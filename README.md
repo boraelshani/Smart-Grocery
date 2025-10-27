@@ -16,8 +16,8 @@ It also provides useful features like featured deals, store information, a perso
 ## Technologies Used
 
 - HTML
-- CSS (Bootstrap + custom styles)
-- JavaScript (for interactive elements)
+- CSS 
+- Bootstrap
 
 ## Project Authors
 
