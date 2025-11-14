@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>500 Internal Error</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <section class="container py-5 text-center">
+    <h1>500</h1>
+    <p class="lead">Internal server error.</p>
+    <a href="{{ url_for('home') }}" class="btn btn-primary">Return Home</a>
+  </section>
+</body>
+</html>

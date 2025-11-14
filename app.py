@@ -50,12 +50,8 @@ off", "deal": "Free shipping"}
 
 # Mock User Data (Login)
 users = {
-    "user1": {"email": "user1@example.com", "password": "password123",
-"name": "John Doe", "shopping_list": ["milk", "bread"], "total_cost":
-6.98},
-    "user2": {"email": "user2@example.com", "password": "password456",
-"name": "Jane Smith", "shopping_list": ["bottled water"],
-"total_cost": 3.99}
+    "user1@example.com": {"email": "user1@example.com", "password": "password123", "name": "John Doe", "shopping_list": ["milk", "bread"], "total_cost": 6.98},
+    "user2@example.com": {"email": "user2@example.com", "password": "password456", "name": "Jane Smith", "shopping_list": ["bottled water"], "total_cost": 3.99}
 }
 
 # Mock Featured Deals
@@ -70,29 +66,27 @@ featured_deals = [
 
 @app.route('/')
 def home():
-    return render_template('home.html', stores=stores,
-products=products, featured_deals=featured_deals)
+    return render_template('home.html', stores=stores, products=products, featured_deals=featured_deals)
 
 @app.route('/stores')
 def stores():
-    return render_template('Stores.html', stores=stores)
+    return render_template('stores.html', stores=stores)
 
 @app.route('/featured-deals')
 def featured_deals_page():
-    return render_template('FeaturedDeals.html', deals=featured_deals)
+    return render_template('featured_deals.html', deals=featured_deals)
 
 @app.route('/compare-prices')
 def compare_prices():
-    return render_template('ComparePrices.html', products=products)
+    return render_template('compare_prices.html', products=products)
 
 @app.route('/shopping-list')
 def shopping_list():
-    return render_template('ShoppingList.html',
-user_data=users.get("user1", {}))
+    return render_template('shopping_list.html', user_data=users.get("user1@example.com", {}))
 
 @app.route('/profile')
 def profile():
-    return render_template('Profile.html', user_data=users.get("user1", {}))
+    return render_template('profile.html', user_data=users.get("user1@example.com", {}))
 
 # Login / Sign Up Routes
 
@@ -138,10 +132,6 @@ def update_profile():
 def about():
     return render_template('about.html')
 
-# Static Files
-@app.route('/static/<path:filename>')
-def serve_static(filename):
-    return send_from_directory('static', filename)
 
 # Error Handling
 @app.errorhandler(404)
