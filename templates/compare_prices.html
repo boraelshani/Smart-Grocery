@@ -63,6 +63,7 @@
 <li class="list-group-item">SaveMore: $3.29 <span class="badge bg-success float-end">10% OFF</span></li>
 </ul>
 <p class="text-muted mb-0">Expires in 2 days</p>
+<button type="button" class="btn btn-sm btn-info mt-2" data-bs-toggle="modal" data-bs-target="#productModal">View Details</button>
 </div>
 </div>
 </div>
@@ -80,6 +81,7 @@
 <li class="list-group-item">SaveMore: $4.99 <span class="badge bg-success float-end">5% OFF</span></li>
 </ul>
 <p class="text-muted mb-0">Expires in 1 day</p>
+<button type="button" class="btn btn-sm btn-info mt-2" data-bs-toggle="modal" data-bs-target="#productModal">View Details</button>
 </div>
 </div>
 </div>
@@ -97,12 +99,52 @@
 <li class="list-group-item">SaveMore: $9.99 <span class="badge bg-success float-end">15% OFF</span></li>
 </ul>
 <p class="text-muted mb-0">Expires in 3 days</p>
+<button type="button" class="btn btn-sm btn-info mt-2" data-bs-toggle="modal" data-bs-target="#productModal">View Details</button>
 </div>
 </div>
 </div>
 
 </div>
+
+<!-- Pagination -->
+<nav aria-label="Page navigation" class="mt-5">
+  <ul class="pagination justify-content-center">
+    <li class="page-item disabled">
+      <a class="page-link" href="#" tabindex="-1">Previous</a>
+    </li>
+    <li class="page-item active"><a class="page-link" href="#">1</a></li>
+    <li class="page-item"><a class="page-link" href="#">2</a></li>
+    <li class="page-item"><a class="page-link" href="#">3</a></li>
+    <li class="page-item">
+      <a class="page-link" href="#">Next</a>
+    </li>
+  </ul>
+</nav>
 </section>
+
+<!-- Modal for Product Details -->
+<div class="modal fade" id="productModal" tabindex="-1" aria-labelledby="productModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="productModalLabel">Product Details</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <img src="https://via.placeholder.com/300x200" class="img-fluid mb-3" alt="Product">
+        <h6>Product Name</h6>
+        <p><strong>Best Price:</strong> $2.99</p>
+        <p><strong>Available at:</strong> FreshMart, SaveMore</p>
+        <p><strong>Discount:</strong> Up to 25% OFF</p>
+        <p><strong>Expires in:</strong> 2 days</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary">Add to Cart</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <footer class="text-center py-4 bg-light border-top">
 <p class="mb-0 text-muted">&copy; 2025 Smart Grocery Team</p>

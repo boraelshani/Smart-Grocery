@@ -71,6 +71,7 @@
             <h5 class="card-title">Milk - $4.49</h5>
             <p class="card-text text-muted">FreshMart</p>
             <p class="card-text text-danger">20% OFF</p>
+            <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#dealModal">See More</button>
           </div>
         </div>
       </div>
@@ -81,6 +82,7 @@
             <h5 class="card-title">Organic Bananas - $2.99</h5>
             <p class="card-text text-muted">SaveMore</p>
             <p class="card-text text-danger">15% OFF</p>
+            <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#dealModal">See More</button>
           </div>
         </div>
       </div>
@@ -91,11 +93,37 @@
             <h5 class="card-title">Chicken Breast - $8.99</h5>
             <p class="card-text text-muted">FreshMart</p>
             <p class="card-text text-danger">25% OFF</p>
+            <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#dealModal">See More</button>
           </div>
         </div>
       </div>
     </div>
   </section>
+
+  <!-- Modal for Deal Details -->
+  <div class="modal fade" id="dealModal" tabindex="-1" aria-labelledby="dealModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="dealModalLabel">Featured Deal Details</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <img src="https://via.placeholder.com/300x200" class="img-fluid mb-3" alt="Deal">
+          <h6>Product Name</h6>
+          <p><strong>Original Price:</strong> <strike>$5.99</strike></p>
+          <p><strong>Deal Price:</strong> $4.49</p>
+          <p><strong>You Save:</strong> $1.50 (25%)</p>
+          <p><strong>Store:</strong> FreshMart</p>
+          <p><strong>Expires:</strong> 2 days</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-success">Claim Deal</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Footer -->
   <footer class="text-center py-4 bg-light border-top">
