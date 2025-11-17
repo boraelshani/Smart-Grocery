@@ -1,0 +1,2 @@
+Flask
+# Add other dependencies here if your app grows (e.g., SQLAlchemy, Flask-Login)

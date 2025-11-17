@@ -4,7 +4,36 @@
 document.addEventListener('DOMContentLoaded', function() {
     initializeBootstrapComponents();
     setupEventListeners();
+    setupSearchFunctionality();
 });
+
+// Setup search functionality
+function setupSearchFunctionality() {
+    const searchButtons = document.querySelectorAll('.search-btn');
+    const searchInputs = document.querySelectorAll('.search-input');
+    
+    searchButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const input = this.previousElementSibling;
+            const query = input.value.trim();
+            if (query) {
+                console.log('Searching for:', query);
+                // Add your search logic here
+            } else {
+                alert('Please enter a search term');
+            }
+        });
+    });
+    
+    searchInputs.forEach(input => {
+        input.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                const btn = this.nextElementSibling;
+                btn.click();
+            }
+        });
+    });
+}
 
 // Initialize Bootstrap components
 function initializeBootstrapComponents() {
