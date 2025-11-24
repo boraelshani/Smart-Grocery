@@ -1,19 +1,31 @@
-# Virtual Environment
+
+# =========================
+# Python / Flask .gitignore
+# =========================
+
+# Virtual environments
 .venv/
 venv/
 env/
 ENV/
 
-# Python compiled files
+# Python helpers
+.python-version
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
+*.pyc
+*.pyo
+*.pyd
 
 # Distribution / packaging
 .Python
 build/
-develop-eggs/
 dist/
 downloads/
 eggs/
@@ -28,30 +40,42 @@ wheels/
 .installed.cfg
 *.egg
 
-# IDE
+# Editor / IDE
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
 
-# OS
+# JetBrains project files
+.idea/**
+
+# OS files
 .DS_Store
 Thumbs.db
+.AppleDouble
+.LSOverride
 
-# Environment variables
+# Environment / secrets
 .env
 .env.local
 .env.*.local
+.envrc
 
 # Flask
 instance/
 .webassets-cache
+gunicorn.sock
 
-# Database
+# Database files
 *.db
 *.sqlite
 *.sqlite3
+
+# MongoDB dumps
+dump/
+*.bson
+*.gz
 
 # Logs
 *.log
@@ -67,13 +91,14 @@ htmlcov/
 .cache/
 pip-wheel-metadata/
 
-# Byte-compiled / optimized / DLL files
-*.pyc
-*.pyo
-*.pyd
+# Jupyter
+.ipynb_checkpoints/
 
-# Editor backups
-*.bak
-
-# Optional: node modules (if front-end added later)
+# Node / frontend
 node_modules/
+# You can keep package-lock.json / yarn.lock if desired
+
+# Temporary files
+*.bak
+*.tmp
+
