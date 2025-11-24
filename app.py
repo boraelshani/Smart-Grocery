@@ -14,6 +14,27 @@ app.config['MONGO_URI'] = os.environ.get('MONGO_URI', 'mongodb://localhost:27017
 # Initialize PyMongo with the Flask app
 mongo.init_app(app)
 
+# If Mongo is available and users collection is empty, seed mock users from models.models
+try:
+    from models import models as mock_models
+    if getattr(mongo, 'db', None) is not None:
+        try:
+            users_count = mongo.db.users.count_documents({})
+            if users_count == 0 and isinstance(getattr(mock_models, 'users', None), dict):
+                to_insert = []
+                for email, u in mock_models.users.items():
+                    # copy dict and ensure email present
+                    doc = dict(u)
+                    doc.setdefault('email', email)
+                    to_insert.append(doc)
+                if to_insert:
+                    mongo.db.users.insert_many(to_insert)
+        except Exception:
+            # ignore DB seeding errors in development
+            pass
+except Exception:
+    pass
+
 # Register blueprints
 app.register_blueprint(main_bp)
 app.register_blueprint(auth_bp)

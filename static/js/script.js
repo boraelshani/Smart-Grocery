@@ -1,380 +1,91 @@
-// Smart Grocery JavaScript Functions
+// Smart Grocery JavaScript (TSX-like shopping list interactions)
 
-// Initialize tooltips and popovers on page load
-document.addEventListener('DOMContentLoaded', function() {
-    initializeBootstrapComponents();
-    setupEventListeners();
-    setupSearchFunctionality();
+document.addEventListener('DOMContentLoaded', () => {
+  initializeBootstrapComponents();
+  setupSearchFunctionality();
+  setupShoppingListHandlers();
+  setupShoppingListInteractions();
 });
 
-// Setup search functionality
-function setupSearchFunctionality() {
-    const searchButtons = document.querySelectorAll('.search-btn');
-    const searchInputs = document.querySelectorAll('.search-input');
-    
-    searchButtons.forEach(btn => {
-        btn.addEventListener('click', function() {
-            const input = this.previousElementSibling;
-            const query = input.value.trim();
-            if (query) {
-                console.log('Searching for:', query);
-                // Add your search logic here
-            } else {
-                alert('Please enter a search term');
-            }
-        });
-    });
-    
-    searchInputs.forEach(input => {
-        input.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                const btn = this.nextElementSibling;
-                btn.click();
-            }
-        });
-    });
-}
-
-// Initialize Bootstrap components
+// Bootstrap helpers
 function initializeBootstrapComponents() {
-    // Initialize tooltips
-    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl);
-    });
-
-    // Initialize popovers
-    const popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
-    popoverTriggerList.map(function (popoverTriggerEl) {
-        return new bootstrap.Popover(popoverTriggerEl);
-    });
+  const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+  tooltipTriggerList.map(function (tooltipTriggerEl) { return new bootstrap.Tooltip(tooltipTriggerEl); });
 }
 
-// Setup event listeners
-function setupEventListeners() {
-    // Add to cart functionality
-    const addToCartButtons = document.querySelectorAll('.add-to-cart-btn');
-    addToCartButtons.forEach(btn => {
-        btn.addEventListener('click', function() {
-            const productName = this.getAttribute('data-product-name');
-            const productPrice = this.getAttribute('data-product-price');
-            addToCart(productName, productPrice);
-        });
-    });
-
-    // Remove from cart functionality
-    const removeFromCartButtons = document.querySelectorAll('.remove-from-cart-btn');
-    removeFromCartButtons.forEach(btn => {
-        btn.addEventListener('click', function() {
-            const itemId = this.getAttribute('data-item-id');
-            removeFromCart(itemId);
-        });
-    });
-
-    // Shopping list item checkbox
-    const shoppingItems = document.querySelectorAll('.shopping-item-checkbox');
-    shoppingItems.forEach(item => {
-        item.addEventListener('change', function() {
-            toggleItemComplete(this);
-        });
-    });
-
-    // Form validation
-    const forms = document.querySelectorAll('form');
-    forms.forEach(form => {
-        form.addEventListener('submit', function(e) {
-            if (!form.checkValidity()) {
-                e.preventDefault();
-                e.stopPropagation();
-            }
-            form.classList.add('was-validated');
-        });
-    });
+// Search stub
+function setupSearchFunctionality() {
+  document.querySelectorAll('.search-btn').forEach(btn => btn.addEventListener('click', () => {
+    const input = btn.previousElementSibling;
+    if (!input) return; const q = input.value.trim(); if (!q) return alert('Please enter a search term');
+  }));
 }
 
-// Add item to shopping cart
-function addToCart(productName, productPrice) {
-    // Use cart class to persist and update UI
-    const itemId = cart.addItem(productName, productPrice);
-    renderCartItems();
-    showNotification(`${productName} added to cart!`, 'success');
-    return itemId;
+// Simple fetch helper
+async function apiPostJson(url, body) {
+  const res = await fetch(url, {
+    method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+  });
+  return res.json().catch(() => ({}));
 }
 
-// Remove item from shopping cart
-function removeFromCart(itemId) {
-    // itemId may come as string from data attribute
-    const id = typeof itemId === 'string' ? Number(itemId) : itemId;
-    cart.removeItem(id);
-    renderCartItems();
-    showNotification('Item removed from cart', 'info');
-}
+function refreshShoppingListUI() { window.location.reload(); }
 
-// Render cart items into a container (if present)
-function renderCartItems() {
-    const container = document.getElementById('cart-items');
-    const emptyMsg = document.getElementById('cart-empty-message');
-    if (!container) return;
-
-    container.innerHTML = '';
-    if (!cart.getCount()) {
-        if (emptyMsg) emptyMsg.style.display = 'block';
-        return;
-    }
-    if (emptyMsg) emptyMsg.style.display = 'none';
-
-    cart.cartItems.forEach(item => {
-        const row = document.createElement('div');
-        row.className = 'd-flex align-items-center justify-content-between mb-2 cart-item-row';
-        row.innerHTML = `
-            <div>
-                <strong class="cart-item-name">${item.name}</strong>
-                <div class="text-muted small">$${parseFloat(item.price).toFixed(2)}</div>
-            </div>
-            <div>
-                <button class="btn btn-sm btn-outline-danger remove-from-cart-btn" data-item-id="${item.id}">Remove</button>
-            </div>
-        `;
-        container.appendChild(row);
-    });
-
-    // Attach listeners to newly created remove buttons
-    const removeBtns = container.querySelectorAll('.remove-from-cart-btn');
-    removeBtns.forEach(btn => {
-        btn.addEventListener('click', function() {
-            const id = this.getAttribute('data-item-id');
-            removeFromCart(id);
-        });
-    });
-}
-
-// Toggle item complete status
-function toggleItemComplete(checkbox) {
-    const itemRow = checkbox.closest('.shopping-item');
-    if (checkbox.checked) {
-        itemRow.classList.add('completed');
-    } else {
-        itemRow.classList.remove('completed');
-    }
-}
-
-// Show notification toast
 function showNotification(message, type = 'info') {
-    const alertClass = `alert-${type}`;
-    const alertHTML = `
-        <div class="alert ${alertClass} alert-dismissible fade show" role="alert" style="position: fixed; top: 20px; right: 20px; z-index: 9999; min-width: 300px;">
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    `;
-    
-    document.body.insertAdjacentHTML('beforeend', alertHTML);
-    
-    // Auto-dismiss after 4 seconds
-    setTimeout(() => {
-        const alert = document.querySelector('.alert:not(.show)');
-        if (alert) {
-            const bsAlert = new bootstrap.Alert(alert);
-            bsAlert.close();
-        }
-    }, 4000);
+  const el = document.createElement('div'); el.className = `alert alert-${type} alert-dismissible fade show`; el.style.position='fixed'; el.style.top='20px'; el.style.right='20px'; el.style.zIndex=9999; el.style.minWidth='260px'; el.innerHTML = `${message}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>`; document.body.appendChild(el);
+  setTimeout(()=>{ try{ new bootstrap.Alert(el).close(); }catch(e){} }, 3500);
 }
 
-// Format price to currency
-function formatPrice(price) {
-    if (typeof price === 'string') {
-        return parseFloat(price.replace('$', ''));
-    }
-    return parseFloat(price);
+function formatPrice(price) { if (typeof price === 'string') price = price.replace(/[^0-9.]/g,''); return Number(price)||0; }
+
+// Handlers for the new TSX-like markup
+function setupShoppingListHandlers() {
+  // remove buttons
+  document.querySelectorAll('.remove-item-btn').forEach(btn => btn.addEventListener('click', async (e) => {
+    const name = btn.getAttribute('data-name') || btn.getAttribute('data-id'); if (!name) return;
+    const r = await apiPostJson('/shopping-list/remove', { item: name }); if (r && r.success) { showNotification('Item removed','info'); refreshShoppingListUI(); } else showNotification('Could not remove item','danger');
+  }));
+
+  // checkbox toggles
+  document.querySelectorAll('.checkbox-item').forEach(cb => cb.addEventListener('change', () => {
+    const row = cb.closest('.item-row'); if (!row) return; if (cb.checked) row.classList.add('purchased'); else row.classList.remove('purchased'); debounceSaveOrder();
+  }));
 }
 
-// Calculate total from shopping list
-function calculateTotal() {
-    const items = document.querySelectorAll('.shopping-item-price');
-    let total = 0;
-    items.forEach(item => {
-        const price = formatPrice(item.textContent);
-        total += price;
-    });
-    return total.toFixed(2);
+function setupShoppingListInteractions() {
+  const list = document.getElementById('shopping-list') || document.querySelector('.list-rows'); if (!list) return;
+
+  // drag/drop
+  let dragSrc = null;
+  list.addEventListener('dragstart', (e) => { const r = e.target.closest('.item-row'); if (!r) return; dragSrc = r; e.dataTransfer.effectAllowed='move'; });
+  list.addEventListener('dragover', (e) => e.preventDefault());
+  list.addEventListener('drop', (e) => { e.preventDefault(); const target = e.target.closest('.item-row'); if (!target || !dragSrc || target===dragSrc) return; list.insertBefore(dragSrc, target); postCurrentListOrder(); });
+
+  // clear purchased
+  document.getElementById('clear-purchased')?.addEventListener('click', () => {
+    const rows = Array.from(list.querySelectorAll('.item-row.purchased'));
+    rows.forEach(r => { const name = r.getAttribute('data-name'); apiPostJson('/shopping-list/remove', { item: name }).then(res => { if (res && res.success) refreshShoppingListUI(); }); });
+  });
+
+  // save order
+  document.getElementById('save-order')?.addEventListener('click', () => { postCurrentListOrder().then(r => { if (r && r.success) showNotification('Order saved','success'); }); });
+
+  computeTotals();
 }
 
-// Search products
-function searchProducts(query) {
-    const products = document.querySelectorAll('.product-card');
-    products.forEach(product => {
-        const productName = product.getAttribute('data-product-name').toLowerCase();
-        if (productName.includes(query.toLowerCase())) {
-            product.style.display = 'block';
-        } else {
-            product.style.display = 'none';
-        }
-    });
+async function postCurrentListOrder() {
+  const rows = Array.from(document.querySelectorAll('.item-row'));
+  const items = rows.map(r => ({ name: r.getAttribute('data-name'), purchased: r.classList.contains('purchased'), qty: 1, price: formatPrice(r.getAttribute('data-price') || (r.querySelector('.item-price')?.textContent||'0')) }));
+  return apiPostJson('/shopping-list/update', { items });
 }
 
-// Filter stores by distance
-function filterStoresByDistance(maxDistance) {
-    const stores = document.querySelectorAll('.store-card');
-    stores.forEach(store => {
-        const distance = parseFloat(store.getAttribute('data-distance'));
-        if (distance <= maxDistance) {
-            store.style.display = 'block';
-        } else {
-            store.style.display = 'none';
-        }
-    });
+let _saveTimer = null; function debounceSaveOrder(delay=700){ if(_saveTimer) clearTimeout(_saveTimer); _saveTimer = setTimeout(()=>postCurrentListOrder(), delay); }
+
+function computeTotals(){ const rows = Array.from(document.querySelectorAll('.item-row')); let total=0; rows.forEach(r=> total += formatPrice(r.getAttribute('data-price') || (r.querySelector('.item-price')?.textContent||'0')) ); const el = document.getElementById('total-value'); if(el) el.textContent = `$${total.toFixed(2)}`; }
+
+// minimal cart counter kept for compatibility
+class CartCounter{ constructor(){ this.cartItems=[]; this.loadFromStorage(); this.updateDisplay(); } addItem(name, price){ const it={name,price,id:Date.now()}; this.cartItems.push(it); this.saveToStorage(); this.updateDisplay(); return it.id;} removeItem(id){ this.cartItems=this.cartItems.filter(i=>i.id!==id); this.saveToStorage(); this.updateDisplay(); } getCount(){ return this.cartItems.length;} getTotal(){ return this.cartItems.reduce((s,i)=>s+Number(i.price||0),0);} clearCart(){ this.cartItems=[]; this.saveToStorage(); this.updateDisplay(); } updateDisplay(){ const b=document.getElementById('cart-counter'); if(b){ b.textContent=this.getCount(); b.style.display=this.getCount()>0?'inline-block':'none'; } const t=document.getElementById('cart-total'); if(t) t.textContent=`$${this.getTotal().toFixed(2)}`; } saveToStorage(){ localStorage.setItem('smartGroceryCart', JSON.stringify(this.cartItems)); } loadFromStorage(){ try{ this.cartItems=JSON.parse(localStorage.getItem('smartGroceryCart'))||[] }catch(e){ this.cartItems=[] } }
 }
-
-// Sort products by price
-function sortProductsByPrice(order = 'asc') {
-    const productContainer = document.querySelector('.products-container');
-    if (!productContainer) return;
-
-    const products = Array.from(productContainer.querySelectorAll('.product-card'));
-    
-    products.sort((a, b) => {
-        const priceA = formatPrice(a.getAttribute('data-price'));
-        const priceB = formatPrice(b.getAttribute('data-price'));
-        
-        return order === 'asc' ? priceA - priceB : priceB - priceA;
-    });
-
-    productContainer.innerHTML = '';
-    products.forEach(product => {
-        productContainer.appendChild(product);
-    });
-}
-
-// Price Filter Functionality
-function filterProductsByPrice(minPrice, maxPrice) {
-    const products = document.querySelectorAll('.product-card');
-    let visibleCount = 0;
-    
-    products.forEach(product => {
-        // Extract price from product card
-        const priceElement = product.querySelector('.price, .product-price, [data-price]');
-        if (!priceElement) return;
-        
-        const priceText = priceElement.textContent;
-        const price = parseFloat(priceText.replace(/[^0-9.]/g, ''));
-        
-        if (price >= minPrice && price <= maxPrice) {
-            product.style.display = 'block';
-            visibleCount++;
-        } else {
-            product.style.display = 'none';
-        }
-    });
-    
-    console.log(`Showing ${visibleCount} products between $${minPrice} - $${maxPrice}`);
-    return visibleCount;
-}
-
-// Price filter with slider or input
-function setupPriceFilter() {
-    const minInput = document.getElementById('min-price');
-    const maxInput = document.getElementById('max-price');
-    const filterBtn = document.getElementById('filter-price-btn');
-    
-    if (filterBtn) {
-        filterBtn.addEventListener('click', function() {
-            const min = parseFloat(minInput.value) || 0;
-            const max = parseFloat(maxInput.value) || 10000;
-            filterProductsByPrice(min, max);
-        });
-    }
-}
-
-// Shopping Cart Counter
-class CartCounter {
-    constructor() {
-        this.cartItems = [];
-        this.loadFromStorage();
-        this.updateDisplay();
-    }
-    
-    addItem(productName, price) {
-        const item = { name: productName, price: price, id: Date.now() };
-        this.cartItems.push(item);
-        this.saveToStorage();
-        this.updateDisplay();
-        return item.id;
-    }
-    
-    removeItem(itemId) {
-        this.cartItems = this.cartItems.filter(item => item.id !== itemId);
-        this.saveToStorage();
-        this.updateDisplay();
-    }
-    
-    getCount() {
-        return this.cartItems.length;
-    }
-    
-    getTotal() {
-        return this.cartItems.reduce((sum, item) => sum + parseFloat(item.price), 0);
-    }
-    
-    clearCart() {
-        this.cartItems = [];
-        this.saveToStorage();
-        this.updateDisplay();
-    }
-    
-    updateDisplay() {
-        // Update cart counter badge
-        const counterBadge = document.getElementById('cart-counter');
-        if (counterBadge) {
-            counterBadge.textContent = this.getCount();
-            counterBadge.style.display = this.getCount() > 0 ? 'inline-block' : 'none';
-        }
-        
-        // Update total price display
-        const totalDisplay = document.getElementById('cart-total');
-        if (totalDisplay) {
-            totalDisplay.textContent = `$${this.getTotal().toFixed(2)}`;
-        }
-    }
-    
-    saveToStorage() {
-        localStorage.setItem('smartGroceryCart', JSON.stringify(this.cartItems));
-    }
-    
-    loadFromStorage() {
-        const saved = localStorage.getItem('smartGroceryCart');
-        if (saved) {
-            try {
-                this.cartItems = JSON.parse(saved);
-            } catch (e) {
-                console.error('Error loading cart from storage:', e);
-                this.cartItems = [];
-            }
-        }
-    }
-}
-
-// Initialize cart counter
 const cart = new CartCounter();
 
-// Hook into existing addToCart function
-const originalAddToCart = window.smartGrocery?.addToCart || function() {};
-function addToCartWithCounter(productName, productPrice) {
-    originalAddToCart(productName, productPrice);
-    cart.addItem(productName, productPrice);
-}
-
-// Export functions for use in templates
-window.smartGrocery = {
-    addToCart: addToCartWithCounter,
-    removeFromCart,
-    toggleItemComplete,
-    showNotification,
-    formatPrice,
-    calculateTotal,
-    searchProducts,
-    filterStoresByDistance,
-    sortProductsByPrice,
-    filterProductsByPrice,
-    setupPriceFilter,
-    cart
-};
+window.smartGrocery = { showNotification, formatPrice, cart };

@@ -62,8 +62,16 @@ def remove_from_shopping_list(email: str, item: str) -> bool:
     if not email or not item:
         return False
     if HAS_DB and mongo is not None and getattr(mongo, 'db', None) is not None:
-        res = mongo.db.users.update_one({'email': email}, {'$pull': {'shopping_list': item}})
-        return res.modified_count > 0
+        # Try removing plain string entries first
+        try:
+            res = mongo.db.users.update_one({'email': email}, {'$pull': {'shopping_list': item}})
+            if getattr(res, 'modified_count', 0) > 0:
+                return True
+            # If not removed, attempt to remove objects with a `name` field equal to item
+            res2 = mongo.db.users.update_one({'email': email}, {'$pull': {'shopping_list': {'name': item}}})
+            return getattr(res2, 'modified_count', 0) > 0
+        except Exception:
+            return False
     if email in MOCK_USERS and 'shopping_list' in MOCK_USERS[email]:
         try:
             MOCK_USERS[email]['shopping_list'].remove(item)
