@@ -55,3 +55,25 @@ instance/
 
 # Logs
 *.log
+
+# Testing / coverage
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Caches
+.mypy_cache/
+.cache/
+pip-wheel-metadata/
+
+# Byte-compiled / optimized / DLL files
+*.pyc
+*.pyo
+*.pyd
+
+# Editor backups
+*.bak
+
+# Optional: node modules (if front-end added later)
+node_modules/
