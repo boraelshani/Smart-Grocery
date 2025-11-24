@@ -1,0 +1,20 @@
+[
+  {
+    "title": "Milk - 10% off",
+    "store": "Supermart",
+    "price": 3.59,
+    "image": "https://via.placeholder.com/300x200"
+  },
+  {
+    "title": "Fresh Bread - Buy 2 Get 1",
+    "store": "Fresh & Co",
+    "price": 2.29,
+    "image": "https://via.placeholder.com/300x200"
+  },
+  {
+    "title": "Eggs - Special",
+    "store": "Green Valley",
+    "price": 2.49,
+    "image": "https://via.placeholder.com/300x200"
+  }
+]
