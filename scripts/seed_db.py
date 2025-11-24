@@ -15,6 +15,7 @@ import os
 import sys
 import json
 from pymongo import MongoClient
+from werkzeug.security import generate_password_hash
 
 # Ensure project root is on sys.path so `from models import models` works
 proj_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -84,6 +85,12 @@ def seed_collection(name, docs_source):
             key = {'_id': doc.get('_id')} if '_id' in doc else doc
 
         doc_to_set = {k: v for k, v in doc.items() if k != '_id'}
+        # Hash passwords when seeding users to avoid storing plaintext
+        if name == 'users' and doc_to_set.get('password'):
+            try:
+                doc_to_set['password'] = generate_password_hash(doc_to_set['password'])
+            except Exception:
+                pass
         res = coll.update_one(key, {'$set': doc_to_set}, upsert=True)
         if getattr(res, 'upserted_id', None) or getattr(res, 'modified_count', 0) > 0:
             changed += 1

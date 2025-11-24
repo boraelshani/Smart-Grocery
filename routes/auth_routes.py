@@ -1,6 +1,6 @@
 from flask import render_template, request, redirect, url_for, session, jsonify
 from . import auth_bp
-from models.models import get_user_by_email, create_user
+from models.models import get_user_by_email
 from models import models as m
 from models import users_model as users_model
 from utils.db import mongo
@@ -11,8 +11,9 @@ def login():
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
-        user = get_user_by_email(email)
-        if user and user.get('password') == password:
+        # use users_model.authenticate which checks hashed passwords
+        ok = users_model.authenticate(email, password)
+        if ok:
             session['user'] = email
             return redirect(url_for('main.home'))
         else:
@@ -26,10 +27,10 @@ def signup():
         email = request.form['email']
         password = request.form['password']
         name = request.form['name']
-        existing = get_user_by_email(email)
+        existing = users_model.get_user_by_email(email)
         if not existing:
             user_doc = {"email": email, "password": password, "name": name, "shopping_list": [], "total_cost": 0.0}
-            create_user(user_doc)
+            users_model.create_user(user_doc)
             session['user'] = email
             return redirect(url_for('main.home'))
         else:

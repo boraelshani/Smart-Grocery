@@ -14,6 +14,13 @@ app.config['MONGO_URI'] = os.environ.get('MONGO_URI', 'mongodb://localhost:27017
 # Initialize PyMongo with the Flask app
 mongo.init_app(app)
 
+# Ensure users.email has a unique index to prevent duplicate accounts when using MongoDB
+try:
+    if getattr(mongo, 'db', None) is not None:
+        mongo.db.users.create_index('email', unique=True)
+except Exception:
+    pass
+
 # If Mongo is available and users collection is empty, seed mock users from models.models
 try:
     from models import models as mock_models

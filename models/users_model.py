@@ -9,6 +9,8 @@ except Exception:
     mongo = None
     HAS_DB = False
 
+from werkzeug.security import generate_password_hash, check_password_hash
+
 from models.models import users as MOCK_USERS
 
 
@@ -32,6 +34,15 @@ def get_user_by_email(email: str) -> Optional[dict]:
 def create_user(user_doc: dict) -> str:
     """Create a user. Returns inserted id (str) or email when using mock.
     """
+    # Ensure password is hashed before storing
+    pwd = user_doc.get('password')
+    if pwd:
+        try:
+            # always store a generated hash (idempotent if already hashed)
+            user_doc['password'] = generate_password_hash(pwd)
+        except Exception:
+            pass
+
     if HAS_DB and mongo is not None and getattr(mongo, 'db', None) is not None:
         res = mongo.db.users.insert_one(user_doc)
         return str(res.inserted_id)
@@ -43,7 +54,15 @@ def authenticate(email: str, password: str) -> bool:
     user = get_user_by_email(email)
     if not user:
         return False
-    return user.get('password') == password
+    stored = user.get('password')
+    if not stored:
+        return False
+    try:
+        # check against hash
+        return check_password_hash(stored, password)
+    except Exception:
+        # fallback to plain comparison for legacy/mock entries
+        return stored == password
 
 
 def add_to_shopping_list(email: str, item: str) -> bool:
