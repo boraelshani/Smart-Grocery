@@ -94,14 +94,58 @@ function setupEventListeners() {
 
 // Add item to shopping cart
 function addToCart(productName, productPrice) {
-    console.log(`Added ${productName} (${productPrice}) to cart`);
+    // Use cart class to persist and update UI
+    const itemId = cart.addItem(productName, productPrice);
+    renderCartItems();
     showNotification(`${productName} added to cart!`, 'success');
+    return itemId;
 }
 
 // Remove item from shopping cart
 function removeFromCart(itemId) {
-    console.log(`Removed item ${itemId} from cart`);
+    // itemId may come as string from data attribute
+    const id = typeof itemId === 'string' ? Number(itemId) : itemId;
+    cart.removeItem(id);
+    renderCartItems();
     showNotification('Item removed from cart', 'info');
+}
+
+// Render cart items into a container (if present)
+function renderCartItems() {
+    const container = document.getElementById('cart-items');
+    const emptyMsg = document.getElementById('cart-empty-message');
+    if (!container) return;
+
+    container.innerHTML = '';
+    if (!cart.getCount()) {
+        if (emptyMsg) emptyMsg.style.display = 'block';
+        return;
+    }
+    if (emptyMsg) emptyMsg.style.display = 'none';
+
+    cart.cartItems.forEach(item => {
+        const row = document.createElement('div');
+        row.className = 'd-flex align-items-center justify-content-between mb-2 cart-item-row';
+        row.innerHTML = `
+            <div>
+                <strong class="cart-item-name">${item.name}</strong>
+                <div class="text-muted small">$${parseFloat(item.price).toFixed(2)}</div>
+            </div>
+            <div>
+                <button class="btn btn-sm btn-outline-danger remove-from-cart-btn" data-item-id="${item.id}">Remove</button>
+            </div>
+        `;
+        container.appendChild(row);
+    });
+
+    // Attach listeners to newly created remove buttons
+    const removeBtns = container.querySelectorAll('.remove-from-cart-btn');
+    removeBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const id = this.getAttribute('data-item-id');
+            removeFromCart(id);
+        });
+    });
 }
 
 // Toggle item complete status
