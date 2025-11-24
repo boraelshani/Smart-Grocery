@@ -11,7 +11,7 @@ except Exception:
 @main_bp.route('/')
 def home():
     # Load stores/products/deals from MongoDB when available, otherwise use in-memory mocks
-    if HAS_DB and mongo and getattr(mongo, 'db', None):
+    if HAS_DB and mongo is not None and getattr(mongo, 'db', None) is not None:
         stores = list(mongo.db.stores.find({}))
         products = list(mongo.db.products.find({}))
         featured_deals = list(mongo.db.featured_deals.find({}))
@@ -29,7 +29,7 @@ def home():
 
 @main_bp.route('/stores')
 def stores_page():
-    if HAS_DB and mongo and getattr(mongo, 'db', None):
+    if HAS_DB and mongo is not None and getattr(mongo, 'db', None) is not None:
         stores = list(mongo.db.stores.find({}))
         for s in stores:
             if '_id' in s:
@@ -40,7 +40,7 @@ def stores_page():
 
 @main_bp.route('/featured-deals')
 def featured_deals_page():
-    if HAS_DB and mongo and getattr(mongo, 'db', None):
+    if HAS_DB and mongo is not None and getattr(mongo, 'db', None) is not None:
         deals = list(mongo.db.featured_deals.find({}))
         for d in deals:
             if '_id' in d:
@@ -51,7 +51,7 @@ def featured_deals_page():
 
 @main_bp.route('/compare-prices')
 def compare_prices():
-    if HAS_DB and mongo and getattr(mongo, 'db', None):
+    if HAS_DB and mongo is not None and getattr(mongo, 'db', None) is not None:
         products = list(mongo.db.products.find({}))
         for p in products:
             if '_id' in p:
@@ -63,7 +63,7 @@ def compare_prices():
 @main_bp.route('/shopping-list')
 def shopping_list():
     user_email = session.get('user')
-    if HAS_DB and mongo and getattr(mongo, 'db', None) and user_email:
+    if HAS_DB and mongo is not None and getattr(mongo, 'db', None) is not None and user_email:
         user = mongo.db.users.find_one({'email': user_email})
         if user and '_id' in user:
             user['id'] = str(user['_id'])
@@ -75,7 +75,7 @@ def shopping_list():
 @main_bp.route('/profile')
 def profile():
     user_email = session.get('user')
-    if HAS_DB and mongo and getattr(mongo, 'db', None) and user_email:
+    if HAS_DB and mongo is not None and getattr(mongo, 'db', None) is not None and user_email:
         user = mongo.db.users.find_one({'email': user_email})
         if user and '_id' in user:
             user['id'] = str(user['_id'])
@@ -94,7 +94,7 @@ def admin_status():
     """Return JSON with collection counts so you can verify DB connectivity."""
     collections = ['products', 'stores', 'featured_deals', 'users']
     counts = {}
-    if HAS_DB and mongo and getattr(mongo, 'db', None):
+    if HAS_DB and mongo is not None and getattr(mongo, 'db', None) is not None:
         try:
             for c in collections:
                 counts[c] = int(mongo.db[c].count_documents({}))

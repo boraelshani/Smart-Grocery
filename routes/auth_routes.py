@@ -43,7 +43,7 @@ def update_profile():
     new_list = request.form.getlist('shopping_list')
     # update shopping list in DB if available, otherwise the fallback in models will handle it
     try:
-        if mongo and mongo.db:
+        if mongo is not None and getattr(mongo, 'db', None) is not None:
             mongo.db.users.update_one({'email': email}, {'$set': {'shopping_list': new_list}})
         else:
             # fallback: update in-memory users dict via models helper

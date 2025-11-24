@@ -54,7 +54,7 @@ def get_user_by_email(email):
     """Return user document by email. Uses MongoDB when available, otherwise falls back to in-memory `users` dict."""
     if not email:
         return None
-    if HAS_DB and mongo and getattr(mongo, 'db', None):
+    if HAS_DB and mongo is not None and getattr(mongo, 'db', None) is not None:
         doc = mongo.db.users.find_one({'email': email})
         if not doc:
             return None
@@ -67,7 +67,7 @@ def get_user_by_email(email):
 
 def create_user(user_doc):
     """Insert a new user. Returns inserted id (str) for DB or email for in-memory fallback."""
-    if HAS_DB and mongo and getattr(mongo, 'db', None):
+    if HAS_DB and mongo is not None and getattr(mongo, 'db', None) is not None:
         res = mongo.db.users.insert_one(user_doc)
         return str(res.inserted_id)
     # fallback: add to in-memory dict
