@@ -201,9 +201,127 @@ function sortProductsByPrice(order = 'asc') {
     });
 }
 
+// Price Filter Functionality
+function filterProductsByPrice(minPrice, maxPrice) {
+    const products = document.querySelectorAll('.product-card');
+    let visibleCount = 0;
+    
+    products.forEach(product => {
+        // Extract price from product card
+        const priceElement = product.querySelector('.price, .product-price, [data-price]');
+        if (!priceElement) return;
+        
+        const priceText = priceElement.textContent;
+        const price = parseFloat(priceText.replace(/[^0-9.]/g, ''));
+        
+        if (price >= minPrice && price <= maxPrice) {
+            product.style.display = 'block';
+            visibleCount++;
+        } else {
+            product.style.display = 'none';
+        }
+    });
+    
+    console.log(`Showing ${visibleCount} products between $${minPrice} - $${maxPrice}`);
+    return visibleCount;
+}
+
+// Price filter with slider or input
+function setupPriceFilter() {
+    const minInput = document.getElementById('min-price');
+    const maxInput = document.getElementById('max-price');
+    const filterBtn = document.getElementById('filter-price-btn');
+    
+    if (filterBtn) {
+        filterBtn.addEventListener('click', function() {
+            const min = parseFloat(minInput.value) || 0;
+            const max = parseFloat(maxInput.value) || 10000;
+            filterProductsByPrice(min, max);
+        });
+    }
+}
+
+// Shopping Cart Counter
+class CartCounter {
+    constructor() {
+        this.cartItems = [];
+        this.loadFromStorage();
+        this.updateDisplay();
+    }
+    
+    addItem(productName, price) {
+        const item = { name: productName, price: price, id: Date.now() };
+        this.cartItems.push(item);
+        this.saveToStorage();
+        this.updateDisplay();
+        return item.id;
+    }
+    
+    removeItem(itemId) {
+        this.cartItems = this.cartItems.filter(item => item.id !== itemId);
+        this.saveToStorage();
+        this.updateDisplay();
+    }
+    
+    getCount() {
+        return this.cartItems.length;
+    }
+    
+    getTotal() {
+        return this.cartItems.reduce((sum, item) => sum + parseFloat(item.price), 0);
+    }
+    
+    clearCart() {
+        this.cartItems = [];
+        this.saveToStorage();
+        this.updateDisplay();
+    }
+    
+    updateDisplay() {
+        // Update cart counter badge
+        const counterBadge = document.getElementById('cart-counter');
+        if (counterBadge) {
+            counterBadge.textContent = this.getCount();
+            counterBadge.style.display = this.getCount() > 0 ? 'inline-block' : 'none';
+        }
+        
+        // Update total price display
+        const totalDisplay = document.getElementById('cart-total');
+        if (totalDisplay) {
+            totalDisplay.textContent = `$${this.getTotal().toFixed(2)}`;
+        }
+    }
+    
+    saveToStorage() {
+        localStorage.setItem('smartGroceryCart', JSON.stringify(this.cartItems));
+    }
+    
+    loadFromStorage() {
+        const saved = localStorage.getItem('smartGroceryCart');
+        if (saved) {
+            try {
+                this.cartItems = JSON.parse(saved);
+            } catch (e) {
+                console.error('Error loading cart from storage:', e);
+                this.cartItems = [];
+            }
+        }
+    }
+}
+
+// Initialize cart counter
+const cart = new CartCounter();
+
+// Hook into existing addToCart function
+const originalAddToCart = window.smartGrocery?.addToCart || function() {};
+function addToCartWithCounter(productName, productPrice) {
+    originalAddToCart(productName, productPrice);
+    cart.addItem(productName, productPrice);
+}
+
 // Export functions for use in templates
 window.smartGrocery = {
-    addToCart,
+    addToCart: addToCartWithCounter,
     removeFromCart,
     toggleItemComplete,
     showNotification,
@@ -211,5 +329,8 @@ window.smartGrocery = {
     calculateTotal,
     searchProducts,
     filterStoresByDistance,
-    sortProductsByPrice
+    sortProductsByPrice,
+    filterProductsByPrice,
+    setupPriceFilter,
+    cart
 };
