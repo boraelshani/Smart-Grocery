@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupSearchFunctionality();
   setupShoppingListHandlers();
   setupShoppingListInteractions();
+  setupClaimButtons();
 });
 
 // Bootstrap helpers
@@ -49,6 +50,30 @@ function setupShoppingListHandlers() {
   // checkbox toggles
   document.querySelectorAll('.checkbox-item').forEach(cb => cb.addEventListener('change', () => {
     const row = cb.closest('.item-row'); if (!row) return; if (cb.checked) row.classList.add('purchased'); else row.classList.remove('purchased'); debounceSaveOrder();
+  }));
+}
+
+// Claim buttons: attach handlers to claim featured deals and add to user's shopping list
+function setupClaimButtons() {
+  document.querySelectorAll('.claim-deal-btn').forEach(btn => btn.addEventListener('click', async (e) => {
+    const id = btn.getAttribute('data-id') || btn.getAttribute('data-title');
+    const title = btn.getAttribute('data-title') || '';
+    const price = btn.getAttribute('data-price') || '';
+    if (!id) return showNotification('Missing deal id', 'danger');
+    try {
+      const res = await apiPostJson('/api/claim-deal', { deal_id: id, title, price });
+      if (res && (res.success || res.added)) {
+        showNotification('Deal claimed and added to your list', 'success');
+        // refresh the shopping list view if present
+        refreshShoppingListUI();
+      } else if (res && res.error) {
+        showNotification(res.error, 'danger');
+      } else {
+        showNotification('Could not claim deal', 'danger');
+      }
+    } catch (err) {
+      showNotification('Error contacting server', 'danger');
+    }
   }));
 }
 
