@@ -192,6 +192,37 @@ def admin_status():
     return jsonify({'db': counts})
 
 
+@main_bp.route('/api/search-products')
+def api_search_products():
+    """Search products by query string `q` (case-insensitive substring match on name).
+    Returns JSON list of product docs (id, name, price, stores, cheapest, image).
+    """
+    q = request.args.get('q', '').strip()
+    if not q:
+        return jsonify({'items': []})
+
+    results = []
+    try:
+        if HAS_DB and mongo is not None and getattr(mongo, 'db', None) is not None:
+            # case-insensitive regex search on 'name' field
+            regex = {'$regex': q, '$options': 'i'}
+            cursor = mongo.db.products.find({'name': regex}).limit(50)
+            for d in cursor:
+                if '_id' in d:
+                    d['id'] = str(d['_id'])
+                results.append(d)
+        else:
+            # fallback to in-memory search
+            for p in getattr(m, 'products', []):
+                name = p.get('name', '')
+                if q.lower() in str(name).lower():
+                    results.append(p)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+    return jsonify({'items': results})
+
+
 @main_bp.route('/api/claim-deal', methods=['POST'])
 def api_claim_deal():
     """Endpoint to claim a featured deal and add it to the user's shopping list.

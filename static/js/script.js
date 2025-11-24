@@ -17,11 +17,68 @@ function initializeBootstrapComponents() {
 
 // Search stub
 function setupSearchFunctionality() {
-  document.querySelectorAll('.search-btn').forEach(btn => btn.addEventListener('click', () => {
-    const input = btn.previousElementSibling;
-    if (!input) return; const q = input.value.trim(); if (!q) return alert('Please enter a search term');
-  }));
+  const input = document.getElementById('home-search-input');
+  const btn = document.getElementById('home-search-btn');
+  const resultsSection = document.getElementById('search-results-section');
+  const resultsContainer = document.getElementById('search-results');
+
+  async function doSearch() {
+    if (!input) return;
+    const q = input.value.trim();
+    if (!q) { showNotification('Please enter a search term', 'info'); return; }
+    try {
+      const res = await fetch(`/api/search-products?q=${encodeURIComponent(q)}`, { credentials: 'same-origin' });
+      const data = await res.json().catch(() => ({}));
+      const items = data.items || [];
+      // render results
+      if (!resultsSection || !resultsContainer) return;
+      resultsContainer.innerHTML = '';
+      if (!items.length) {
+        resultsContainer.innerHTML = `<div class="col-12"><p class="text-muted">No matching products found.</p></div>`;
+        resultsSection.style.display = 'block';
+        return;
+      }
+      items.forEach(it => {
+        const title = it.name || it.title || '';
+        const price = it.price || (it.cheapest && it.cheapest.price) || '';
+        const img = it.image || (it.images && it.images[0]) || 'https://via.placeholder.com/300x200';
+        const store = (it.stores && it.stores[0] && it.stores[0].store) || '';
+        const id = it.id || title;
+        const col = document.createElement('div'); col.className = 'col-md-6 col-lg-4';
+        col.innerHTML = `
+          <div class="card shadow-sm">
+            <img src="${img}" class="card-img-top" alt="${title}">
+            <div class="card-body">
+              <h5 class="card-title">${title}</h5>
+              <p class="card-text mb-1">${store}</p>
+              <p class="card-text text-muted mb-2">${price}</p>
+              <div class="d-flex gap-2">
+                <button class="btn btn-sm btn-info view-details-btn" data-bs-toggle="modal" data-bs-target="#productModal" data-title="${escapeHtml(title)}" data-price="${escapeHtml(price)}" data-store="${escapeHtml(store)}" data-image="${escapeHtml(img)}">View Details</button>
+                <button class="btn btn-sm btn-primary add-to-list-btn" data-id="${escapeHtml(id)}" data-name="${escapeHtml(title)}" data-price="${escapeHtml(price)}">Add to List</button>
+              </div>
+            </div>
+          </div>
+        `;
+        resultsContainer.appendChild(col);
+      });
+      resultsSection.style.display = 'block';
+      // after rendering, attach view-details behavior and claim buttons
+      // view-details handled by setupProductModalHandlers (it binds existing elements on DOMContentLoaded), so we need to re-run attaching for newly created elements
+      // attach event for view-details and claim buttons
+      document.querySelectorAll('.view-details-btn').forEach(el => el.removeEventListener('click', noop));
+      // small rebind: call setupProductModalHandlers to rebind handlers to new elements
+      try { setupProductModalHandlers(); } catch(e){}
+    } catch (err) {
+      showNotification('Search failed', 'danger');
+    }
+  }
+
+  if (btn) btn.addEventListener('click', doSearch);
+  if (input) input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); doSearch(); } });
 }
+
+function noop() {}
+
 
 // Simple fetch helper
 async function apiPostJson(url, body) {
@@ -39,6 +96,14 @@ function showNotification(message, type = 'info') {
 }
 
 function formatPrice(price) { if (typeof price === 'string') price = price.replace(/[^0-9.]/g,''); return Number(price)||0; }
+
+// Escape HTML to safely insert into innerHTML
+function escapeHtml(unsafe) {
+  if (unsafe === null || unsafe === undefined) return '';
+  return String(unsafe).replace(/[&<>'"]/g, function(m) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]); });
+}
+
+let productModalHandlerBound = false;
 
 // Handlers for the new TSX-like markup
 function setupShoppingListHandlers() {
@@ -80,45 +145,46 @@ function setupClaimButtons() {
 
 // Product modal: populate modal with clicked product details and wire Add to Cart
 function setupProductModalHandlers() {
-  // When a View Details button is clicked, populate the modal fields
-  document.querySelectorAll('.view-details-btn').forEach(btn => btn.addEventListener('click', (e) => {
-    const title = btn.getAttribute('data-title') || '';
-    const price = btn.getAttribute('data-price') || '';
-    const store = btn.getAttribute('data-store') || '';
-    const discount = btn.getAttribute('data-discount') || '';
-    const image = btn.getAttribute('data-image') || '';
+  // Use event delegation for dynamically added elements. Bind the listener only once.
+  if (productModalHandlerBound) return;
+  productModalHandlerBound = true;
 
-    const modal = document.getElementById('productModal');
-    if (!modal) return;
-    // set modal content
-    modal.querySelector('.modal-title') && (modal.querySelector('.modal-title').textContent = title + ' Details');
-    const img = modal.querySelector('.modal-body img'); if (img) img.src = image;
-    const body = modal.querySelector('.modal-body');
-    if (body) {
-      body.querySelector('h6') && (body.querySelector('h6').textContent = title);
-      const bestPrice = body.querySelector('p strong')?.parentElement;
-      // Replace known content blocks in modal body using data attributes
-      const ps = body.querySelectorAll('p');
-      if (ps && ps.length >= 4) {
-        ps[0].innerHTML = `<strong>Best Price:</strong> ${price}`;
-        ps[1].innerHTML = `<strong>Available at:</strong> ${store}`;
-        ps[2].innerHTML = `<strong>Discount:</strong> ${discount}`;
-      }
-    }
-
-    // attach product info to the Add to Cart button for when it's clicked
-    const addBtn = modal.querySelector('.add-to-cart-btn');
-    if (addBtn) {
-      addBtn.setAttribute('data-name', title);
-      addBtn.setAttribute('data-price', price);
-      addBtn.setAttribute('data-store', store);
-    }
-  }));
-
-  // Add to Cart button handler inside modal
   document.addEventListener('click', async (e) => {
     const target = e.target;
     if (!target) return;
+
+    // View Details button clicked: populate modal
+    const viewBtn = target.closest('.view-details-btn');
+    if (viewBtn) {
+      const title = viewBtn.getAttribute('data-title') || '';
+      const price = viewBtn.getAttribute('data-price') || '';
+      const store = viewBtn.getAttribute('data-store') || '';
+      const discount = viewBtn.getAttribute('data-discount') || '';
+      const image = viewBtn.getAttribute('data-image') || '';
+      const modal = document.getElementById('productModal');
+      if (!modal) return;
+      modal.querySelector('.modal-title') && (modal.querySelector('.modal-title').textContent = title + ' Details');
+      const img = modal.querySelector('.modal-body img'); if (img) img.src = image;
+      const body = modal.querySelector('.modal-body');
+      if (body) {
+        body.querySelector('h6') && (body.querySelector('h6').textContent = title);
+        const ps = body.querySelectorAll('p');
+        if (ps && ps.length >= 4) {
+          ps[0].innerHTML = `<strong>Best Price:</strong> ${escapeHtml(price)}`;
+          ps[1].innerHTML = `<strong>Available at:</strong> ${escapeHtml(store)}`;
+          ps[2].innerHTML = `<strong>Discount:</strong> ${escapeHtml(discount)}`;
+        }
+      }
+      const addBtn = modal.querySelector('.add-to-cart-btn');
+      if (addBtn) {
+        addBtn.setAttribute('data-name', title);
+        addBtn.setAttribute('data-price', price);
+        addBtn.setAttribute('data-store', store);
+      }
+      return;
+    }
+
+    // Add to Cart button inside modal
     if (target.classList && target.classList.contains('add-to-cart-btn')) {
       const name = target.getAttribute('data-name') || target.getAttribute('data-title') || (document.querySelector('#productModal h6')?.textContent || 'Item');
       const price = target.getAttribute('data-price') || '';
@@ -128,7 +194,6 @@ function setupProductModalHandlers() {
         const res = await apiPostJson('/shopping-list/add', { item });
         if (res && (res.success || res.success === true)) {
           showNotification('Added to shopping list', 'success');
-          // close modal
           try { const modalEl = bootstrap.Modal.getInstance(document.getElementById('productModal')); if (modalEl) modalEl.hide(); } catch(e){}
           refreshShoppingListUI();
         } else if (res && res.error) {
@@ -139,6 +204,29 @@ function setupProductModalHandlers() {
       } catch (err) {
         showNotification('Server error adding item', 'danger');
       }
+      return;
+    }
+
+    // Add to List button in search results or elsewhere
+    if (target.classList && target.classList.contains('add-to-list-btn')) {
+      const name = target.getAttribute('data-name') || target.getAttribute('data-title') || 'Item';
+      const price = target.getAttribute('data-price') || '';
+      const id = target.getAttribute('data-id') || null;
+      const item = { name, price, id };
+      try {
+        const res = await apiPostJson('/shopping-list/add', { item });
+        if (res && (res.success || res.success === true)) {
+          showNotification('Added to shopping list', 'success');
+          refreshShoppingListUI();
+        } else if (res && res.error) {
+          showNotification(res.error, 'danger');
+        } else {
+          showNotification('Could not add to list', 'danger');
+        }
+      } catch (err) {
+        showNotification('Server error adding item', 'danger');
+      }
+      return;
     }
   });
 }
