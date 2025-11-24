@@ -1,4 +1,4 @@
-from flask import render_template, jsonify, session
+from flask import render_template, jsonify, session, request
 from . import main_bp
 from models import models as m
 try:
@@ -190,3 +190,87 @@ def admin_status():
         counts['users'] = len(getattr(m, 'users', {}))
 
     return jsonify({'db': counts})
+
+
+@main_bp.route('/api/search-products')
+def api_search_products():
+    """Search products by query string `q` (case-insensitive substring match on name).
+    Returns JSON list of product docs (id, name, price, stores, cheapest, image).
+    """
+    q = request.args.get('q', '').strip()
+    if not q:
+        return jsonify({'items': []})
+
+    results = []
+    try:
+        if HAS_DB and mongo is not None and getattr(mongo, 'db', None) is not None:
+            # case-insensitive regex search on 'name' field
+            regex = {'$regex': q, '$options': 'i'}
+            cursor = mongo.db.products.find({'name': regex}).limit(50)
+            for d in cursor:
+                if '_id' in d:
+                    d['id'] = str(d['_id'])
+                results.append(d)
+        else:
+            # fallback to in-memory search
+            for p in getattr(m, 'products', []):
+                name = p.get('name', '')
+                if q.lower() in str(name).lower():
+                    results.append(p)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+    return jsonify({'items': results})
+
+
+@main_bp.route('/api/claim-deal', methods=['POST'])
+def api_claim_deal():
+    """Endpoint to claim a featured deal and add it to the user's shopping list.
+    Expects JSON { deal_id: '<id>' } or { title: '<title>' }. Returns JSON { success: bool }.
+    """
+    data = request.get_json() or {}
+    deal_id = data.get('deal_id') or data.get('id') or data.get('title')
+    if not deal_id:
+        return jsonify({'error': 'no_deal_id_provided'}), 400
+
+    # determine user (fallback to in-memory default)
+    fallback = 'user1@example.com' if getattr(m, 'users', None) and 'user1@example.com' in m.users else (next(iter(m.users.keys())) if getattr(m, 'users', None) else None)
+    email = session.get('user') or fallback
+
+    try:
+        # attempt to find deal document (DB or fallback)
+        deal_doc = None
+        if HAS_DB and mongo is not None and getattr(mongo, 'db', None) is not None:
+            from bson import ObjectId
+            query = None
+            try:
+                query = {'_id': ObjectId(str(deal_id))}
+            except Exception:
+                query = {'title': str(deal_id)}
+            deal_doc = mongo.db.featured_deals.find_one(query)
+            if deal_doc and '_id' in deal_doc:
+                deal_doc['id'] = str(deal_doc['_id'])
+        else:
+            # fallback to in-memory list
+            for d in getattr(m, 'featured_deals', []):
+                if str(d.get('title')) == str(deal_id) or str(d.get('id')) == str(deal_id):
+                    deal_doc = d
+                    break
+
+        # mark claimed
+        claimed = False
+        if deal_doc:
+            claimed = m.claim_featured_deal_by_id(deal_id, email=email)
+        else:
+            # still try to increment using helper (it will fail gracefully)
+            claimed = m.claim_featured_deal_by_id(deal_id, email=email)
+
+        # add to user's shopping list if we have an email
+        added = False
+        if email:
+            # prefer storing a deal representation if available
+            added = m.add_deal_to_user_shopping_list(email, deal_doc or str(deal_id))
+
+        return jsonify({'success': bool(claimed or added), 'claimed': bool(claimed), 'added': bool(added)})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500

@@ -62,43 +62,41 @@
   <section class="container">
     <div class="search-container">
       <div class="search-bar">
-        <input type="text" class="search-input" placeholder="Search for products (e.g., milk, bread, eggs)..." />
-        <button class="search-btn">Search</button>
+        <input id="home-search-input" type="text" class="search-input" placeholder="Search for products (e.g., milk, bread, eggs)..." />
+        <button id="home-search-btn" class="search-btn">Search</button>
       </div>
     </div>
+  </section>
+
+  <!-- Search Results -->
+  <section class="container py-4" id="search-results-section" style="display:none;">
+    <h3 class="mb-3">Search Results</h3>
+    <div id="search-results" class="row g-4"></div>
   </section>
 
   <!-- Featured deals section -->
   <section class="container py-5">
     <h2 class="mb-4">Featured Deals</h2>
     <div class="row">
+      {% for deal in featured_deals %}
       <div class="col-md-4">
         <div class="card shadow-sm">
-          <img src="https://via.placeholder.com/300x200" class="card-img-top" alt="Product">
+          <img src="{{ deal.image if deal.image else url_for('static', filename='placeholder.png') }}" class="card-img-top" alt="{{ deal.title or deal.name }}">
           <div class="card-body">
-            <h5 class="card-title">Milk - $1.49</h5>
-            <p class="card-text text-muted">Available at Store A</p>
+            <h5 class="card-title">{{ deal.title or deal.name }} - {{ deal.price or '' }}</h5>
+            <p class="card-text text-muted">{{ deal.store or deal.source or '' }}</p>
+            <div class="d-flex gap-2">
+              <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#dealModal" data-deal-id="{{ deal.id or deal.title }}">See More</button>
+              <button type="button" class="btn btn-sm btn-success claim-deal-btn" data-id="{{ deal.id or deal.title }}" data-title="{{ deal.title or deal.name }}" data-price="{{ deal.price or '' }}">Claim / Add to List</button>
+            </div>
           </div>
         </div>
       </div>
-      <div class="col-md-4">
-        <div class="card shadow-sm">
-          <img src="https://via.placeholder.com/300x200" class="card-img-top" alt="Product">
-          <div class="card-body">
-            <h5 class="card-title">Eggs - $2.09</h5>
-            <p class="card-text text-muted">Available at Store B</p>
-          </div>
-        </div>
+      {% else %}
+      <div class="col-12">
+        <p class="text-muted">No featured deals right now.</p>
       </div>
-      <div class="col-md-4">
-        <div class="card shadow-sm">
-          <img src="https://via.placeholder.com/300x200" class="card-img-top" alt="Product">
-          <div class="card-body">
-            <h5 class="card-title">Bread - $1.79</h5>
-            <p class="card-text text-muted">Available at Store C</p>
-          </div>
-        </div>
-      </div>
+      {% endfor %}
     </div>
   </section>
 

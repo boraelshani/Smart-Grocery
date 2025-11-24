@@ -64,39 +64,24 @@
   <!-- Deals Grid -->
   <section class="container py-5">
     <div class="row g-4">
+      {% for deal in deals %}
       <div class="col-md-4">
         <div class="card shadow-sm h-100">
-          <img src="https://via.placeholder.com/300x200" class="card-img-top" alt="Milk">
+          <img src="{{ deal.image if deal.image else url_for('static', filename='placeholder.png') }}" class="card-img-top" alt="{{ deal.title or deal.name }}">
           <div class="card-body">
-            <h5 class="card-title">Milk - $4.49</h5>
-            <p class="card-text text-muted">FreshMart</p>
-            <p class="card-text text-danger">20% OFF</p>
-            <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#dealModal">See More</button>
+            <h5 class="card-title">{{ deal.title or deal.name }} - {{ deal.price or '' }}</h5>
+            <p class="card-text text-muted">{{ deal.store or deal.source or '' }}</p>
+            <p class="card-text text-danger">{{ deal.discount if deal.discount else '' }}</p>
+            <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#dealModal" data-deal-id="{{ deal.id or deal.title }}">See More</button>
+            <button type="button" class="btn btn-sm btn-success claim-deal-btn" data-id="{{ deal.id or deal.title }}" data-title="{{ deal.title or deal.name }}" data-price="{{ deal.price or '' }}">Claim Deal</button>
           </div>
         </div>
       </div>
-      <div class="col-md-4">
-        <div class="card shadow-sm h-100">
-          <img src="https://via.placeholder.com/300x200" class="card-img-top" alt="Bananas">
-          <div class="card-body">
-            <h5 class="card-title">Organic Bananas - $2.99</h5>
-            <p class="card-text text-muted">SaveMore</p>
-            <p class="card-text text-danger">15% OFF</p>
-            <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#dealModal">See More</button>
-          </div>
-        </div>
+      {% else %}
+      <div class="col-12">
+        <p class="text-muted">No featured deals at the moment.</p>
       </div>
-      <div class="col-md-4">
-        <div class="card shadow-sm h-100">
-          <img src="https://via.placeholder.com/300x200" class="card-img-top" alt="Chicken">
-          <div class="card-body">
-            <h5 class="card-title">Chicken Breast - $8.99</h5>
-            <p class="card-text text-muted">FreshMart</p>
-            <p class="card-text text-danger">25% OFF</p>
-            <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#dealModal">See More</button>
-          </div>
-        </div>
-      </div>
+      {% endfor %}
     </div>
   </section>
 
