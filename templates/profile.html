@@ -54,24 +54,27 @@
         <!-- Profile Card -->
         <div class="card shadow-sm mb-4">
           <div class="card-body">
-            <h5 class="card-title">John Doe</h5>
-            <p class="card-text"><strong>Email:</strong> john@example.com</p>
-            <p class="card-text"><strong>Phone:</strong> +1 (555) 123-4567</p>
-            <p class="card-text"><strong>Address:</strong> 123 Main Street, New York, NY 10001</p>
+            <h5 class="card-title">{{ user_data.name if user_data and user_data.get('name') else 'Your Name' }}</h5>
+            <p class="card-text"><strong>Email:</strong> {{ user_data.email if user_data and user_data.get('email') else 'Not provided' }}</p>
+            <p class="card-text"><strong>Phone:</strong> {{ user_data.phone if user_data and user_data.get('phone') else 'Not provided' }}</p>
+            <p class="card-text"><strong>Address:</strong> {{ user_data.address if user_data and user_data.get('address') else 'Not provided' }}</p>
 
             <!-- Edit / Save Buttons (just UI for now) -->
             <div class="d-flex gap-2">
               <button class="btn btn-outline-primary">Edit Profile</button>
               <button class="btn btn-primary">Save Changes</button>
+              <a href="{{ url_for('auth.logout') }}" class="btn btn-danger">Log Out</a>
             </div>
           </div>
         </div>
 
-        <!-- Login / Sign Up -->
+        <!-- If not logged in, show Login / Sign Up -->
+        {% if not session.get('user') %}
         <div class="d-flex gap-2">
           <a href="{{ url_for('auth.login') }}" class="btn btn-primary">Login</a>
           <a href="{{ url_for('auth.signup') }}" class="btn btn-outline-primary">Sign Up</a>
         </div>
+        {% endif %}
       </div>
 
       <!-- Sidebar / Stats -->
