@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupShoppingListHandlers();
   setupShoppingListInteractions();
   setupClaimButtons();
+  setupProductModalHandlers();
 });
 
 // Bootstrap helpers
@@ -75,6 +76,71 @@ function setupClaimButtons() {
       showNotification('Error contacting server', 'danger');
     }
   }));
+}
+
+// Product modal: populate modal with clicked product details and wire Add to Cart
+function setupProductModalHandlers() {
+  // When a View Details button is clicked, populate the modal fields
+  document.querySelectorAll('.view-details-btn').forEach(btn => btn.addEventListener('click', (e) => {
+    const title = btn.getAttribute('data-title') || '';
+    const price = btn.getAttribute('data-price') || '';
+    const store = btn.getAttribute('data-store') || '';
+    const discount = btn.getAttribute('data-discount') || '';
+    const image = btn.getAttribute('data-image') || '';
+
+    const modal = document.getElementById('productModal');
+    if (!modal) return;
+    // set modal content
+    modal.querySelector('.modal-title') && (modal.querySelector('.modal-title').textContent = title + ' Details');
+    const img = modal.querySelector('.modal-body img'); if (img) img.src = image;
+    const body = modal.querySelector('.modal-body');
+    if (body) {
+      body.querySelector('h6') && (body.querySelector('h6').textContent = title);
+      const bestPrice = body.querySelector('p strong')?.parentElement;
+      // Replace known content blocks in modal body using data attributes
+      const ps = body.querySelectorAll('p');
+      if (ps && ps.length >= 4) {
+        ps[0].innerHTML = `<strong>Best Price:</strong> ${price}`;
+        ps[1].innerHTML = `<strong>Available at:</strong> ${store}`;
+        ps[2].innerHTML = `<strong>Discount:</strong> ${discount}`;
+      }
+    }
+
+    // attach product info to the Add to Cart button for when it's clicked
+    const addBtn = modal.querySelector('.add-to-cart-btn');
+    if (addBtn) {
+      addBtn.setAttribute('data-name', title);
+      addBtn.setAttribute('data-price', price);
+      addBtn.setAttribute('data-store', store);
+    }
+  }));
+
+  // Add to Cart button handler inside modal
+  document.addEventListener('click', async (e) => {
+    const target = e.target;
+    if (!target) return;
+    if (target.classList && target.classList.contains('add-to-cart-btn')) {
+      const name = target.getAttribute('data-name') || target.getAttribute('data-title') || (document.querySelector('#productModal h6')?.textContent || 'Item');
+      const price = target.getAttribute('data-price') || '';
+      const store = target.getAttribute('data-store') || '';
+      const item = { name, price, store };
+      try {
+        const res = await apiPostJson('/shopping-list/add', { item });
+        if (res && (res.success || res.success === true)) {
+          showNotification('Added to shopping list', 'success');
+          // close modal
+          try { const modalEl = bootstrap.Modal.getInstance(document.getElementById('productModal')); if (modalEl) modalEl.hide(); } catch(e){}
+          refreshShoppingListUI();
+        } else if (res && res.error) {
+          showNotification(res.error, 'danger');
+        } else {
+          showNotification('Could not add to list', 'danger');
+        }
+      } catch (err) {
+        showNotification('Server error adding item', 'danger');
+      }
+    }
+  });
 }
 
 function setupShoppingListInteractions() {
