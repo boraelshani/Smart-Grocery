@@ -11,6 +11,11 @@ import re
 
 @main_bp.route('/')
 def home():
+    # If the user is not signed in, show the entry page prompting Log In / Sign Up
+    user_email = session.get('user')
+    if not user_email:
+        return render_template('entry.html')
+
     # Load stores/products/deals from MongoDB when available, otherwise use in-memory mocks
     if HAS_DB and mongo is not None and getattr(mongo, 'db', None) is not None:
         stores = list(mongo.db.stores.find({}))
