@@ -54,9 +54,10 @@
   <!-- Search Bar Section -->
   <section class="container">
     <div class="search-container">
-      <div class="search-bar">
-        <input type="text" class="search-input" placeholder="Search for stores by name or location..." />
-        <button class="search-btn">Search</button>
+      <div class="search-bar position-relative" style="max-width:720px;margin:auto;">
+        <input id="stores-search-input" type="text" class="search-input form-control" placeholder="Search for stores by name or location..." autocomplete="off" />
+        <button id="stores-search-btn" class="search-btn btn btn-primary mt-2">Search</button>
+        <div id="store-suggestions" class="list-group position-absolute" style="top:calc(100% + 6px); left:0; right:0; display:none; z-index:1200; max-height:240px; overflow:auto;"></div>
       </div>
     </div>
   </section>

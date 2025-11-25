@@ -7,6 +7,8 @@ document.addEventListener('DOMContentLoaded', () => {
   setupShoppingListInteractions();
   setupClaimButtons();
   setupProductModalHandlers();
+  setupStoreSuggestions();
+  setupHomeStoreSuggestions();
 });
 
 // Bootstrap helpers
@@ -27,7 +29,10 @@ function setupSearchFunctionality() {
     const q = input.value.trim();
     if (!q) { showNotification('Please enter a search term', 'info'); return; }
     try {
-      const res = await fetch(`/api/search-products?q=${encodeURIComponent(q)}`, { credentials: 'same-origin' });
+      const selectedStoreEl = document.getElementById('home-selected-store');
+      let url = `/api/search-products?q=${encodeURIComponent(q)}`;
+      if (selectedStoreEl && selectedStoreEl.value) url += `&store=${encodeURIComponent(selectedStoreEl.value)}`;
+      const res = await fetch(url, { credentials: 'same-origin' });
       const data = await res.json().catch(() => ({}));
       const items = data.items || [];
       // render results
@@ -78,6 +83,133 @@ function setupSearchFunctionality() {
 }
 
 function noop() {}
+
+// Store suggestions for stores page: fetch stores and show dropdown on focus/hover
+function setupStoreSuggestions() {
+  const input = document.getElementById('stores-search-input');
+  const btn = document.getElementById('stores-search-btn');
+  const suggestions = document.getElementById('store-suggestions');
+  let storeList = [];
+  if (!input || !suggestions) return;
+
+  async function fetchStores() {
+    try {
+      const r = await fetch('/api/stores', { credentials: 'same-origin' });
+      const j = await r.json().catch(() => ({}));
+      storeList = j.stores || [];
+      renderSuggestions(storeList);
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  function renderSuggestions(list) {
+    suggestions.innerHTML = '';
+    if (!list || !list.length) {
+      suggestions.style.display = 'none';
+      return;
+    }
+    list.forEach(s => {
+      const el = document.createElement('button');
+      el.type = 'button';
+      el.className = 'list-group-item list-group-item-action';
+      el.textContent = s.name + (s.location ? ` — ${s.location}` : '');
+      el.setAttribute('data-name', s.name);
+      el.setAttribute('data-id', s.id || s.name);
+      el.addEventListener('click', () => {
+        // set input to chosen store and hide suggestions
+        input.value = s.name;
+        suggestions.style.display = 'none';
+        // perform a store-filtered search or navigate to store detail
+        performStoreSearch(s.name);
+      });
+      suggestions.appendChild(el);
+    });
+    suggestions.style.display = 'block';
+  }
+
+  function performStoreSearch(storeName) {
+    // On the stores page, filter the visible store cards by name
+    const cards = Array.from(document.querySelectorAll('.card'));
+    cards.forEach(card => {
+      const title = card.querySelector('.card-title')?.textContent || '';
+      if (title.toLowerCase().includes(storeName.toLowerCase())) {
+        card.closest('.col-md-4')?.classList.remove('d-none');
+      } else {
+        card.closest('.col-md-4')?.classList.add('d-none');
+      }
+    });
+  }
+
+  // show suggestions when input focused or hovered near it
+  input.addEventListener('focus', () => { if (!storeList.length) fetchStores(); else renderSuggestions(storeList); });
+  input.addEventListener('mouseenter', () => { if (!storeList.length) fetchStores(); });
+
+  // hide suggestions on blur (with a slight delay to allow click)
+  input.addEventListener('blur', () => { setTimeout(()=>{ suggestions.style.display='none'; }, 150); });
+
+  // allow typing to filter suggestions
+  input.addEventListener('input', () => {
+    const q = input.value.trim().toLowerCase();
+    if (!q) {
+      renderSuggestions(storeList);
+      return;
+    }
+    const filtered = storeList.filter(s => (s.name || '').toLowerCase().includes(q) || (s.location||'').toLowerCase().includes(q));
+    renderSuggestions(filtered);
+  });
+
+  // search button fallback: simple filter
+  btn?.addEventListener('click', (e) => { e.preventDefault(); const q = input.value.trim(); if (!q) { renderSuggestions(storeList); } else performStoreSearch(q); });
+}
+
+// Home page store suggestions: fetch stores and show dropdown on focus/hover
+function setupHomeStoreSuggestions() {
+  const input = document.getElementById('home-search-input');
+  const btn = document.getElementById('home-search-btn');
+  const suggestions = document.getElementById('home-store-suggestions');
+  const selectedStoreEl = document.getElementById('home-selected-store');
+  let storeList = [];
+  if (!input || !suggestions) return;
+
+  async function fetchStores() {
+    try {
+      const r = await fetch('/api/stores', { credentials: 'same-origin' });
+      const j = await r.json().catch(() => ({}));
+      storeList = j.stores || [];
+      renderSuggestions(storeList);
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  function renderSuggestions(list) {
+    suggestions.innerHTML = '';
+    if (!list || !list.length) { suggestions.style.display = 'none'; return; }
+    list.forEach(s => {
+      const el = document.createElement('button');
+      el.type = 'button';
+      el.className = 'list-group-item list-group-item-action';
+      el.textContent = s.name + (s.location ? ` — ${s.location}` : '');
+      el.setAttribute('data-name', s.name);
+      el.setAttribute('data-id', s.id || s.name);
+      el.addEventListener('click', () => {
+        if (selectedStoreEl) selectedStoreEl.value = s.name;
+        input.value = input.value || '';
+        suggestions.style.display = 'none';
+        btn?.click();
+      });
+      suggestions.appendChild(el);
+    });
+    suggestions.style.display = 'block';
+  }
+
+  input.addEventListener('focus', () => { if (!storeList.length) fetchStores(); else renderSuggestions(storeList); });
+  input.addEventListener('mouseenter', () => { if (!storeList.length) fetchStores(); });
+  input.addEventListener('blur', () => { setTimeout(()=>{ suggestions.style.display='none'; }, 150); });
+  input.addEventListener('input', () => { const q = input.value.trim().toLowerCase(); if (!q) { renderSuggestions(storeList); return; } const filtered = storeList.filter(s => (s.name || '').toLowerCase().includes(q) || (s.location||'').toLowerCase().includes(q)); renderSuggestions(filtered); });
+  btn?.addEventListener('click', () => { /* default search behavior will include selected store */ });
+}
 
 
 // Simple fetch helper

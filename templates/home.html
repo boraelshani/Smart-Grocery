@@ -61,8 +61,10 @@
   <!-- Search Bar Section -->
   <section class="container">
     <div class="search-container">
-      <div class="search-bar">
-        <input id="home-search-input" type="text" class="search-input" placeholder="Search for products (e.g., milk, bread, eggs)..." />
+      <div class="search-bar position-relative">
+        <input id="home-search-input" type="text" class="search-input" placeholder="Search for products (e.g., milk, bread, eggs)..." autocomplete="off" />
+        <input type="hidden" id="home-selected-store" value="" />
+        <div id="home-store-suggestions" class="list-group position-absolute w-100" style="display:none; z-index:9999; top:48px;"></div>
         <button id="home-search-btn" class="search-btn">Search</button>
       </div>
     </div>
