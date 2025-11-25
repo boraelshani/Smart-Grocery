@@ -1,124 +1,91 @@
-"""User model helpers for auth and shopping list management.
-Provides MongoDB-backed operations with in-memory fallbacks for development.
-"""
-from typing import Optional, List
-try:
-    from utils.db import mongo
-    HAS_DB = True
-except Exception:
-    mongo = None
-    HAS_DB = False
+from pymongo import MongoClient
+from bson import ObjectId
+import os
+from dotenv import load_dotenv
 
-from werkzeug.security import generate_password_hash, check_password_hash
+load_dotenv()
 
-from models.models import users as MOCK_USERS
+class CountryModel:
+    def __init__(self):
+        mongo_uri = os.getenv('MONGO_URI', 'mongodb://localhost:27017/smart_grocery')
+        database_name = os.getenv('DATABASE_NAME', None)
 
-
-def _convert_id(doc: dict) -> dict:
-    if not doc:
-        return doc
-    if '_id' in doc:
-        doc['id'] = str(doc['_id'])
-    return doc
-
-
-def get_user_by_email(email: str) -> Optional[dict]:
-    if not email:
-        return None
-    if HAS_DB and mongo is not None and getattr(mongo, 'db', None) is not None:
-        doc = mongo.db.users.find_one({'email': email})
-        return _convert_id(doc)
-    return MOCK_USERS.get(email)
-
-
-def create_user(user_doc: dict) -> str:
-    """Create a user. Returns inserted id (str) or email when using mock.
-    """
-    # Ensure password is hashed before storing
-    pwd = user_doc.get('password')
-    if pwd:
+        # Prefer Flask-PyMongo `mongo` if available
         try:
-            # always store a generated hash (idempotent if already hashed)
-            user_doc['password'] = generate_password_hash(pwd)
+            from utils.db import mongo as flask_mongo
         except Exception:
-            pass
+            flask_mongo = None
 
-    if HAS_DB and mongo is not None and getattr(mongo, 'db', None) is not None:
-        res = mongo.db.users.insert_one(user_doc)
-        return str(res.inserted_id)
-    MOCK_USERS[user_doc['email']] = user_doc
-    return user_doc['email']
-
-
-def authenticate(email: str, password: str) -> bool:
-    user = get_user_by_email(email)
-    if not user:
-        return False
-    stored = user.get('password')
-    if not stored:
-        return False
-    try:
-        # check against hash
-        return check_password_hash(stored, password)
-    except Exception:
-        # fallback to plain comparison for legacy/mock entries
-        return stored == password
-
-
-def add_to_shopping_list(email: str, item: str) -> bool:
-    if not email or not item:
-        return False
-    if HAS_DB and mongo is not None and getattr(mongo, 'db', None) is not None:
-        res = mongo.db.users.update_one({'email': email}, {'$push': {'shopping_list': item}})
-        return res.modified_count > 0
-    if email in MOCK_USERS:
-        MOCK_USERS[email].setdefault('shopping_list', []).append(item)
-        return True
-    return False
-
-
-def remove_from_shopping_list(email: str, item: str) -> bool:
-    if not email or not item:
-        return False
-    if HAS_DB and mongo is not None and getattr(mongo, 'db', None) is not None:
-        # Try removing plain string entries first
+        if flask_mongo is not None and getattr(flask_mongo, 'db', None) is not None:
+            self.db = flask_mongo.db
+            self.client = None
+        else:
+            self.client = MongoClient(mongo_uri)
+            if database_name:
+                self.db = self.client[database_name]
+            else:
+                try:
+                    self.db = self.client.get_default_database()
+                    if self.db is None:
+                        self.db = self.client['smart_grocery']
+                except Exception:
+                    self.db = self.client['smart_grocery']
+        self.collection = self.db['countries']
+    
+    def create_country(self, country_data):
+        """Create a new country"""
+        result = self.collection.insert_one(country_data)
+        return str(result.inserted_id)
+    
+    def get_all_countries(self):
+        """Get all countries"""
+        countries = list(self.collection.find({}))
+        # Convert ObjectId to string for JSON serialization
+        for country in countries:
+            country['_id'] = str(country['_id'])
+        return countries
+    
+    def get_country_by_id(self, country_id):
+        """Get a country by ID"""
         try:
-            res = mongo.db.users.update_one({'email': email}, {'$pull': {'shopping_list': item}})
-            if getattr(res, 'modified_count', 0) > 0:
-                return True
-            # If not removed, attempt to remove objects with a `name` field equal to item
-            res2 = mongo.db.users.update_one({'email': email}, {'$pull': {'shopping_list': {'name': item}}})
-            return getattr(res2, 'modified_count', 0) > 0
-        except Exception:
-            return False
-    if email in MOCK_USERS and 'shopping_list' in MOCK_USERS[email]:
+            country = self.collection.find_one({'_id': ObjectId(country_id)})
+            if country:
+                country['_id'] = str(country['_id'])
+            return country
+        except:
+            return None
+    
+    def update_country(self, country_id, country_data):
+        """Update a country by ID"""
         try:
-            MOCK_USERS[email]['shopping_list'].remove(item)
-            return True
-        except ValueError:
+            # Remove _id from update data if present
+            country_data.pop('_id', None)
+            result = self.collection.update_one(
+                {'_id': ObjectId(country_id)},
+                {'$set': country_data}
+            )
+            return result.modified_count > 0
+        except:
             return False
-    return False
-
-
-def update_shopping_list(email: str, new_list: List[str]) -> bool:
-    if not email:
-        return False
-    if HAS_DB and mongo is not None and getattr(mongo, 'db', None) is not None:
-        res = mongo.db.users.update_one({'email': email}, {'$set': {'shopping_list': new_list}})
-        return res.modified_count > 0
-    if email in MOCK_USERS:
-        MOCK_USERS[email]['shopping_list'] = new_list
-        return True
-    return False
-
-
-def update_profile(email: str, updates: dict) -> bool:
-    if not email or not updates:
-        return False
-    if HAS_DB and mongo is not None and getattr(mongo, 'db', None) is not None:
-        res = mongo.db.users.update_one({'email': email}, {'$set': updates})
-        return res.modified_count > 0
-    if email in MOCK_USERS:
-        MOCK_USERS[email].update(updates)
-        return True
-    return False
+    
+    def delete_country(self, country_id):
+        """Delete a country by ID"""
+        try:
+            result = self.collection.delete_one({'_id': ObjectId(country_id)})
+            return result.deleted_count > 0
+        except:
+            return False
+    
+    def get_countries_starting_with_a(self):
+        """Get all countries that start with the letter 'a' (case-insensitive)"""
+        countries = list(self.collection.find({
+            'name': {'$regex': '^a', '$options': 'i'}
+        }))
+        # Convert ObjectId to string for JSON serialization
+        for country in countries:
+            country['_id'] = str(country['_id'])
+        return countries
+    
+    def close_connection(self):
+        """Close MongoDB connection"""
+        self.client.close()
