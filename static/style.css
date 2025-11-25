@@ -253,6 +253,36 @@ a:hover {
   margin-bottom: 15px;
 }
 
+/* Ensure product card images have a fixed container so small images don't collapse layout.
+   Use `object-fit: contain` so smaller images are centered and not stretched; container size stays constant. */
+.card .card-img-top,
+.featured-deals .deal-card img,
+.product-card-img {
+  width: 100%;
+  height: 300px; /* taller vertical display to avoid square look */
+  object-fit: contain;
+  background-color: #f6f6f6;
+  display: block;
+}
+
+/* Modal product image fixed size */
+.product-modal-image {
+  width: 100%;
+  height: 420px; /* taller modal image for detail view */
+  object-fit: contain;
+  background-color: #f6f6f6;
+  border-radius: 6px;
+}
+
+/* Shopping list small icons: fixed square, center small images without stretching */
+.item-icon {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  background-color: #f6f6f6;
+  display: inline-block;
+}
+
 .featured-deals .deal-card h3 {
   font-size: 1.2rem;
   color: #28a745;

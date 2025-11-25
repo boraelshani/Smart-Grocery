@@ -101,6 +101,8 @@ def shopping_list():
         return None
 
     items = []
+    # Aggregate duplicates by name so multiple additions stack into a single line with qty
+    agg = {}
     for idx, entry in enumerate(shopping_entries):
         # entry might be a plain string or dict
         if isinstance(entry, dict):
@@ -146,16 +148,46 @@ def shopping_list():
                 except Exception:
                     store_name = ''
 
-        item = {
-            'id': product.get('id') if product and product.get('id') else f'item-{idx}',
-            'name': name,
-            'price': f"${price_val:.2f}",
-            'price_val': price_val,
-            'store': store_name,
-            'qty': qty,
-            'purchased': purchased,
-        }
-        items.append(item)
+        item_key = (name or f'item-{idx}').strip().lower()
+        existing = agg.get(item_key)
+        image_val = ''
+        # try to get image from product or entry
+        try:
+            if isinstance(entry, dict):
+                image_val = entry.get('image') or (entry.get('images')[0] if entry.get('images') else '')
+            if not image_val and product:
+                image_val = product.get('image') or (product.get('images')[0] if product.get('images') else '')
+        except Exception:
+            image_val = ''
+
+        if existing:
+            # increment quantity and update purchased flag
+            existing['qty'] += qty
+            existing['purchased'] = existing['purchased'] or purchased
+            # if price_val differs and existing is zero, set; otherwise keep existing unit price
+            if existing.get('price_val', 0) == 0 and price_val:
+                existing['price_val'] = price_val
+            # prefer to set image if missing
+            if not existing.get('image') and image_val:
+                existing['image'] = image_val
+        else:
+            agg[item_key] = {
+                'id': product.get('id') if product and product.get('id') else f'item-{idx}',
+                'name': name,
+                'price_val': price_val,
+                'store': store_name,
+                'qty': qty,
+                'purchased': purchased,
+                'image': image_val or ''
+            }
+
+    # build final items list from aggregated values, set formatted price as total (unit * qty)
+    for k, v in agg.items():
+        unit = float(v.get('price_val') or 0.0)
+        qty = int(v.get('qty') or 1)
+        total = unit * qty
+        v['price'] = f"${total:.2f}"
+        items.append(v)
 
     return render_template('shopping_list.html', user_data=user_data, items=items)
 

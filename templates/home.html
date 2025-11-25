@@ -64,7 +64,7 @@
       <div class="search-bar position-relative">
         <input id="home-search-input" type="text" class="search-input" placeholder="Search for products (e.g., milk, bread, eggs)..." autocomplete="off" />
         <input type="hidden" id="home-selected-store" value="" />
-        <div id="home-store-suggestions" class="list-group position-absolute w-100" style="display:none; z-index:9999; top:48px;"></div>
+        <div id="home-store-suggestions" class="list-group position-absolute w-100" style="display:none; z-index:9999; top:calc(100% + 6px);"></div>
         <button id="home-search-btn" class="search-btn">Search</button>
       </div>
     </div>
@@ -88,7 +88,7 @@
             <h5 class="card-title">{{ deal.title or deal.name }} - {{ deal.price or '' }}</h5>
             <p class="card-text text-muted">{{ deal.store or deal.source or '' }}</p>
             <div class="d-flex gap-2">
-              <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#dealModal" data-deal-id="{{ deal.id or deal.title }}">See More</button>
+              <button type="button" class="btn btn-sm btn-primary view-details-btn" data-bs-toggle="modal" data-bs-target="#dealModal" data-deal-id="{{ deal.id or deal.title }}" data-title="{{ deal.title or deal.name }}" data-price="{{ deal.price or '' }}" data-store="{{ deal.store or deal.source or '' }}" data-image="{{ deal.image or '' }}">Details</button>
               <button type="button" class="btn btn-sm btn-success claim-deal-btn" data-id="{{ deal.id or deal.title }}" data-title="{{ deal.title or deal.name }}" data-price="{{ deal.price or '' }}">Claim / Add to List</button>
             </div>
           </div>

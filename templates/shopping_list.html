@@ -69,18 +69,33 @@
 				{% if items and items|length > 0 %}
 					<div class="list-rows">
 						{% for it in items %}
-							<div class="item-row d-flex items-center gap-3 p-3 rounded-lg" draggable="true" data-name="{{ it.name }}" data-id="{{ it.id }}" data-price="{{ it.price_val if it.price_val is defined else it.price }}">
+							{# support both object items and simple string items #}
+							{% set name = (it.name if it.name is defined else it) %}
+							{% set item_id = (it.id if it.id is defined else (it if it is string else '')) %}
+							{% set store = (it.store if it.store is defined else '') %}
+							{% set purchased = (it.purchased if it.purchased is defined else false) %}
+							{% set img = (it.image if it.image is defined else (it.images[0] if it.images is defined and it.images else '')) %}
+							{# normalize price: prefer numeric price_val, fall back to price and strip $/commas #}
+							{% set raw_price = (it.price_val if it.price_val is defined else (it.price if it.price is defined else '')) %}
+							{% set raw_price = (raw_price|string).replace('$','').replace(',','') if raw_price is not none else '' %}
+							<div class="item-row d-flex items-center gap-3 p-3 rounded-lg" draggable="true" data-name="{{ name }}" data-id="{{ item_id }}" data-price="{{ raw_price }}">
 								<div class="form-check me-3">
-									<input class="form-check-input checkbox-item" type="checkbox" id="chk-{{ loop.index0 }}" {% if it.purchased %}checked{% endif %}>
+									<input class="form-check-input checkbox-item" type="checkbox" id="chk-{{ loop.index0 }}" {% if purchased %}checked{% endif %}>
+								</div>
+								<div class="me-3">
+								  <img src="{{ img if img else url_for('static', filename='placeholder.png') }}" alt="{{ name }}" class="item-icon" style="width:40px;height:40px;object-fit:cover;border-radius:6px;">
 								</div>
 								<div class="flex-grow-1">
-									<p class="mb-0 item-name {{ 'text-decoration-line-through text-muted' if it.purchased }}">{{ it.name }}</p>
-									<small class="text-muted">{{ it.store if it.store else '' }}</small>
+									<p class="mb-0 item-name {{ 'text-decoration-line-through text-muted' if purchased }}">{{ name }}</p>
+									<small class="text-muted">{{ store }}</small>
 								</div>
 								<div class="text-end me-3">
-									<div class="fw-semibold item-price">{{ it.price }}</div>
+									{# display total for this row = unit price * qty #}
+									{% set unit = (it.price_val if it.price_val is defined else (raw_price|float if raw_price is defined else 0.0)) %}
+									{% set qty = (it.qty if it.qty is defined else 1) %}
+									<div class="fw-semibold item-price">${{ '%.2f'|format((unit|float) * (qty|int)) }}</div>
 								</div>
-								<button class="btn btn-ghost btn-icon remove-item-btn" data-name="{{ it.name }}" data-id="{{ it.id }}" aria-label="Remove">
+								<button class="btn btn-ghost btn-icon remove-item-btn" data-name="{{ name }}" data-id="{{ item_id }}" aria-label="Remove">
 									<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m5 0V4a2 2 0 0 1 2-2h0a2 2 0 0 1 2 2v2"/></svg>
 								</button>
 							</div>
@@ -99,6 +114,7 @@
 				<div class="card-footer d-flex items-center justify-content-between p-3 border-top">
 					<div>
 						<button id="clear-purchased" class="btn btn-outline-secondary btn-sm">Clear Purchased</button>
+						<button id="clear-all" class="btn btn-outline-danger btn-sm">Clear All</button>
 						<button id="save-order" class="btn btn-outline-primary btn-sm">Save Order</button>
 					</div>
 					<div class="text-end">

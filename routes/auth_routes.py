@@ -17,7 +17,8 @@ def login():
             session['user'] = email
             return redirect(url_for('main.home'))
         else:
-            return render_template('login.html', error="Invalid credentials")
+            # return the entered email back so the user doesn't need to retype it
+            return render_template('login.html', error="Invalid credentials", email=email)
     return render_template('login.html')
 
 
@@ -134,6 +135,23 @@ def update_shopping_list_api():
         else:
             users_model.update_shopping_list(email, names)
         return jsonify({'success': True, 'items': names})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@auth_bp.route('/shopping-list/clear', methods=['POST'])
+def clear_shopping_list():
+    # Clear entire shopping list for current user (or fallback)
+    fallback = 'user1@example.com' if getattr(m, 'users', None) and 'user1@example.com' in m.users else (next(iter(m.users.keys())) if getattr(m, 'users', None) else None)
+    email = session.get('user') or fallback
+    if not email:
+        return jsonify({'error': 'no_user_available'}), 400
+    try:
+        if mongo is not None and getattr(mongo, 'db', None) is not None:
+            mongo.db.users.update_one({'email': email}, {'$set': {'shopping_list': []}}, upsert=True)
+        else:
+            users_model.update_shopping_list(email, [])
+        return jsonify({'success': True})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
+<head>th
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Smart Grocery | Featured Deals</title>
@@ -72,7 +72,7 @@
             <h5 class="card-title">{{ deal.title or deal.name }} - {{ deal.price or '' }}</h5>
             <p class="card-text text-muted">{{ deal.store or deal.source or '' }}</p>
             <p class="card-text text-danger">{{ deal.discount if deal.discount else '' }}</p>
-            <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#dealModal" data-deal-id="{{ deal.id or deal.title }}">See More</button>
+            <button type="button" class="btn btn-sm btn-primary view-details-btn" data-bs-toggle="modal" data-bs-target="#dealModal" data-deal-id="{{ deal.id or deal.title }}" data-title="{{ deal.title or deal.name }}" data-price="{{ deal.price or '' }}" data-store="{{ deal.store or deal.source or '' }}" data-image="{{ deal.image or '' }}">Details</button>
             <button type="button" class="btn btn-sm btn-success claim-deal-btn" data-id="{{ deal.id or deal.title }}" data-title="{{ deal.title or deal.name }}" data-price="{{ deal.price or '' }}">Claim Deal</button>
           </div>
         </div>
