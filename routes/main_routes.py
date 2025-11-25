@@ -228,6 +228,46 @@ def api_search_products():
     return jsonify({'items': results})
 
 
+@main_bp.route('/api/product')
+def api_get_product():
+    """Return a single product by id or name. Query params: ?id=<id> or ?name=<name>
+    Response: { item: <product-doc> }
+    """
+    pid = request.args.get('id') or request.args.get('product_id')
+    name = request.args.get('name') or request.args.get('title') or request.args.get('q')
+    if not pid and not name:
+        return jsonify({'item': None}), 400
+    try:
+        if HAS_DB and mongo is not None and getattr(mongo, 'db', None) is not None:
+            query = None
+            if pid:
+                try:
+                    from bson import ObjectId
+                    query = {'_id': ObjectId(str(pid))}
+                except Exception:
+                    # treat as plain id string match on 'id' or 'sku'
+                    query = {'id': str(pid)}
+            else:
+                # case-insensitive name match
+                query = {'name': {'$regex': name, '$options': 'i'}}
+            doc = mongo.db.products.find_one(query)
+            if not doc:
+                return jsonify({'item': None}), 404
+            if '_id' in doc:
+                doc['id'] = str(doc['_id'])
+            return jsonify({'item': doc})
+        else:
+            # fallback: search in-memory products
+            for p in getattr(m, 'products', []):
+                if pid and (str(p.get('id')) == str(pid) or str(p.get('_id', '')) == str(pid)):
+                    return jsonify({'item': p})
+                if name and name.lower() in str(p.get('name', '')).lower():
+                    return jsonify({'item': p})
+            return jsonify({'item': None}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 @main_bp.route('/api/claim-deal', methods=['POST'])
 def api_claim_deal():
     """Endpoint to claim a featured deal and add it to the user's shopping list.

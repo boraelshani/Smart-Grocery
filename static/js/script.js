@@ -153,34 +153,85 @@ function setupProductModalHandlers() {
     const target = e.target;
     if (!target) return;
 
-    // View Details button clicked: populate modal
+    // View Details button clicked: try to fetch full product details from server by id or name
     const viewBtn = target.closest('.view-details-btn');
     if (viewBtn) {
-      const title = viewBtn.getAttribute('data-title') || '';
-      const price = viewBtn.getAttribute('data-price') || '';
-      const store = viewBtn.getAttribute('data-store') || '';
-      const discount = viewBtn.getAttribute('data-discount') || '';
-      const image = viewBtn.getAttribute('data-image') || '';
+      const pid = viewBtn.getAttribute('data-id') || viewBtn.getAttribute('data-product-id') || null;
+      const titleAttr = viewBtn.getAttribute('data-title') || '';
       const modal = document.getElementById('productModal');
       if (!modal) return;
-      modal.querySelector('.modal-title') && (modal.querySelector('.modal-title').textContent = title + ' Details');
-      const img = modal.querySelector('.modal-body img'); if (img) img.src = image;
-      const body = modal.querySelector('.modal-body');
-      if (body) {
-        body.querySelector('h6') && (body.querySelector('h6').textContent = title);
-        const ps = body.querySelectorAll('p');
-        if (ps && ps.length >= 4) {
-          ps[0].innerHTML = `<strong>Best Price:</strong> ${escapeHtml(price)}`;
-          ps[1].innerHTML = `<strong>Available at:</strong> ${escapeHtml(store)}`;
-          ps[2].innerHTML = `<strong>Discount:</strong> ${escapeHtml(discount)}`;
+
+      async function populateModalFromDoc(doc) {
+        const title = doc.name || doc.title || titleAttr || 'Product';
+        const price = doc.price || (doc.cheapest && doc.cheapest.price) || '';
+        const store = doc.store || (doc.cheapest && doc.cheapest.store) || (doc.stores && doc.stores[0] && doc.stores[0].store) || '';
+        const image = doc.image || (doc.images && doc.images[0]) || viewBtn.getAttribute('data-image') || 'https://via.placeholder.com/300x200';
+        modal.querySelector('.modal-title') && (modal.querySelector('.modal-title').textContent = title + ' Details');
+        const img = modal.querySelector('.modal-body img'); if (img) img.src = image;
+        const body = modal.querySelector('.modal-body');
+        if (body) {
+          body.querySelector('h6') && (body.querySelector('h6').textContent = title);
+          // clear body info area below header and then set rich content
+          // We'll try to insert structured info if available
+          const infoHtml = [];
+          if (doc.identification_mark) infoHtml.push(`<p><strong>Identification Mark:</strong> ${escapeHtml(doc.identification_mark)}</p>`);
+          if (doc.country_of_origin) infoHtml.push(`<p><strong>Country/Place of Origin:</strong> ${escapeHtml(doc.country_of_origin)}</p>`);
+          if (doc.storage_instructions) infoHtml.push(`<p><strong>Storage Instructions:</strong><br>${escapeHtml(doc.storage_instructions)}</p>`);
+          if (doc.usage_instructions) infoHtml.push(`<p><strong>Usage Instructions:</strong><br>${escapeHtml(doc.usage_instructions)}</p>`);
+          if (doc.origin_country) infoHtml.push(`<p><strong>Country:</strong> ${escapeHtml(doc.origin_country)}</p>`);
+          if (doc.product_labeling) infoHtml.push(`<p><strong>Product Labeling:</strong> ${escapeHtml(doc.product_labeling)}</p>`);
+          // fallback short summary
+          if (doc.description && infoHtml.length === 0) infoHtml.push(`<p>${escapeHtml(doc.description)}</p>`);
+
+          // Add pricing/store summary at top
+          infoHtml.unshift(`<p><strong>Best Price:</strong> ${escapeHtml(price)}</p>`, `<p><strong>Available at:</strong> ${escapeHtml(store)}</p>`);
+
+          // Replace body paragraphs (keep first h6 and image in place)
+          // Remove existing paragraphs except the h6 and img
+          const bodyChildren = Array.from(body.children).filter(ch => !ch.matches('img') && ch.tagName.toLowerCase() !== 'h6');
+          bodyChildren.forEach(ch => ch.remove());
+          const insertDiv = document.createElement('div'); insertDiv.innerHTML = infoHtml.join('\n');
+          body.appendChild(insertDiv);
+        }
+        const addBtn = modal.querySelector('.add-to-cart-btn');
+        if (addBtn) {
+          addBtn.setAttribute('data-name', title);
+          addBtn.setAttribute('data-price', price);
+          addBtn.setAttribute('data-store', store);
         }
       }
-      const addBtn = modal.querySelector('.add-to-cart-btn');
-      if (addBtn) {
-        addBtn.setAttribute('data-name', title);
-        addBtn.setAttribute('data-price', price);
-        addBtn.setAttribute('data-store', store);
-      }
+
+      // Try to fetch richer data from API
+      (async () => {
+        try {
+          let url = '/api/product';
+          if (pid) url += `?id=${encodeURIComponent(pid)}`; else url += `?name=${encodeURIComponent(titleAttr)}`;
+          const r = await fetch(url, { credentials: 'same-origin' });
+          const j = await r.json().catch(() => ({}));
+          const doc = j.item || j;
+          if (doc && Object.keys(doc).length) {
+            await populateModalFromDoc(doc);
+          } else {
+            // fallback to data attrs
+            const fallback = {
+              name: titleAttr,
+              price: viewBtn.getAttribute('data-price') || '',
+              store: viewBtn.getAttribute('data-store') || '',
+              image: viewBtn.getAttribute('data-image') || ''
+            };
+            await populateModalFromDoc(fallback);
+          }
+        } catch (err) {
+          // fallback
+          const fallback = {
+            name: titleAttr,
+            price: viewBtn.getAttribute('data-price') || '',
+            store: viewBtn.getAttribute('data-store') || '',
+            image: viewBtn.getAttribute('data-image') || ''
+          };
+          await populateModalFromDoc(fallback);
+        }
+      })();
       return;
     }
 
