@@ -268,6 +268,27 @@ def api_get_product():
         return jsonify({'error': str(e)}), 500
 
 
+@main_bp.route('/api/stores')
+def api_get_stores():
+    """Return a list of available stores (id, name, location).
+    Uses MongoDB when available, otherwise falls back to in-memory `models.stores`.
+    """
+    try:
+        out = []
+        if HAS_DB and mongo is not None and getattr(mongo, 'db', None) is not None:
+            cursor = mongo.db.stores.find({}).limit(500)
+            for s in cursor:
+                if '_id' in s:
+                    s['id'] = str(s['_id'])
+                out.append({'id': s.get('id') or s.get('_id'), 'name': s.get('name'), 'location': s.get('location')})
+        else:
+            for s in getattr(m, 'stores', []):
+                out.append({'id': s.get('id') or s.get('name'), 'name': s.get('name'), 'location': s.get('location')})
+        return jsonify({'stores': out})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 @main_bp.route('/api/claim-deal', methods=['POST'])
 def api_claim_deal():
     """Endpoint to claim a featured deal and add it to the user's shopping list.
