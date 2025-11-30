@@ -86,7 +86,7 @@
             <h5 class="card-title">{{ deal.title or deal.name }} - {{ deal.price or '' }}</h5>
             <p class="card-text text-muted">{{ deal.store or deal.source or '' }}</p>
             <div class="d-flex gap-2">
-              <button type="button" class="btn btn-sm btn-primary view-details-btn" data-bs-toggle="modal" data-bs-target="#dealModal" data-deal-id="{{ deal.id or deal.title }}" data-title="{{ deal.title or deal.name }}" data-price="{{ deal.price or '' }}" data-store="{{ deal.store or deal.source or '' }}" data-image="{{ deal.image or '' }}">Details</button>
+              <button type="button" class="btn btn-sm btn-primary view-details-btn" data-bs-toggle="modal" data-bs-target="#productModal" data-id="{{ deal.id or deal.title }}" data-title="{{ deal.title or deal.name }}" data-price="{{ deal.price or '' }}" data-store="{{ deal.store or deal.source or '' }}" data-image="{{ deal.image or '' }}">Details</button>
               <button type="button" class="btn btn-sm btn-success claim-deal-btn" data-id="{{ deal.id or deal.title }}" data-title="{{ deal.title or deal.name }}" data-price="{{ deal.price or '' }}">Claim / Add to List</button>
             </div>
           </div>
@@ -104,6 +104,30 @@
   <footer class="text-center py-4 bg-light border-top">
     <p class="mb-0 text-muted">&copy; 2025 Smart Grocery Team</p>
   </footer>
+
+  <!-- Modal for Product Details (used by Home featured deals and other details buttons) -->
+  <div class="modal fade" id="productModal" tabindex="-1" aria-labelledby="productModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="productModalLabel">Product Details</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <img src="{{ url_for('static', filename='placeholder.png') }}" class="img-fluid mb-3 product-modal-image" alt="Product">
+          <h6 class="product-modal-title">Product Name</h6>
+          <p class="product-modal-price"><strong>Best Price:</strong> <span></span></p>
+          <p class="product-modal-stores"><strong>Available at:</strong> <span></span></p>
+          <p class="product-modal-discount"><strong>Discount:</strong> <span></span></p>
+          <p class="product-modal-expires"><strong>Expires in:</strong> <span></span></p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-primary add-to-cart-btn">Add to Cart</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="{{ url_for('static', filename='js/script.js') }}"></script>
