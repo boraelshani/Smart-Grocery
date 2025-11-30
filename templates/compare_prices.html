@@ -1,157 +1,110 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Smart Grocery | Compare Prices</title>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-
-</head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Grocery | Compare Prices</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  </head>
 <body>
-
-<!-- Navbar (same for all pages) -->
-<nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
-<div class="container">
-<a class="navbar-brand fw-bold" href="{{ url_for('main.home') }}">Smart Grocery</a>
-<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-<span class="navbar-toggler-icon"></span>
-</button>
-<div class="collapse navbar-collapse" id="navbarNav">
-<ul class="navbar-nav ms-auto">
-<li class="nav-item"><a class="nav-link" href="{{ url_for('main.home') }}">Home</a></li>
-<li class="nav-item"><a class="nav-link" href="{{ url_for('main.stores_page') }}">Stores</a></li>
-<li class="nav-item"><a class="nav-link" href="{{ url_for('main.featured_deals_page') }}">Featured Deals</a></li>
-<li class="nav-item"><a class="nav-link active" href="{{ url_for('main.compare_prices') }}">Compare Prices</a></li>
-<li class="nav-item"><a class="nav-link" href="{{ url_for('main.shopping_list') }}">Shopping List</a></li>
-<li class="nav-item"><a class="nav-link" href="{{ url_for('main.profile') }}">Profile</a></li>
-<li class="nav-item"><a class="nav-link" href="{{ url_for('auth.login') }}">Login</a></li>
-</ul>
-</div>
-</div>
-</nav>
-
-<!-- Page Header -->
-<section class="container py-5 text-center">
-<h1 class="mb-3">Compare Prices</h1>
-<p class="lead text-muted">See prices for products across different stores</p>
-</section>
-
-<!-- Search Bar Section -->
-<section class="container">
-  <div class="search-container">
-    <div class="search-bar">
-      <input type="text" class="search-input" placeholder="Search for products to compare..." />
-      <button class="search-btn">Search</button>
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
+    <div class="container">
+      <a class="navbar-brand fw-bold" href="{{ url_for('main.home') }}">Smart Grocery</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.home') }}">Home</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.stores_page') }}">Stores</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.featured_deals_page') }}">Featured Deals</a></li>
+          <li class="nav-item"><a class="nav-link active" href="{{ url_for('main.compare_prices') }}">Compare Prices</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.shopping_list') }}">Shopping List</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.profile') }}">Profile</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.login') }}">Login</a></li>
+        </ul>
+      </div>
     </div>
-  </div>
-</section>
+  </nav>
 
-<!-- Products List -->
-<section class="container py-3">
-<div class="row g-4">
+  <section class="text-center py-5 bg-light">
+    <div class="container">
+      <h1 class="fw-bold">Compare Prices</h1>
+      <p class="lead text-muted">Find the best price across nearby stores.</p>
+    </div>
+  </section>
 
-<!-- Product 1 -->
-<div class="col-md-6 col-lg-4">
-<div class="card shadow-sm">
-<img src="https://via.placeholder.com/300x200" class="card-img-top" alt="Organic Bananas">
-<div class="card-body">
-<h5 class="card-title">Organic Bananas</h5>
-<p class="card-text mb-1">Category: Fruits</p>
-<ul class="list-group list-group-flush mb-2">
-<li class="list-group-item">FreshMart: $2.99 <span class="badge bg-success float-end">15% OFF</span></li>
-<li class="list-group-item">GreenGrocer: $3.49</li>
-<li class="list-group-item">SaveMore: $3.29 <span class="badge bg-success float-end">10% OFF</span></li>
-</ul>
-<p class="text-muted mb-0">Expires in 2 days</p>
-<button type="button" class="btn btn-sm btn-info mt-2 view-details-btn" data-bs-toggle="modal" data-bs-target="#productModal" data-title="Organic Bananas" data-price="$2.99" data-store="FreshMart" data-discount="15% OFF" data-image="https://via.placeholder.com/300x200">View Details</button>
-</div>
-</div>
-</div>
+  <section class="container py-4">
+    <div class="row g-4">
+      {% if products %}
+        {% for p in products %}
+          <div class="col-md-6 col-lg-4">
+            <div class="card shadow-sm h-100">
+              <img src="{{ p.get('image') or (p.get('images') and p.get('images')[0]) or url_for('static', filename='placeholder.png') }}" class="card-img-top" alt="{{ p.get('name') or p.get('title','Product') }}">
+              <div class="card-body">
+                <h5 class="card-title">{{ p.get('name') or p.get('title','') }}</h5>
+                <p class="card-text mb-1">Category: {{ p.get('category','') }}</p>
+                <ul class="list-group list-group-flush mb-2">
+                  {% if p.get('stores') %}
+                    {% for s in p.get('stores')[:3] %}
+                      <li class="list-group-item">{{ s.get('store') or s.get('name') }}: {{ s.get('price') }} {% if s.get('discount') %}<span class="badge bg-success float-end">{{ s.get('discount') }}</span>{% endif %}</li>
+                    {% endfor %}
+                  {% endif %}
+                </ul>
+                <p class="text-muted mb-0">{% if p.get('expires') %}Expires in {{ p.get('expires') }}{% endif %}</p>
+                <button type="button" class="btn btn-sm btn-info mt-2 view-details-btn" data-bs-toggle="modal" data-bs-target="#productModal" data-title="{{ p.get('name') or p.get('title','') }}" data-price="{{ (p.get('cheapest') and p.get('cheapest').get('price')) or p.get('price','') }}" data-store="{{ (p.get('cheapest') and p.get('cheapest').get('store')) or '' }}" data-image="{{ p.get('image') or (p.get('images') and p.get('images')[0]) or '' }}">Details</button>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      {% else %}
+        <div class="col-12"><p class="text-muted">No products available.</p></div>
+      {% endif %}
+    </div>
 
-<!-- Product 2 -->
-<div class="col-md-6 col-lg-4">
-<div class="card shadow-sm">
-<img src="https://via.placeholder.com/300x200" class="card-img-top" alt="Whole Milk 1 Gallon">
-<div class="card-body">
-<h5 class="card-title">Whole Milk 1 Gallon</h5>
-<p class="card-text mb-1">Category: Dairy</p>
-<ul class="list-group list-group-flush mb-2">
-<li class="list-group-item">FreshMart: $4.49 <span class="badge bg-success float-end">20% OFF</span></li>
-<li class="list-group-item">GreenGrocer: $5.29</li>
-<li class="list-group-item">SaveMore: $4.99 <span class="badge bg-success float-end">5% OFF</span></li>
-</ul>
-<p class="text-muted mb-0">Expires in 1 day</p>
-<button type="button" class="btn btn-sm btn-info mt-2 view-details-btn" data-bs-toggle="modal" data-bs-target="#productModal" data-title="Whole Milk 1 Gallon" data-price="$4.49" data-store="FreshMart" data-discount="20% OFF" data-image="https://via.placeholder.com/300x200">View Details</button>
-</div>
-</div>
-</div>
+    <!-- Pagination (static for now) -->
+    <nav aria-label="Page navigation" class="mt-5">
+      <ul class="pagination justify-content-center">
+        <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1">Previous</a></li>
+        <li class="page-item active"><a class="page-link" href="#">1</a></li>
+        <li class="page-item"><a class="page-link" href="#">2</a></li>
+        <li class="page-item"><a class="page-link" href="#">3</a></li>
+        <li class="page-item"><a class="page-link" href="#">Next</a></li>
+      </ul>
+    </nav>
+  </section>
 
-<!-- Product 3 -->
-<div class="col-md-6 col-lg-4">
-<div class="card shadow-sm">
-<img src="https://via.placeholder.com/300x200" class="card-img-top" alt="Chicken Breast 2lb">
-<div class="card-body">
-<h5 class="card-title">Chicken Breast 2lb</h5>
-<p class="card-text mb-1">Category: Meat</p>
-<ul class="list-group list-group-flush mb-2">
-<li class="list-group-item">FreshMart: $8.99 <span class="badge bg-success float-end">25% OFF</span></li>
-<li class="list-group-item">GreenGrocer: $10.49 <span class="badge bg-success float-end">10% OFF</span></li>
-<li class="list-group-item">SaveMore: $9.99 <span class="badge bg-success float-end">15% OFF</span></li>
-</ul>
-<p class="text-muted mb-0">Expires in 3 days</p>
-<button type="button" class="btn btn-sm btn-info mt-2 view-details-btn" data-bs-toggle="modal" data-bs-target="#productModal" data-title="Chicken Breast 2lb" data-price="$8.99" data-store="FreshMart" data-discount="25% OFF" data-image="https://via.placeholder.com/300x200">View Details</button>
-</div>
-</div>
-</div>
-
-</div>
-
-<!-- Pagination -->
-<nav aria-label="Page navigation" class="mt-5">
-  <ul class="pagination justify-content-center">
-    <li class="page-item disabled">
-      <a class="page-link" href="#" tabindex="-1">Previous</a>
-    </li>
-    <li class="page-item active"><a class="page-link" href="#">1</a></li>
-    <li class="page-item"><a class="page-link" href="#">2</a></li>
-    <li class="page-item"><a class="page-link" href="#">3</a></li>
-    <li class="page-item">
-      <a class="page-link" href="#">Next</a>
-    </li>
-  </ul>
-</nav>
-</section>
-
-<!-- Modal for Product Details -->
-<div class="modal fade" id="productModal" tabindex="-1" aria-labelledby="productModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="productModalLabel">Product Details</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <img src="https://via.placeholder.com/300x200" class="img-fluid mb-3" alt="Product">
-        <h6>Product Name</h6>
-        <p><strong>Best Price:</strong> $2.99</p>
-        <p><strong>Available at:</strong> FreshMart, SaveMore</p>
-        <p><strong>Discount:</strong> Up to 25% OFF</p>
-        <p><strong>Expires in:</strong> 2 days</p>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-primary add-to-cart-btn">Add to Cart</button>
+  <!-- Modal for Product Details -->
+  <div class="modal fade" id="productModal" tabindex="-1" aria-labelledby="productModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="productModalLabel">Product Details</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <img src="{{ url_for('static', filename='placeholder.png') }}" class="img-fluid mb-3 product-modal-image" alt="Product">
+          <h6 class="product-modal-title">Product Name</h6>
+          <p class="product-modal-price"><strong>Best Price:</strong> <span></span></p>
+          <p class="product-modal-stores"><strong>Available at:</strong> <span></span></p>
+          <p class="product-modal-discount"><strong>Discount:</strong> <span></span></p>
+          <p class="product-modal-expires"><strong>Expires in:</strong> <span></span></p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-primary add-to-cart-btn">Add to Cart</button>
+        </div>
       </div>
     </div>
   </div>
-</div>
 
-<footer class="text-center py-4 bg-light border-top">
-<p class="mb-0 text-muted">&copy; 2025 Smart Grocery Team</p>
-</footer>
+  <footer class="text-center py-4 bg-light border-top">
+    <p class="mb-0 text-muted">&copy; 2025 Smart Grocery Team</p>
+  </footer>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 </body>
 </html>

@@ -97,7 +97,6 @@ function setupStoreSuggestions() {
       const r = await fetch('/api/stores', { credentials: 'same-origin' });
       const j = await r.json().catch(() => ({}));
       storeList = j.stores || [];
-      renderSuggestions(storeList);
     } catch (e) {
       // ignore
     }
@@ -142,7 +141,7 @@ function setupStoreSuggestions() {
   }
 
   // show suggestions when input focused or hovered near it
-  input.addEventListener('focus', () => { if (!storeList.length) fetchStores(); else renderSuggestions(storeList); });
+  input.addEventListener('focus', () => { if (!storeList.length) fetchStores(); if (input.value && input.value.trim()) renderSuggestions(storeList); });
   input.addEventListener('mouseenter', () => { if (!storeList.length) fetchStores(); });
 
   // hide suggestions on blur (with a slight delay to allow click)
@@ -152,7 +151,8 @@ function setupStoreSuggestions() {
   input.addEventListener('input', () => {
     const q = input.value.trim().toLowerCase();
     if (!q) {
-      renderSuggestions(storeList);
+      // don't show suggestions for an empty input
+      document.getElementById('store-suggestions').style.display = 'none';
       return;
     }
     const filtered = storeList.filter(s => (s.name || '').toLowerCase().includes(q) || (s.location||'').toLowerCase().includes(q));
@@ -177,7 +177,6 @@ function setupHomeStoreSuggestions() {
       const r = await fetch('/api/stores', { credentials: 'same-origin' });
       const j = await r.json().catch(() => ({}));
       storeList = j.stores || [];
-      renderSuggestions(storeList);
     } catch (e) {
       // ignore
     }
@@ -204,10 +203,10 @@ function setupHomeStoreSuggestions() {
     suggestions.style.display = 'block';
   }
 
-  input.addEventListener('focus', () => { if (!storeList.length) fetchStores(); else renderSuggestions(storeList); });
+  input.addEventListener('focus', () => { if (!storeList.length) fetchStores(); if (input.value && input.value.trim()) renderSuggestions(storeList); });
   input.addEventListener('mouseenter', () => { if (!storeList.length) fetchStores(); });
   input.addEventListener('blur', () => { setTimeout(()=>{ suggestions.style.display='none'; }, 150); });
-  input.addEventListener('input', () => { const q = input.value.trim().toLowerCase(); if (!q) { renderSuggestions(storeList); return; } const filtered = storeList.filter(s => (s.name || '').toLowerCase().includes(q) || (s.location||'').toLowerCase().includes(q)); renderSuggestions(filtered); });
+  input.addEventListener('input', () => { const q = input.value.trim().toLowerCase(); if (!q) { suggestions.style.display='none'; return; } const filtered = storeList.filter(s => (s.name || '').toLowerCase().includes(q) || (s.location||'').toLowerCase().includes(q)); renderSuggestions(filtered); });
   btn?.addEventListener('click', () => { /* default search behavior will include selected store */ });
 }
 
@@ -290,14 +289,19 @@ function setupProductModalHandlers() {
     if (viewBtn) {
       const pid = viewBtn.getAttribute('data-id') || viewBtn.getAttribute('data-product-id') || null;
       const titleAttr = viewBtn.getAttribute('data-title') || '';
-      const modal = document.getElementById('productModal');
+      const targetSelector = viewBtn.getAttribute('data-bs-target') || '#productModal';
+      const modal = document.querySelector(targetSelector);
       if (!modal) return;
 
       async function populateModalFromDoc(doc) {
         const title = doc.name || doc.title || titleAttr || 'Product';
         const price = doc.price || (doc.cheapest && doc.cheapest.price) || '';
         const store = doc.store || (doc.cheapest && doc.cheapest.store) || (doc.stores && doc.stores[0] && doc.stores[0].store) || '';
-        const image = doc.image || (doc.images && doc.images[0]) || viewBtn.getAttribute('data-image') || 'https://via.placeholder.com/300x200';
+        let image = doc.image || (doc.images && doc.images[0]) || viewBtn.getAttribute('data-image') || 'https://via.placeholder.com/300x200';
+        // If `image` is a short id (no protocol and not an absolute path), convert to CDN URL.
+        if (image && !/^https?:\/\//i.test(image) && !image.startsWith('/')) {
+          image = `https://images.example.com/${image}`;
+        }
         modal.querySelector('.modal-title') && (modal.querySelector('.modal-title').textContent = title + ' Details');
         const img = modal.querySelector('.modal-body img'); if (img) img.src = image;
         const body = modal.querySelector('.modal-body');
@@ -330,6 +334,7 @@ function setupProductModalHandlers() {
           addBtn.setAttribute('data-name', title);
           addBtn.setAttribute('data-price', price);
           addBtn.setAttribute('data-store', store);
+          addBtn.setAttribute('data-image', image);
         }
       }
 
@@ -369,15 +374,17 @@ function setupProductModalHandlers() {
 
     // Add to Cart button inside modal
     if (target.classList && target.classList.contains('add-to-cart-btn')) {
-      const name = target.getAttribute('data-name') || target.getAttribute('data-title') || (document.querySelector('#productModal h6')?.textContent || 'Item');
+      const modalRoot = target.closest('.modal');
+      const name = target.getAttribute('data-name') || target.getAttribute('data-title') || (modalRoot?.querySelector('h6')?.textContent || 'Item');
       const price = target.getAttribute('data-price') || '';
       const store = target.getAttribute('data-store') || '';
-      const item = { name, price, store };
+      const image = target.getAttribute('data-image') || modalRoot?.querySelector('img')?.src || '';
+      const item = { name, price, store, image };
       try {
         const res = await apiPostJson('/shopping-list/add', { item });
         if (res && (res.success || res.success === true)) {
           showNotification('Added to shopping list', 'success');
-          try { const modalEl = bootstrap.Modal.getInstance(document.getElementById('productModal')); if (modalEl) modalEl.hide(); } catch(e){}
+          try { const modalEl = bootstrap.Modal.getInstance(modalRoot); if (modalEl) modalEl.hide(); } catch(e){}
           refreshShoppingListUI();
         } else if (res && res.error) {
           showNotification(res.error, 'danger');
@@ -395,7 +402,9 @@ function setupProductModalHandlers() {
       const name = target.getAttribute('data-name') || target.getAttribute('data-title') || 'Item';
       const price = target.getAttribute('data-price') || '';
       const id = target.getAttribute('data-id') || null;
+      const img = target.getAttribute('data-image') || '';
       const item = { name, price, id };
+      if (img) item.image = img;
       try {
         const res = await apiPostJson('/shopping-list/add', { item });
         if (res && (res.success || res.success === true)) {
@@ -427,6 +436,12 @@ function setupShoppingListInteractions() {
   document.getElementById('clear-purchased')?.addEventListener('click', () => {
     const rows = Array.from(list.querySelectorAll('.item-row.purchased'));
     rows.forEach(r => { const name = r.getAttribute('data-name'); apiPostJson('/shopping-list/remove', { item: name }).then(res => { if (res && res.success) refreshShoppingListUI(); }); });
+  });
+
+  // clear all
+  document.getElementById('clear-all')?.addEventListener('click', () => {
+    if (!confirm('Clear all items from your shopping list?')) return;
+    apiPostJson('/shopping-list/clear', {}).then(res => { if (res && res.success) { showNotification('All items cleared', 'info'); refreshShoppingListUI(); } else showNotification('Could not clear items', 'danger'); }).catch(()=> showNotification('Server error', 'danger'));
   });
 
   // save order

@@ -36,10 +36,13 @@
 <div class="card shadow-sm">
 <div class="card-body">
 <h2 class="card-title mb-4 text-center">Login</h2>
+	{% if error %}
+	<div class="alert alert-danger" role="alert">{{ error }}</div>
+	{% endif %}
 <form method="post" action="{{ url_for('auth.login') }}">
 <div class="mb-3">
 <label for="email" class="form-label">Email address</label>
-<input type="email" class="form-control" id="email" name="email" placeholder="Enter email" required>
+		<input type="email" class="form-control" id="email" name="email" placeholder="Enter email" value="{{ email or request.form.get('email','') }}" required>
 </div>
 <div class="mb-3">
 <label for="password" class="form-label">Password</label>
