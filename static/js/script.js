@@ -93,6 +93,8 @@ function setupStoreSuggestions() {
       const r = await fetch('/api/stores', { credentials: 'same-origin' });
       const j = await r.json().catch(() => ({}));
       storeList = j.stores || [];
+      // render suggestions after fetching so focus shows options
+      renderSuggestions(storeList);
     } catch (e) {
       // ignore
     }
@@ -137,7 +139,7 @@ function setupStoreSuggestions() {
   }
 
   // show suggestions when input focused or hovered near it
-  input.addEventListener('focus', () => { if (!storeList.length) fetchStores(); if (input.value && input.value.trim()) renderSuggestions(storeList); });
+  input.addEventListener('focus', () => { if (!storeList.length) fetchStores(); else renderSuggestions(storeList); });
   input.addEventListener('mouseenter', () => { if (!storeList.length) fetchStores(); });
 
   // hide suggestions on blur (with a slight delay to allow click)
