@@ -67,7 +67,7 @@
       {% for deal in deals %}
       <div class="col-md-4">
         <div class="card shadow-sm h-100">
-          <img src="{{ deal.image if deal.image else url_for('static', filename='placeholder.png') }}" class="card-img-top" alt="{{ deal.title or deal.name }}">
+          <img src="{{ deal.image if deal.image else url_for('static', filename='placeholder.svg') }}" class="card-img-top" alt="{{ deal.title or deal.name }}" style="width:700px;height:700px;object-fit:cover;">
           <div class="card-body">
             <h5 class="card-title">{{ deal.title or deal.name }} - {{ deal.price or '' }}</h5>
             <p class="card-text text-muted">{{ deal.store or deal.source or '' }}</p>

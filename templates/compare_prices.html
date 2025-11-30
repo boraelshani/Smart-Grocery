@@ -42,7 +42,7 @@
         {% for p in products %}
           <div class="col-md-6 col-lg-4">
             <div class="card shadow-sm h-100">
-              <img src="{{ p.get('image') or (p.get('images') and p.get('images')[0]) or url_for('static', filename='placeholder.png') }}" class="card-img-top" alt="{{ p.get('name') or p.get('title','Product') }}">
+              <img src="{{ p.get('image') or (p.get('images') and p.get('images')[0]) or url_for('static', filename='placeholder.svg') }}" class="card-img-top" alt="{{ p.get('name') or p.get('title','Product') }}" style="width:700px;height:700px;object-fit:cover;">
               <div class="card-body">
                 <h5 class="card-title">{{ p.get('name') or p.get('title','') }}</h5>
                 <p class="card-text mb-1">Category: {{ p.get('category','') }}</p>
@@ -85,7 +85,7 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
-          <img src="{{ url_for('static', filename='placeholder.png') }}" class="img-fluid mb-3 product-modal-image" alt="Product">
+          <img src="{{ url_for('static', filename='placeholder.svg') }}" class="img-fluid mb-3 product-modal-image" alt="Product">
           <h6 class="product-modal-title">Product Name</h6>
           <p class="product-modal-price"><strong>Best Price:</strong> <span></span></p>
           <p class="product-modal-stores"><strong>Available at:</strong> <span></span></p>

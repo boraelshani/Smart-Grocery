@@ -1,5 +1,7 @@
-from flask import render_template, request, redirect, url_for, session, jsonify
+from flask import render_template, request, redirect, url_for, session, jsonify, current_app
 from . import auth_bp
+import re
+from bson.decimal128 import Decimal128
 from models.models import get_user_by_email
 from models import models as m
 from models import users_model as users_model
@@ -20,23 +22,6 @@ def login():
             # return the entered email back so the user doesn't need to retype it
             return render_template('login.html', error="Invalid credentials", email=email)
     return render_template('login.html')
-
-
-@auth_bp.route('/signup', methods=['GET', 'POST'])
-def signup():
-    if request.method == 'POST':
-        email = request.form['email']
-        password = request.form['password']
-        name = request.form['name']
-        existing = users_model.get_user_by_email(email)
-        if not existing:
-            user_doc = {"email": email, "password": password, "name": name, "shopping_list": [], "total_cost": 0.0}
-            users_model.create_user(user_doc)
-            session['user'] = email
-            return redirect(url_for('main.home'))
-        else:
-            return render_template('signup.html', error="Email already exists")
-    return render_template('signup.html')
 
 
 @auth_bp.route('/profile', methods=['POST'])
@@ -68,14 +53,96 @@ def add_shopping_item():
         return jsonify({'error': 'no_user_available'}), 400
     data = request.get_json() or request.form
     item = data.get('item')
+    # coerce form-like objects to plain dicts to avoid type surprises
+    try:
+        if not isinstance(item, dict) and hasattr(item, 'to_dict'):
+            item = item.to_dict()
+        # also allow item to be a simple string (convert to dict)
+        if not isinstance(item, dict) and item is not None:
+            # if item looks like a JSON string, try to parse
+            try:
+                import json
+                parsed = json.loads(item)
+                if isinstance(parsed, dict):
+                    item = parsed
+            except Exception:
+                item = {'name': str(item)}
+    except Exception:
+        pass
     if not item:
         return jsonify({'error': 'no_item_provided'}), 400
     try:
         if mongo is not None and getattr(mongo, 'db', None) is not None:
-            # use upsert to ensure user doc exists
-            res = mongo.db.users.update_one({'email': email}, {'$push': {'shopping_list': item}}, upsert=True)
-            # success if modified or upserted
-            success = (getattr(res, 'modified_count', 0) > 0) or (getattr(res, 'upserted_id', None) is not None)
+            # If item is an object and missing a usable unit price, try to enrich it
+            try:
+                if isinstance(item, dict):
+                    # prefer product id if provided
+                    prod = None
+                    prod_id = item.get('id') or item.get('product_id')
+                    if prod_id:
+                        try:
+                            from bson import ObjectId
+                            prod = mongo.db.products.find_one({'_id': ObjectId(str(prod_id))})
+                        except Exception:
+                            prod = mongo.db.products.find_one({'id': str(prod_id)})
+                    # fallback: try matching by name
+                    if prod is None and item.get('name'):
+                        # try exact name (case-insensitive)
+                        prod = mongo.db.products.find_one({'name': {'$regex': '^' + re.escape(item.get('name')) + '$', '$options': 'i'}})
+                        # fallback to substring match if exact not found
+                        if prod is None:
+                            prod = mongo.db.products.find_one({'name': {'$regex': re.escape(item.get('name')), '$options': 'i'}})
+
+                    # determine price from product if available
+                    if prod is not None:
+                        # try common fields
+                        cheapest = prod.get('cheapest') or {}
+                        price_field = cheapest.get('price') if isinstance(cheapest, dict) else prod.get('price')
+                        if price_field is None:
+                            try:
+                                stores_list = prod.get('stores', [])
+                                if stores_list and isinstance(stores_list, list):
+                                    price_field = stores_list[0].get('price')
+                            except Exception:
+                                price_field = None
+                        # normalize to numeric unit price if found
+                        if price_field is not None:
+                            try:
+                                if isinstance(price_field, (int, float)):
+                                    unit_price = float(price_field)
+                                else:
+                                    cleaned = re.sub(r"[^0-9.]", "", str(price_field))
+                                    unit_price = float(cleaned) if cleaned else 0.0
+                            except Exception:
+                                unit_price = 0.0
+                            # set/overwrite item price with product unit price (store as Decimal128)
+                            try:
+                                item['price'] = Decimal128(f"{unit_price:.2f}")
+                            except Exception:
+                                item['price'] = float(unit_price)
+                        # ensure the item contains the product id so server-side aggregation can group correctly
+                        try:
+                            if prod.get('_id'):
+                                item['id'] = str(prod.get('_id'))
+                            elif prod.get('id'):
+                                item['id'] = str(prod.get('id'))
+                        except Exception:
+                            pass
+            except Exception:
+                # enrichment should never block adding; ignore errors
+                pass
+
+            # persist the item by fetching the user doc and setting the list explicitly
+            user_doc = mongo.db.users.find_one({'email': email})
+            if not user_doc:
+                # create new user doc with shopping_list
+                mongo.db.users.insert_one({'email': email, 'shopping_list': [item], 'total_cost': 0.0})
+                success = True
+            else:
+                sl = user_doc.get('shopping_list', []) or []
+                sl.append(item)
+                res = mongo.db.users.update_one({'email': email}, {'$set': {'shopping_list': sl}})
+                success = getattr(res, 'modified_count', 0) > 0
         else:
             success = users_model.add_to_shopping_list(email, item)
         return jsonify({'success': bool(success)})
@@ -114,8 +181,9 @@ def remove_shopping_item():
 
 @auth_bp.route('/shopping-list/update', methods=['POST'])
 def update_shopping_list_api():
-    """Accept JSON payload: { items: [ {name: str, purchased: bool, qty: int, price: float}, ... ] }
-    Persists the ordered list of item names (simple representation) using users_model.update_shopping_list.
+    """Accept JSON payload: { items: [ {name: str, purchased: bool, qty: int, price: float, image: str}, ... ] }
+    Persists the ordered list of full item objects (keeps price/image/qty/purchased).
+    Backwards-compatible with older string-only lists.
     """
     # allow fallback to in-memory default user when not authenticated
     # use the same fallback user as the main routes ('user1@example.com') when present
@@ -127,14 +195,24 @@ def update_shopping_list_api():
     items = data.get('items')
     if not isinstance(items, list):
         return jsonify({'error': 'invalid_items'}), 400
-    # For persistence we store list of item names in order
-    names = [it.get('name') if isinstance(it, dict) else str(it) for it in items]
+    # For persistence we store the full item objects (dicts) when provided,
+    # but allow older string-only entries as well.
+    to_store = []
+    for it in items:
+        if isinstance(it, dict):
+            # normalize keys: ensure name exists
+            if 'name' not in it and 'title' in it:
+                it['name'] = it.get('title')
+            to_store.append(it)
+        else:
+            to_store.append(str(it))
+
     try:
         if mongo is not None and getattr(mongo, 'db', None) is not None:
-            mongo.db.users.update_one({'email': email}, {'$set': {'shopping_list': names}}, upsert=True)
+            mongo.db.users.update_one({'email': email}, {'$set': {'shopping_list': to_store}}, upsert=True)
         else:
-            users_model.update_shopping_list(email, names)
-        return jsonify({'success': True, 'items': names})
+            users_model.update_shopping_list(email, to_store)
+        return jsonify({'success': True, 'items': to_store})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

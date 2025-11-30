@@ -48,7 +48,7 @@ function setupSearchFunctionality() {
         const col = document.createElement('div'); col.className = 'col-md-6 col-lg-4';
         col.innerHTML = `
           <div class="card shadow-sm">
-            <img src="${img}" class="card-img-top" alt="${title}">
+              <img src="${img}" class="card-img-top" alt="${title}" style="width:700px;height:700px;object-fit:cover;">
             <div class="card-body">
               <h5 class="card-title">${title}</h5>
               <p class="card-text mb-1">${store}</p>
@@ -291,6 +291,7 @@ function setupProductModalHandlers() {
         }
         modal.querySelector('.modal-title') && (modal.querySelector('.modal-title').textContent = title + ' Details');
         const img = modal.querySelector('.modal-body img'); if (img) img.src = image;
+        if (img) { img.style.width='700px'; img.style.height='700px'; img.style.objectFit='cover'; }
         const body = modal.querySelector('.modal-body');
         if (body) {
           body.querySelector('h6') && (body.querySelector('h6').textContent = title);
@@ -434,18 +435,56 @@ function setupShoppingListInteractions() {
   // save order
   document.getElementById('save-order')?.addEventListener('click', () => { postCurrentListOrder().then(r => { if (r && r.success) showNotification('Order saved','success'); }); });
 
+  // quantity increment/decrement handling (delegated)
+  list.addEventListener('click', (e) => {
+    const inc = e.target.closest('.qty-incr');
+    const dec = e.target.closest('.qty-decr');
+    if (inc || dec) {
+      const btn = inc || dec;
+      const row = btn.closest('.item-row'); if (!row) return;
+      const badge = row.querySelector('.qty-badge');
+      let qty = Number(row.getAttribute('data-qty') || 1) || 1;
+      qty = qty + (inc ? 1 : -1);
+      if (qty < 1) qty = 1;
+      row.setAttribute('data-qty', String(qty));
+      if (badge) badge.textContent = String(qty);
+      // update per-row displayed price (unit * qty)
+      const unit = formatPrice(row.getAttribute('data-price') || (row.querySelector('.item-price')?.textContent||'0'));
+      const priceEl = row.querySelector('.item-price');
+      if (priceEl) priceEl.textContent = `$${(unit * qty).toFixed(2)}`;
+      debounceSaveOrder();
+      computeTotals();
+    }
+  });
+
   computeTotals();
 }
 
 async function postCurrentListOrder() {
   const rows = Array.from(document.querySelectorAll('.item-row'));
-  const items = rows.map(r => ({ name: r.getAttribute('data-name'), purchased: r.classList.contains('purchased'), qty: 1, price: formatPrice(r.getAttribute('data-price') || (r.querySelector('.item-price')?.textContent||'0')) }));
+  const items = rows.map(r => ({
+    name: r.getAttribute('data-name'),
+    purchased: r.classList.contains('purchased'),
+    qty: Number(r.getAttribute('data-qty') || 1),
+    // price here is the unit price (not total); server will persist this value
+    price: formatPrice(r.getAttribute('data-price') || (r.querySelector('.item-price')?.textContent||'0'))
+  }));
   return apiPostJson('/shopping-list/update', { items });
 }
 
 let _saveTimer = null; function debounceSaveOrder(delay=700){ if(_saveTimer) clearTimeout(_saveTimer); _saveTimer = setTimeout(()=>postCurrentListOrder(), delay); }
 
-function computeTotals(){ const rows = Array.from(document.querySelectorAll('.item-row')); let total=0; rows.forEach(r=> total += formatPrice(r.getAttribute('data-price') || (r.querySelector('.item-price')?.textContent||'0')) ); const el = document.getElementById('total-value'); if(el) el.textContent = `$${total.toFixed(2)}`; }
+// computeTotals: sum unit_price * qty for each row
+function computeTotals(){
+  const rows = Array.from(document.querySelectorAll('.item-row'));
+  let total = 0;
+  rows.forEach(r => {
+    const unit = formatPrice(r.getAttribute('data-price') || (r.querySelector('.item-price')?.textContent||'0'));
+    const qty = Number(r.getAttribute('data-qty') || 1);
+    total += unit * (isNaN(qty) ? 1 : qty);
+  });
+  const el = document.getElementById('total-value'); if(el) el.textContent = `$${total.toFixed(2)}`;
+}
 
 // minimal cart counter kept for compatibility
 class CartCounter{ constructor(){ this.cartItems=[]; this.loadFromStorage(); this.updateDisplay(); } addItem(name, price){ const it={name,price,id:Date.now()}; this.cartItems.push(it); this.saveToStorage(); this.updateDisplay(); return it.id;} removeItem(id){ this.cartItems=this.cartItems.filter(i=>i.id!==id); this.saveToStorage(); this.updateDisplay(); } getCount(){ return this.cartItems.length;} getTotal(){ return this.cartItems.reduce((s,i)=>s+Number(i.price||0),0);} clearCart(){ this.cartItems=[]; this.saveToStorage(); this.updateDisplay(); } updateDisplay(){ const b=document.getElementById('cart-counter'); if(b){ b.textContent=this.getCount(); b.style.display=this.getCount()>0?'inline-block':'none'; } const t=document.getElementById('cart-total'); if(t) t.textContent=`$${this.getTotal().toFixed(2)}`; } saveToStorage(){ localStorage.setItem('smartGroceryCart', JSON.stringify(this.cartItems)); } loadFromStorage(){ try{ this.cartItems=JSON.parse(localStorage.getItem('smartGroceryCart'))||[] }catch(e){ this.cartItems=[] } }

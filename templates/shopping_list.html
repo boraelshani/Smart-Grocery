@@ -78,12 +78,15 @@
 							{# normalize price: prefer numeric price_val, fall back to price and strip $/commas #}
 							{% set raw_price = (it.price_val if it.price_val is defined else (it.price if it.price is defined else '')) %}
 							{% set raw_price = (raw_price|string).replace('$','').replace(',','') if raw_price is not none else '' %}
-							<div class="item-row d-flex items-center gap-3 p-3 rounded-lg" draggable="true" data-name="{{ name }}" data-id="{{ item_id }}" data-price="{{ raw_price }}">
+							{# compute unit and qty early so attributes can reference them #}
+							{% set unit = (it.price_val if it.price_val is defined else (raw_price|float if raw_price is defined else 0.0)) %}
+							{% set qty = (it.qty if it.qty is defined else 1) %}
+							<div class="item-row d-flex items-center gap-3 p-3 rounded-lg" draggable="true" data-name="{{ name }}" data-id="{{ item_id }}" data-price="{{ raw_price }}" data-qty="{{ qty }}">
 								<div class="form-check me-3">
 									<input class="form-check-input checkbox-item" type="checkbox" id="chk-{{ loop.index0 }}" {% if purchased %}checked{% endif %}>
 								</div>
 								<div class="me-3">
-								  <img src="{{ img if img else url_for('static', filename='placeholder.png') }}" alt="{{ name }}" class="item-icon" style="width:40px;height:40px;object-fit:cover;border-radius:6px;">
+								  <img src="{{ img if img else url_for('static', filename='placeholder.svg') }}" alt="{{ name }}" class="item-icon" style="width:700px;height:700px;object-fit:cover;border-radius:6px;">
 								</div>
 								<div class="flex-grow-1">
 									<p class="mb-0 item-name {{ 'text-decoration-line-through text-muted' if purchased }}">{{ name }}</p>
@@ -91,9 +94,12 @@
 								</div>
 								<div class="text-end me-3">
 									{# display total for this row = unit price * qty #}
-									{% set unit = (it.price_val if it.price_val is defined else (raw_price|float if raw_price is defined else 0.0)) %}
-									{% set qty = (it.qty if it.qty is defined else 1) %}
 									<div class="fw-semibold item-price">${{ '%.2f'|format((unit|float) * (qty|int)) }}</div>
+								</div>
+								<div class="mx-2 d-flex flex-column align-items-center">
+								  <button class="btn btn-sm btn-outline-secondary qty-incr" type="button" aria-label="Increase">+</button>
+								  <div class="badge bg-light text-dark qty-badge my-1">{{ qty }}</div>
+								  <button class="btn btn-sm btn-outline-secondary qty-decr" type="button" aria-label="Decrease">−</button>
 								</div>
 								<button class="btn btn-ghost btn-icon remove-item-btn" data-name="{{ name }}" data-id="{{ item_id }}" aria-label="Remove">
 									<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m5 0V4a2 2 0 0 1 2-2h0a2 2 0 0 1 2 2v2"/></svg>

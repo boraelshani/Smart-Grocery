@@ -81,7 +81,7 @@
       {% for deal in featured_deals %}
       <div class="col-md-4">
         <div class="card shadow-sm">
-          <img src="{{ deal.image if deal.image else url_for('static', filename='placeholder.png') }}" class="card-img-top" alt="{{ deal.title or deal.name }}">
+          <img src="{{ deal.image if deal.image else url_for('static', filename='placeholder.svg') }}" class="card-img-top" alt="{{ deal.title or deal.name }}" style="width:700px;height:700px;object-fit:cover;">
           <div class="card-body">
             <h5 class="card-title">{{ deal.title or deal.name }} - {{ deal.price or '' }}</h5>
             <p class="card-text text-muted">{{ deal.store or deal.source or '' }}</p>
@@ -114,7 +114,7 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
-          <img src="{{ url_for('static', filename='placeholder.png') }}" class="img-fluid mb-3 product-modal-image" alt="Product">
+          <img src="{{ url_for('static', filename='placeholder.svg') }}" class="img-fluid mb-3 product-modal-image" alt="Product">
           <h6 class="product-modal-title">Product Name</h6>
           <p class="product-modal-price"><strong>Best Price:</strong> <span></span></p>
           <p class="product-modal-stores"><strong>Available at:</strong> <span></span></p>

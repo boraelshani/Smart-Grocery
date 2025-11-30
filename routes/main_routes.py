@@ -1,6 +1,7 @@
 from flask import render_template, jsonify, session, request
 from . import main_bp
 from models import models as m
+from bson.decimal128 import Decimal128
 try:
     from utils.db import mongo
     HAS_DB = True
@@ -117,8 +118,9 @@ def shopping_list():
         product = find_product_by_name(name)
         price_val = 0.0
         store_name = ''
+        # If we found a product in the catalog, prefer that product's price.
         if product:
-            # try common fields for price
+            # try common fields for price on product
             cheapest = product.get('cheapest') or {}
             price_field = cheapest.get('price') if isinstance(cheapest, dict) else product.get('price')
             if price_field is None:
@@ -131,24 +133,43 @@ def shopping_list():
                 except Exception:
                     price_field = None
             if price_field is not None:
-                # normalize to float
+                # normalize to float, handle Decimal128 specially
                 try:
                     if isinstance(price_field, (int, float)):
                         price_val = float(price_field)
+                    elif isinstance(price_field, Decimal128):
+                        try:
+                            price_val = float(price_field.to_decimal())
+                        except Exception:
+                            price_val = 0.0
                     else:
-                        # strip anything except digits and dot
                         cleaned = re.sub(r"[^0-9.]", "", str(price_field))
                         price_val = float(cleaned) if cleaned else 0.0
                 except Exception:
                     price_val = 0.0
             if not store_name:
-                # try cheapest.store
                 try:
                     store_name = (product.get('cheapest') or {}).get('store', '')
                 except Exception:
                     store_name = ''
+        # If product price is missing or zero, but the stored entry contains a price, use it.
+        if (not price_val or price_val == 0) and isinstance(entry, dict):
+            entry_price = entry.get('price') or entry.get('price_val')
+            if entry_price is not None:
+                try:
+                    if isinstance(entry_price, (int, float)):
+                        price_val = float(entry_price)
+                    else:
+                        cleaned = re.sub(r"[^0-9.]", "", str(entry_price))
+                        price_val = float(cleaned) if cleaned else price_val
+                except Exception:
+                    pass
 
-        item_key = (name or f'item-{idx}').strip().lower()
+        # Prefer to aggregate by product id when possible (more reliable), otherwise use normalized name
+        if product and product.get('id'):
+            item_key = str(product.get('id'))
+        else:
+            item_key = (name or f'item-{idx}').strip().lower()
         existing = agg.get(item_key)
         image_val = ''
         # try to get image from product or entry
@@ -245,6 +266,25 @@ def api_search_products():
             regex = {'$regex': q, '$options': 'i'}
             cursor = mongo.db.products.find({'name': regex}).limit(50)
             for d in cursor:
+                # only include products that look like valid, usable product docs
+                def _has_price(prod):
+                    if prod is None: return False
+                    if prod.get('price') not in (None, ''):
+                        return True
+                    c = prod.get('cheapest') or {}
+                    if isinstance(c, dict) and c.get('price') not in (None, ''):
+                        return True
+                    stores_list = prod.get('stores') or []
+                    try:
+                        if isinstance(stores_list, list) and len(stores_list) and stores_list[0].get('price') not in (None, ''):
+                            return True
+                    except Exception:
+                        pass
+                    return False
+
+                if not _has_price(d):
+                    # skip legacy/broken entries that don't have usable price info
+                    continue
                 if '_id' in d:
                     d['id'] = str(d['_id'])
                 results.append(d)
@@ -253,7 +293,9 @@ def api_search_products():
             for p in getattr(m, 'products', []):
                 name = p.get('name', '')
                 if q.lower() in str(name).lower():
-                    results.append(p)
+                    # filter out in-memory legacy items without price
+                    if p.get('price') not in (None, '') or (p.get('cheapest') and p['cheapest'].get('price')) or (p.get('stores') and len(p.get('stores')) and p.get('stores')[0].get('price')):
+                        results.append(p)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
