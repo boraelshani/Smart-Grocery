@@ -117,12 +117,46 @@ function setupStoreSuggestions() {
         // set input to chosen store and hide suggestions
         input.value = s.name;
         suggestions.style.display = 'none';
-        // perform a store-filtered search or navigate to store detail
-        performStoreSearch(s.name);
+        // show selected store details
+        showStoreDetails(s);
       });
       suggestions.appendChild(el);
     });
     suggestions.style.display = 'block';
+  }
+
+  function showStoreDetails(storeObj) {
+    if (!storeObj) return;
+    // hide grid and show detail panel
+    const grid = document.getElementById('stores-grid');
+    const detail = document.getElementById('store-detail');
+    if (!detail) return;
+    // build HTML for selected store
+    const html = `
+      <div class="card shadow-sm">
+        <div class="row g-0">
+          <div class="col-md-4">
+            <img src="${escapeHtml(storeObj.image || 'https://via.placeholder.com/400x300')}" class="img-fluid rounded-start" alt="${escapeHtml(storeObj.name)}">
+          </div>
+          <div class="col-md-8">
+            <div class="card-body">
+              <h3 class="card-title">${escapeHtml(storeObj.name)}</h3>
+              <p class="card-text text-muted">${escapeHtml(storeObj.location || '')}</p>
+              <p class="card-text">${escapeHtml(storeObj.description || '')}</p>
+              <p class="card-text"><strong>Active deals:</strong> ${escapeHtml(String(storeObj.active_deals || storeObj.deals || 0))}</p>
+              <div class="mt-3">
+                <button id="back-to-stores" class="btn btn-secondary">Back to all stores</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    detail.innerHTML = html; detail.style.display = 'block';
+    if (grid) grid.style.display = 'none';
+    // wire back button
+    const back = document.getElementById('back-to-stores');
+    if (back) back.addEventListener('click', () => { detail.style.display = 'none'; if (grid) grid.style.display = 'flex' || 'block'; });
   }
 
   function performStoreSearch(storeName) {
