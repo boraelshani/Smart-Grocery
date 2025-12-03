@@ -259,10 +259,13 @@ a:hover {
 .featured-deals .deal-card img,
 .product-card-img {
   width: 100%;
-  height: 300px; /* taller vertical display to avoid square look */
-  object-fit: contain;
+  max-height: 320px;
+  object-fit: contain !important;
+  object-position: center top;
   background-color: #f6f6f6;
+  padding: 12px;
   display: block;
+  border-radius: 8px;
 }
 
 /* Modal product image fixed size */

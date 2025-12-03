@@ -1,14 +1,6 @@
-"""Seed script to insert or upsert mock data into MongoDB.
-
-Behavior:
-- If `data/<collection>.json` exists (e.g. `data/stores.json`) it will be used as the source.
-- Otherwise the script falls back to `models/models.py` variables.
-- Documents are upserted using sensible unique keys so running multiple times won't wipe your Compass data.
-
-Usage (PowerShell):
-  . ./.venv/Scripts/Activate.ps1
-  $env:MONGO_URI = 'mongodb://localhost:27017/smart_grocery'   # optional; defaults to local
-  python ./scripts/seed_db.py
+#!/usr/bin/env python3
+"""Seed script (fixed) to insert or upsert mock data into MongoDB.
+This version loads .env and uses MONGO_URI from it with local fallback.
 """
 import os
 import sys
@@ -17,10 +9,9 @@ from dotenv import load_dotenv
 from pymongo import MongoClient
 from werkzeug.security import generate_password_hash
 
-# Load .env so MONGO_URI can be provided there; fallback to local DB
+# Load .env
 load_dotenv()
 
-# Prefer MONGO_URI, then MONGODB_URI, then local fallback
 MONGO_URI = os.getenv('MONGO_URI') or os.getenv('MONGODB_URI') or 'mongodb://localhost:27017/smart_grocery'
 print('Using MONGO_URI:', MONGO_URI)
 
@@ -36,18 +27,15 @@ except Exception as e:
     mock = None
 
 client = MongoClient(MONGO_URI)
-
 # Determine DB: if URI provides a database name use it, otherwise default to 'smart_grocery'
 db_name = None
 if '/' in MONGO_URI and MONGO_URI.rsplit('/', 1)[-1]:
     db_name = MONGO_URI.rsplit('/', 1)[-1]
 
 db = client.get_database(db_name) if db_name else client['smart_grocery']
-db = client.get_database(db_name) if db_name else client['smart_grocery']
 
 
 def load_data_file(name):
-    """Load data/<name>.json if it exists and return parsed JSON or None."""
     data_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data')
     path = os.path.join(data_dir, f'{name}.json')
     if os.path.exists(path):
@@ -63,7 +51,6 @@ def seed_collection(name, docs_source):
     """Upsert documents into collection `name` using docs_source which can be a list or dict."""
     coll = db[name]
 
-    # Determine documents list
     if docs_source is None:
         print(f'No source for collection {name}; skipping')
         return
@@ -79,7 +66,6 @@ def seed_collection(name, docs_source):
     print(f'Upserting {len(docs_list)} documents into "{name}"...')
     changed = 0
     for doc in docs_list:
-        # choose unique key per collection
         if name == 'users':
             key = {'email': doc.get('email')}
         elif name in ('stores', 'products'):
@@ -90,7 +76,6 @@ def seed_collection(name, docs_source):
             key = {'_id': doc.get('_id')} if '_id' in doc else doc
 
         doc_to_set = {k: v for k, v in doc.items() if k != '_id'}
-        # Hash passwords when seeding users to avoid storing plaintext
         if name == 'users' and doc_to_set.get('password'):
             try:
                 doc_to_set['password'] = generate_password_hash(doc_to_set['password'])
@@ -107,13 +92,10 @@ def main():
     collections = ['stores', 'products', 'featured_deals', 'users']
 
     for name in collections:
-        # Try JSON file first
         data = load_data_file(name)
         if data is not None:
             seed_collection(name, data)
             continue
-
-        # Fallback to models mock data
         if mock is not None and hasattr(mock, name):
             seed_collection(name, getattr(mock, name))
         else:

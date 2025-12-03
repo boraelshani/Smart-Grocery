@@ -1,19 +1,7 @@
-"""One-time importer: load all JSON files from the `data/` folder
-and upsert them into a MongoDB database (default: smart_grocery).
-
-Usage (PowerShell):
-  . .\.venv\Scripts\Activate.ps1
-  $env:MONGO_URI = 'mongodb://localhost:27017/smart_grocery'  # optional
-  python .\scripts\import_all_data.py
-
-This script is intentionally conservative: it upserts documents using
-reasonable unique keys for common collections (`users.email`,
-`stores.name`, `products.name`, `featured_deals.title`). For other
-collections it will upsert by `_id` if present, otherwise it will
-insert documents (skipping duplicates by catching duplicate-key errors).
+#!/usr/bin/env python3
+"""One-time importer (fixed) that loads JSON files from `data/` and upserts into MongoDB.
+This version uses python-dotenv and prefers MONGO_URI from .env with a local fallback.
 """
-
-import os
 import os
 import sys
 import json
@@ -21,29 +9,28 @@ from dotenv import load_dotenv
 from pymongo import MongoClient, errors
 from werkzeug.security import generate_password_hash
 
-# Load environment from .env if present
+# Load .env if present
 load_dotenv()
 
-# MONGO_URI preference: env MONGO_URI -> MONGODB_URI -> fallback local
 MONGO_URI = os.getenv('MONGO_URI') or os.getenv('MONGODB_URI') or 'mongodb://localhost:27017/smart_grocery'
 print('Using MONGO_URI:', MONGO_URI)
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DATA_DIR = os.path.join(ROOT, 'data')
 
-MONGO_URI = os.environ.get('MONGO_URI', os.environ.get('MONGODB_URI', 'mongodb://localhost:27017/smart_grocery'))
 
 def detect_db_name_from_uri(uri):
-    # If the URI ends with a db name, return it
     if '/' in uri and uri.rsplit('/', 1)[-1]:
         return uri.rsplit('/', 1)[-1]
     return None
+
 
 def load_json_file(path):
     with open(path, 'r', encoding='utf-8') as fh:
         return json.load(fh)
 
+
 def choose_key_for_collection(name, doc):
-    # Return a filter dict for upsert operations based on collection
     if name == 'users' and doc.get('email'):
         return {'email': doc.get('email')}
     if name in ('stores', 'products') and doc.get('name'):
@@ -54,10 +41,10 @@ def choose_key_for_collection(name, doc):
         return {'_id': doc.get('_id')}
     return None
 
+
 def upsert_collection(db, name, docs):
     coll = db[name]
     if not isinstance(docs, list):
-        # if it's a dict of objects by key, convert to list
         if isinstance(docs, dict):
             docs = list(docs.values())
         else:
@@ -69,7 +56,6 @@ def upsert_collection(db, name, docs):
     for doc in docs:
         if not isinstance(doc, dict):
             continue
-        # handle user password hashing
         if name == 'users' and doc.get('password'):
             try:
                 doc['password'] = generate_password_hash(doc['password'])
@@ -84,16 +70,15 @@ def upsert_collection(db, name, docs):
                 if getattr(res, 'upserted_id', None) or getattr(res, 'modified_count', 0) > 0:
                     changed += 1
             else:
-                # try insert; if duplicate key error occurs, ignore
                 try:
                     coll.insert_one(doc_to_set)
                     changed += 1
                 except errors.DuplicateKeyError:
-                    # already exists; skip
                     pass
         except Exception as e:
             print(f'Error inserting/updating doc in {name}:', e)
     print(f'Finished collection "{name}" (changed/inserted: {changed})')
+
 
 def main():
     if not os.path.isdir(DATA_DIR):
@@ -122,6 +107,7 @@ def main():
         upsert_collection(db, col_name, data)
 
     print('Import complete.')
+
 
 if __name__ == '__main__':
     main()

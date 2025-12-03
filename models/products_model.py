@@ -12,7 +12,14 @@ load_dotenv()
 
 class ProductsModel:
     def __init__(self):
-        mongo_uri = os.getenv('MONGO_URI', 'mongodb://localhost:27017/smart_grocery')
+        mongo_uri = os.getenv('MONGO_URI') or 'mongodb://localhost:27017/smart_grocery'
+        # sanitize common mistake: remove angle-brackets if user pasted URI with <...>
+        if '<' in mongo_uri or '>' in mongo_uri:
+            mongo_uri = mongo_uri.replace('<', '').replace('>', '')
+            try:
+                os.environ['MONGO_URI'] = mongo_uri
+            except Exception:
+                pass
         database_name = os.getenv('DATABASE_NAME', None)
 
         # Prefer Flask-PyMongo `mongo` if available to reuse the app connection
