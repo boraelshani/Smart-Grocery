@@ -53,10 +53,16 @@
   <section class="container">
     <div class="search-container">
       <div class="search-bar">
-        <input type="text" class="search-input" placeholder="Search for featured deals..." />
-        <button class="search-btn">Search</button>
+        <input id="featured-search-input" type="text" class="search-input" placeholder="Search for products (e.g., milk, bread, eggs)..." autocomplete="off" />
+        <button id="featured-search-btn" class="search-btn">Search</button>
       </div>
     </div>
+  </section>
+
+  <!-- Featured Search Results -->
+  <section class="container py-4" id="featured-search-results-section" style="display:none;">
+    <h3 class="mb-3">Search Results</h3>
+    <div id="featured-search-results" class="row g-4"></div>
   </section>
 
   <!-- Deals Grid -->
