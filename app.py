@@ -1,6 +1,7 @@
 from flask import Flask, jsonify
 import os
 from dotenv import load_dotenv
+from dotenv import load_dotenv
 from routes import main_bp, auth_bp
 from routes.admin_routes import admin_bp
 from utils.db import mongo
@@ -14,6 +15,9 @@ if not os.environ.get('SSL_CERT_FILE'):
     os.environ['SSL_CERT_FILE'] = certifi.where()
 
 # App setup
+# Load environment variables from .env (if present)
+load_dotenv()
+
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key')
 

@@ -276,3 +276,34 @@ def clear_shopping_list():
 def logout():
     session.clear()
     return redirect(url_for('main.home'))
+
+
+@auth_bp.route('/profile/update', methods=['POST'])
+def api_update_profile():
+    if 'user' not in session:
+        return jsonify({'error': 'not_authenticated'}), 401
+    email = session['user']
+    data = request.get_json() or request.form or {}
+    phone = data.get('phone')
+    address = data.get('address')
+    try:
+        if mongo is not None and getattr(mongo, 'db', None) is not None:
+            mongo.db.users.update_one({'email': email}, {'$set': {'phone': phone, 'address': address}}, upsert=True)
+        else:
+            # fallback to in-memory models.users if available
+            try:
+                from models import models as mock_models
+                if getattr(mock_models, 'users', None) is None:
+                    mock_models.users = {}
+                u = mock_models.users.get(email) or {}
+                u['email'] = email
+                if phone is not None:
+                    u['phone'] = phone
+                if address is not None:
+                    u['address'] = address
+                mock_models.users[email] = u
+            except Exception:
+                pass
+        return jsonify({'success': True, 'phone': phone, 'address': address})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500

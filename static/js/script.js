@@ -8,6 +8,8 @@ document.addEventListener('DOMContentLoaded', () => {
   setupClaimButtons();
   setupProductModalHandlers();
   setupStoreSuggestions();
+  setupProfileEditHandlers();
+  setupFeaturedDealsSearch();
 });
 
 // Bootstrap helpers
@@ -409,6 +411,100 @@ function setupProductModalHandlers() {
       return;
     }
   });
+}
+
+// Profile edit handlers: open modal, submit updates to server and update UI
+function setupProfileEditHandlers() {
+  const editBtn = document.getElementById('edit-profile-btn');
+  const saveBtn = document.getElementById('save-profile-btn');
+  const phoneEl = document.getElementById('profile-phone');
+  const addressEl = document.getElementById('profile-address');
+  const phoneInput = document.getElementById('profile-phone-input');
+  const addressInput = document.getElementById('profile-address-input');
+  if (!editBtn || !saveBtn) return;
+
+  editBtn.addEventListener('click', () => {
+    // populate inputs with current values
+    if (phoneEl && phoneInput) phoneInput.value = phoneEl.textContent === 'Not provided' ? '' : phoneEl.textContent;
+    if (addressEl && addressInput) addressInput.value = addressEl.textContent === 'Not provided' ? '' : addressEl.textContent;
+  });
+
+  saveBtn.addEventListener('click', async () => {
+    const phone = phoneInput ? phoneInput.value.trim() : '';
+    const address = addressInput ? addressInput.value.trim() : '';
+    try {
+      const res = await fetch('/profile/update', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ phone, address }) });
+      const j = await res.json().catch(() => ({}));
+      if (res.ok && j && j.success) {
+        // update UI
+        if (phoneEl) phoneEl.textContent = phone || 'Not provided';
+        if (addressEl) addressEl.textContent = address || 'Not provided';
+        // hide modal
+        try { const modal = bootstrap.Modal.getInstance(document.getElementById('profileModal')); if (modal) modal.hide(); } catch (e) {}
+        showNotification('Profile updated', 'success');
+      } else {
+        showNotification(j.error || 'Could not update profile', 'danger');
+      }
+    } catch (err) {
+      showNotification('Server error updating profile', 'danger');
+    }
+  });
+}
+
+// Featured Deals search: search products and render results in featured page
+function setupFeaturedDealsSearch() {
+  const input = document.getElementById('featured-search-input');
+  const btn = document.getElementById('featured-search-btn');
+  const resultsSection = document.getElementById('featured-search-results-section');
+  const resultsContainer = document.getElementById('featured-search-results');
+  if (!input || !btn || !resultsSection || !resultsContainer) return;
+
+  async function doSearch() {
+    const q = input.value.trim();
+    if (!q) { showNotification('Please enter a search term', 'info'); return; }
+    try {
+      const res = await fetch(`/api/search-products?q=${encodeURIComponent(q)}`, { credentials: 'same-origin' });
+      const data = await res.json().catch(() => ({}));
+      const items = data.items || [];
+      resultsContainer.innerHTML = '';
+      if (!items.length) {
+        resultsContainer.innerHTML = `<div class="col-12"><p class="text-muted">Don't have that item.</p></div>`;
+        resultsSection.style.display = 'block';
+        return;
+      }
+
+      items.forEach(it => {
+        const title = it.name || it.title || '';
+        const price = it.price || (it.cheapest && it.cheapest.price) || '';
+        const img = it.image || (it.images && it.images[0]) || 'https://via.placeholder.com/300x200';
+        const store = (it.stores && it.stores[0] && it.stores[0].store) || '';
+        const id = it.id || title;
+        const col = document.createElement('div'); col.className = 'col-md-6 col-lg-4';
+        col.innerHTML = `
+          <div class="card shadow-sm">
+            <img src="${img}" class="card-img-top" alt="${escapeHtml(title)}">
+            <div class="card-body">
+              <h5 class="card-title">${escapeHtml(title)}</h5>
+              <p class="card-text mb-1">${escapeHtml(store)}</p>
+              <p class="card-text text-muted mb-2">${escapeHtml(price)}</p>
+              <div class="d-flex gap-2">
+                <button class="btn btn-sm btn-info view-details-btn" data-bs-toggle="modal" data-bs-target="#productModal" data-id="${escapeHtml(id)}" data-title="${escapeHtml(title)}" data-price="${escapeHtml(price)}" data-store="${escapeHtml(store)}" data-image="${escapeHtml(img)}">View Details</button>
+                <button class="btn btn-sm btn-primary add-to-list-btn" data-id="${escapeHtml(id)}" data-name="${escapeHtml(title)}" data-price="${escapeHtml(price)}">Add to List</button>
+              </div>
+            </div>
+          </div>
+        `;
+        resultsContainer.appendChild(col);
+      });
+      resultsSection.style.display = 'block';
+      try { setupProductModalHandlers(); } catch(e) {}
+    } catch (err) {
+      showNotification('Search failed', 'danger');
+    }
+  }
+
+  btn.addEventListener('click', (e) => { e.preventDefault(); doSearch(); });
+  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); doSearch(); } });
 }
 
 function setupShoppingListInteractions() {
