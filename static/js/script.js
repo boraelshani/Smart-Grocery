@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupClaimButtons();
   setupProductModalHandlers();
   setupStoreSuggestions();
+  setupProfileEditHandlers();
 });
 
 // Bootstrap helpers
@@ -407,6 +408,44 @@ function setupProductModalHandlers() {
         showNotification('Server error adding item', 'danger');
       }
       return;
+    }
+  });
+}
+
+// Profile edit handlers: open modal, submit updates to server and update UI
+function setupProfileEditHandlers() {
+  const editBtn = document.getElementById('edit-profile-btn');
+  const saveBtn = document.getElementById('save-profile-btn');
+  const phoneEl = document.getElementById('profile-phone');
+  const addressEl = document.getElementById('profile-address');
+  const phoneInput = document.getElementById('profile-phone-input');
+  const addressInput = document.getElementById('profile-address-input');
+  if (!editBtn || !saveBtn) return;
+
+  editBtn.addEventListener('click', () => {
+    // populate inputs with current values
+    if (phoneEl && phoneInput) phoneInput.value = phoneEl.textContent === 'Not provided' ? '' : phoneEl.textContent;
+    if (addressEl && addressInput) addressInput.value = addressEl.textContent === 'Not provided' ? '' : addressEl.textContent;
+  });
+
+  saveBtn.addEventListener('click', async () => {
+    const phone = phoneInput ? phoneInput.value.trim() : '';
+    const address = addressInput ? addressInput.value.trim() : '';
+    try {
+      const res = await fetch('/profile/update', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ phone, address }) });
+      const j = await res.json().catch(() => ({}));
+      if (res.ok && j && j.success) {
+        // update UI
+        if (phoneEl) phoneEl.textContent = phone || 'Not provided';
+        if (addressEl) addressEl.textContent = address || 'Not provided';
+        // hide modal
+        try { const modal = bootstrap.Modal.getInstance(document.getElementById('profileModal')); if (modal) modal.hide(); } catch (e) {}
+        showNotification('Profile updated', 'success');
+      } else {
+        showNotification(j.error || 'Could not update profile', 'danger');
+      }
+    } catch (err) {
+      showNotification('Server error updating profile', 'danger');
     }
   });
 }
