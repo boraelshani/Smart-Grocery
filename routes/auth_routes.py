@@ -24,6 +24,33 @@ def login():
     return render_template('login.html')
 
 
+@auth_bp.route('/signup', methods=['GET', 'POST'])
+def signup():
+    if request.method == 'POST':
+        name = request.form.get('name')
+        email = request.form.get('email')
+        password = request.form.get('password')
+        if not email or not password:
+            return render_template('signup.html', error='Email and password required')
+        # build user doc
+        user_doc = {
+            'email': email,
+            'name': name or email,
+            'password': password,
+            'shopping_list': [],
+            'total_cost': 0.0
+        }
+        try:
+            # use users_model helper if available to persist
+            created = users_model.create_user(user_doc)
+            # on success, set session and redirect to home
+            session['user'] = email
+            return redirect(url_for('main.home'))
+        except Exception as e:
+            return render_template('signup.html', error=str(e))
+    return render_template('signup.html')
+
+
 @auth_bp.route('/profile', methods=['POST'])
 def update_profile():
     if 'user' not in session:

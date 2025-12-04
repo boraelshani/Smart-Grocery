@@ -84,5 +84,16 @@ def health():
     except Exception as e:
         return jsonify({'status': 'error', 'mongo': 'disconnected', 'detail': str(e)}), 500
 
+# Temporary test route to insert a small document into Atlas for verification
+@app.route('/add-test')
+def add_test():
+    try:
+        test_data = {"name": "Test Product", "price": 9.99}
+        res = mongo.db.products.insert_one(test_data)
+        return jsonify({'success': True, 'inserted_id': str(res.inserted_id)}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 if __name__ == '__main__':
     app.run(debug=True)
