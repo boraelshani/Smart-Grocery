@@ -1,23 +1,44 @@
 from flask import Flask, jsonify
 import os
 from dotenv import load_dotenv
+from dotenv import load_dotenv
 from routes import main_bp, auth_bp
 from routes.admin_routes import admin_bp
 from utils.db import mongo
+import certifi
 
+# Load .env so MONGO_URI can be provided there during development
+load_dotenv()
+
+# Ensure SSL_CERT_FILE is set for pymongo TLS if not already
+if not os.environ.get('SSL_CERT_FILE'):
+    os.environ['SSL_CERT_FILE'] = certifi.where()
+
+# App setup
 # Load environment variables from .env (if present)
 load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key')
 
-# MongoDB configuration
-# Use `MONGO_URI` environment variable when available (Atlas or custom),
-# otherwise default to a local DB named `smart_grocery`.
-# Read MongoDB connection from environment so credentials are not hardcoded.
-# The app will use the environment variable `MONGO_URI` when present and
-# fall back to a local MongoDB instance for development.
-app.config['MONGO_URI'] = os.environ.get('MONGO_URI', 'mongodb://localhost:27017/smart_grocery')
+# MongoDB configuration: prefer env var (from .env), fall back to local
+raw_uri = os.environ.get('MONGO_URI') or 'mongodb://localhost:27017/smart_grocery'
+# sanitize common mistake: users sometimes paste URI with angle-brackets
+if '<' in raw_uri or '>' in raw_uri:
+    cleaned = raw_uri.replace('<', '').replace('>', '')
+    # do not overwrite user's env permanently; just use cleaned value for app
+    app.config['MONGO_URI'] = cleaned
+    # also set environment so other modules that read os.getenv get the cleaned URI
+    os.environ['MONGO_URI'] = cleaned
+    # print masked host for debugging
+    try:
+        host = cleaned.split('@', 1)[1].split('/', 1)[0]
+    except Exception:
+        host = cleaned
+    print(f"Warning: MONGO_URI contained angle-brackets; using cleaned host={host}")
+else:
+    app.config['MONGO_URI'] = raw_uri
+    os.environ['MONGO_URI'] = raw_uri
 
 # Initialize PyMongo with the Flask app
 mongo.init_app(app)

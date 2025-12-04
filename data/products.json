@@ -1,0 +1,29 @@
+[
+  {
+    "name": "Milk",
+    "unit": "gal",
+    "price": 1.69,
+    "stores": [
+      {"store": "Supermart", "price": 1.99},
+      {"store": "Fresh & Co", "price": 1.69}
+    ]
+  },
+  {
+    "name": "Bread",
+    "unit": "loaf",
+    "price": 2.29,
+    "stores": [
+      {"store": "Supermart", "price": 2.49},
+      {"store": "Fresh & Co", "price": 2.29}
+    ]
+  },
+  {
+    "name": "Eggs",
+    "unit": "dozen",
+    "price": 2.79,
+    "stores": [
+      {"store": "Supermart", "price": 2.99},
+      {"store": "Green Valley", "price": 2.79}
+    ]
+  }
+]

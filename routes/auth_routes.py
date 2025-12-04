@@ -31,23 +31,37 @@ def signup():
         email = request.form.get('email')
         password = request.form.get('password')
         if not email or not password:
-            return render_template('signup.html', error='Email and password required')
-        # build user doc
+            return render_template('signup.html', error='Please provide email and password', name=name, email=email)
+
+        # check whether an account already exists
+        existing = None
+        try:
+            existing = users_model.get_user_by_email(email)
+        except Exception:
+            existing = None
+        if existing:
+            return render_template('signup.html', error='Email already registered', name=name, email=email)
+
+        # create user record
         user_doc = {
             'email': email,
-            'name': name or email,
             'password': password,
+            'name': name or email,
             'shopping_list': [],
             'total_cost': 0.0
         }
         try:
-            # use users_model helper if available to persist
-            created = users_model.create_user(user_doc)
-            # on success, set session and redirect to home
-            session['user'] = email
-            return redirect(url_for('main.home'))
-        except Exception as e:
-            return render_template('signup.html', error=str(e))
+            users_model.create_user(user_doc)
+        except Exception:
+            # try once more, then fail gracefully
+            try:
+                users_model.create_user(user_doc)
+            except Exception:
+                return render_template('signup.html', error='Could not create user', name=name, email=email)
+
+        session['user'] = email
+        return redirect(url_for('main.home'))
+
     return render_template('signup.html')
 
 

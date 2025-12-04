@@ -71,13 +71,13 @@
       {% for deal in deals %}
       <div class="col-md-4">
         <div class="card shadow-sm h-100">
-          <img src="{{ deal.image if deal.image else url_for('static', filename='placeholder.svg') }}" class="card-img-top" alt="{{ deal.title or deal.name }}" style="width:700px;height:700px;object-fit:cover;">
+          <img src="{{ deal.image if deal.image else url_for('static', filename='placeholder.svg') }}" class="card-img-top" alt="{{ deal.title or deal.name }}" style="width:100%;height:250px;object-fit:cover;object-position:center;">
           <div class="card-body">
             <h5 class="card-title">{{ deal.title or deal.name }} - {{ deal.price or '' }}</h5>
             <p class="card-text text-muted">{{ deal.store or deal.source or '' }}</p>
             <p class="card-text text-danger">{{ deal.discount if deal.discount else '' }}</p>
             <button type="button" class="btn btn-sm btn-primary view-details-btn" data-bs-toggle="modal" data-bs-target="#dealModal" data-deal-id="{{ deal.id or deal.title }}" data-title="{{ deal.title or deal.name }}" data-price="{{ deal.price or '' }}" data-store="{{ deal.store or deal.source or '' }}" data-image="{{ deal.image or '' }}">Details</button>
-            <button type="button" class="btn btn-sm btn-success claim-deal-btn" data-id="{{ deal.id or deal.title }}" data-title="{{ deal.title or deal.name }}" data-price="{{ deal.price or '' }}">Claim Deal</button>
+            <button type="button" class="btn btn-sm btn-success claim-deal-btn" data-id="{{ deal.id or deal.title }}" data-title="{{ deal.title or deal.name }}" data-price="{{ deal.price or '' }}">Add to List</button>
           </div>
         </div>
       </div>
@@ -108,7 +108,7 @@
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-          <button type="button" class="btn btn-success">Claim Deal</button>
+          <button type="button" class="btn btn-success">Add to List</button>
         </div>
       </div>
     </div>

@@ -4,13 +4,21 @@ from bson import ObjectId
 import os
 from dotenv import load_dotenv
 from typing import List, Optional
+import certifi
 
 load_dotenv()
 
 
 class FeaturedDealsModel:
     def __init__(self):
-        mongo_uri = os.getenv('MONGO_URI', 'mongodb://localhost:27017/smart_grocery')
+        mongo_uri = os.getenv('MONGO_URI') or 'mongodb://localhost:27017/smart_grocery'
+        # sanitize common mistake: remove angle-brackets if user pasted URI with <...>
+        if '<' in mongo_uri or '>' in mongo_uri:
+            mongo_uri = mongo_uri.replace('<', '').replace('>', '')
+            try:
+                os.environ['MONGO_URI'] = mongo_uri
+            except Exception:
+                pass
         database_name = os.getenv('DATABASE_NAME', None)
         try:
             from utils.db import mongo as flask_mongo
@@ -21,7 +29,11 @@ class FeaturedDealsModel:
             self.db = flask_mongo.db
             self._client = None
         else:
-            self._client = MongoClient(mongo_uri)
+            # use certifi CA bundle for TLS connections
+            try:
+                self._client = MongoClient(mongo_uri, tlsCAFile=certifi.where())
+            except TypeError:
+                self._client = MongoClient(mongo_uri)
             if database_name:
                 self.db = self._client[database_name]
             else:
