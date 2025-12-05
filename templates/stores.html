@@ -50,12 +50,11 @@
   </section>
 
   <!-- Search Bar Section -->
-  <section class="container">
+  <section class="container py-4">
     <div class="search-container">
       <div class="search-bar position-relative" style="max-width:720px;margin:auto;">
         <input id="stores-search-input" type="text" class="search-input form-control" placeholder="Search for stores by name or location..." autocomplete="off" />
         <button id="stores-search-btn" class="search-btn btn btn-primary mt-2">Search</button>
-        <div id="store-suggestions" class="list-group position-absolute" style="top:calc(100% + 6px); left:0; right:0; display:none; z-index:1200; max-height:240px; overflow:auto;"></div>
       </div>
     </div>
   </section>
@@ -66,58 +65,50 @@
     <!-- Selected store detail (shown when a user selects a store) -->
     <div id="store-detail" class="mb-4" style="display:none;"></div>
     <div id="stores-grid" class="row g-4">
-      <!-- Store Card -->
-      <div class="col-md-4">
-        <div class="card shadow-sm h-100">
-          <img src="https://via.placeholder.com/300x200" class="card-img-top" alt="FreshMart">
-          <div class="card-body">
-            <h5 class="card-title">FreshMart</h5>
-            <p class="card-text text-muted">Distance: 0.5 mi</p>
-            <p class="card-text text-success">Hours: 8am - 9pm</p>
-            <p class="card-text"><strong class="text-primary">10</strong> active deals</p>
+      <!-- Stores loaded from database -->
+      {% if stores %}
+        {% for store in stores %}
+          <div class="col-md-4">
+            <div class="card shadow-sm h-100 d-flex flex-column">
+              <img src="{{ store.image or 'https://via.placeholder.com/300x200' }}" class="card-img-top" alt="{{ store.name }}" style="height: 200px; object-fit: cover;">
+              <div class="card-body d-flex flex-column">
+                <h5 class="card-title">{{ store.name }}</h5>
+                {% if store.distance %}
+                  <p class="card-text text-muted">Distance: {{ store.distance }} mi</p>
+                {% endif %}
+                {% if store.hours %}
+                  <p class="card-text text-success">Hours: {{ store.hours }}</p>
+                {% endif %}
+                {% if store.url %}
+                  <a href="{{ store.url }}" target="_blank" class="btn btn-primary btn-sm mt-auto">Visit Store</a>
+                {% endif %}
+              </div>
+            </div>
           </div>
+        {% endfor %}
+      {% else %}
+        <div class="col-12">
+          <p class="text-muted text-center">No stores available. Please check back later.</p>
         </div>
-      </div>
-      <!-- Another Store -->
-      <div class="col-md-4">
-        <div class="card shadow-sm h-100">
-          <img src="https://via.placeholder.com/300x200" class="card-img-top" alt="GreenGrocer">
-          <div class="card-body">
-            <h5 class="card-title">GreenGrocer</h5>
-            <p class="card-text text-muted">Distance: 1.2 mi</p>
-            <p class="card-text text-success">Hours: 7am - 10pm</p>
-            <p class="card-text"><strong class="text-primary">8</strong> active deals</p>
-          </div>
-        </div>
-      </div>
-      <!-- Another Store -->
-      <div class="col-md-4">
-        <div class="card shadow-sm h-100">
-          <img src="https://via.placeholder.com/300x200" class="card-img-top" alt="SaveMore">
-          <div class="card-body">
-            <h5 class="card-title">SaveMore</h5>
-            <p class="card-text text-muted">Distance: 0.8 mi</p>
-            <p class="card-text text-success">Hours: 9am - 8pm</p>
-            <p class="card-text"><strong class="text-primary">5</strong> active deals</p>
-          </div>
-        </div>
-      </div>
+      {% endif %}
     </div>
 
-    <!-- Pagination -->
-    <nav aria-label="Page navigation" class="mt-5">
-      <ul class="pagination justify-content-center">
-        <li class="page-item disabled">
-          <a class="page-link" href="#" tabindex="-1">Previous</a>
-        </li>
-        <li class="page-item active"><a class="page-link" href="#">1</a></li>
-        <li class="page-item"><a class="page-link" href="#">2</a></li>
-        <li class="page-item"><a class="page-link" href="#">3</a></li>
-        <li class="page-item">
-          <a class="page-link" href="#">Next</a>
-        </li>
-      </ul>
-    </nav>
+    <!-- Pagination (hidden if no stores) -->
+    {% if stores %}
+      <nav aria-label="Page navigation" class="mt-5">
+        <ul class="pagination justify-content-center">
+          <li class="page-item disabled">
+            <a class="page-link" href="#" tabindex="-1">Previous</a>
+          </li>
+          <li class="page-item active"><a class="page-link" href="#">1</a></li>
+          <li class="page-item"><a class="page-link" href="#">2</a></li>
+          <li class="page-item"><a class="page-link" href="#">3</a></li>
+          <li class="page-item">
+            <a class="page-link" href="#">Next</a>
+          </li>
+        </ul>
+      </nav>
+    {% endif %}
   </section>
 
   <!-- Footer -->
