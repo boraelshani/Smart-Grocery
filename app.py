@@ -1,35 +1,40 @@
 from flask import Flask, jsonify
 import os
-from dotenv import load_dotenv
-from dotenv import load_dotenv
-from routes import main_bp, auth_bp
-from routes.admin_routes import admin_bp
-from utils.db import mongo
 import certifi
+from dotenv import load_dotenv, find_dotenv
 
-# Load .env so MONGO_URI can be provided there during development
-load_dotenv()
+# Load .env as early as possible so any modules imported afterwards see the variables
+dotenv_path = find_dotenv('.env', usecwd=True)
+if dotenv_path:
+    load_dotenv(dotenv_path, override=True)
+    print(f'INFO: Loaded .env from {dotenv_path}')
+else:
+    print('INFO: No .env file found in project root')
 
 # Ensure SSL_CERT_FILE is set for pymongo TLS if not already
 if not os.environ.get('SSL_CERT_FILE'):
     os.environ['SSL_CERT_FILE'] = certifi.where()
 
-# App setup
-# Load environment variables from .env (if present)
-load_dotenv()
+from utils.db import mongo
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key')
 
-# MongoDB configuration: prefer env var (from .env), fall back to local
-raw_uri = os.environ.get('MONGO_URI') or 'mongodb://localhost:27017/smart_grocery'
+# MongoDB configuration: prefer MONGO_URI from the .env we just loaded (if present),
+# otherwise fall back to process environment or local MongoDB.
+dotenv_uri = None
+try:
+    # if .env exists and provided MONGO_URI, prefer that (we loaded it with override=True above)
+    dotenv_uri = os.environ.get('MONGO_URI')
+except Exception:
+    dotenv_uri = None
+
+raw_uri = dotenv_uri or os.environ.get('MONGO_URI') or 'mongodb://localhost:27017/smart_grocery'
 # sanitize common mistake: users sometimes paste URI with angle-brackets
 if '<' in raw_uri or '>' in raw_uri:
     cleaned = raw_uri.replace('<', '').replace('>', '')
-    # do not overwrite user's env permanently; just use cleaned value for app
+    # use cleaned value for app config but do NOT overwrite the process environment
     app.config['MONGO_URI'] = cleaned
-    # also set environment so other modules that read os.getenv get the cleaned URI
-    os.environ['MONGO_URI'] = cleaned
     # print masked host for debugging
     try:
         host = cleaned.split('@', 1)[1].split('/', 1)[0]
@@ -38,10 +43,42 @@ if '<' in raw_uri or '>' in raw_uri:
     print(f"Warning: MONGO_URI contained angle-brackets; using cleaned host={host}")
 else:
     app.config['MONGO_URI'] = raw_uri
-    os.environ['MONGO_URI'] = raw_uri
+
+uri = app.config.get('MONGO_URI') or os.environ.get('MONGO_URI')
+if uri:
+    try:
+        if uri.rstrip().endswith('/') or '/' not in uri.split('@')[-1]:
+            app.config.setdefault('MONGO_DBNAME', 'smart_grocery')
+            print('INFO: MONGO_URI had no DB path; setting MONGO_DBNAME=smart_grocery')
+    except Exception:
+        pass
 
 # Initialize PyMongo with the Flask app
 mongo.init_app(app)
+
+# Now import the blueprints (after PyMongo initialized) so routes can safely access `mongo`
+from routes import main_bp, auth_bp
+from routes.admin_routes import admin_bp
+
+# Log which DB and collections we're connected to (helpful to debug wrong DB selection)
+try:
+    # prefer explicit MONGO_DBNAME config, otherwise inspect the client's default DB
+    db_name = app.config.get('MONGO_DBNAME') or (getattr(mongo, 'db', None) and getattr(mongo.db, 'name', None))
+    print(f'INFO: Using MONGO_URI={app.config.get("MONGO_URI")}, MONGO_DBNAME={db_name}')
+    if getattr(mongo, 'db', None) is not None:
+        try:
+            cols = mongo.db.list_collection_names()
+            print('INFO: Collections in DB:', cols)
+            for c in cols:
+                try:
+                    cnt = mongo.db[c].count_documents({})
+                except Exception as e:
+                    cnt = f'error:{e}'
+                print(f'  - {c}: {cnt}')
+        except Exception as e:
+            print('INFO: Could not list collections:', e)
+except Exception as e:
+    print('INFO: MongoDB introspection failed at startup:', e)
 
 # Ensure users.email has a unique index to prevent duplicate accounts when using MongoDB
 try:
@@ -104,6 +141,34 @@ def health():
         return jsonify({'status': 'ok', 'mongo': 'connected'}), 200
     except Exception as e:
         return jsonify({'status': 'error', 'mongo': 'disconnected', 'detail': str(e)}), 500
+
+
+@app.route('/debug-mongo')
+def debug_mongo():
+    # Return config and client info so we can tell which host/DB the app connected to
+    info = {'app_config_mongo_uri': app.config.get('MONGO_URI'), 'app_config_dbname': app.config.get('MONGO_DBNAME')}
+    try:
+        if getattr(mongo, 'db', None) is not None:
+            info['mongo_db_name'] = getattr(mongo.db, 'name', None)
+            try:
+                # try to reach the server and show the client addresses
+                client = getattr(mongo, 'cx', None) or getattr(mongo, 'client', None) or getattr(mongo, '_client', None)
+                if client is None:
+                    try:
+                        client = mongo.db.client
+                    except Exception:
+                        client = None
+                if client is not None:
+                    try:
+                        # list hosts/servers
+                        info['client_info'] = str(getattr(client, 'address', getattr(client, 'hosts', getattr(client, 'nodes', None))))
+                    except Exception as ex:
+                        info['client_info_error'] = str(ex)
+            except Exception:
+                pass
+    except Exception as e:
+        info['error'] = str(e)
+    return jsonify(info)
 
 # Temporary test route to insert a small document into Atlas for verification
 @app.route('/add-test')

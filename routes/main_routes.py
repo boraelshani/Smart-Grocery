@@ -1,4 +1,4 @@
-from flask import render_template, jsonify, session, request
+from flask import render_template, jsonify, session, request, current_app
 from . import main_bp
 from models import models as m
 from bson.decimal128 import Decimal128
@@ -10,6 +10,55 @@ except Exception:
     HAS_DB = False
 import re
 
+def _db_available():
+    return HAS_DB and mongo is not None and getattr(mongo, 'db', None) is not None
+
+
+def get_db():
+    """Return a working pymongo Database instance. Prefer the Flask-PyMongo `mongo.db` when available;
+    otherwise open a fresh MongoClient using the configured URI in the app config or environment.
+    """
+    try:
+        if _db_available():
+            return mongo.db
+    except Exception:
+        pass
+    # fallback: try direct MongoClient using configured URI
+    try:
+        from pymongo import MongoClient
+        import os
+        # ensure .env is loaded here too (override any process env) so we consistently prefer it
+        try:
+            from dotenv import load_dotenv, find_dotenv
+            dotenv_path = find_dotenv('.env', usecwd=True)
+            if dotenv_path:
+                load_dotenv(dotenv_path, override=True)
+        except Exception:
+            pass
+        # prefer the Flask app config, otherwise read from .env (now loaded) or process env
+        uri = current_app.config.get('MONGO_URI') or os.environ.get('MONGO_URI')
+        # If this is an Atlas SRV URI, ensure TLS and CA file are provided to avoid SSL issues
+        try:
+            import certifi
+            if isinstance(uri, str) and uri.startswith('mongodb+srv://'):
+                client = MongoClient(uri, tls=True, tlsCAFile=certifi.where(), serverSelectionTimeoutMS=5000)
+            else:
+                client = MongoClient(uri, serverSelectionTimeoutMS=5000)
+        except Exception:
+            client = MongoClient(uri, serverSelectionTimeoutMS=5000)
+        dbname = current_app.config.get('MONGO_DBNAME')
+        if not dbname:
+            try:
+                default = client.get_default_database()
+                dbname = getattr(default, 'name', None) or 'smart_grocery'
+            except Exception:
+                dbname = 'smart_grocery'
+        return client[dbname]
+    except Exception as e:
+        print('ERROR: get_db() failed to create MongoClient:', e)
+        return None
+
+
 @main_bp.route('/')
 def home():
     # If the user is not signed in, show the entry page prompting Log In / Sign Up
@@ -18,74 +67,116 @@ def home():
         return render_template('entry.html')
 
     # Load stores/products/deals from MongoDB when available, otherwise use in-memory mocks
-    if HAS_DB and mongo is not None and getattr(mongo, 'db', None) is not None:
-        stores = list(mongo.db.stores.find({}))
-        products = list(mongo.db.products.find({}))
-        featured_deals = list(mongo.db.featured_deals.find({}))
+    using_fallback = False
+    db = get_db()
+    if db is not None:
+        try:
+            stores = list(db.stores.find({}))
+            products = list(db.products.find({}))
+            featured_deals = list(db.featured_deals.find({}))
+        except Exception:
+            stores = products = featured_deals = []
         # convert ObjectId to string id for templates
         for doc_list in (stores, products, featured_deals):
             for d in doc_list:
                 if '_id' in d:
                     d['id'] = str(d['_id'])
     else:
+        using_fallback = True
+        print('WARNING: Using in-memory fallback data for home page (DB unavailable)')
         stores = getattr(m, 'stores', [])
         products = getattr(m, 'products', [])
         featured_deals = getattr(m, 'featured_deals', [])
 
-    return render_template('home.html', stores=stores, products=products, featured_deals=featured_deals)
+    return render_template('home.html', stores=stores, products=products, featured_deals=featured_deals, using_fallback=using_fallback)
 
 @main_bp.route('/stores')
 def stores_page():
-    if HAS_DB and mongo is not None and getattr(mongo, 'db', None) is not None:
-        stores = list(mongo.db.stores.find({}))
-        for s in stores:
-            if '_id' in s:
-                s['id'] = str(s['_id'])
+    using_fallback = False
+    db = get_db()
+    if db is not None:
+        try:
+            stores = list(db.stores.find({}))
+            for s in stores:
+                if '_id' in s:
+                    s['id'] = str(s['_id'])
+        except Exception:
+            using_fallback = True
+            print('WARNING: Using in-memory fallback data for stores page (DB query failed)')
+            stores = getattr(m, 'stores', [])
     else:
+        using_fallback = True
+        print('WARNING: Using in-memory fallback data for stores page (DB unavailable)')
         stores = getattr(m, 'stores', [])
-    return render_template('stores.html', stores=stores)
+    return render_template('stores.html', stores=stores, using_fallback=using_fallback)
 
 @main_bp.route('/featured-deals')
 def featured_deals_page():
-    if HAS_DB and mongo is not None and getattr(mongo, 'db', None) is not None:
-        deals = list(mongo.db.featured_deals.find({}))
-        for d in deals:
-            if '_id' in d:
-                d['id'] = str(d['_id'])
+    using_fallback = False
+    db = get_db()
+    if db is not None:
+        try:
+            deals = list(db.featured_deals.find({}))
+            for d in deals:
+                if '_id' in d:
+                    d['id'] = str(d['_id'])
+        except Exception:
+            using_fallback = True
+            print('WARNING: Using in-memory fallback data for featured deals (DB query failed)')
+            deals = getattr(m, 'featured_deals', [])
     else:
+        using_fallback = True
+        print('WARNING: Using in-memory fallback data for featured deals (DB unavailable)')
         deals = getattr(m, 'featured_deals', [])
-    return render_template('featured_deals.html', deals=deals)
+    return render_template('featured_deals.html', deals=deals, using_fallback=using_fallback)
 
 @main_bp.route('/compare-prices')
 def compare_prices():
-    if HAS_DB and mongo is not None and getattr(mongo, 'db', None) is not None:
-        products = list(mongo.db.products.find({}))
-        for p in products:
-            if '_id' in p:
-                p['id'] = str(p['_id'])
+    using_fallback = False
+    db = get_db()
+    if db is not None:
+        try:
+            products = list(db.products.find({}))
+            for p in products:
+                if '_id' in p:
+                    p['id'] = str(p['_id'])
+        except Exception:
+            using_fallback = True
+            print('WARNING: Using in-memory fallback data for compare-prices (DB query failed)')
+            products = getattr(m, 'products', [])
     else:
+        using_fallback = True
+        print('WARNING: Using in-memory fallback data for compare-prices (DB unavailable)')
         products = getattr(m, 'products', [])
-    return render_template('compare_prices.html', products=products)
+    return render_template('compare_prices.html', products=products, using_fallback=using_fallback)
 
 @main_bp.route('/shopping-list')
 def shopping_list():
     user_email = session.get('user')
-    if HAS_DB and mongo is not None and getattr(mongo, 'db', None) is not None and user_email:
-        user = mongo.db.users.find_one({'email': user_email})
-        if user and '_id' in user:
-            user['id'] = str(user['_id'])
-        user_data = user or {}
+    db = get_db()
+    if db is not None and user_email:
+        try:
+            user = db.users.find_one({'email': user_email})
+            if user and '_id' in user:
+                user['id'] = str(user['_id'])
+            user_data = user or {}
+        except Exception:
+            user_data = getattr(m, 'users', {}).get('user1@example.com', {})
     else:
         user_data = getattr(m, 'users', {}).get('user1@example.com', {})
     # Build items list with price/store information for the template
     shopping_entries = user_data.get('shopping_list', []) if isinstance(user_data, dict) else []
 
     # load products to try to find prices
-    if HAS_DB and mongo is not None and getattr(mongo, 'db', None) is not None:
-        products = list(mongo.db.products.find({}))
-        for p in products:
-            if '_id' in p:
-                p['id'] = str(p['_id'])
+    db = get_db()
+    if db is not None:
+        try:
+            products = list(db.products.find({}))
+            for p in products:
+                if '_id' in p:
+                    p['id'] = str(p['_id'])
+        except Exception:
+            products = getattr(m, 'products', [])
     else:
         products = getattr(m, 'products', [])
 
@@ -215,7 +306,7 @@ def shopping_list():
 @main_bp.route('/profile')
 def profile():
     user_email = session.get('user')
-    if HAS_DB and mongo is not None and getattr(mongo, 'db', None) is not None and user_email:
+    if _db_available() and user_email:
         user = mongo.db.users.find_one({'email': user_email})
         if user and '_id' in user:
             user['id'] = str(user['_id'])
@@ -234,14 +325,23 @@ def admin_status():
     """Return JSON with collection counts so you can verify DB connectivity."""
     collections = ['products', 'stores', 'featured_deals', 'users']
     counts = {}
-    if HAS_DB and mongo is not None and getattr(mongo, 'db', None) is not None:
-        try:
-            for c in collections:
-                counts[c] = int(mongo.db[c].count_documents({}))
-        except Exception as e:
-            return jsonify({'error': str(e)}), 500
-    else:
+    # Prefer directly opening a MongoClient with the app-configured URI so we reliably
+    # query the intended Atlas cluster (avoids any Flask-PyMongo initialization quirks).
+    try:
+        from pymongo import MongoClient
+        import certifi
+        uri = current_app.config.get('MONGO_URI')
+        dbname = current_app.config.get('MONGO_DBNAME') or 'smart_grocery'
+        if isinstance(uri, str) and uri.startswith('mongodb+srv://'):
+            client = MongoClient(uri, tls=True, tlsCAFile=certifi.where(), serverSelectionTimeoutMS=5000)
+        else:
+            client = MongoClient(uri, serverSelectionTimeoutMS=5000)
+        db = client[dbname]
+        for c in collections:
+            counts[c] = int(db[c].count_documents({}))
+    except Exception as e:
         # fallback to in-memory mock data
+        print('WARNING: admin_status could not query MongoDB directly:', e)
         counts['products'] = len(getattr(m, 'products', []))
         counts['stores'] = len(getattr(m, 'stores', []))
         counts['featured_deals'] = len(getattr(m, 'featured_deals', []))
@@ -261,7 +361,7 @@ def api_search_products():
 
     results = []
     try:
-        if HAS_DB and mongo is not None and getattr(mongo, 'db', None) is not None:
+        if _db_available():
             # case-insensitive regex search on 'name' field
             regex = {'$regex': q, '$options': 'i'}
             cursor = mongo.db.products.find({'name': regex}).limit(50)
@@ -289,7 +389,8 @@ def api_search_products():
                     d['id'] = str(d['_id'])
                 results.append(d)
         else:
-            # fallback to in-memory search
+            # fallback to in-memory search (log this so it's visible)
+            print('WARNING: api_search_products used fallback in-memory products (DB unavailable)')
             for p in getattr(m, 'products', []):
                 name = p.get('name', '')
                 if q.lower() in str(name).lower():

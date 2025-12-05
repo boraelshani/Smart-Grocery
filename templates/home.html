@@ -72,6 +72,12 @@
     <div id="search-results" class="row g-4"></div>
   </section>
 
+  {% if using_fallback %}
+  <section class="container py-2">
+    <div class="alert alert-warning" role="alert">Warning: using local fallback data — database unavailable.</div>
+  </section>
+  {% endif %}
+
   <!-- Featured deals section -->
   <section class="container py-5">
     <h2 class="mb-4">Featured Deals</h2>
