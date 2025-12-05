@@ -690,7 +690,13 @@ function setupProfileEditHandlers() {
 function setupFeaturedDealsSearch() {
   const input = document.getElementById('featured-search-input');
   const btn = document.getElementById('featured-search-btn');
-  const dealsGrid = document.getElementById('featured-deals-grid') || document.querySelector('section.container .row.g-4');
+  // Find the products grid on Featured Deals page (look for grid with products that have data-name)
+  let dealsGrid = document.getElementById('products-grid');
+  // If on home page, look for the main products grid
+  if (!dealsGrid) {
+    dealsGrid = document.querySelector('section.container .row.g-4');
+  }
+  
   const applyFiltersBtn = document.getElementById('apply-filters');
   const clearFiltersBtn = document.getElementById('clear-filters');
   const minPrice = document.getElementById('min-price');
@@ -702,7 +708,7 @@ function setupFeaturedDealsSearch() {
   let allDeals = [];
 
   const collectAllDeals = () => {
-    allDeals = Array.from(dealsGrid.querySelectorAll('[class*="col"]'));
+    allDeals = Array.from(dealsGrid.querySelectorAll('[data-name]'));
   };
 
   const parsePrice = (v) => { 
@@ -719,11 +725,9 @@ function setupFeaturedDealsSearch() {
     const visible = [];
     allDeals.forEach(col => {
       if (!col) return;
-      const card = col.querySelector('.card');
-      if (!card) return;
       
-      const productName = (card.getAttribute('data-name') || card.querySelector('.card-title')?.textContent || '').toLowerCase();
-      const priceText = card.getAttribute('data-price') || card.querySelector('[class*="price"]')?.textContent || '0';
+      const productName = (col.getAttribute('data-name') || '').toLowerCase();
+      const priceText = col.getAttribute('data-price') || '0';
       const price = parsePrice(priceText);
 
       // search match
