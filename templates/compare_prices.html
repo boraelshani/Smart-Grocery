@@ -37,19 +37,71 @@
   </section>
 
   <section class="container py-4">
+    <!-- Filters: store, price range, sort -->
+    <div class="row mb-3">
+      <div class="col-12">
+        <div class="card p-3">
+          <div class="row g-2 align-items-end">
+            <div class="col-sm-4">
+              <label class="form-label mb-1">Store</label>
+              <select id="store-filter" class="form-select">
+                <option value="">All stores</option>
+              </select>
+            </div>
+            <div class="col-sm-3">
+              <label class="form-label mb-1">Min price</label>
+              <input id="min-price" type="number" step="0.01" class="form-control" placeholder="0.00">
+            </div>
+            <div class="col-sm-3">
+              <label class="form-label mb-1">Max price</label>
+              <input id="max-price" type="number" step="0.01" class="form-control" placeholder="0.00">
+            </div>
+            <div class="col-sm-2">
+              <label class="form-label mb-1">Sort</label>
+              <select id="sort-order" class="form-select">
+                <option value="price-asc">Price: low → high</option>
+                <option value="price-desc">Price: high → low</option>
+                <option value="name-asc">Name: A → Z</option>
+                <option value="name-desc">Name: Z → A</option>
+              </select>
+            </div>
+            <div class="col-12 mt-2">
+              <button id="apply-filters" class="btn btn-primary btn-sm">Apply</button>
+              <button id="clear-filters" class="btn btn-outline-secondary btn-sm">Clear</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="row g-4">
       {% if products %}
         {% for p in products %}
           <div class="col-md-6 col-lg-4">
-            <div class="card shadow-sm h-100">
-              <img src="{{ p.get('image') or (p.get('images') and p.get('images')[0]) or url_for('static', filename='placeholder.svg') }}" class="card-img-top" alt="{{ p.get('name') or p.get('title','Product') }}" style="width:700px;height:700px;object-fit:cover;">
+            <div class="card shadow-sm h-100" data-stores='{{ p.get("stores")|tojson }}' data-price="{{ (p.get('cheapest') and p.get('cheapest').get('price')) or p.get('price','') }}" data-name="{{ p.get('name')|e }}">
+              <img src="{{ p.get('image') or (p.get('images') and p.get('images')[0]) or url_for('static', filename='placeholder.svg') }}" class="card-img-top product-thumb" alt="{{ p.get('name') or p.get('title','Product') }}">
               <div class="card-body">
                 <h5 class="card-title">{{ p.get('name') or p.get('title','') }}</h5>
                 <p class="card-text mb-1">Category: {{ p.get('category','') }}</p>
+                <div class="d-flex gap-2 mb-2">
+                  <button class="btn btn-outline-secondary btn-sm sort-stores-btn" type="button">Sort stores by price</button>
+                  <a class="btn btn-outline-primary btn-sm" href="{{ url_for('main.api_get_product') }}?id={{ p.get('id') }}" target="_blank">Open product</a>
+                </div>
                 <ul class="list-group list-group-flush mb-2">
                   {% if p.get('stores') %}
                     {% for s in p.get('stores')[:3] %}
-                      <li class="list-group-item">{{ s.get('store') or s.get('name') }}: {{ s.get('price') }} {% if s.get('discount') %}<span class="badge bg-success float-end">{{ s.get('discount') }}</span>{% endif %}</li>
+                      <li class="list-group-item d-flex align-items-center">
+                        <img src="{{ s.get('logo') or url_for('static', filename='placeholder.svg') }}" alt="{{ s.get('store') or s.get('name') }}" style="width:32px;height:32px;object-fit:contain;margin-right:8px;"/>
+                        <div class="flex-grow-1">
+                          {% if s.get('url') %}
+                            <a href="{{ s.get('url') }}" target="_blank" rel="noopener noreferrer">{{ s.get('store') or s.get('name') }}</a>
+                          {% else %}
+                            {{ s.get('store') or s.get('name') }}
+                          {% endif %}
+                          : {{ s.get('price') }}
+                        </div>
+                        {% if s.get('discount') %}<span class="badge bg-success ms-2">{{ s.get('discount') }}</span>{% endif %}
+                      </li>
                     {% endfor %}
                   {% endif %}
                 </ul>

@@ -169,6 +169,14 @@ def add_shopping_item():
                                 item['id'] = str(prod.get('id'))
                         except Exception:
                             pass
+                        # include image if product provides one
+                        try:
+                            if prod.get('image'):
+                                item['image'] = prod.get('image')
+                            elif prod.get('images') and isinstance(prod.get('images'), list) and len(prod.get('images')):
+                                item['image'] = prod.get('images')[0]
+                        except Exception:
+                            pass
             except Exception:
                 # enrichment should never block adding; ignore errors
                 pass

@@ -1,29 +1,80 @@
 [
   {
     "name": "Milk",
-    "unit": "gal",
+    "unit": "1L",
+    "image": "https://via.placeholder.com/400x300?text=Milk+1L",
     "price": 1.69,
+    "category": "Dairy",
+    "description": "1L whole milk, fresh from local dairies.",
     "stores": [
-      {"store": "Supermart", "price": 1.99},
-      {"store": "Fresh & Co", "price": 1.69}
-    ]
+      {"store": "Supermart", "price": 1.99, "url": "https://supermart.example/product/milk-1l", "logo": "https://supermart.example/logo.png"},
+      {"store": "Fresh & Co", "price": 1.69, "url": "https://freshco.example/product/milk-1l", "logo": "https://freshco.example/logo.png"}
+    ],
+    "cheapest": {"price": 1.69, "store": "Fresh & Co"}
   },
   {
     "name": "Bread",
     "unit": "loaf",
+    "image": "https://via.placeholder.com/400x300?text=Bread",
     "price": 2.29,
+    "category": "Bakery",
+    "description": "Fresh baked whole wheat loaf.",
     "stores": [
-      {"store": "Supermart", "price": 2.49},
-      {"store": "Fresh & Co", "price": 2.29}
-    ]
+      {"store": "Supermart", "price": 2.49, "url": "https://supermart.example/product/bread-loaf", "logo": "https://supermart.example/logo.png"},
+      {"store": "Fresh & Co", "price": 2.29, "url": "https://freshco.example/product/bread-loaf", "logo": "https://freshco.example/logo.png"}
+    ],
+    "cheapest": {"price": 2.29, "store": "Fresh & Co"}
   },
   {
     "name": "Eggs",
     "unit": "dozen",
+    "image": "https://via.placeholder.com/400x300?text=Eggs",
     "price": 2.79,
+    "category": "Dairy",
+    "description": "Large eggs, dozen pack.",
     "stores": [
-      {"store": "Supermart", "price": 2.99},
-      {"store": "Green Valley", "price": 2.79}
-    ]
+      {"store": "Supermart", "price": 2.99, "url": "https://supermart.example/product/eggs-dozen", "logo": "https://supermart.example/logo.png"},
+      {"store": "Green Valley", "price": 2.79, "url": "https://greenvalley.example/product/eggs-dozen", "logo": "https://greenvalley.example/logo.png"}
+    ],
+    "cheapest": {"price": 2.79, "store": "Green Valley"}
+  },
+  {
+    "name": "Bananas",
+    "unit": "kg",
+    "image": "https://via.placeholder.com/400x300?text=Bananas",
+    "price": 1.49,
+    "category": "Produce",
+    "description": "Fresh bananas, per kg.",
+    "stores": [
+      {"store": "Green Valley", "price": 1.49, "url": "https://greenvalley.example/product/bananas", "logo": "https://greenvalley.example/logo.png"},
+      {"store": "Fresh & Co", "price": 1.79, "url": "https://freshco.example/product/bananas", "logo": "https://freshco.example/logo.png"}
+    ],
+    "cheapest": {"price": 1.49, "store": "Green Valley"}
+  },
+  {
+    "name": "Toilet Paper 12-pack",
+    "unit": "pack",
+    "image": "https://via.placeholder.com/400x300?text=Toilet+Paper",
+    "price": 9.99,
+    "category": "Household",
+    "description": "Soft 12-roll pack, 2-ply.",
+    "stores": [
+      {"store": "Supermart", "price": 9.99, "url": "https://supermart.example/product/tp-12", "logo": "https://supermart.example/logo.png"},
+      {"store": "BigBox", "price": 8.49, "url": "https://bigbox.example/product/tp-12", "logo": "https://bigbox.example/logo.png"}
+    ],
+    "cheapest": {"price": 8.49, "store": "BigBox"}
+  },
+  {
+    "name": "Extra Virgin Olive Oil 500ml",
+    "unit": "500ml",
+    "image": "https://via.placeholder.com/400x300?text=Olive+Oil",
+    "price": 12.5,
+    "category": "Pantry",
+    "description": "Cold-pressed extra virgin olive oil, 500ml.",
+    "stores": [
+      {"store": "Fresh & Co", "price": 12.5, "url": "https://freshco.example/product/olive-oil-500", "logo": "https://freshco.example/logo.png"},
+      {"store": "Gourmet Market", "price": 11.99, "url": "https://gourmet.example/product/olive-oil-500", "logo": "https://gourmet.example/logo.png"}
+    ],
+    "cheapest": {"price": 11.99, "store": "Gourmet Market"}
   }
 ]

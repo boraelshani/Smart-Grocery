@@ -10,6 +10,8 @@ document.addEventListener('DOMContentLoaded', () => {
   setupStoreSuggestions();
   setupProfileEditHandlers();
   setupFeaturedDealsSearch();
+  setupCompareHandlers();
+  setupCompareFilters();
 });
 
 // Bootstrap helpers
@@ -18,7 +20,143 @@ function initializeBootstrapComponents() {
   tooltipTriggerList.map(function (tooltipTriggerEl) { return new bootstrap.Tooltip(tooltipTriggerEl); });
 }
 
+// Compare page: sort the rendered store list items by numeric price (client-side)
+function setupCompareHandlers() {
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('.sort-stores-btn');
+    if (!btn) return;
+    const card = btn.closest('.card');
+    if (!card) return;
+    const list = card.querySelector('.list-group');
+    if (!list) return;
+    const items = Array.from(list.querySelectorAll('li'));
+    function parsePriceFromText(text) {
+      if (!text) return Number.POSITIVE_INFINITY;
+      const m = String(text).match(/\d+[\d,.]*/);
+      if (!m) return Number.POSITIVE_INFINITY;
+      const cleaned = m[0].replace(/,/g, '');
+      const n = Number(cleaned);
+      return isNaN(n) ? Number.POSITIVE_INFINITY : n;
+    }
+    // map items to [node, price]
+    const mapped = items.map(li => {
+      const priceText = li.textContent || li.innerText || '';
+      return { node: li, price: parsePriceFromText(priceText) };
+    });
+    mapped.sort((a,b) => a.price - b.price);
+    // clear existing list and append sorted nodes
+    list.innerHTML = '';
+    mapped.forEach((m, idx) => {
+      // add a 'Best Price' badge to the first item
+      if (idx === 0) {
+        // ensure a badge exists
+        if (!m.node.querySelector('.best-price-badge')) {
+          const span = document.createElement('span');
+          span.className = 'badge bg-warning text-dark ms-2 best-price-badge';
+          span.textContent = 'Best Price';
+          // try to append to end of item
+          m.node.appendChild(span);
+        }
+      } else {
+        const existing = m.node.querySelector('.best-price-badge'); if (existing) existing.remove();
+      }
+      list.appendChild(m.node);
+    });
+  });
+}
+
 // Search stub
+// Client-side filters and sorting for the Compare page
+function setupCompareFilters() {
+  const productsRow = document.querySelector('section.container .row.g-4');
+  if (!productsRow) return;
+
+  const storeSelect = document.getElementById('store-filter');
+  const minInput = document.getElementById('min-price');
+  const maxInput = document.getElementById('max-price');
+  const sortSelect = document.getElementById('sort-order');
+  const applyBtn = document.getElementById('apply-filters');
+  const clearBtn = document.getElementById('clear-filters');
+
+  // collect available stores from rendered cards
+  const collectStores = () => {
+    const cards = Array.from(productsRow.querySelectorAll('.card[data-stores]'));
+    const set = new Set();
+    cards.forEach(c => {
+      try {
+        const stores = JSON.parse(c.getAttribute('data-stores') || '[]');
+        stores.forEach(s => { if (s && (s.store || s.name)) set.add((s.store||s.name).trim()); });
+      } catch (e) { }
+    });
+    // populate select
+    if (!storeSelect) return;
+    const existing = new Set(Array.from(storeSelect.options).map(o => o.value));
+    set.forEach(name => { if (!existing.has(name)) { const opt = document.createElement('option'); opt.value = name; opt.textContent = name; storeSelect.appendChild(opt); } });
+  };
+
+  const parsePrice = (v) => { if (v === null || v === undefined || v === '') return Number.POSITIVE_INFINITY; const n = Number(String(v).toString().replace(/[^0-9.\-]/g, '')); return isNaN(n) ? Number.POSITIVE_INFINITY : n; };
+
+  const applyFilters = () => {
+    const storeVal = storeSelect ? storeSelect.value : '';
+    const minVal = minInput ? parseFloat(minInput.value) : NaN;
+    const maxVal = maxInput ? parseFloat(maxInput.value) : NaN;
+    const sortVal = sortSelect ? sortSelect.value : 'price-asc';
+
+    const cols = Array.from(productsRow.querySelectorAll('.col-md-6.col-lg-4'));
+
+    // determine visible columns
+    const visible = [];
+    cols.forEach(col => {
+      const card = col.querySelector('.card');
+      if (!card) return;
+      const priceAttr = card.getAttribute('data-price') || '';
+      const price = parsePrice(priceAttr);
+      // store match
+      let storeMatch = true;
+      if (storeVal) {
+        try {
+          const stores = JSON.parse(card.getAttribute('data-stores') || '[]');
+          storeMatch = stores.some(s => { const n = (s.store||s.name||'').toString().trim(); return n.toLowerCase() === storeVal.toLowerCase(); });
+        } catch (e) { storeMatch = false; }
+      }
+      // price range match
+      let priceMatch = true;
+      if (!isNaN(minVal)) priceMatch = priceMatch && (price >= minVal);
+      if (!isNaN(maxVal)) priceMatch = priceMatch && (price <= maxVal);
+
+      if (storeMatch && priceMatch) {
+        col.style.display = '';
+        visible.push({ col, price, name: (card.getAttribute('data-name')||'').toLowerCase() });
+      } else {
+        col.style.display = 'none';
+      }
+    });
+
+    // sort visible columns
+    if (visible.length) {
+      if (sortVal === 'price-asc' || sortVal === 'price-desc') {
+        visible.sort((a,b) => sortVal === 'price-asc' ? a.price - b.price : b.price - a.price);
+      } else if (sortVal === 'name-asc' || sortVal === 'name-desc') {
+        visible.sort((a,b) => sortVal === 'name-asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name));
+      }
+      // re-append in sorted order
+      visible.forEach(v => productsRow.appendChild(v.col));
+    }
+  };
+
+  const clearFilters = () => {
+    if (storeSelect) storeSelect.value = '';
+    if (minInput) minInput.value = '';
+    if (maxInput) maxInput.value = '';
+    if (sortSelect) sortSelect.value = 'price-asc';
+    const cols = Array.from(productsRow.querySelectorAll('.col-md-6.col-lg-4'));
+    cols.forEach(c => c.style.display = '');
+  };
+
+  collectStores();
+  applyBtn && applyBtn.addEventListener('click', (e) => { e.preventDefault(); applyFilters(); });
+  clearBtn && clearBtn.addEventListener('click', (e) => { e.preventDefault(); clearFilters(); });
+}
 function setupSearchFunctionality() {
   const input = document.getElementById('home-search-input');
   const btn = document.getElementById('home-search-btn');
@@ -49,15 +187,15 @@ function setupSearchFunctionality() {
         const id = it.id || title;
         const col = document.createElement('div'); col.className = 'col-md-6 col-lg-4';
         col.innerHTML = `
-          <div class="card shadow-sm">
-              <img src="${img}" class="card-img-top" alt="${title}" style="width:700px;height:700px;object-fit:cover;">
+              <div class="card shadow-sm">
+                <img src="${img}" class="card-img-top product-thumb" alt="${title}">
             <div class="card-body">
               <h5 class="card-title">${title}</h5>
               <p class="card-text mb-1">${store}</p>
               <p class="card-text text-muted mb-2">${price}</p>
               <div class="d-flex gap-2">
                 <button class="btn btn-sm btn-info view-details-btn" data-bs-toggle="modal" data-bs-target="#productModal" data-title="${escapeHtml(title)}" data-price="${escapeHtml(price)}" data-store="${escapeHtml(store)}" data-image="${escapeHtml(img)}">View Details</button>
-                <button class="btn btn-sm btn-primary add-to-list-btn" data-id="${escapeHtml(id)}" data-name="${escapeHtml(title)}" data-price="${escapeHtml(price)}">Add to List</button>
+                <button class="btn btn-sm btn-primary add-to-list-btn" data-id="${escapeHtml(id)}" data-name="${escapeHtml(title)}" data-price="${escapeHtml(price)}" data-image="${escapeHtml(img)}">Add to List</button>
               </div>
             </div>
           </div>
@@ -482,14 +620,14 @@ function setupFeaturedDealsSearch() {
         const col = document.createElement('div'); col.className = 'col-md-6 col-lg-4';
         col.innerHTML = `
           <div class="card shadow-sm">
-            <img src="${img}" class="card-img-top" alt="${escapeHtml(title)}">
+            <img src="${img}" class="card-img-top product-thumb" alt="${escapeHtml(title)}">
             <div class="card-body">
               <h5 class="card-title">${escapeHtml(title)}</h5>
               <p class="card-text mb-1">${escapeHtml(store)}</p>
               <p class="card-text text-muted mb-2">${escapeHtml(price)}</p>
               <div class="d-flex gap-2">
                 <button class="btn btn-sm btn-info view-details-btn" data-bs-toggle="modal" data-bs-target="#productModal" data-id="${escapeHtml(id)}" data-title="${escapeHtml(title)}" data-price="${escapeHtml(price)}" data-store="${escapeHtml(store)}" data-image="${escapeHtml(img)}">View Details</button>
-                <button class="btn btn-sm btn-primary add-to-list-btn" data-id="${escapeHtml(id)}" data-name="${escapeHtml(title)}" data-price="${escapeHtml(price)}">Add to List</button>
+                <button class="btn btn-sm btn-primary add-to-list-btn" data-id="${escapeHtml(id)}" data-name="${escapeHtml(title)}" data-price="${escapeHtml(price)}" data-image="${escapeHtml(img)}">Add to List</button>
               </div>
             </div>
           </div>

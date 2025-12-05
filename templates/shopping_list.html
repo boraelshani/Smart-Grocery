@@ -83,9 +83,9 @@
 								<div class="form-check me-3">
 									<input class="form-check-input checkbox-item" type="checkbox" id="chk-{{ loop.index0 }}" {% if purchased %}checked{% endif %}>
 								</div>
-								<div class="me-3">
-								  <img src="{{ img if img else url_for('static', filename='placeholder.svg') }}" alt="{{ name }}" class="item-icon" style="width:700px;height:700px;object-fit:cover;border-radius:6px;">
-								</div>
+																<div class="me-3">
+																	<img src="{{ img if img else url_for('static', filename='placeholder.svg') }}" alt="{{ name }}" class="item-icon rounded" />
+																</div>
 								<div class="flex-grow-1">
 									<p class="mb-0 item-name {{ 'text-decoration-line-through text-muted' if purchased }}">{{ name }}</p>
 									<small class="text-muted">{{ store }}</small>
