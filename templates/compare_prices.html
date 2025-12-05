@@ -247,20 +247,27 @@
                data-price="{{ (p.get('cheapest') and p.get('cheapest').get('price')) or p.get('price','') }}" 
                data-name="{{ p.get('name','') |lower }}" 
                data-category="{{ p.get('category','') |lower }}">
-            <div class="card product-card-inner h-100">
-              <div class="position-relative">
-                <img src="{{ prefer_processed(p.get('image') or (p.get('images') and p.get('images')[0]) or url_for('static', filename='placeholder.svg')) }}" class="card-img-top product-image" alt="{{ p.get('name') or p.get('title','Product') }}">
-                <span class="price-badge">
-                  <i class="bi bi-tag-fill"></i> {{ (p.get('cheapest') and p.get('cheapest').get('price')) or p.get('price','N/A') }}
-                </span>
-              </div>
-              <div class="card-body d-flex flex-column">
-                <div class="d-flex justify-content-between align-items-start mb-3">
-                  <h5 class="card-title mb-0 fw-bold">{{ p.get('name') or p.get('title','') }}</h5>
-                  {% if p.get('category') %}
-                    <span class="badge category-badge ms-2">{{ p.get('category') }}</span>
-                  {% endif %}
+            <a href="{{ url_for('main.product_detail', product_id=p.get('id')) }}" class="text-decoration-none text-dark">
+              <div class="card product-card-inner h-100">
+                <div class="position-relative">
+                  <img src="{{ prefer_processed(p.get('image') or (p.get('images') and p.get('images')[0]) or url_for('static', filename='placeholder.svg')) }}" class="card-img-top product-image" alt="{{ p.get('name') or p.get('title','Product') }}">
+                  <span class="price-badge">
+                    <i class="bi bi-tag-fill"></i> {{ (p.get('cheapest') and p.get('cheapest').get('price')) or p.get('price','N/A') }}
+                  </span>
+                  <button class="btn btn-sm position-absolute top-0 end-0 m-2 bg-white border-0 shadow-sm rounded-circle" 
+                          style="width: 35px; height: 35px; z-index: 10;"
+                          onclick="quickFavorite(event, '{{ p.get('id') }}', this)"
+                          data-product-id="{{ p.get('id') }}">
+                    <i class="bi bi-heart text-danger"></i>
+                  </button>
                 </div>
+                <div class="card-body d-flex flex-column">
+                  <div class="d-flex justify-content-between align-items-start mb-3">
+                    <h5 class="card-title mb-0 fw-bold">{{ p.get('name') or p.get('title','') }}</h5>
+                    {% if p.get('category') %}
+                      <span class="badge category-badge ms-2">{{ p.get('category') }}</span>
+                    {% endif %}
+                  </div>
                 
                 {% if p.get('stores') %}
                   <div class="mb-3">
@@ -299,13 +306,14 @@
                     </p>
                   {% endif %}
                   <div class="d-grid gap-2">
-                    <button type="button" class="btn btn-add-cart" data-bs-toggle="modal" data-bs-target="#productModal" data-title="{{ p.get('name') or p.get('title','') }}" data-price="{{ (p.get('cheapest') and p.get('cheapest').get('price')) or p.get('price','') }}" data-store="{{ (p.get('cheapest') and p.get('cheapest').get('store')) or '' }}" data-image="{{ p.get('image') or (p.get('images') and p.get('images')[0]) or '' }}">
-                      <i class="bi bi-cart-plus"></i> Add to Cart
-                    </button>
+                    <span class="btn btn-add-cart">
+                      <i class="bi bi-eye"></i> View Details
+                    </span>
                   </div>
                 </div>
               </div>
             </div>
+            </a>
           </div>
         {% endfor %}
       {% else %}
@@ -532,7 +540,107 @@
       if (maxPriceInput) maxPriceInput.addEventListener('change', filterAndSortProducts);
       if (sortOrder) sortOrder.addEventListener('change', filterAndSortProducts);
       if (clearFiltersBtn) clearFiltersBtn.addEventListener('click', clearAllFilters);
+      
+      // Load favorite states
+      loadFavoriteStates();
     });
+
+    // Quick favorite function
+    async function quickFavorite(event, productId, button) {
+      event.preventDefault();
+      event.stopPropagation();
+      
+      try {
+        const response = await fetch('/api/toggle-favorite', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ product_id: productId })
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          const icon = button.querySelector('i');
+          
+          if (data.is_favorite) {
+            icon.classList.remove('bi-heart');
+            icon.classList.add('bi-heart-fill');
+            button.classList.add('text-danger');
+          } else {
+            icon.classList.remove('bi-heart-fill');
+            icon.classList.add('bi-heart');
+            button.classList.remove('text-danger');
+          }
+        } else {
+          const error = await response.json();
+          if (error.error === 'Not logged in') {
+            alert('Please log in to add favorites');
+            window.location.href = '/login';
+          }
+        }
+      } catch (error) {
+        console.error('Error toggling favorite:', error);
+      }
+    }
+
+    // Load favorite states for all products
+    async function loadFavoriteStates() {
+      const favoriteButtons = document.querySelectorAll('[data-product-id]');
+      
+      for (const button of favoriteButtons) {
+        const productId = button.dataset.productId;
+        try {
+          const response = await fetch(`/api/check-favorite/${productId}`);
+          const data = await response.json();
+          
+          if (data.is_favorite) {
+            const icon = button.querySelector('i');
+            icon.classList.remove('bi-heart');
+            icon.classList.add('bi-heart-fill');
+            button.classList.add('text-danger');
+          }
+        } catch (error) {
+          console.error('Error checking favorite:', error);
+        }
+      }
+    }
+    
+    // Quick favorite function
+    async function quickFavorite(event, productId, button) {
+      event.preventDefault();
+      event.stopPropagation();
+      
+      try {
+        const response = await fetch('/api/toggle-favorite', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ product_id: productId })
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          const icon = button.querySelector('i');
+          
+          if (data.is_favorite) {
+            icon.classList.remove('bi-heart');
+            icon.classList.add('bi-heart-fill');
+          } else {
+            icon.classList.remove('bi-heart-fill');
+            icon.classList.add('bi-heart');
+          }
+        } else {
+          const error = await response.json();
+          if (error.error === 'Not logged in') {
+            alert('Please log in to add favorites');
+          }
+        }
+      } catch (error) {
+        console.error('Error toggling favorite:', error);
+      }
+    }
   </script>
 </body>
 </html>

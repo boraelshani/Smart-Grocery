@@ -150,13 +150,38 @@ def compare_prices():
                     p['id'] = str(p['_id'])
         except Exception:
             using_fallback = True
-            print('WARNING: Using in-memory fallback data for compare-prices (DB query failed)')
+            print('WARNING: Using in-memory fallback data for compare prices (DB query failed)')
             products = getattr(m, 'products', [])
     else:
         using_fallback = True
-        print('WARNING: Using in-memory fallback data for compare-prices (DB unavailable)')
+        print('WARNING: Using in-memory fallback data for compare prices (DB unavailable)')
         products = getattr(m, 'products', [])
     return render_template('compare_prices.html', products=products, using_fallback=using_fallback)
+
+@main_bp.route('/product/<product_id>')
+def product_detail(product_id):
+    db = get_db()
+    product = None
+    
+    if db is not None:
+        try:
+            from bson import ObjectId
+            # Try to find by ObjectId first
+            try:
+                product = db.products.find_one({'_id': ObjectId(product_id)})
+            except:
+                # If not a valid ObjectId, try as string id
+                product = db.products.find_one({'id': product_id})
+            
+            if product and '_id' in product:
+                product['id'] = str(product['_id'])
+        except Exception as e:
+            print(f'Error fetching product: {e}')
+    
+    if not product:
+        return render_template('404.html'), 404
+    
+    return render_template('product_detail.html', product=product)
 
 @main_bp.route('/shopping-list')
 def shopping_list():
@@ -318,6 +343,13 @@ def profile():
         user = mongo.db.users.find_one({'email': user_email})
         if user and '_id' in user:
             user['id'] = str(user['_id'])
+        
+        # Initialize favorites and recent_views if not present
+        if user and 'favorites' not in user:
+            user['favorites'] = []
+        if user and 'recent_views' not in user:
+            user['recent_views'] = []
+        
         user_data = user or {}
     else:
         user_data = getattr(m, 'users', {}).get('user1@example.com', {})
@@ -521,5 +553,124 @@ def api_claim_deal():
             added = m.add_deal_to_user_shopping_list(email, deal_doc or str(deal_id))
 
         return jsonify({'success': bool(claimed or added), 'claimed': bool(claimed), 'added': bool(added)})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@main_bp.route('/api/toggle-favorite', methods=['POST'])
+def toggle_favorite():
+    """Add or remove a product from user's favorites"""
+    try:
+        user_email = session.get('user')
+        if not user_email:
+            return jsonify({'error': 'Not logged in'}), 401
+        
+        data = request.get_json()
+        product_id = data.get('product_id')
+        
+        if not product_id:
+            return jsonify({'error': 'Product ID required'}), 400
+        
+        db = get_db()
+        if db is None:
+            return jsonify({'error': 'Database not available'}), 500
+        
+        # Get user
+        user = db.users.find_one({'email': user_email})
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+        
+        # Get favorites list
+        favorites = user.get('favorites', [])
+        
+        # Check if product is already in favorites
+        is_favorited = any(str(fav.get('id')) == str(product_id) for fav in favorites if isinstance(fav, dict))
+        
+        if is_favorited:
+            # Remove from favorites
+            favorites = [fav for fav in favorites if str(fav.get('id')) != str(product_id)]
+            db.users.update_one(
+                {'email': user_email},
+                {'$set': {'favorites': favorites}}
+            )
+            return jsonify({'success': True, 'action': 'removed', 'is_favorite': False})
+        else:
+            # Add to favorites
+            # Get product details
+            try:
+                from bson import ObjectId
+                try:
+                    product = db.products.find_one({'_id': ObjectId(product_id)})
+                except:
+                    product = db.products.find_one({'id': product_id})
+            except Exception as e:
+                return jsonify({'error': f'Product not found: {str(e)}'}), 404
+            
+            if not product:
+                return jsonify({'error': 'Product not found'}), 404
+            
+            # Create favorite entry
+            favorite_entry = {
+                'id': str(product.get('_id', product_id)),
+                'name': product.get('name', ''),
+                'image': product.get('image', ''),
+                'category': product.get('category', ''),
+                'best_price': (product.get('cheapest') and product.get('cheapest').get('price')) or product.get('price', 'N/A')
+            }
+            
+            favorites.append(favorite_entry)
+            db.users.update_one(
+                {'email': user_email},
+                {'$set': {'favorites': favorites}}
+            )
+            return jsonify({'success': True, 'action': 'added', 'is_favorite': True})
+    
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@main_bp.route('/api/check-favorite/<product_id>', methods=['GET'])
+def check_favorite(product_id):
+    """Check if a product is in user's favorites"""
+    try:
+        user_email = session.get('user')
+        if not user_email:
+            return jsonify({'is_favorite': False})
+        
+        db = get_db()
+        if db is None:
+            return jsonify({'is_favorite': False})
+        
+        user = db.users.find_one({'email': user_email})
+        if not user:
+            return jsonify({'is_favorite': False})
+        
+        favorites = user.get('favorites', [])
+        is_favorited = any(str(fav.get('id')) == str(product_id) for fav in favorites if isinstance(fav, dict))
+        
+        return jsonify({'is_favorite': is_favorited})
+    
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@main_bp.route('/api/save-preferences', methods=['POST'])
+def save_preferences():
+    """Save user preferences"""
+    try:
+        user_email = session.get('user')
+        if not user_email:
+            return jsonify({'error': 'Not logged in'}), 401
+        
+        data = request.get_json()
+        
+        db = get_db()
+        if db is None:
+            return jsonify({'error': 'Database not available'}), 500
+        
+        db.users.update_one(
+            {'email': user_email},
+            {'$set': {'preferences': data}}
+        )
+        
+        return jsonify({'success': True})
+    
     except Exception as e:
         return jsonify({'error': str(e)}), 500
