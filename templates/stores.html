@@ -70,7 +70,7 @@
         {% for store in stores %}
           <div class="col-md-4">
             <div class="card shadow-sm h-100 d-flex flex-column">
-              <img src="{{ store.image or 'https://via.placeholder.com/300x200' }}" class="card-img-top" alt="{{ store.name }}" style="height: 200px; object-fit: cover;">
+              <img src="{{ prefer_processed(store.image or 'https://via.placeholder.com/300x200') or (store.image or 'https://via.placeholder.com/300x200') }}" class="card-img-top" alt="{{ store.name }}" style="height: 200px; object-fit: cover;">
               <div class="card-body d-flex flex-column">
                 <h5 class="card-title">{{ store.name }}</h5>
                 {% if store.distance %}

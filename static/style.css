@@ -271,6 +271,8 @@ a:hover {
   .product-thumb { height: 120px; }
 }
 
+/* Client-side white-bg blending removed — server-side processed images are preferred. */
+
 /* Ensure product card images have a fixed container so small images don't collapse layout.
    Use `object-fit: contain` so smaller images are centered and not stretched; container size stays constant. */
 .card .card-img-top,
@@ -582,4 +584,83 @@ a:hover {
 
 @media (max-width: 768px) {
   .card { margin: 0 8px; }
+}
+
+/* Unified Compare / Home / Featured search + button sizing */
+.compare-search-row {
+  --search-height: 46px;
+  margin-bottom: 1.5rem;
+}
+.compare-search-row .input-group {
+  display: flex !important;
+  align-items: center !important;
+}
+.compare-search-row .input-group .form-control {
+  height: var(--search-height) !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  align-items: center !important;
+  padding: 0.45rem 0.75rem !important;
+  font-size: 1rem !important;
+}
+.compare-search-row .input-group .btn,
+.compare-search-row .input-group .btn-group .btn {
+  height: var(--search-height) !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 0.75rem !important;
+  font-size: 1rem !important;
+}
+
+/* Lighter product card styles to reduce repaint cost and scrolling lag */
+.product-card-inner {
+  border: none;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+  transition: box-shadow 0.15s ease;
+  will-change: transform;
+}
+.product-card-inner:hover {
+  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+}
+.product-image {
+  height: 240px;
+  object-fit: cover;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  display: block;
+}
+.price-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+.category-badge {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+}
+.btn-add-cart {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  color: white;
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-weight: 600;
+}
+
+/* Reduce heavy global shadows which can cause repaint cost on scroll */
+.card, .featured-deals .deal-card, .compare-container, .shopping-list, .profile-container {
+  box-shadow: 0 2px 8px rgba(124,58,237,0.06) !important;
 }

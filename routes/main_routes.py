@@ -10,6 +10,9 @@ except Exception:
     HAS_DB = False
 import re
 
+# Cached fallback client to avoid creating a new MongoClient on every request
+_FALLBACK_CLIENT = None
+
 def _db_available():
     return HAS_DB and mongo is not None and getattr(mongo, 'db', None) is not None
 
@@ -40,12 +43,17 @@ def get_db():
         # If this is an Atlas SRV URI, ensure TLS and CA file are provided to avoid SSL issues
         try:
             import certifi
-            if isinstance(uri, str) and uri.startswith('mongodb+srv://'):
-                client = MongoClient(uri, tls=True, tlsCAFile=certifi.where(), serverSelectionTimeoutMS=5000)
-            else:
-                client = MongoClient(uri, serverSelectionTimeoutMS=5000)
+            # Reuse a cached fallback client when possible to avoid repeated server-selection handshakes
+            global _FALLBACK_CLIENT
+            if _FALLBACK_CLIENT is None:
+                if isinstance(uri, str) and uri.startswith('mongodb+srv://'):
+                    _FALLBACK_CLIENT = MongoClient(uri, tls=True, tlsCAFile=certifi.where(), serverSelectionTimeoutMS=2000)
+                else:
+                    _FALLBACK_CLIENT = MongoClient(uri, serverSelectionTimeoutMS=2000)
+            client = _FALLBACK_CLIENT
         except Exception:
-            client = MongoClient(uri, serverSelectionTimeoutMS=5000)
+            # last-resort: create a simple client with a small timeout
+            client = MongoClient(uri, serverSelectionTimeoutMS=2000)
         dbname = current_app.config.get('MONGO_DBNAME')
         if not dbname:
             try:

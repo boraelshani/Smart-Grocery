@@ -208,7 +208,7 @@ function setupSearchFunctionality() {
       // attach event for view-details and claim buttons
       document.querySelectorAll('.view-details-btn').forEach(el => el.removeEventListener('click', noop));
       // small rebind: call setupProductModalHandlers to rebind handlers to new elements
-      try { setupProductModalHandlers(); } catch(e){}
+      try { setupProductModalHandlers(); } catch(e) {}
     } catch (err) {
       showNotification('Search failed', 'danger');
     }
@@ -620,7 +620,7 @@ function setupFeaturedDealsSearch() {
         const col = document.createElement('div'); col.className = 'col-md-6 col-lg-4';
         col.innerHTML = `
           <div class="card shadow-sm">
-            <img src="${img}" class="card-img-top product-thumb" alt="${escapeHtml(title)}">
+              <img src="${img}" class="card-img-top product-thumb" alt="${escapeHtml(title)}">
             <div class="card-body">
               <h5 class="card-title">${escapeHtml(title)}</h5>
               <p class="card-text mb-1">${escapeHtml(store)}</p>
@@ -635,7 +635,7 @@ function setupFeaturedDealsSearch() {
         resultsContainer.appendChild(col);
       });
       resultsSection.style.display = 'block';
-      try { setupProductModalHandlers(); } catch(e) {}
+        try { setupProductModalHandlers(); } catch(e) {}
     } catch (err) {
       showNotification('Search failed', 'danger');
     }

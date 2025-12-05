@@ -16,6 +16,8 @@ if not os.environ.get('SSL_CERT_FILE'):
     os.environ['SSL_CERT_FILE'] = certifi.where()
 
 from utils.db import mongo
+import hashlib
+from flask import url_for
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key')
@@ -112,6 +114,27 @@ except Exception:
 app.register_blueprint(main_bp)
 app.register_blueprint(auth_bp)
 app.register_blueprint(admin_bp)
+
+
+# Template helper: prefer a processed local image if available (static/processed/<sha1>.webp)
+def processed_image_url(image_url: str | None) -> str | None:
+    if not image_url:
+        return None
+    try:
+        key = hashlib.sha1(image_url.encode('utf-8')).hexdigest() + '.webp'
+        path = os.path.join(app.root_path, 'static', 'processed', key)
+        if os.path.exists(path):
+            return url_for('static', filename=f'processed/{key}')
+    except Exception:
+        pass
+    return None
+
+# convenience wrapper for templates: returns processed URL if exists, otherwise returns original image_url
+def prefer_processed(image_url: str | None) -> str | None:
+    return processed_image_url(image_url) or image_url
+
+app.jinja_env.globals['processed_image_url'] = processed_image_url
+app.jinja_env.globals['prefer_processed'] = prefer_processed
 
 # Error Handling
 @app.errorhandler(404)

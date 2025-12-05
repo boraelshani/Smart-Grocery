@@ -84,7 +84,7 @@
 									<input class="form-check-input checkbox-item" type="checkbox" id="chk-{{ loop.index0 }}" {% if purchased %}checked{% endif %}>
 								</div>
 																<div class="me-3">
-																	<img src="{{ img if img else url_for('static', filename='placeholder.svg') }}" alt="{{ name }}" class="item-icon rounded" />
+																	<img src="{{ prefer_processed(img if img else url_for('static', filename='placeholder.svg')) or (img if img else url_for('static', filename='placeholder.svg')) }}" alt="{{ name }}" class="item-icon rounded" />
 																</div>
 								<div class="flex-grow-1">
 									<p class="mb-0 item-name {{ 'text-decoration-line-through text-muted' if purchased }}">{{ name }}</p>

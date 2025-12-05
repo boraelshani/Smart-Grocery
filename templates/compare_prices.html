@@ -8,6 +8,39 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
+    /* Compare page specific tweaks */
+    .compare-search-row {
+      --search-height: 46px; /* adjust to match input height */
+      margin-bottom: 1.5rem; /* slightly more space before product grid */
+    }
+    /* Ensure the input-group and button group align items exactly */
+    .compare-search-row .input-group {
+      display: flex !important;
+      align-items: center !important;
+    }
+    .compare-search-row .input-group .form-control {
+      height: var(--search-height) !important;
+      box-sizing: border-box;
+      display: flex !important;
+      align-items: center !important;
+      padding: 0.45rem 0.75rem !important;
+      font-size: 1rem;
+    }
+    .compare-search-row .input-group .btn,
+    .compare-search-row .input-group .btn-group .btn {
+      height: var(--search-height) !important;
+      box-sizing: border-box;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      padding: 0 0.75rem !important;
+      font-size: 1rem;
+    }
+    .compare-search-row .input-group .btn i {
+      line-height: 1;
+      display: inline-block;
+      vertical-align: middle;
+    }
     .hero-section {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
@@ -126,79 +159,75 @@
   </section>
 
   <section class="container py-4">
-    <!-- Enhanced Search & Filter Section -->
+    <!-- Search row with filter button -->
     {% if using_fallback %}
     <div class="alert alert-warning" role="alert" style="margin-top:1rem">Warning: using local fallback product data — database unavailable.</div>
     {% endif %}
-    <div class="card filter-card p-4 mb-4">
-      <div class="row g-3">
-        <!-- Search Bar -->
-        <div class="col-md-6">
-          <label class="form-label"><i class="bi bi-search"></i> Search Products</label>
-          <div class="input-group">
-            <input id="product-search-input" type="text" class="form-control" placeholder="Search by product name..." autocomplete="off" />
+    <div class="row align-items-end mb-3 compare-search-row">
+      <div class="col-md-12">
+        <label class="form-label d-block"><i class="bi bi-search"></i> Search Products</label>
+        <div class="input-group">
+          <input id="product-search-input" type="text" class="form-control" placeholder="Search by product name..." autocomplete="off" />
+          <div class="btn-group" role="group">
             <button id="product-search-btn" class="btn btn-primary">
-              <i class="bi bi-search"></i> Search
+              <i class="bi bi-search"></i>
             </button>
+            <div class="dropdown">
+              <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="filtersDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false" data-version="v2">
+                <i class="bi bi-funnel"></i> Filters
+              </button>
+              <div class="dropdown-menu dropdown-menu-end p-3" aria-labelledby="filtersDropdownBtn" style="min-width: 320px;">
+            <div class="mb-2">
+              <label class="form-label"><i class="bi bi-grid"></i> Category</label>
+              <select id="category-filter" class="form-select">
+                <option value="">All Categories</option>
+                <option value="dairy">Dairy</option>
+                <option value="produce">Produce</option>
+                <option value="meat">Meat & Seafood</option>
+                <option value="bakery">Bakery</option>
+                <option value="snacks">Snacks</option>
+                <option value="beverages">Beverages</option>
+                <option value="frozen">Frozen Foods</option>
+                <option value="pantry">Pantry</option>
+              </select>
+            </div>
+
+            <div class="mb-2">
+              <label class="form-label"><i class="bi bi-shop"></i> Store</label>
+              <select id="store-filter" class="form-select">
+                <option value="">All Stores</option>
+              </select>
+            </div>
+
+            <div class="mb-2">
+              <label class="form-label"><i class="bi bi-currency-dollar"></i> Price Range</label>
+              <div class="input-group">
+                <input id="min-price" type="number" step="0.01" class="form-control" placeholder="Min">
+                <span class="input-group-text">to</span>
+                <input id="max-price" type="number" step="0.01" class="form-control" placeholder="Max">
+              </div>
+            </div>
+
+            <div class="mb-2">
+              <label class="form-label"><i class="bi bi-sort-down"></i> Sort By</label>
+              <select id="sort-order" class="form-select">
+                <option value="price-asc">Price: Low to High</option>
+                <option value="price-desc">Price: High to Low</option>
+                <option value="name-asc">Name: A to Z</option>
+                <option value="name-desc">Name: Z to A</option>
+              </select>
+            </div>
+
+            <div class="d-flex gap-2 mt-3">
+              <button id="apply-filters" class="btn btn-primary flex-grow-1">Apply</button>
+              <button id="clear-filters" class="btn btn-outline-secondary">Clear</button>
+            </div>
+
+            <div id="active-filters" class="mt-3 d-flex flex-wrap gap-2" style="display:none;">
+              <!-- Filter badges will appear here -->
+            </div>
           </div>
         </div>
-        
-        <!-- Category Filter -->
-        <div class="col-md-3">
-          <label class="form-label"><i class="bi bi-grid"></i> Category</label>
-          <select id="category-filter" class="form-select">
-            <option value="">All Categories</option>
-            <option value="dairy">Dairy</option>
-            <option value="produce">Produce</option>
-            <option value="meat">Meat & Seafood</option>
-            <option value="bakery">Bakery</option>
-            <option value="snacks">Snacks</option>
-            <option value="beverages">Beverages</option>
-            <option value="frozen">Frozen Foods</option>
-            <option value="pantry">Pantry</option>
-          </select>
-        </div>
-        
-        <!-- Store Filter -->
-        <div class="col-md-3">
-          <label class="form-label"><i class="bi bi-shop"></i> Store</label>
-          <select id="store-filter" class="form-select">
-            <option value="">All Stores</option>
-          </select>
-        </div>
-        
-        <!-- Price Range -->
-        <div class="col-md-4">
-          <label class="form-label"><i class="bi bi-currency-dollar"></i> Price Range</label>
-          <div class="input-group">
-            <input id="min-price" type="number" step="0.01" class="form-control" placeholder="Min">
-            <span class="input-group-text">to</span>
-            <input id="max-price" type="number" step="0.01" class="form-control" placeholder="Max">
-          </div>
-        </div>
-        
-        <!-- Sort -->
-        <div class="col-md-4">
-          <label class="form-label"><i class="bi bi-sort-down"></i> Sort By</label>
-          <select id="sort-order" class="form-select">
-            <option value="price-asc">Price: Low to High</option>
-            <option value="price-desc">Price: High to Low</option>
-            <option value="name-asc">Name: A to Z</option>
-            <option value="name-desc">Name: Z to A</option>
-          </select>
-        </div>
-        
-        <!-- Action Buttons -->
-        <div class="col-md-4 d-flex align-items-end">
-          <button id="clear-filters" class="btn btn-outline-secondary w-100">
-            <i class="bi bi-x-circle"></i> Clear Filters
-          </button>
-        </div>
-      </div>
-      
-      <!-- Active Filters Display -->
-      <div id="active-filters" class="mt-3 d-flex flex-wrap gap-2" style="display:none;">
-        <!-- Filter badges will appear here -->
       </div>
     </div>
     
@@ -220,7 +249,7 @@
                data-category="{{ p.get('category','') |lower }}">
             <div class="card product-card-inner h-100">
               <div class="position-relative">
-                <img src="{{ p.get('image') or (p.get('images') and p.get('images')[0]) or url_for('static', filename='placeholder.svg') }}" class="card-img-top product-image" alt="{{ p.get('name') or p.get('title','Product') }}">
+                <img src="{{ prefer_processed(p.get('image') or (p.get('images') and p.get('images')[0]) or url_for('static', filename='placeholder.svg')) }}" class="card-img-top product-image" alt="{{ p.get('name') or p.get('title','Product') }}">
                 <span class="price-badge">
                   <i class="bi bi-tag-fill"></i> {{ (p.get('cheapest') and p.get('cheapest').get('price')) or p.get('price','N/A') }}
                 </span>
@@ -305,7 +334,7 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
-          <img src="{{ url_for('static', filename='placeholder.svg') }}" class="img-fluid mb-3 product-modal-image" alt="Product">
+          <img src="{{ prefer_processed(url_for('static', filename='placeholder.svg')) or url_for('static', filename='placeholder.svg') }}" class="img-fluid mb-3 product-modal-image" alt="Product">
           <h6 class="product-modal-title">Product Name</h6>
           <p class="product-modal-price"><strong>Best Price:</strong> <span></span></p>
           <p class="product-modal-stores"><strong>Available at:</strong> <span></span></p>
