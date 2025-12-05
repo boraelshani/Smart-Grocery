@@ -65,12 +65,13 @@ function setupCompareHandlers() {
   });
 }
 
-// Search stub
-// Client-side filters and sorting for the Compare page
+// Client-side filters, search and sorting for the Compare page
 function setupCompareFilters() {
-  const productsRow = document.querySelector('section.container .row.g-4');
+  const productsRow = document.getElementById('products-grid') || document.querySelector('section.container .row.g-4');
   if (!productsRow) return;
 
+  const searchInput = document.getElementById('product-search-input');
+  const searchBtn = document.getElementById('product-search-btn');
   const storeSelect = document.getElementById('store-filter');
   const minInput = document.getElementById('min-price');
   const maxInput = document.getElementById('max-price');
@@ -78,13 +79,17 @@ function setupCompareFilters() {
   const applyBtn = document.getElementById('apply-filters');
   const clearBtn = document.getElementById('clear-filters');
 
+  // Store all original product cards
+  let allProducts = [];
+
   // collect available stores from rendered cards
   const collectStores = () => {
-    const cards = Array.from(productsRow.querySelectorAll('.card[data-stores]'));
+    const productDivs = Array.from(productsRow.querySelectorAll('[data-stores]'));
+    allProducts = productDivs;
     const set = new Set();
-    cards.forEach(c => {
+    productDivs.forEach(div => {
       try {
-        const stores = JSON.parse(c.getAttribute('data-stores') || '[]');
+        const stores = JSON.parse(div.getAttribute('data-stores') || '[]');
         stores.forEach(s => { if (s && (s.store || s.name)) set.add((s.store||s.name).trim()); });
       } catch (e) { }
     });
@@ -97,36 +102,43 @@ function setupCompareFilters() {
   const parsePrice = (v) => { if (v === null || v === undefined || v === '') return Number.POSITIVE_INFINITY; const n = Number(String(v).toString().replace(/[^0-9.\-]/g, '')); return isNaN(n) ? Number.POSITIVE_INFINITY : n; };
 
   const applyFilters = () => {
+    const searchVal = searchInput ? searchInput.value.trim().toLowerCase() : '';
     const storeVal = storeSelect ? storeSelect.value : '';
     const minVal = minInput ? parseFloat(minInput.value) : NaN;
     const maxVal = maxInput ? parseFloat(maxInput.value) : NaN;
     const sortVal = sortSelect ? sortSelect.value : 'price-asc';
 
-    const cols = Array.from(productsRow.querySelectorAll('.col-md-6.col-lg-4'));
-
-    // determine visible columns
+    // determine visible products
     const visible = [];
-    cols.forEach(col => {
-      const card = col.querySelector('.card');
-      if (!card) return;
-      const priceAttr = card.getAttribute('data-price') || '';
+    allProducts.forEach(col => {
+      if (!col) return;
+      const priceAttr = col.getAttribute('data-price') || '';
       const price = parsePrice(priceAttr);
+      const productName = (col.getAttribute('data-name') || '').toLowerCase();
+
+      // search match
+      let searchMatch = true;
+      if (searchVal) {
+        searchMatch = productName.includes(searchVal);
+      }
+
       // store match
       let storeMatch = true;
       if (storeVal) {
         try {
-          const stores = JSON.parse(card.getAttribute('data-stores') || '[]');
+          const stores = JSON.parse(col.getAttribute('data-stores') || '[]');
           storeMatch = stores.some(s => { const n = (s.store||s.name||'').toString().trim(); return n.toLowerCase() === storeVal.toLowerCase(); });
         } catch (e) { storeMatch = false; }
       }
+
       // price range match
       let priceMatch = true;
       if (!isNaN(minVal)) priceMatch = priceMatch && (price >= minVal);
       if (!isNaN(maxVal)) priceMatch = priceMatch && (price <= maxVal);
 
-      if (storeMatch && priceMatch) {
+      if (searchMatch && storeMatch && priceMatch) {
         col.style.display = '';
-        visible.push({ col, price, name: (card.getAttribute('data-name')||'').toLowerCase() });
+        visible.push({ col, price, name: productName });
       } else {
         col.style.display = 'none';
       }
@@ -145,15 +157,21 @@ function setupCompareFilters() {
   };
 
   const clearFilters = () => {
+    if (searchInput) searchInput.value = '';
     if (storeSelect) storeSelect.value = '';
     if (minInput) minInput.value = '';
     if (maxInput) maxInput.value = '';
     if (sortSelect) sortSelect.value = 'price-asc';
-    const cols = Array.from(productsRow.querySelectorAll('.col-md-6.col-lg-4'));
-    cols.forEach(c => c.style.display = '');
+    allProducts.forEach(col => { if (col) col.style.display = ''; });
   };
 
   collectStores();
+  
+  // Add search event listeners to apply filters on search
+  searchInput && searchInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); applyFilters(); } });
+  searchBtn && searchBtn.addEventListener('click', (e) => { e.preventDefault(); applyFilters(); });
+  searchInput && searchInput.addEventListener('input', () => { applyFilters(); });
+  
   applyBtn && applyBtn.addEventListener('click', (e) => { e.preventDefault(); applyFilters(); });
   clearBtn && clearBtn.addEventListener('click', (e) => { e.preventDefault(); clearFilters(); });
 }
@@ -162,6 +180,21 @@ function setupSearchFunctionality() {
   const btn = document.getElementById('home-search-btn');
   const resultsSection = document.getElementById('search-results-section');
   const resultsContainer = document.getElementById('search-results');
+  const productsGrid = document.getElementById('products-grid');
+  const applyFiltersBtn = document.getElementById('apply-filters');
+  const clearFiltersBtn = document.getElementById('clear-filters');
+  const storeFilter = document.getElementById('store-filter');
+  const minPrice = document.getElementById('min-price');
+  const maxPrice = document.getElementById('max-price');
+  const sortOrder = document.getElementById('sort-order');
+
+  let allProducts = [];
+
+  // collect all initial products
+  const collectAllProducts = () => {
+    if (!productsGrid) return;
+    allProducts = Array.from(productsGrid.querySelectorAll('[class*="col"]'));
+  };
 
   async function doSearch() {
     if (!input) return;
@@ -203,6 +236,7 @@ function setupSearchFunctionality() {
         resultsContainer.appendChild(col);
       });
       resultsSection.style.display = 'block';
+      if (productsGrid) productsGrid.style.display = 'none';
       // after rendering, attach view-details behavior and claim buttons
       // view-details handled by setupProductModalHandlers (it binds existing elements on DOMContentLoaded), so we need to re-run attaching for newly created elements
       // attach event for view-details and claim buttons
@@ -214,8 +248,61 @@ function setupSearchFunctionality() {
     }
   }
 
+  const applyHomFilters = () => {
+    if (!productsGrid) return;
+    const minVal = minPrice ? parseFloat(minPrice.value) : NaN;
+    const maxVal = maxPrice ? parseFloat(maxPrice.value) : NaN;
+    const sortVal = sortOrder ? sortOrder.value : 'price-asc';
+    const parsePrice = (v) => { const n = Number(String(v || '').replace(/[^0-9.\-]/g, '')); return isNaN(n) ? 0 : n; };
+
+    const visible = [];
+    allProducts.forEach(col => {
+      if (!col) return;
+      const card = col.querySelector('.card');
+      if (!card) return;
+      const priceText = card.getAttribute('data-price') || card.querySelector('[class*="price"]')?.textContent || '0';
+      const price = parsePrice(priceText);
+
+      let priceMatch = true;
+      if (!isNaN(minVal)) priceMatch = priceMatch && (price >= minVal);
+      if (!isNaN(maxVal)) priceMatch = priceMatch && (price <= maxVal);
+
+      if (priceMatch) {
+        col.style.display = '';
+        const name = (card.getAttribute('data-name') || card.querySelector('.card-title')?.textContent || '').toLowerCase();
+        visible.push({ col, price, name });
+      } else {
+        col.style.display = 'none';
+      }
+    });
+
+    // sort
+    if (visible.length) {
+      if (sortVal === 'price-asc' || sortVal === 'price-desc') {
+        visible.sort((a,b) => sortVal === 'price-asc' ? a.price - b.price : b.price - a.price);
+      } else if (sortVal === 'name-asc' || sortVal === 'name-desc') {
+        visible.sort((a,b) => sortVal === 'name-asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name));
+      }
+      visible.forEach(v => productsGrid.appendChild(v.col));
+    }
+  };
+
+  const clearHomeFilters = () => {
+    if (minPrice) minPrice.value = '';
+    if (maxPrice) maxPrice.value = '';
+    if (sortOrder) sortOrder.value = 'price-asc';
+    if (storeFilter) storeFilter.value = '';
+    if (input) input.value = '';
+    allProducts.forEach(col => { if (col) col.style.display = ''; });
+    if (resultsSection) resultsSection.style.display = 'none';
+    if (productsGrid) productsGrid.style.display = '';
+  };
+
+  collectAllProducts();
   if (btn) btn.addEventListener('click', doSearch);
   if (input) input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); doSearch(); } });
+  if (applyFiltersBtn) applyFiltersBtn.addEventListener('click', (e) => { e.preventDefault(); applyHomFilters(); });
+  if (clearFiltersBtn) clearFiltersBtn.addEventListener('click', (e) => { e.preventDefault(); clearHomeFilters(); });
 }
 
 function noop() {}
@@ -301,15 +388,25 @@ function setupStoreSuggestions() {
 
   function performStoreSearch(storeName) {
     // On the stores page, filter the visible store cards by name
-    const cards = Array.from(document.querySelectorAll('.card'));
+    const storesGrid = document.getElementById('stores-grid');
+    const cards = storesGrid ? Array.from(storesGrid.querySelectorAll('.card')) : Array.from(document.querySelectorAll('.card'));
+    let foundCount = 0;
     cards.forEach(card => {
       const title = card.querySelector('.card-title')?.textContent || '';
       if (title.toLowerCase().includes(storeName.toLowerCase())) {
-        card.closest('.col-md-4')?.classList.remove('d-none');
+        const col = card.closest('.col-md-4');
+        if (col) {
+          col.style.display = '';
+          foundCount++;
+        }
       } else {
-        card.closest('.col-md-4')?.classList.add('d-none');
+        const col = card.closest('.col-md-4');
+        if (col) col.style.display = 'none';
       }
     });
+    if (foundCount === 0) {
+      showNotification('No stores found matching your search', 'info');
+    }
   }
 
   // show suggestions when input focused or hovered near it
@@ -589,60 +686,90 @@ function setupProfileEditHandlers() {
   });
 }
 
-// Featured Deals search: search products and render results in featured page
+// Featured Deals search: filter products locally on the page
 function setupFeaturedDealsSearch() {
   const input = document.getElementById('featured-search-input');
   const btn = document.getElementById('featured-search-btn');
-  const resultsSection = document.getElementById('featured-search-results-section');
-  const resultsContainer = document.getElementById('featured-search-results');
-  if (!input || !btn || !resultsSection || !resultsContainer) return;
+  const dealsGrid = document.getElementById('featured-deals-grid') || document.querySelector('section.container .row.g-4');
+  const applyFiltersBtn = document.getElementById('apply-filters');
+  const clearFiltersBtn = document.getElementById('clear-filters');
+  const minPrice = document.getElementById('min-price');
+  const maxPrice = document.getElementById('max-price');
+  const sortOrder = document.getElementById('sort-order');
+  
+  if (!input || !btn || !dealsGrid) return;
 
-  async function doSearch() {
-    const q = input.value.trim();
-    if (!q) { showNotification('Please enter a search term', 'info'); return; }
-    try {
-      const res = await fetch(`/api/search-products?q=${encodeURIComponent(q)}`, { credentials: 'same-origin' });
-      const data = await res.json().catch(() => ({}));
-      const items = data.items || [];
-      resultsContainer.innerHTML = '';
-      if (!items.length) {
-        resultsContainer.innerHTML = `<div class="col-12"><p class="text-muted">Don't have that item.</p></div>`;
-        resultsSection.style.display = 'block';
-        return;
+  let allDeals = [];
+
+  const collectAllDeals = () => {
+    allDeals = Array.from(dealsGrid.querySelectorAll('[class*="col"]'));
+  };
+
+  const parsePrice = (v) => { 
+    const n = Number(String(v || '').replace(/[^0-9.\-]/g, '')); 
+    return isNaN(n) ? 0 : n; 
+  };
+
+  const doSearch = () => {
+    const q = input.value.trim().toLowerCase();
+    const minVal = minPrice ? parseFloat(minPrice.value) : NaN;
+    const maxVal = maxPrice ? parseFloat(maxPrice.value) : NaN;
+    const sortVal = sortOrder ? sortOrder.value : 'price-asc';
+
+    const visible = [];
+    allDeals.forEach(col => {
+      if (!col) return;
+      const card = col.querySelector('.card');
+      if (!card) return;
+      
+      const productName = (card.getAttribute('data-name') || card.querySelector('.card-title')?.textContent || '').toLowerCase();
+      const priceText = card.getAttribute('data-price') || card.querySelector('[class*="price"]')?.textContent || '0';
+      const price = parsePrice(priceText);
+
+      // search match
+      let searchMatch = true;
+      if (q) {
+        searchMatch = productName.includes(q);
       }
 
-      items.forEach(it => {
-        const title = it.name || it.title || '';
-        const price = it.price || (it.cheapest && it.cheapest.price) || '';
-        const img = it.image || (it.images && it.images[0]) || 'https://via.placeholder.com/300x200';
-        const store = (it.stores && it.stores[0] && it.stores[0].store) || '';
-        const id = it.id || title;
-        const col = document.createElement('div'); col.className = 'col-md-6 col-lg-4';
-        col.innerHTML = `
-          <div class="card shadow-sm">
-              <img src="${img}" class="card-img-top product-thumb" alt="${escapeHtml(title)}">
-            <div class="card-body">
-              <h5 class="card-title">${escapeHtml(title)}</h5>
-              <p class="card-text mb-1">${escapeHtml(store)}</p>
-              <p class="card-text text-muted mb-2">${escapeHtml(price)}</p>
-              <div class="d-flex gap-2">
-                <button class="btn btn-sm btn-info view-details-btn" data-bs-toggle="modal" data-bs-target="#productModal" data-id="${escapeHtml(id)}" data-title="${escapeHtml(title)}" data-price="${escapeHtml(price)}" data-store="${escapeHtml(store)}" data-image="${escapeHtml(img)}">View Details</button>
-                <button class="btn btn-sm btn-primary add-to-list-btn" data-id="${escapeHtml(id)}" data-name="${escapeHtml(title)}" data-price="${escapeHtml(price)}" data-image="${escapeHtml(img)}">Add to List</button>
-              </div>
-            </div>
-          </div>
-        `;
-        resultsContainer.appendChild(col);
-      });
-      resultsSection.style.display = 'block';
-        try { setupProductModalHandlers(); } catch(e) {}
-    } catch (err) {
-      showNotification('Search failed', 'danger');
-    }
-  }
+      // price match
+      let priceMatch = true;
+      if (!isNaN(minVal)) priceMatch = priceMatch && (price >= minVal);
+      if (!isNaN(maxVal)) priceMatch = priceMatch && (price <= maxVal);
 
-  btn.addEventListener('click', (e) => { e.preventDefault(); doSearch(); });
-  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); doSearch(); } });
+      if (searchMatch && priceMatch) {
+        col.style.display = '';
+        visible.push({ col, price, name: productName });
+      } else {
+        col.style.display = 'none';
+      }
+    });
+
+    // sort
+    if (visible.length) {
+      if (sortVal === 'price-asc' || sortVal === 'price-desc') {
+        visible.sort((a,b) => sortVal === 'price-asc' ? a.price - b.price : b.price - a.price);
+      } else if (sortVal === 'name-asc' || sortVal === 'name-desc') {
+        visible.sort((a,b) => sortVal === 'name-asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name));
+      }
+      visible.forEach(v => dealsGrid.appendChild(v.col));
+    }
+  };
+
+  const clearFeaturedFilters = () => {
+    if (input) input.value = '';
+    if (minPrice) minPrice.value = '';
+    if (maxPrice) maxPrice.value = '';
+    if (sortOrder) sortOrder.value = 'price-asc';
+    allDeals.forEach(col => { if (col) col.style.display = ''; });
+  };
+
+  collectAllDeals();
+  btn && btn.addEventListener('click', (e) => { e.preventDefault(); doSearch(); });
+  input && input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); doSearch(); } });
+  input && input.addEventListener('input', () => { doSearch(); });
+  if (applyFiltersBtn) applyFiltersBtn.addEventListener('click', (e) => { e.preventDefault(); doSearch(); });
+  if (clearFiltersBtn) clearFiltersBtn.addEventListener('click', (e) => { e.preventDefault(); clearFeaturedFilters(); });
 }
 
 function setupShoppingListInteractions() {

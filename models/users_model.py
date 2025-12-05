@@ -145,12 +145,17 @@ def create_user(user_doc: dict):
 def authenticate(email: str, password: str) -> bool:
     user = get_user_by_email(email)
     if not user:
+        print(f'[AUTH] user {email} not found')
         return False
     stored = user.get('password')
     if stored is None:
+        print(f'[AUTH] user {email} has no password field')
         return False
     # Basic check — if you store hashed passwords, replace with hashing check
-    return str(stored) == str(password)
+    print(f'[AUTH] comparing: stored={repr(stored)} (type={type(stored).__name__}) vs entered={repr(password)} (type={type(password).__name__})')
+    match = str(stored).strip() == str(password).strip()
+    print(f'[AUTH] result={match}')
+    return match
 
 
 def update_shopping_list(email: str, new_list: list) -> bool:

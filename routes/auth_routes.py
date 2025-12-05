@@ -14,7 +14,9 @@ def login():
         email = request.form['email']
         password = request.form['password']
         # use users_model.authenticate which checks hashed passwords
+        print(f'[LOGIN] email={email}, password_entered={repr(password)}')
         ok = users_model.authenticate(email, password)
+        print(f'[LOGIN] auth result={ok}')
         if ok:
             session['user'] = email
             return redirect(url_for('main.home'))
@@ -30,6 +32,7 @@ def signup():
         name = request.form.get('name')
         email = request.form.get('email')
         password = request.form.get('password')
+        print(f'[SIGNUP] email={email}, password_entered={repr(password)}, name={name}')
         if not email or not password:
             return render_template('signup.html', error='Please provide email and password', name=name, email=email)
 

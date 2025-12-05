@@ -193,6 +193,29 @@ def debug_mongo():
         info['error'] = str(e)
     return jsonify(info)
 
+
+@app.route('/debug-user')
+def debug_user():
+    """Diagnostic endpoint: check what password is stored for an email. Usage: /debug-user?email=your@email.com"""
+    email = request.args.get('email', '')
+    if not email:
+        return jsonify({'error': 'missing email parameter'}), 400
+    try:
+        from models import users_model
+        user = users_model.get_user_by_email(email)
+        if not user:
+            return jsonify({'email': email, 'found': False, 'message': 'user not found in DB'}), 200
+        return jsonify({
+            'email': email,
+            'found': True,
+            'password_stored': repr(user.get('password')),
+            'password_type': type(user.get('password')).__name__,
+            'name': user.get('name'),
+            'shopping_list_count': len(user.get('shopping_list', []))
+        }), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 # Temporary test route to insert a small document into Atlas for verification
 @app.route('/add-test')
 def add_test():
