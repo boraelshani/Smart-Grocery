@@ -312,124 +312,36 @@ function setupStoreSuggestions() {
   const input = document.getElementById('stores-search-input');
   const btn = document.getElementById('stores-search-btn');
   const suggestions = document.getElementById('store-suggestions');
-  let storeList = [];
-  if (!input || !suggestions) return;
+  const grid = document.getElementById('stores-grid');
+  if (!input || !grid) return;
+  // Hide the purple suggestion dropdown entirely
+  if (suggestions) suggestions.style.display = 'none';
 
-  async function fetchStores() {
-    try {
-      const r = await fetch('/api/stores', { credentials: 'same-origin' });
-      const j = await r.json().catch(() => ({}));
-      storeList = j.stores || [];
-      // render suggestions after fetching so focus shows options
-      renderSuggestions(storeList);
-    } catch (e) {
-      // ignore
-    }
-  }
+  const cards = Array.from(grid.querySelectorAll('.card'));
 
-  function renderSuggestions(list) {
-    suggestions.innerHTML = '';
-    if (!list || !list.length) {
-      suggestions.style.display = 'none';
-      return;
-    }
-    list.forEach(s => {
-      const el = document.createElement('button');
-      el.type = 'button';
-      el.className = 'list-group-item list-group-item-action';
-      el.textContent = s.name + (s.location ? ` — ${s.location}` : '');
-      el.setAttribute('data-name', s.name);
-      el.setAttribute('data-id', s.id || s.name);
-      el.addEventListener('click', () => {
-        // set input to chosen store and hide suggestions
-        input.value = s.name;
-        suggestions.style.display = 'none';
-        // show selected store details
-        showStoreDetails(s);
-      });
-      suggestions.appendChild(el);
-    });
-    suggestions.style.display = 'block';
-  }
-
-  function showStoreDetails(storeObj) {
-    if (!storeObj) return;
-    // hide grid and show detail panel
-    const grid = document.getElementById('stores-grid');
-    const detail = document.getElementById('store-detail');
-    if (!detail) return;
-    // build HTML for selected store
-    const html = `
-      <div class="card shadow-sm">
-        <div class="row g-0">
-          <div class="col-md-4">
-            <img src="${escapeHtml(storeObj.image || 'https://via.placeholder.com/400x300')}" class="img-fluid rounded-start" alt="${escapeHtml(storeObj.name)}">
-          </div>
-          <div class="col-md-8">
-            <div class="card-body">
-              <h3 class="card-title">${escapeHtml(storeObj.name)}</h3>
-              <p class="card-text text-muted">${escapeHtml(storeObj.location || '')}</p>
-              <p class="card-text">${escapeHtml(storeObj.description || '')}</p>
-              <p class="card-text"><strong>Active deals:</strong> ${escapeHtml(String(storeObj.active_deals || storeObj.deals || 0))}</p>
-              <div class="mt-3">
-                <button id="back-to-stores" class="btn btn-secondary">Back to all stores</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
-    detail.innerHTML = html; detail.style.display = 'block';
-    if (grid) grid.style.display = 'none';
-    // wire back button
-    const back = document.getElementById('back-to-stores');
-    if (back) back.addEventListener('click', () => { detail.style.display = 'none'; if (grid) grid.style.display = 'flex' || 'block'; });
-  }
-
-  function performStoreSearch(storeName) {
-    // On the stores page, filter the visible store cards by name
-    const storesGrid = document.getElementById('stores-grid');
-    const cards = storesGrid ? Array.from(storesGrid.querySelectorAll('.card')) : Array.from(document.querySelectorAll('.card'));
-    let foundCount = 0;
+  function filterGrid(q) {
+    const query = (q || '').toLowerCase();
+    let shown = 0;
     cards.forEach(card => {
-      const title = card.querySelector('.card-title')?.textContent || '';
-      if (title.toLowerCase().includes(storeName.toLowerCase())) {
-        const col = card.closest('.col-md-4');
-        if (col) {
-          col.style.display = '';
-          foundCount++;
-        }
+      const title = (card.querySelector('.card-title')?.textContent || '').toLowerCase();
+      const location = (card.querySelector('.card-text')?.textContent || '').toLowerCase();
+      const col = card.closest('.col-md-4');
+      if (!col) return;
+      if (!query || title.includes(query) || location.includes(query)) {
+        col.style.display = '';
+        shown += 1;
       } else {
-        const col = card.closest('.col-md-4');
-        if (col) col.style.display = 'none';
+        col.style.display = 'none';
       }
     });
-    if (foundCount === 0) {
+    if (shown === 0) {
       showNotification('No stores found matching your search', 'info');
     }
   }
 
-  // show suggestions when input focused or hovered near it
-  input.addEventListener('focus', () => { if (!storeList.length) fetchStores(); else renderSuggestions(storeList); });
-  input.addEventListener('mouseenter', () => { if (!storeList.length) fetchStores(); });
-
-  // hide suggestions on blur (with a slight delay to allow click)
-  input.addEventListener('blur', () => { setTimeout(()=>{ suggestions.style.display='none'; }, 150); });
-
-  // allow typing to filter suggestions
-  input.addEventListener('input', () => {
-    const q = input.value.trim().toLowerCase();
-    if (!q) {
-      // don't show suggestions for an empty input
-      document.getElementById('store-suggestions').style.display = 'none';
-      return;
-    }
-    const filtered = storeList.filter(s => (s.name || '').toLowerCase().includes(q) || (s.location||'').toLowerCase().includes(q));
-    renderSuggestions(filtered);
-  });
-
-  // search button fallback: simple filter
-  btn?.addEventListener('click', (e) => { e.preventDefault(); const q = input.value.trim(); if (!q) { renderSuggestions(storeList); } else performStoreSearch(q); });
+  input.addEventListener('input', () => { filterGrid(input.value.trim()); });
+  btn?.addEventListener('click', (e) => { e.preventDefault(); filterGrid(input.value.trim()); });
+  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); filterGrid(input.value.trim()); } });
 }
 
 

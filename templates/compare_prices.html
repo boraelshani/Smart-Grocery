@@ -124,6 +124,42 @@
       border-radius: 20px;
       font-weight: 500;
     }
+    .category-chip-row {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      padding: 8px 4px 4px;
+      scrollbar-width: none;
+    }
+    .category-chip-row::-webkit-scrollbar { display: none; }
+    .category-chip {
+      border: 2px solid #d6d8ff;
+      background: #f6f7ff;
+      color: #4a4e69;
+      border-radius: 999px;
+      padding: 12px 16px;
+      min-width: 120px;
+      max-width: 180px;
+      text-align: center;
+      font-weight: 600;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+      white-space: normal;
+      line-height: 1.2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .category-chip:hover {
+      background: #e7e9ff;
+      transform: translateY(-1px);
+    }
+    .category-chip.active {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-color: transparent;
+      box-shadow: 0 6px 16px rgba(102, 126, 234, 0.3);
+    }
   </style>
   </head>
 <body>
@@ -230,6 +266,24 @@
         </div>
       </div>
     </div>
+
+    <!-- Category chips -->
+    <div class="category-chip-row mb-3">
+      {% set category_list = [
+        ('fruit-vegetables', 'Fruit & Vegetables'),
+        ('bread-pastries', 'Bread & Pastries'),
+        ('dairy-products-alternatives', 'Dairy Products & Alternatives'),
+        ('frozen-products', 'Frozen products'),
+        ('sausage-meat-eggs-fish', 'Sausage, meat, eggs & fish'),
+        ('side-dishes-vinegar-oil-spices', 'Side dishes, vinegar, oil & spices'),
+        ('baking-breakfast', 'Baking & Breakfast'),
+        ('sweet-salty', 'Sweet & Salty'),
+        ('fast-food-to-go', 'Fast Food & To Go'),
+      ] %}
+      {% for slug, label in category_list %}
+        <button type="button" class="category-chip" data-category-chip="{{ slug }}" data-category-label="{{ label }}">{{ label }}</button>
+      {% endfor %}
+    </div>
     
     <!-- Results Count -->
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -254,10 +308,10 @@
                   <span class="price-badge">
                     <i class="bi bi-tag-fill"></i> {{ (p.get('cheapest') and p.get('cheapest').get('price')) or p.get('price','N/A') }}
                   </span>
-                  <button class="btn btn-sm position-absolute top-0 end-0 m-2 bg-white border-0 shadow-sm rounded-circle" 
-                          style="width: 35px; height: 35px; z-index: 10;"
-                          onclick="quickFavorite(event, '{{ p.get('id') }}', this)"
-                          data-product-id="{{ p.get('id') }}">
+                    <button class="btn btn-sm position-absolute top-0 end-0 m-2 bg-white border-0 shadow-sm rounded-circle" 
+                      style="width: 35px; height: 35px; z-index: 10;"
+                      onclick="quickFavorite(event, this.dataset.productId, this)"
+                      data-product-id="{{ p.get('id') }}">
                     <i class="bi bi-heart text-danger"></i>
                   </button>
                 </div>
@@ -377,6 +431,9 @@
       const productsGrid = document.getElementById('products-grid');
       const productsCount = document.getElementById('products-count');
       const activeFiltersDiv = document.getElementById('active-filters');
+      const categoryChips = Array.from(document.querySelectorAll('[data-category-chip]'));
+      let activeCategorySlug = '';
+      let activeCategoryLabel = '';
       
       // Populate store filter from products
       const allProducts = document.querySelectorAll('.product-card');
@@ -394,9 +451,23 @@
         storeFilter.appendChild(opt);
       });
       
+      function slugifyCategory(str) {
+        return (str || '').toString().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+      }
+
+      function setActiveChip(slug, label) {
+        activeCategorySlug = slug;
+        activeCategoryLabel = label;
+        categoryChips.forEach(chip => {
+          chip.classList.toggle('active', chip.dataset.categoryChip === slug);
+        });
+        // keep dropdown in sync but not required for matching values
+        categoryFilter.value = '';
+      }
+
       function filterAndSortProducts() {
         const searchTerm = searchInput.value.toLowerCase().trim();
-        const selectedCategory = categoryFilter.value.toLowerCase();
+        const selectedCategory = activeCategorySlug || slugifyCategory(categoryFilter.value);
         const selectedStore = storeFilter.value;
         const minPrice = parseFloat(minPriceInput.value) || 0;
         const maxPrice = parseFloat(maxPriceInput.value) || Infinity;
@@ -406,6 +477,7 @@
         allProducts.forEach(card => {
           const productName = card.dataset.name || '';
           const productCategory = card.dataset.category || '';
+          const productCategorySlug = slugifyCategory(productCategory);
           const productPrice = parseFloat(card.dataset.price) || 0;
           
           // Check store availability
@@ -419,9 +491,10 @@
           
           // Check all conditions
           const matchesSearch = !searchTerm || productName.includes(searchTerm);
-          const matchesCategory = !selectedCategory || productCategory === selectedCategory;
+          const matchesCategory = !selectedCategory || productCategorySlug === selectedCategory;
           const matchesPrice = productPrice >= minPrice && productPrice <= maxPrice;
-          
+
+          const matchesStore = hasStore;
           if (matchesSearch && matchesCategory && matchesStore && hasStore) {
             card.style.display = '';
             visibleProducts.push({
@@ -458,7 +531,7 @@
         updateActiveFilters(searchTerm, selectedCategory, selectedStore, minPrice, maxPrice);
       }
       
-      function updateActiveFilters(searchTerm, category, store, minPrice, maxPrice) {
+      function updateActiveFilters(searchTerm, categorySlug, store, minPrice, maxPrice) {
         activeFiltersDiv.innerHTML = '';
         let hasFilters = false;
         
@@ -470,9 +543,11 @@
           }));
         }
         
-        if (category) {
+        if (categorySlug) {
           hasFilters = true;
-          activeFiltersDiv.appendChild(createFilterBadge('Category: ' + category, () => {
+          const label = activeCategoryLabel || categoryFilter.options[categoryFilter.selectedIndex || 0]?.textContent || 'Category';
+          activeFiltersDiv.appendChild(createFilterBadge('Category: ' + label, () => {
+            setActiveChip('', '');
             categoryFilter.value = '';
             filterAndSortProducts();
           }));
@@ -523,6 +598,7 @@
       function clearAllFilters() {
         searchInput.value = '';
         categoryFilter.value = '';
+        setActiveChip('', '');
         storeFilter.value = '';
         minPriceInput.value = '';
         maxPriceInput.value = '';
@@ -540,6 +616,20 @@
       if (maxPriceInput) maxPriceInput.addEventListener('change', filterAndSortProducts);
       if (sortOrder) sortOrder.addEventListener('change', filterAndSortProducts);
       if (clearFiltersBtn) clearFiltersBtn.addEventListener('click', clearAllFilters);
+
+      categoryChips.forEach(chip => {
+        chip.addEventListener('click', () => {
+          const slug = chip.dataset.categoryChip;
+          const label = chip.dataset.categoryLabel || chip.textContent;
+          // toggle off if clicking the active chip
+          if (activeCategorySlug === slug) {
+            setActiveChip('', '');
+          } else {
+            setActiveChip(slug, label);
+          }
+          filterAndSortProducts();
+        });
+      });
       
       // Load favorite states
       loadFavoriteStates();

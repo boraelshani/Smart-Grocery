@@ -79,14 +79,28 @@
     <div class="container">
       <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
+          {% set trail = product.get('category_path') if product.get('category_path') else [] %}
+          {% if not trail and product.get('category') %}
+            {% set trail = ['Products', product.get('category')] %}
+          {% endif %}
           <li class="breadcrumb-item"><a href="{{ url_for('main.home') }}" class="text-white">Home</a></li>
           <li class="breadcrumb-item"><a href="{{ url_for('main.compare_prices') }}" class="text-white">Products</a></li>
-          <li class="breadcrumb-item active text-white" aria-current="page">{{ product.name }}</li>
+          {% if trail %}
+            {% for crumb in trail %}
+              {% if loop.last %}
+                <li class="breadcrumb-item active text-white" aria-current="page">{{ crumb }}</li>
+              {% else %}
+                <li class="breadcrumb-item text-white">{{ crumb }}</li>
+              {% endif %}
+            {% endfor %}
+          {% else %}
+            <li class="breadcrumb-item active text-white" aria-current="page">{{ product.name }}</li>
+          {% endif %}
         </ol>
       </nav>
       <h1 class="display-5 fw-bold">{{ product.name }}</h1>
-      {% if product.category %}
-        <span class="category-badge mt-2">{{ product.category }}</span>
+      {% if product.category or (product.category_path and product.category_path|length) %}
+        <span class="category-badge mt-2">{{ (product.category_path and product.category_path[-1]) or product.category }}</span>
       {% endif %}
     </div>
   </section>

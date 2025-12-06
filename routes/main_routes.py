@@ -490,15 +490,35 @@ def api_get_stores():
     """
     try:
         out = []
+        def shape_store(s):
+            # prefer richer metadata so the UI can render cards from search results
+            image = s.get('image') or (s.get('images')[0] if isinstance(s.get('images'), list) and s.get('images') else None)
+            hours = s.get('hours') or s.get('opening_hours')
+            deals_val = s.get('active_deals') or s.get('deals')
+            if isinstance(deals_val, list):
+                deals_count = len(deals_val)
+            else:
+                deals_count = deals_val
+            location = s.get('location') or ', '.join(filter(None, [s.get('address'), s.get('city')]))
+            return {
+                'id': s.get('id') or s.get('_id'),
+                'name': s.get('name'),
+                'location': location,
+                'image': image,
+                'url': s.get('url') or s.get('website'),
+                'hours': hours,
+                'distance': s.get('distance'),
+                'deals': deals_count
+            }
         if HAS_DB and mongo is not None and getattr(mongo, 'db', None) is not None:
             cursor = mongo.db.stores.find({}).limit(500)
             for s in cursor:
                 if '_id' in s:
                     s['id'] = str(s['_id'])
-                out.append({'id': s.get('id') or s.get('_id'), 'name': s.get('name'), 'location': s.get('location')})
+                out.append(shape_store(s))
         else:
             for s in getattr(m, 'stores', []):
-                out.append({'id': s.get('id') or s.get('name'), 'name': s.get('name'), 'location': s.get('location')})
+                out.append(shape_store(s))
         return jsonify({'stores': out})
     except Exception as e:
         return jsonify({'error': str(e)}), 500

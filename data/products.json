@@ -5,6 +5,8 @@
     "image": "https://via.placeholder.com/400x300?text=Milk+1L",
     "price": 1.69,
     "category": "Dairy",
+    "category_path": ["Products", "Dairy Products & Alternatives", "Milk"],
+    "category_slugs": ["products", "dairy-products-alternatives", "milk"],
     "description": "1L whole milk, fresh from local dairies.",
     "stores": [
       {"store": "Supermart", "price": 1.99, "url": "https://supermart.example/product/milk-1l", "logo": "https://supermart.example/logo.png"},
@@ -18,6 +20,8 @@
     "image": "https://via.placeholder.com/400x300?text=Bread",
     "price": 2.29,
     "category": "Bakery",
+    "category_path": ["Products", "Bread & Pastries", "Bread"],
+    "category_slugs": ["products", "bread-pastries", "bread"],
     "description": "Fresh baked whole wheat loaf.",
     "stores": [
       {"store": "Supermart", "price": 2.49, "url": "https://supermart.example/product/bread-loaf", "logo": "https://supermart.example/logo.png"},
@@ -31,6 +35,8 @@
     "image": "https://via.placeholder.com/400x300?text=Eggs",
     "price": 2.79,
     "category": "Dairy",
+    "category_path": ["Products", "Sausage, meat, eggs & fish", "Eggs"],
+    "category_slugs": ["products", "sausage-meat-eggs-fish", "eggs"],
     "description": "Large eggs, dozen pack.",
     "stores": [
       {"store": "Supermart", "price": 2.99, "url": "https://supermart.example/product/eggs-dozen", "logo": "https://supermart.example/logo.png"},
@@ -44,6 +50,8 @@
     "image": "https://via.placeholder.com/400x300?text=Bananas",
     "price": 1.49,
     "category": "Produce",
+    "category_path": ["Products", "Fruit & Vegetables", "Fruits", "Bananas"],
+    "category_slugs": ["products", "fruit-vegetables", "fruits", "bananas"],
     "description": "Fresh bananas, per kg.",
     "stores": [
       {"store": "Green Valley", "price": 1.49, "url": "https://greenvalley.example/product/bananas", "logo": "https://greenvalley.example/logo.png"},
@@ -57,6 +65,8 @@
     "image": "https://via.placeholder.com/400x300?text=Toilet+Paper",
     "price": 9.99,
     "category": "Household",
+    "category_path": ["Products", "Household", "Toilet Paper"],
+    "category_slugs": ["products", "household", "toilet-paper"],
     "description": "Soft 12-roll pack, 2-ply.",
     "stores": [
       {"store": "Supermart", "price": 9.99, "url": "https://supermart.example/product/tp-12", "logo": "https://supermart.example/logo.png"},
@@ -70,11 +80,178 @@
     "image": "https://via.placeholder.com/400x300?text=Olive+Oil",
     "price": 12.5,
     "category": "Pantry",
+    "category_path": ["Products", "Side dishes, vinegar, oil & spices", "Oil", "Olive Oil"],
+    "category_slugs": ["products", "side-dishes-vinegar-oil-spices", "oil", "olive-oil"],
     "description": "Cold-pressed extra virgin olive oil, 500ml.",
     "stores": [
       {"store": "Fresh & Co", "price": 12.5, "url": "https://freshco.example/product/olive-oil-500", "logo": "https://freshco.example/logo.png"},
       {"store": "Gourmet Market", "price": 11.99, "url": "https://gourmet.example/product/olive-oil-500", "logo": "https://gourmet.example/logo.png"}
     ],
     "cheapest": {"price": 11.99, "store": "Gourmet Market"}
+  },
+  {
+    "name": "Apple",
+    "unit": "kg",
+    "image": "https://via.placeholder.com/400x300?text=Apple",
+    "price": 2.49,
+    "category": "Produce",
+    "category_path": ["Products", "Fruit & Vegetables", "Fruits", "Apple"],
+    "category_slugs": ["products", "fruit-vegetables", "fruits", "apple"],
+    "description": "Crisp red apples, per kg.",
+    "stores": [
+      {"store": "Green Valley", "price": 2.49, "url": "https://greenvalley.example/product/apple", "logo": "https://greenvalley.example/logo.png"},
+      {"store": "Fresh & Co", "price": 2.69, "url": "https://freshco.example/product/apple", "logo": "https://freshco.example/logo.png"}
+    ],
+    "cheapest": {"price": 2.49, "store": "Green Valley"}
+  },
+  {
+    "name": "Spinach",
+    "unit": "bag",
+    "image": "https://via.placeholder.com/400x300?text=Spinach",
+    "price": 3.29,
+    "category": "Produce",
+    "category_path": ["Products", "Fruit & Vegetables", "Vegetables", "Spinach"],
+    "category_slugs": ["products", "fruit-vegetables", "vegetables", "spinach"],
+    "description": "Fresh baby spinach, 250g bag.",
+    "stores": [
+      {"store": "Fresh & Co", "price": 3.29, "url": "https://freshco.example/product/spinach", "logo": "https://freshco.example/logo.png"},
+      {"store": "Supermart", "price": 3.49, "url": "https://supermart.example/product/spinach", "logo": "https://supermart.example/logo.png"}
+    ],
+    "cheapest": {"price": 3.29, "store": "Fresh & Co"}
+  },
+  {
+    "name": "Butter Croissant",
+    "unit": "piece",
+    "image": "https://via.placeholder.com/400x300?text=Croissant",
+    "price": 1.79,
+    "category": "Bakery",
+    "category_path": ["Products", "Bread & Pastries", "Pastries", "Butter Croissant"],
+    "category_slugs": ["products", "bread-pastries", "pastries", "butter-croissant"],
+    "description": "Flaky butter croissant, baked daily.",
+    "stores": [
+      {"store": "Boulangerie", "price": 1.79, "url": "https://boulangerie.example/product/croissant", "logo": "https://boulangerie.example/logo.png"},
+      {"store": "Fresh & Co", "price": 1.99, "url": "https://freshco.example/product/croissant", "logo": "https://freshco.example/logo.png"}
+    ],
+    "cheapest": {"price": 1.79, "store": "Boulangerie"}
+  },
+  {
+    "name": "Greek Yogurt",
+    "unit": "500g",
+    "image": "https://via.placeholder.com/400x300?text=Greek+Yogurt",
+    "price": 4.49,
+    "category": "Dairy",
+    "category_path": ["Products", "Dairy Products & Alternatives", "Yogurt", "Greek Yogurt"],
+    "category_slugs": ["products", "dairy-products-alternatives", "yogurt", "greek-yogurt"],
+    "description": "Thick strained Greek yogurt, 500g tub.",
+    "stores": [
+      {"store": "Supermart", "price": 4.49, "url": "https://supermart.example/product/greek-yogurt", "logo": "https://supermart.example/logo.png"},
+      {"store": "Fresh & Co", "price": 4.69, "url": "https://freshco.example/product/greek-yogurt", "logo": "https://freshco.example/logo.png"}
+    ],
+    "cheapest": {"price": 4.49, "store": "Supermart"}
+  },
+  {
+    "name": "Frozen Margherita Pizza",
+    "unit": "pizza",
+    "image": "https://via.placeholder.com/400x300?text=Frozen+Pizza",
+    "price": 5.99,
+    "category": "Frozen",
+    "category_path": ["Products", "Frozen products", "Pizza", "Margherita Pizza"],
+    "category_slugs": ["products", "frozen-products", "pizza", "margherita-pizza"],
+    "description": "Wood-fired style frozen margherita pizza.",
+    "stores": [
+      {"store": "BigBox", "price": 5.99, "url": "https://bigbox.example/product/frozen-pizza", "logo": "https://bigbox.example/logo.png"},
+      {"store": "Supermart", "price": 6.49, "url": "https://supermart.example/product/frozen-pizza", "logo": "https://supermart.example/logo.png"}
+    ],
+    "cheapest": {"price": 5.99, "store": "BigBox"}
+  },
+  {
+    "name": "Chicken Breast",
+    "unit": "kg",
+    "image": "https://via.placeholder.com/400x300?text=Chicken+Breast",
+    "price": 7.99,
+    "category": "Meat",
+    "category_path": ["Products", "Sausage, meat, eggs & fish", "Meat", "Chicken Breast"],
+    "category_slugs": ["products", "sausage-meat-eggs-fish", "meat", "chicken-breast"],
+    "description": "Boneless skinless chicken breast, per kg.",
+    "stores": [
+      {"store": "Green Valley", "price": 7.99, "url": "https://greenvalley.example/product/chicken-breast", "logo": "https://greenvalley.example/logo.png"},
+      {"store": "Supermart", "price": 8.49, "url": "https://supermart.example/product/chicken-breast", "logo": "https://supermart.example/logo.png"}
+    ],
+    "cheapest": {"price": 7.99, "store": "Green Valley"}
+  },
+  {
+    "name": "Pancake Mix",
+    "unit": "500g",
+    "image": "https://via.placeholder.com/400x300?text=Pancake+Mix",
+    "price": 3.99,
+    "category": "Baking & Breakfast",
+    "category_path": ["Products", "Baking & Breakfast", "Mixes", "Pancake Mix"],
+    "category_slugs": ["products", "baking-breakfast", "mixes", "pancake-mix"],
+    "description": "Fluffy pancake mix, just add water.",
+    "stores": [
+      {"store": "Supermart", "price": 3.99, "url": "https://supermart.example/product/pancake-mix", "logo": "https://supermart.example/logo.png"},
+      {"store": "Fresh & Co", "price": 4.19, "url": "https://freshco.example/product/pancake-mix", "logo": "https://freshco.example/logo.png"}
+    ],
+    "cheapest": {"price": 3.99, "store": "Supermart"}
+  },
+  {
+    "name": "Chocolate Bar",
+    "unit": "50g",
+    "image": "https://via.placeholder.com/400x300?text=Chocolate+Bar",
+    "price": 1.49,
+    "category": "Snacks",
+    "category_path": ["Products", "Sweet & Salty", "Sweets", "Chocolate Bar"],
+    "category_slugs": ["products", "sweet-salty", "sweets", "chocolate-bar"],
+    "description": "Milk chocolate bar, 50g.",
+    "stores": [
+      {"store": "Supermart", "price": 1.49, "url": "https://supermart.example/product/chocolate-bar", "logo": "https://supermart.example/logo.png"},
+      {"store": "Corner Shop", "price": 1.59, "url": "https://cornershop.example/product/chocolate-bar", "logo": "https://cornershop.example/logo.png"}
+    ],
+    "cheapest": {"price": 1.49, "store": "Supermart"}
+  },
+  {
+    "name": "Chicken Caesar Wrap",
+    "unit": "wrap",
+    "image": "https://via.placeholder.com/400x300?text=Chicken+Wrap",
+    "price": 5.49,
+    "category": "Fast Food & To Go",
+    "category_path": ["Products", "Fast Food & To Go", "Wraps", "Chicken Caesar Wrap"],
+    "category_slugs": ["products", "fast-food-to-go", "wraps", "chicken-caesar-wrap"],
+    "description": "Ready-to-eat chicken caesar wrap.",
+    "stores": [
+      {"store": "Fresh & Co", "price": 5.49, "url": "https://freshco.example/product/chicken-wrap", "logo": "https://freshco.example/logo.png"},
+      {"store": "BigBox", "price": 5.79, "url": "https://bigbox.example/product/chicken-wrap", "logo": "https://bigbox.example/logo.png"}
+    ],
+    "cheapest": {"price": 5.49, "store": "Fresh & Co"}
+  },
+  {
+    "name": "Baby Fruit Puree",
+    "unit": "90g pouch",
+    "image": "https://via.placeholder.com/400x300?text=Baby+Puree",
+    "price": 1.99,
+    "category": "Baby food",
+    "category_path": ["Products", "Baby food", "Puree", "Baby Fruit Puree"],
+    "category_slugs": ["products", "baby-food", "puree", "baby-fruit-puree"],
+    "description": "Organic apple and pear puree for babies.",
+    "stores": [
+      {"store": "Supermart", "price": 1.99, "url": "https://supermart.example/product/baby-puree", "logo": "https://supermart.example/logo.png"},
+      {"store": "Green Valley", "price": 2.09, "url": "https://greenvalley.example/product/baby-puree", "logo": "https://greenvalley.example/logo.png"}
+    ],
+    "cheapest": {"price": 1.99, "store": "Supermart"}
+  },
+  {
+    "name": "Orange Juice",
+    "unit": "1L",
+    "image": "https://via.placeholder.com/400x300?text=Orange+Juice",
+    "price": 3.49,
+    "category": "Beverages",
+    "category_path": ["Products", "Baking & Breakfast", "Juice", "Orange Juice"],
+    "category_slugs": ["products", "baking-breakfast", "juice", "orange-juice"],
+    "description": "100% squeezed orange juice, not from concentrate.",
+    "stores": [
+      {"store": "Supermart", "price": 3.49, "url": "https://supermart.example/product/orange-juice", "logo": "https://supermart.example/logo.png"},
+      {"store": "Fresh & Co", "price": 3.69, "url": "https://freshco.example/product/orange-juice", "logo": "https://freshco.example/logo.png"}
+    ],
+    "cheapest": {"price": 3.49, "store": "Supermart"}
   }
 ]
