@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupFeaturedDealsSearch();
   setupCompareHandlers();
   setupCompareFilters();
+  setupPaginationSmoothTransition();
 });
 
 // Bootstrap helpers
@@ -174,6 +175,24 @@ function setupCompareFilters() {
   
   applyBtn && applyBtn.addEventListener('click', (e) => { e.preventDefault(); applyFilters(); });
   clearBtn && clearBtn.addEventListener('click', (e) => { e.preventDefault(); clearFilters(); });
+}
+
+// Smooth-ish transition when paging compare results (fade grid, then navigate)
+function setupPaginationSmoothTransition() {
+  const grid = document.getElementById('products-grid');
+  if (!grid) return;
+  const links = document.querySelectorAll('[data-pagination-link="true"]');
+  if (!links.length) return;
+
+  links.forEach(link => {
+    link.addEventListener('click', (e) => {
+      const href = link.getAttribute('href');
+      if (!href || href === '#') return;
+      e.preventDefault();
+      grid.classList.add('fade-out');
+      setTimeout(() => { window.location.href = href; }, 140);
+    });
+  });
 }
 function setupSearchFunctionality() {
   const input = document.getElementById('home-search-input');

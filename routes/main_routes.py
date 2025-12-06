@@ -140,23 +140,68 @@ def featured_deals_page():
 
 @main_bp.route('/compare-prices')
 def compare_prices():
+    """Render compare page with server-side pagination (30 products per page)."""
     using_fallback = False
+    per_page = 30
+    try:
+        page = int(request.args.get('page', 1))
+    except Exception:
+        page = 1
+    page = max(page, 1)
+
+    total_products = 0
+    total_pages = 1
+    products = []
     db = get_db()
+
     if db is not None:
         try:
-            products = list(db.products.find({}))
+            total_products = int(db.products.count_documents({}))
+            total_pages = (total_products + per_page - 1) // per_page if total_products else 1
+            page = min(page, total_pages) if total_products else 1
+            skip_amount = (page - 1) * per_page
+            cursor = db.products.find({}).skip(skip_amount).limit(per_page)
+            products = list(cursor)
             for p in products:
                 if '_id' in p:
                     p['id'] = str(p['_id'])
         except Exception:
             using_fallback = True
             print('WARNING: Using in-memory fallback data for compare prices (DB query failed)')
-            products = getattr(m, 'products', [])
+            products_all = getattr(m, 'products', [])
+            total_products = len(products_all)
+            total_pages = (total_products + per_page - 1) // per_page if total_products else 1
+            page = min(page, total_pages) if total_products else 1
+            skip_amount = (page - 1) * per_page
+            products = products_all[skip_amount:skip_amount + per_page]
     else:
         using_fallback = True
         print('WARNING: Using in-memory fallback data for compare prices (DB unavailable)')
-        products = getattr(m, 'products', [])
-    return render_template('compare_prices.html', products=products, using_fallback=using_fallback)
+        products_all = getattr(m, 'products', [])
+        total_products = len(products_all)
+        total_pages = (total_products + per_page - 1) // per_page if total_products else 1
+        page = min(page, total_pages) if total_products else 1
+        skip_amount = (page - 1) * per_page
+        products = products_all[skip_amount:skip_amount + per_page]
+
+    has_prev = page > 1
+    has_next = page < total_pages
+    showing_start = skip_amount + 1 if total_products else 0
+    showing_end = skip_amount + len(products)
+
+    return render_template(
+        'compare_prices.html',
+        products=products,
+        using_fallback=using_fallback,
+        page=page,
+        per_page=per_page,
+        total_products=total_products,
+        total_pages=total_pages,
+        has_prev=has_prev,
+        has_next=has_next,
+        showing_start=showing_start,
+        showing_end=showing_end,
+    )
 
 @main_bp.route('/product/<product_id>')
 def product_detail(product_id):
@@ -339,21 +384,36 @@ def shopping_list():
 @main_bp.route('/profile')
 def profile():
     user_email = session.get('user')
+    stores_options = []
+    category_options = []
+
     if _db_available() and user_email:
         user = mongo.db.users.find_one({'email': user_email})
         if user and '_id' in user:
             user['id'] = str(user['_id'])
-        
+
         # Initialize favorites and recent_views if not present
         if user and 'favorites' not in user:
             user['favorites'] = []
         if user and 'recent_views' not in user:
             user['recent_views'] = []
-        
+
         user_data = user or {}
+        try:
+            stores_cursor = mongo.db.stores.find({}, {'name': 1}).limit(200)
+            stores_options = sorted({s.get('name') for s in stores_cursor if s.get('name')})
+        except Exception:
+            stores_options = []
+        try:
+            category_options = sorted({c for c in mongo.db.products.distinct('category') if c})
+        except Exception:
+            category_options = []
     else:
         user_data = getattr(m, 'users', {}).get('user1@example.com', {})
-    return render_template('profile.html', user_data=user_data)
+        stores_options = [s.get('name') for s in getattr(m, 'stores', []) if s.get('name')]
+        category_options = sorted({p.get('category') for p in getattr(m, 'products', []) if p.get('category')})
+
+    return render_template('profile.html', user_data=user_data, stores_options=stores_options, category_options=category_options)
 
 @main_bp.route('/about')
 def about():
@@ -679,7 +739,13 @@ def save_preferences():
         if not user_email:
             return jsonify({'error': 'Not logged in'}), 401
         
-        data = request.get_json()
+        data = request.get_json() or {}
+        preferred_stores = [s for s in data.get('preferred_stores', []) if s]
+        favorite_categories = [c for c in data.get('favorite_categories', []) if c]
+        prefs = {
+            'preferred_stores': preferred_stores,
+            'favorite_categories': favorite_categories
+        }
         
         db = get_db()
         if db is None:
@@ -687,10 +753,14 @@ def save_preferences():
         
         db.users.update_one(
             {'email': user_email},
-            {'$set': {'preferences': data}}
+            {'$set': {
+                'preferences': prefs,
+                'preferred_stores': preferred_stores,
+                'favorite_categories': favorite_categories
+            }}
         )
         
-        return jsonify({'success': True})
+        return jsonify({'success': True, 'preferences': prefs})
     
     except Exception as e:
         return jsonify({'error': str(e)}), 500

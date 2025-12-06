@@ -51,7 +51,7 @@ def download_image(url: str) -> bytes | None:
         return None
 
 
-def convert_white_to_alpha(img_bytes: bytes, threshold: int = 240) -> bytes | None:
+def convert_white_to_alpha(img_bytes: bytes, threshold: int = 252) -> bytes | None:
     try:
         with Image.open(io.BytesIO(img_bytes)) as im:
             im = im.convert("RGBA")
@@ -59,8 +59,11 @@ def convert_white_to_alpha(img_bytes: bytes, threshold: int = 240) -> bytes | No
 
             new_data = []
             for r, g, b, a in datas:
-                # distance from white
-                if max(r, g, b) >= threshold and (abs(r-g) < 20 and abs(g-b) < 20):
+                # Treat near-white and low-saturation light tones as background
+                avg = (r + g + b) / 3.0
+                near_white = max(r, g, b) >= threshold or avg >= (threshold - 6)
+                low_chroma = (abs(r - g) < 35 and abs(g - b) < 35)
+                if near_white and low_chroma:
                     new_data.append((255, 255, 255, 0))  # make transparent
                 else:
                     new_data.append((r, g, b, a))

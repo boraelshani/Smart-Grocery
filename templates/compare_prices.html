@@ -160,6 +160,23 @@
       border-color: transparent;
       box-shadow: 0 6px 16px rgba(102, 126, 234, 0.3);
     }
+    .pagination-pane {
+      background: #ffffff;
+      border-radius: 14px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+      padding: 14px 18px;
+    }
+    .pagination .page-link {
+      border-radius: 12px;
+      min-width: 44px;
+      text-align: center;
+    }
+    #products-grid {
+      transition: opacity 0.18s ease-out;
+    }
+    #products-grid.fade-out {
+      opacity: 0.15;
+    }
   </style>
   </head>
 <body>
@@ -286,11 +303,17 @@
     </div>
     
     <!-- Results Count -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
       <h4 class="mb-0 fw-bold">
         <i class="bi bi-grid-3x3-gap"></i> Products
       </h4>
-      <span id="products-count" class="badge badge-filter fs-6">{{ products|length if products else 0 }} products</span>
+      <span id="products-count" class="badge badge-filter fs-6">
+        {% if total_products %}
+          Showing {{ showing_start }}-{{ showing_end }} of {{ total_products }} products
+        {% else %}
+          0 products
+        {% endif %}
+      </span>
     </div>
 
     <div class="row g-4" id="products-grid">
@@ -330,10 +353,10 @@
                     </h6>
                     {% for s in p.get('stores')[:3] %}
                       <div class="store-item">
-                        <div class="d-flex align-items-center justify-content-between">
-                          <div class="d-flex align-items-center">
-                            <i class="bi bi-shop-window me-2 text-primary"></i>
-                            <div>
+                        <div class="d-flex justify-content-between align-items-start gap-1">
+                          <div class="d-flex align-items-start gap-1 flex-grow-1" style="min-width:0;">
+                            <i class="bi bi-shop-window text-primary" style="margin-top:2px;"></i>
+                            <div class="lh-sm">
                               {% if s.get('url') %}
                                 <a href="{{ s.get('url') }}" target="_blank" class="text-decoration-none fw-semibold">{{ s.get('store') or s.get('name') }}</a>
                               {% else %}
@@ -341,7 +364,7 @@
                               {% endif %}
                             </div>
                           </div>
-                          <div class="text-end">
+                          <div class="text-end" style="min-width: 68px;">
                             <span class="text-success fw-bold fs-5">{{ s.get('price') }}</span>
                             {% if s.get('discount') %}
                               <span class="badge bg-danger ms-1">{{ s.get('discount') }}</span>
@@ -375,16 +398,29 @@
       {% endif %}
     </div>
 
-    <!-- Pagination (static for now) -->
-    <nav aria-label="Page navigation" class="mt-5">
-      <ul class="pagination justify-content-center">
-        <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1">Previous</a></li>
-        <li class="page-item active"><a class="page-link" href="#">1</a></li>
-        <li class="page-item"><a class="page-link" href="#">2</a></li>
-        <li class="page-item"><a class="page-link" href="#">3</a></li>
-        <li class="page-item"><a class="page-link" href="#">Next</a></li>
-      </ul>
-    </nav>
+    {% if total_pages and total_pages > 1 %}
+    <div class="pagination-pane mt-5 d-flex flex-column flex-sm-row align-items-center justify-content-between gap-3">
+      <div class="d-flex align-items-center gap-2">
+        <span class="badge bg-light text-dark border"><i class="bi bi-layers"></i> Page {{ page }} of {{ total_pages }}</span>
+        <span class="text-muted small">Showing {{ showing_start }}-{{ showing_end }} of {{ total_products }}</span>
+      </div>
+      <nav aria-label="Compare prices pagination" class="w-100 w-sm-auto">
+        <ul class="pagination justify-content-center mb-0 flex-wrap gap-1">
+          <li class="page-item {% if not has_prev %}disabled{% endif %}">
+            <a class="page-link" data-pagination-link="true" href="{% if has_prev %}{{ url_for('main.compare_prices', page=page-1) }}{% else %}#{% endif %}" tabindex="{% if not has_prev %}-1{% endif %}"><i class="bi bi-chevron-left"></i></a>
+          </li>
+          {% for pnum in range(1, total_pages + 1) %}
+          <li class="page-item {% if pnum == page %}active{% endif %}">
+            <a class="page-link" data-pagination-link="true" href="{{ url_for('main.compare_prices', page=pnum) }}">{{ pnum }}</a>
+          </li>
+          {% endfor %}
+          <li class="page-item {% if not has_next %}disabled{% endif %}">
+            <a class="page-link" data-pagination-link="true" href="{% if has_next %}{{ url_for('main.compare_prices', page=page+1) }}{% else %}#{% endif %}"><i class="bi bi-chevron-right"></i></a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+    {% endif %}
   </section>
 
   <!-- Modal for Product Details -->

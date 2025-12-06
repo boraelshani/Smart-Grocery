@@ -110,7 +110,7 @@
     <div class="row">
       <!-- Product Image -->
       <div class="col-lg-6 mb-4">
-        <img src="{{ product.image or (product.images and product.images[0]) or url_for('static', filename='placeholder.svg') }}" 
+           <img src="{{ prefer_processed(product.image or (product.images and product.images[0]) or url_for('static', filename='placeholder.svg')) }}" 
              alt="{{ product.name }}" 
              class="product-image-large shadow-lg">
       </div>

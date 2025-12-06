@@ -175,6 +175,8 @@ a:hover {
 }
 
 .product-header {
+  mix-blend-mode: multiply;
+  background-color: #f5f7fa;
   padding: 15px 0;
   background: #f3e8ff;
   border-bottom: 1px solid #e9d5ff;
@@ -663,4 +665,23 @@ a:hover {
 /* Reduce heavy global shadows which can cause repaint cost on scroll */
 .card, .featured-deals .deal-card, .compare-container, .shopping-list, .profile-container {
   box-shadow: 0 2px 8px rgba(124,58,237,0.06) !important;
+}
+
+/* Favorite Heart Button Styles */
+.btn.rounded-circle i.bi-heart,
+.btn.rounded-circle i.bi-heart-fill {
+  transition: all 0.2s ease;
+}
+
+.btn.rounded-circle:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3) !important;
+}
+
+.btn.rounded-circle i.bi-heart-fill {
+  color: #dc2626 !important;
+}
+
+.btn.rounded-circle:active {
+  transform: scale(0.95);
 }

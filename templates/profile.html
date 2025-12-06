@@ -9,109 +9,181 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
     .profile-header {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: radial-gradient(circle at 20% 20%, #8ea2ff 0%, #667eea 35%, #4b63c9 70%);
       color: white;
-      padding: 4rem 0 2rem;
+      padding: 3.5rem 0 2.5rem;
       margin-bottom: -3rem;
-      border-radius: 0 0 50px 50px;
+      border-radius: 0 0 32px 32px;
     }
     .profile-avatar {
-      width: 120px;
-      height: 120px;
+      width: 110px;
+      height: 110px;
       border-radius: 50%;
       background: white;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 3rem;
-      color: #667eea;
-      border: 5px solid white;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-      margin: 0 auto 1.5rem;
+      font-size: 2.8rem;
+      color: #4b63c9;
+      border: 4px solid rgba(255,255,255,0.8);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+      margin: 0 auto 1rem;
     }
-    .profile-card {
+    .profile-shell {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 20px;
+      max-width: 1180px;
+      margin: 0 auto;
+      align-items: stretch;
+    }
+    @media (max-width: 992px) {
+      .profile-shell { grid-template-columns: 1fr; }
+    }
+    .card-neo {
       border: none;
-      border-radius: 20px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-      transition: transform 0.3s ease;
+      border-radius: 18px;
+      background: #ffffff;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.06);
     }
-    .profile-card:hover {
-      transform: translateY(-5px);
-    }
-    .stat-card {
-      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-      color: white;
-      border-radius: 15px;
-      padding: 1.5rem;
-      text-align: center;
-      border: none;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.15);
-    }
-    .stat-card h3 {
-      font-size: 2.5rem;
-      font-weight: bold;
-      margin-bottom: 0.5rem;
-    }
-    .favorite-item {
-      border: none;
-      border-radius: 15px;
-      overflow: hidden;
-      margin-bottom: 1rem;
-      transition: all 0.3s ease;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    }
-    .favorite-item:hover {
-      transform: translateX(5px);
-      box-shadow: 0 6px 12px rgba(0,0,0,0.15);
-    }
-    .favorite-item img {
-      width: 80px;
-      height: 80px;
-      object-fit: contain;
-      padding: 10px;
-      background: white;
-      border-radius: 10px;
-    }
-    .nav-tabs .nav-link {
-      border: none;
-      color: #6c757d;
+    .stat-chip {
+      border-radius: 12px;
+      background: #f5f7ff;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
       font-weight: 600;
-      padding: 1rem 1.5rem;
+      color: #3b4b8f;
     }
-    .nav-tabs .nav-link.active {
+    .stat-chip i {
       color: #667eea;
-      background: transparent;
-      border-bottom: 3px solid #667eea;
+      font-size: 1.2rem;
+    }
+    .pill-badge {
+      background: #eef2ff;
+      color: #4b63c9;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+    .favorite-card {
+      border: 1px solid #eef1f8;
+      border-radius: 16px;
+      padding: 12px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .favorite-card:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(0,0,0,0.05);
+    }
+    .favorite-card img {
+      width: 56px;
+      height: 56px;
+      object-fit: contain;
+      border-radius: 12px;
+      background: #f8f6ff;
+      padding: 8px;
+    }
+    .favorites-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+    }
+    @media (max-width: 576px) {
+      .favorites-grid { grid-template-columns: 1fr; }
+    }
+    .favorites-panel {
+      background: linear-gradient(180deg, #ffffff 0%, #f8f9ff 100%);
+      width: 100%;
+    }
+    .column-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      height: 100%;
+    }
+    .empty-favorites {
+      padding: 18px;
+      border: 1px dashed #e0e5f5;
+      border-radius: 14px;
+      background: #fafbff;
+    }
+    .preference-list .badge {
+      background: #eef2ff;
+      color: #4b63c9;
+      padding: 10px 12px;
+      border-radius: 12px;
+      font-weight: 600;
     }
     .btn-favorite {
       background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
       border: none;
       color: white;
       border-radius: 50%;
-      width: 40px;
-      height: 40px;
+      width: 38px;
+      height: 38px;
       display: flex;
       align-items: center;
       justify-content: center;
       transition: transform 0.2s ease;
     }
-    .btn-favorite:hover {
-      transform: scale(1.1);
-    }
-    .btn-favorite.active {
-      background: #dc3545;
-    }
-    .recent-view-item {
-      border: none;
+    .btn-favorite:hover { transform: scale(1.1); }
+    .btn-favorite.active { background: #dc3545; }
+    .store-box {
+      border: 2px solid #e0e5f5;
       border-radius: 12px;
-      padding: 1rem;
-      margin-bottom: 0.8rem;
-      background: #f8f6ff;
+      padding: 14px 16px;
+      background: #fafbff;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-align: center;
+      flex: 1;
+      min-width: 120px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .store-box input {
+      display: none;
+    }
+    .store-box:hover {
+      border-color: #667eea;
+      background: #f0f3ff;
+    }
+    .store-box input:checked + label {
+      border-color: #667eea;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    .store-label {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      padding: 8px;
+      border-radius: 8px;
+      border: 2px solid transparent;
+      background: white;
+      color: #4b63c9;
+      font-weight: 600;
+      cursor: pointer;
       transition: all 0.2s ease;
     }
-    .recent-view-item:hover {
-      background: #ede9fe;
-      transform: translateX(3px);
+    .store-box input:checked + .store-label {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-color: #667eea;
+    }
+    .stores-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 12px;
     }
   </style>
 </head>
@@ -166,220 +238,127 @@
   <!-- Profile Content -->
   <section class="container py-5">
     {% if not session.get('user') %}
-      <!-- Not Logged In -->
       <div class="row justify-content-center">
         <div class="col-lg-6 text-center">
-          <div class="profile-card card p-5">
+          <div class="card-neo card p-5">
             <i class="bi bi-lock display-1 text-primary mb-3"></i>
             <h3 class="mb-3">Sign in to view your profile</h3>
             <p class="text-muted mb-4">Access your favorites, shopping lists, and personalized recommendations</p>
             <div class="d-flex gap-2 justify-content-center">
-              <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-lg">
-                <i class="bi bi-box-arrow-in-right"></i> Login
-              </a>
-              <a href="{{ url_for('auth.signup') }}" class="btn btn-outline-primary btn-lg">
-                <i class="bi bi-person-plus"></i> Sign Up
-              </a>
+              <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-lg"><i class="bi bi-box-arrow-in-right"></i> Login</a>
+              <a href="{{ url_for('auth.signup') }}" class="btn btn-outline-primary btn-lg"><i class="bi bi-person-plus"></i> Sign Up</a>
             </div>
           </div>
         </div>
       </div>
     {% else %}
-      <!-- Logged In -->
-      <div class="row g-4">
-        <!-- Left Column: Account Info & Actions -->
-        <div class="col-lg-4">
-          <!-- Account Info Card -->
-          <div class="profile-card card mb-4">
-            <div class="card-body">
-              <h5 class="card-title fw-bold mb-4">
-                <i class="bi bi-person-circle text-primary"></i> Account Information
-              </h5>
-              <div class="mb-3">
-                <label class="text-muted small">Full Name</label>
-                <p class="mb-0 fw-semibold">{{ user_data.name if user_data and user_data.get('name') else 'Not provided' }}</p>
+      <div class="profile-shell">
+        <!-- Left column: identity + stats + preferences -->
+        <div class="column-stack">
+          <div class="card-neo p-4">
+            <div class="d-flex align-items-center gap-3 mb-3">
+              <div class="profile-avatar"><i class="bi bi-person-fill"></i></div>
+              <div>
+                <h4 class="mb-1 fw-bold">{{ user_data.name if user_data and user_data.get('name') else 'Guest User' }}</h4>
+                <span class="pill-badge"><i class="bi bi-envelope"></i> {{ user_data.email if user_data and user_data.get('email') else 'Not logged in' }}</span>
               </div>
-              <div class="mb-3">
-                <label class="text-muted small">Email Address</label>
-                <p class="mb-0 fw-semibold">{{ user_data.email if user_data and user_data.get('email') else 'Not provided' }}</p>
-              </div>
-              <div class="mb-3">
-                <label class="text-muted small">Phone Number</label>
-                <p class="mb-0 fw-semibold" id="profile-phone">{{ user_data.phone if user_data and user_data.get('phone') else 'Not provided' }}</p>
-              </div>
-              <div class="mb-4">
-                <label class="text-muted small">Address</label>
-                <p class="mb-0 fw-semibold" id="profile-address">{{ user_data.address if user_data and user_data.get('address') else 'Not provided' }}</p>
-              </div>
-              <div class="d-grid gap-2">
-                <button id="edit-profile-btn" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#profileModal">
-                  <i class="bi bi-pencil"></i> Edit Profile
-                </button>
-                <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-danger">
-                  <i class="bi bi-box-arrow-right"></i> Log Out
-                </a>
+            </div>
+            <div class="d-grid gap-3">
+              <div class="stat-chip"><i class="bi bi-geo-alt"></i><span id="profile-address">{{ user_data.address if user_data and user_data.get('address') else 'Address not provided' }}</span></div>
+              <div class="stat-chip"><i class="bi bi-telephone"></i><span id="profile-phone">{{ user_data.phone if user_data and user_data.get('phone') else 'Phone not provided' }}</span></div>
+              <div class="d-flex gap-2 flex-wrap">
+                <button id="edit-profile-btn" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#profileModal"><i class="bi bi-pencil"></i> Edit Profile</button>
+                <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-danger"><i class="bi bi-box-arrow-right"></i> Log Out</a>
               </div>
             </div>
           </div>
 
-          <!-- Quick Stats -->
-          <div class="row g-3">
-            <div class="col-6">
-              <div class="stat-card">
-                <h3>{{ user_data.favorites|length if user_data and user_data.get('favorites') else 0 }}</h3>
-                <p class="mb-0"><i class="bi bi-heart-fill"></i> Favorites</p>
-              </div>
-            </div>
-            <div class="col-6">
-              <div class="stat-card">
-                <h3>{{ user_data.shopping_list|length if user_data and user_data.get('shopping_list') else 0 }}</h3>
-                <p class="mb-0"><i class="bi bi-cart-fill"></i> In Cart</p>
-              </div>
+          <div class="card-neo p-4">
+            <h6 class="text-muted text-uppercase fw-semibold mb-3">At a glance</h6>
+            <div class="d-flex flex-wrap gap-2">
+              <div class="stat-chip"><i class="bi bi-heart-fill"></i> Favorites: {{ user_data.favorites|length if user_data and user_data.get('favorites') else 0 }}</div>
+              <div class="stat-chip"><i class="bi bi-cart-fill"></i> In Cart: {{ user_data.shopping_list|length if user_data and user_data.get('shopping_list') else 0 }}</div>
             </div>
           </div>
         </div>
 
-        <!-- Right Column: Favorites & Recent Views -->
-        <div class="col-lg-8">
-          <!-- Tabs -->
-          <ul class="nav nav-tabs mb-4" id="profileTabs" role="tablist">
-            <li class="nav-item" role="presentation">
-              <button class="nav-link active" id="favorites-tab" data-bs-toggle="tab" data-bs-target="#favorites" type="button" role="tab">
-                <i class="bi bi-heart-fill"></i> Favorite Items
-              </button>
-            </li>
-            <li class="nav-item" role="presentation">
-              <button class="nav-link" id="recent-tab" data-bs-toggle="tab" data-bs-target="#recent" type="button" role="tab">
-                <i class="bi bi-clock-history"></i> Recently Viewed
-              </button>
-            </li>
-            <li class="nav-item" role="presentation">
-              <button class="nav-link" id="preferences-tab" data-bs-toggle="tab" data-bs-target="#preferences" type="button" role="tab">
-                <i class="bi bi-sliders"></i> Preferences
-              </button>
-            </li>
-          </ul>
+        <!-- Right column: Favorites only -->
+        <div class="column-stack">
+          <div class="card-neo p-4 favorites-panel">
+            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+              <div>
+                <h5 class="fw-bold mb-1"><i class="bi bi-heart-fill text-danger"></i> Favorites</h5>
+                <small class="text-muted">Your saved products at a glance</small>
+              </div>
+              <a href="{{ url_for('main.compare_prices') }}" class="btn btn-outline-primary btn-sm"><i class="bi bi-search"></i> Browse Products</a>
+            </div>
 
-          <!-- Tab Content -->
-          <div class="tab-content" id="profileTabsContent">
-            <!-- Favorites Tab -->
-            <div class="tab-pane fade show active" id="favorites" role="tabpanel">
-              <div id="favorites-list">
-                {% if user_data and user_data.get('favorites') and user_data.favorites|length > 0 %}
-                  {% for product in user_data.favorites %}
-                    <div class="favorite-item card">
-                      <div class="card-body">
-                        <div class="row align-items-center">
-                          <div class="col-auto">
-                            <img src="{{ product.image or url_for('static', filename='placeholder.svg') }}" alt="{{ product.name }}">
-                          </div>
-                          <div class="col">
-                            <h5 class="mb-1 fw-bold">{{ product.name }}</h5>
-                            <p class="text-muted mb-2">{{ product.category }}</p>
+            <div class="favorites-grid" id="favorites-list">
+              {% if user_data and user_data.get('favorites') and user_data.favorites|length > 0 %}
+                {% for product in user_data.favorites %}
+                  <div class="favorite-card">
+                    <img src="{{ prefer_processed(product.image or (product.images and product.images[0]) or url_for('static', filename='placeholder.svg')) }}" alt="{{ product.name }}">
+                    <div class="flex-grow-1 min-w-0">
+                      <div class="d-flex justify-content-between align-items-start gap-2">
+                        <div>
+                          <h6 class="mb-1 fw-bold text-truncate">{{ product.name }}</h6>
+                          <div class="d-flex gap-2 flex-wrap align-items-center">
+                            <span class="pill-badge">{{ product.category or 'Category' }}</span>
                             <span class="badge bg-success">{{ product.best_price or 'N/A' }}</span>
                           </div>
-                          <div class="col-auto">
-                            <a href="{{ url_for('main.product_detail', product_id=product.id) }}" class="btn btn-primary me-2">
-                              <i class="bi bi-eye"></i> View
-                            </a>
-                            <button class="btn btn-favorite active" onclick="toggleFavorite('{{ product.id }}', this)">
-                              <i class="bi bi-heart-fill"></i>
-                            </button>
-                          </div>
+                        </div>
+                        <div class="d-flex gap-1">
+                          <a href="{{ url_for('main.product_detail', product_id=product.id) }}" class="btn btn-outline-primary btn-sm"><i class="bi bi-eye"></i></a>
+                          <button class="btn btn-favorite active" onclick="toggleFavorite('{{ product.id }}', this)"><i class="bi bi-heart-fill"></i></button>
                         </div>
                       </div>
                     </div>
-                  {% endfor %}
-                {% else %}
-                  <div class="text-center py-5">
-                    <i class="bi bi-heart display-1 text-muted"></i>
-                    <h4 class="mt-3 text-muted">No favorites yet</h4>
-                    <p class="text-muted">Start adding products to your favorites to see them here!</p>
-                    <a href="{{ url_for('main.compare_prices') }}" class="btn btn-primary mt-3">
-                      <i class="bi bi-search"></i> Browse Products
-                    </a>
                   </div>
-                {% endif %}
-              </div>
-            </div>
-
-            <!-- Recent Views Tab -->
-            <div class="tab-pane fade" id="recent" role="tabpanel">
-              <div id="recent-views-list">
-                {% if user_data and user_data.get('recent_views') and user_data.recent_views|length > 0 %}
-                  {% for product in user_data.recent_views %}
-                    <div class="recent-view-item d-flex align-items-center">
-                      <i class="bi bi-clock text-muted me-3 fs-4"></i>
-                      <div class="flex-grow-1">
-                        <h6 class="mb-0 fw-bold">{{ product.name }}</h6>
-                        <small class="text-muted">{{ product.viewed_at or 'Recently' }}</small>
-                      </div>
-                      <a href="{{ url_for('main.product_detail', product_id=product.id) }}" class="btn btn-sm btn-outline-primary">
-                        View
-                      </a>
-                    </div>
-                  {% endfor %}
-                {% else %}
-                  <div class="text-center py-5">
-                    <i class="bi bi-clock-history display-1 text-muted"></i>
-                    <h4 class="mt-3 text-muted">No recently viewed items</h4>
-                    <p class="text-muted">Your recently viewed products will appear here</p>
-                  </div>
-                {% endif %}
-              </div>
-            </div>
-
-            <!-- Preferences Tab -->
-            <div class="tab-pane fade" id="preferences" role="tabpanel">
-              <div class="profile-card card">
-                <div class="card-body">
-                  <h5 class="card-title fw-bold mb-4">
-                    <i class="bi bi-sliders text-primary"></i> Shopping Preferences
-                  </h5>
-                  
-                  <div class="mb-4">
-                    <label class="form-label fw-semibold">Preferred Stores</label>
-                    <select class="form-select" id="preferred-stores" multiple>
-                      <option value="walmart">Walmart</option>
-                      <option value="target">Target</option>
-                      <option value="costco">Costco</option>
-                      <option value="safeway">Safeway</option>
-                    </select>
-                    <small class="text-muted">Select stores you shop at most frequently</small>
-                  </div>
-
-                  <div class="mb-4">
-                    <label class="form-label fw-semibold">Favorite Categories</label>
-                    <div class="d-flex flex-wrap gap-2">
-                      <input type="checkbox" class="btn-check" id="cat-dairy" autocomplete="off">
-                      <label class="btn btn-outline-primary" for="cat-dairy">Dairy</label>
-                      
-                      <input type="checkbox" class="btn-check" id="cat-produce" autocomplete="off">
-                      <label class="btn btn-outline-primary" for="cat-produce">Produce</label>
-                      
-                      <input type="checkbox" class="btn-check" id="cat-meat" autocomplete="off">
-                      <label class="btn btn-outline-primary" for="cat-meat">Meat</label>
-                      
-                      <input type="checkbox" class="btn-check" id="cat-bakery" autocomplete="off">
-                      <label class="btn btn-outline-primary" for="cat-bakery">Bakery</label>
-                      
-                      <input type="checkbox" class="btn-check" id="cat-snacks" autocomplete="off">
-                      <label class="btn btn-outline-primary" for="cat-snacks">Snacks</label>
-                    </div>
-                  </div>
-
-                  <div class="mb-4">
-                    <label class="form-label fw-semibold">Price Alert Threshold</label>
-                    <input type="range" class="form-range" id="price-threshold" min="0" max="50" step="5" value="20">
-                    <small class="text-muted">Notify me when prices drop by: <span id="threshold-value">20</span>%</small>
-                  </div>
-
-                  <button class="btn btn-primary" onclick="savePreferences()">
-                    <i class="bi bi-check-circle"></i> Save Preferences
-                  </button>
+                {% endfor %}
+              {% else %}
+                <div class="text-center empty-favorites">
+                  <i class="bi bi-heart display-6 text-muted"></i>
+                  <h6 class="mt-2 mb-1 text-muted">No favorites yet</h6>
+                  <p class="text-muted mb-2">Start adding products to see them here.</p>
+                  <a href="{{ url_for('main.compare_prices') }}" class="btn btn-primary btn-sm"><i class="bi bi-search"></i> Browse Products</a>
                 </div>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="card-neo p-4">
+            <h6 class="text-muted text-uppercase fw-semibold mb-3">Preferences</h6>
+            {% set selected_stores = (user_data.preferences.preferred_stores if user_data and user_data.get('preferences') else user_data.get('preferred_stores', [])) or [] %}
+            {% set selected_cats = (user_data.preferences.favorite_categories if user_data and user_data.get('preferences') else user_data.get('favorite_categories', [])) or [] %}
+            <div class="preference-list mb-3">
+              <label class="form-label fw-semibold mb-3">Preferred Stores</label>
+              {% if stores_options %}
+                <div class="stores-grid">
+                  {% for store in stores_options %}
+                    <div class="store-box">
+                      <input type="checkbox" id="store-{{ loop.index }}" name="preferred_store" value="{{ store }}" {% if store in selected_stores %}checked{% endif %} class="store-checkbox">
+                      <label for="store-{{ loop.index }}" class="store-label">{{ store }}</label>
+                    </div>
+                  {% endfor %}
+                </div>
+              {% else %}
+                <p class="text-muted">No stores available yet</p>
+              {% endif %}
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Favorite Categories</label>
+              <div class="d-flex flex-wrap gap-2">
+                {% for cat in category_options %}
+                  {% set slug = cat|replace(' ', '-')|lower %}
+                  <input type="checkbox" class="btn-check" id="cat-{{ slug }}" value="{{ cat }}" autocomplete="off" {% if cat in selected_cats %}checked{% endif %}>
+                  <label class="btn btn-outline-primary" for="cat-{{ slug }}">{{ cat }}</label>
+                {% endfor %}
+                {% if not category_options %}
+                  <span class="text-muted small">No categories available</span>
+                {% endif %}
               </div>
             </div>
+            <button class="btn btn-primary" onclick="savePreferences()"><i class="bi bi-check-circle"></i> Save Preferences</button>
           </div>
         </div>
       </div>
@@ -434,19 +413,20 @@
         
         if (response.ok) {
           const data = await response.json();
-          if (data.action === 'removed') {
-            // Remove the item from the list
-            button.closest('.favorite-item').style.transition = 'all 0.3s ease';
-            button.closest('.favorite-item').style.opacity = '0';
-            button.closest('.favorite-item').style.transform = 'translateX(-20px)';
-            setTimeout(() => {
-              button.closest('.favorite-item').remove();
-              // Check if list is empty
-              if (document.querySelectorAll('.favorite-item').length === 0) {
-                location.reload();
+            if (data.action === 'removed') {
+              const card = button.closest('.favorite-card');
+              if (card) {
+                card.style.transition = 'all 0.25s ease';
+                card.style.opacity = '0';
+                card.style.transform = 'translateX(-10px)';
+                setTimeout(() => {
+                  card.remove();
+                  if (document.querySelectorAll('.favorite-card').length === 0) {
+                    location.reload();
+                  }
+                }, 250);
               }
-            }, 300);
-          }
+            }
         }
       } catch (error) {
         console.error('Error toggling favorite:', error);
@@ -455,12 +435,10 @@
 
     // Save preferences
     function savePreferences() {
-      const preferences = {
-        preferred_stores: Array.from(document.getElementById('preferred-stores').selectedOptions).map(opt => opt.value),
-        favorite_categories: Array.from(document.querySelectorAll('.btn-check:checked')).map(cb => cb.id.replace('cat-', '')),
-        price_threshold: document.getElementById('price-threshold').value
-      };
-      
+        const preferences = {
+          preferred_stores: Array.from(document.querySelectorAll('.store-checkbox:checked')).map(cb => cb.value),
+          favorite_categories: Array.from(document.querySelectorAll('.btn-check:checked')).map(cb => cb.value || cb.id.replace('cat-', ''))
+        };
       fetch('/api/save-preferences', {
         method: 'POST',
         headers: {
@@ -477,10 +455,6 @@
       });
     }
 
-    // Update threshold display
-    document.getElementById('price-threshold')?.addEventListener('input', function(e) {
-      document.getElementById('threshold-value').textContent = e.target.value;
-    });
   </script>
 </body>
 </html>

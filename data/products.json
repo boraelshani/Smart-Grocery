@@ -253,5 +253,905 @@
       {"store": "Fresh & Co", "price": 3.69, "url": "https://freshco.example/product/orange-juice", "logo": "https://freshco.example/logo.png"}
     ],
     "cheapest": {"price": 3.49, "store": "Supermart"}
+  },
+  {
+    "name": "Strawberries",
+    "unit": "box",
+    "image": "https://via.placeholder.com/400x300?text=Strawberries",
+    "price": 4.99,
+    "category": "Produce",
+    "category_path": ["Products", "Fruit & Vegetables", "Fruits", "Strawberries"],
+    "category_slugs": ["products", "fruit-vegetables", "fruits", "strawberries"],
+    "description": "Fresh strawberries, 400g box.",
+    "stores": [
+      {"store": "Fresh & Co", "price": 4.99, "url": "https://freshco.example/product/strawberries", "logo": "https://freshco.example/logo.png"},
+      {"store": "Green Valley", "price": 5.29, "url": "https://greenvalley.example/product/strawberries", "logo": "https://greenvalley.example/logo.png"}
+    ],
+    "cheapest": {"price": 4.99, "store": "Fresh & Co"}
+  },
+  {
+    "name": "Blueberries",
+    "unit": "box",
+    "image": "https://via.placeholder.com/400x300?text=Blueberries",
+    "price": 3.99,
+    "category": "Produce",
+    "category_path": ["Products", "Fruit & Vegetables", "Fruits", "Blueberries"],
+    "category_slugs": ["products", "fruit-vegetables", "fruits", "blueberries"],
+    "description": "Sweet blueberries, 200g box.",
+    "stores": [
+      {"store": "Fresh & Co", "price": 3.99, "url": "https://freshco.example/product/blueberries", "logo": "https://freshco.example/logo.png"},
+      {"store": "Supermart", "price": 4.29, "url": "https://supermart.example/product/blueberries", "logo": "https://supermart.example/logo.png"}
+    ],
+    "cheapest": {"price": 3.99, "store": "Fresh & Co"}
+  },
+  {
+    "name": "Oranges",
+    "unit": "kg",
+    "image": "https://via.placeholder.com/400x300?text=Oranges",
+    "price": 2.39,
+    "category": "Produce",
+    "category_path": ["Products", "Fruit & Vegetables", "Fruits", "Oranges"],
+    "category_slugs": ["products", "fruit-vegetables", "fruits", "oranges"],
+    "description": "Juicy navel oranges, per kg.",
+    "stores": [
+      {"store": "Supermart", "price": 2.39, "url": "https://supermart.example/product/oranges", "logo": "https://supermart.example/logo.png"},
+      {"store": "Green Valley", "price": 2.59, "url": "https://greenvalley.example/product/oranges", "logo": "https://greenvalley.example/logo.png"}
+    ],
+    "cheapest": {"price": 2.39, "store": "Supermart"}
+  },
+  {
+    "name": "Grapes",
+    "unit": "kg",
+    "image": "https://via.placeholder.com/400x300?text=Grapes",
+    "price": 3.49,
+    "category": "Produce",
+    "category_path": ["Products", "Fruit & Vegetables", "Fruits", "Grapes"],
+    "category_slugs": ["products", "fruit-vegetables", "fruits", "grapes"],
+    "description": "Seedless grapes, per kg.",
+    "stores": [
+      {"store": "Fresh & Co", "price": 3.49, "url": "https://freshco.example/product/grapes", "logo": "https://freshco.example/logo.png"},
+      {"store": "Supermart", "price": 3.79, "url": "https://supermart.example/product/grapes", "logo": "https://supermart.example/logo.png"}
+    ],
+    "cheapest": {"price": 3.49, "store": "Fresh & Co"}
+  },
+  {
+    "name": "Avocado",
+    "unit": "each",
+    "image": "https://via.placeholder.com/400x300?text=Avocado",
+    "price": 1.69,
+    "category": "Produce",
+    "category_path": ["Products", "Fruit & Vegetables", "Fruits", "Avocado"],
+    "category_slugs": ["products", "fruit-vegetables", "fruits", "avocado"],
+    "description": "Hass avocado, ripe and ready.",
+    "stores": [
+      {"store": "Green Valley", "price": 1.69, "url": "https://greenvalley.example/product/avocado", "logo": "https://greenvalley.example/logo.png"},
+      {"store": "Supermart", "price": 1.89, "url": "https://supermart.example/product/avocado", "logo": "https://supermart.example/logo.png"}
+    ],
+    "cheapest": {"price": 1.69, "store": "Green Valley"}
+  },
+  {
+    "name": "Roma Tomatoes",
+    "unit": "kg",
+    "image": "https://via.placeholder.com/400x300?text=Tomatoes",
+    "price": 2.19,
+    "category": "Produce",
+    "category_path": ["Products", "Fruit & Vegetables", "Vegetables", "Tomatoes"],
+    "category_slugs": ["products", "fruit-vegetables", "vegetables", "tomatoes"],
+    "description": "Roma tomatoes, ideal for sauces.",
+    "stores": [
+      {"store": "Supermart", "price": 2.19, "url": "https://supermart.example/product/tomatoes", "logo": "https://supermart.example/logo.png"},
+      {"store": "Fresh & Co", "price": 2.39, "url": "https://freshco.example/product/tomatoes", "logo": "https://freshco.example/logo.png"}
+    ],
+    "cheapest": {"price": 2.19, "store": "Supermart"}
+  },
+  {
+    "name": "Cucumbers",
+    "unit": "each",
+    "image": "https://via.placeholder.com/400x300?text=Cucumbers",
+    "price": 0.99,
+    "category": "Produce",
+    "category_path": ["Products", "Fruit & Vegetables", "Vegetables", "Cucumbers"],
+    "category_slugs": ["products", "fruit-vegetables", "vegetables", "cucumbers"],
+    "description": "Fresh cucumbers, each.",
+    "stores": [
+      {"store": "Green Valley", "price": 0.99, "url": "https://greenvalley.example/product/cucumbers", "logo": "https://greenvalley.example/logo.png"},
+      {"store": "Supermart", "price": 1.09, "url": "https://supermart.example/product/cucumbers", "logo": "https://supermart.example/logo.png"}
+    ],
+    "cheapest": {"price": 0.99, "store": "Green Valley"}
+  },
+  {
+    "name": "Carrots",
+    "unit": "1kg bag",
+    "image": "https://via.placeholder.com/400x300?text=Carrots",
+    "price": 1.49,
+    "category": "Produce",
+    "category_path": ["Products", "Fruit & Vegetables", "Vegetables", "Carrots"],
+    "category_slugs": ["products", "fruit-vegetables", "vegetables", "carrots"],
+    "description": "Crunchy carrots, 1kg bag.",
+    "stores": [
+      {"store": "Supermart", "price": 1.49, "url": "https://supermart.example/product/carrots", "logo": "https://supermart.example/logo.png"},
+      {"store": "Fresh & Co", "price": 1.59, "url": "https://freshco.example/product/carrots", "logo": "https://freshco.example/logo.png"}
+    ],
+    "cheapest": {"price": 1.49, "store": "Supermart"}
+  },
+  {
+    "name": "Potatoes",
+    "unit": "2kg bag",
+    "image": "https://via.placeholder.com/400x300?text=Potatoes",
+    "price": 3.29,
+    "category": "Produce",
+    "category_path": ["Products", "Fruit & Vegetables", "Vegetables", "Potatoes"],
+    "category_slugs": ["products", "fruit-vegetables", "vegetables", "potatoes"],
+    "description": "White potatoes, 2kg bag.",
+    "stores": [
+      {"store": "Supermart", "price": 3.29, "url": "https://supermart.example/product/potatoes", "logo": "https://supermart.example/logo.png"},
+      {"store": "BigBox", "price": 3.49, "url": "https://bigbox.example/product/potatoes", "logo": "https://bigbox.example/logo.png"}
+    ],
+    "cheapest": {"price": 3.29, "store": "Supermart"}
+  },
+  {
+    "name": "Red Onions",
+    "unit": "kg",
+    "image": "https://via.placeholder.com/400x300?text=Red+Onions",
+    "price": 1.99,
+    "category": "Produce",
+    "category_path": ["Products", "Fruit & Vegetables", "Vegetables", "Onions"],
+    "category_slugs": ["products", "fruit-vegetables", "vegetables", "onions"],
+    "description": "Red onions, per kg.",
+    "stores": [
+      {"store": "Fresh & Co", "price": 1.99, "url": "https://freshco.example/product/red-onions", "logo": "https://freshco.example/logo.png"},
+      {"store": "Supermart", "price": 2.19, "url": "https://supermart.example/product/red-onions", "logo": "https://supermart.example/logo.png"}
+    ],
+    "cheapest": {"price": 1.99, "store": "Fresh & Co"}
+  },
+  {
+    "name": "Garlic",
+    "unit": "bulb",
+    "image": "https://via.placeholder.com/400x300?text=Garlic",
+    "price": 0.79,
+    "category": "Produce",
+    "category_path": ["Products", "Fruit & Vegetables", "Vegetables", "Garlic"],
+    "category_slugs": ["products", "fruit-vegetables", "vegetables", "garlic"],
+    "description": "Fresh garlic bulb.",
+    "stores": [
+      {"store": "Green Valley", "price": 0.79, "url": "https://greenvalley.example/product/garlic", "logo": "https://greenvalley.example/logo.png"},
+      {"store": "Supermart", "price": 0.89, "url": "https://supermart.example/product/garlic", "logo": "https://supermart.example/logo.png"}
+    ],
+    "cheapest": {"price": 0.79, "store": "Green Valley"}
+  },
+  {
+    "name": "Lettuce",
+    "unit": "head",
+    "image": "https://via.placeholder.com/400x300?text=Lettuce",
+    "price": 1.49,
+    "category": "Produce",
+    "category_path": ["Products", "Fruit & Vegetables", "Vegetables", "Lettuce"],
+    "category_slugs": ["products", "fruit-vegetables", "vegetables", "lettuce"],
+    "description": "Crisp lettuce head.",
+    "stores": [
+      {"store": "Fresh & Co", "price": 1.49, "url": "https://freshco.example/product/lettuce", "logo": "https://freshco.example/logo.png"},
+      {"store": "Supermart", "price": 1.69, "url": "https://supermart.example/product/lettuce", "logo": "https://supermart.example/logo.png"}
+    ],
+    "cheapest": {"price": 1.49, "store": "Fresh & Co"}
+  },
+  {
+    "name": "Broccoli",
+    "unit": "head",
+    "image": "https://via.placeholder.com/400x300?text=Broccoli",
+    "price": 2.09,
+    "category": "Produce",
+    "category_path": ["Products", "Fruit & Vegetables", "Vegetables", "Broccoli"],
+    "category_slugs": ["products", "fruit-vegetables", "vegetables", "broccoli"],
+    "description": "Fresh broccoli head.",
+    "stores": [
+      {"store": "Supermart", "price": 2.09, "url": "https://supermart.example/product/broccoli", "logo": "https://supermart.example/logo.png"},
+      {"store": "Fresh & Co", "price": 2.29, "url": "https://freshco.example/product/broccoli", "logo": "https://freshco.example/logo.png"}
+    ],
+    "cheapest": {"price": 2.09, "store": "Supermart"}
+  },
+  {
+    "name": "Cauliflower",
+    "unit": "head",
+    "image": "https://via.placeholder.com/400x300?text=Cauliflower",
+    "price": 2.29,
+    "category": "Produce",
+    "category_path": ["Products", "Fruit & Vegetables", "Vegetables", "Cauliflower"],
+    "category_slugs": ["products", "fruit-vegetables", "vegetables", "cauliflower"],
+    "description": "Fresh cauliflower head.",
+    "stores": [
+      {"store": "Fresh & Co", "price": 2.29, "url": "https://freshco.example/product/cauliflower", "logo": "https://freshco.example/logo.png"},
+      {"store": "Supermart", "price": 2.49, "url": "https://supermart.example/product/cauliflower", "logo": "https://supermart.example/logo.png"}
+    ],
+    "cheapest": {"price": 2.29, "store": "Fresh & Co"}
+  },
+  {
+    "name": "Mushrooms",
+    "unit": "250g",
+    "image": "https://via.placeholder.com/400x300?text=Mushrooms",
+    "price": 2.59,
+    "category": "Produce",
+    "category_path": ["Products", "Fruit & Vegetables", "Vegetables", "Mushrooms"],
+    "category_slugs": ["products", "fruit-vegetables", "vegetables", "mushrooms"],
+    "description": "White button mushrooms, 250g.",
+    "stores": [
+      {"store": "Supermart", "price": 2.59, "url": "https://supermart.example/product/mushrooms", "logo": "https://supermart.example/logo.png"},
+      {"store": "Fresh & Co", "price": 2.79, "url": "https://freshco.example/product/mushrooms", "logo": "https://freshco.example/logo.png"}
+    ],
+    "cheapest": {"price": 2.59, "store": "Supermart"}
+  },
+  {
+    "name": "Zucchini",
+    "unit": "each",
+    "image": "https://via.placeholder.com/400x300?text=Zucchini",
+    "price": 1.09,
+    "category": "Produce",
+    "category_path": ["Products", "Fruit & Vegetables", "Vegetables", "Zucchini"],
+    "category_slugs": ["products", "fruit-vegetables", "vegetables", "zucchini"],
+    "description": "Fresh zucchini, each.",
+    "stores": [
+      {"store": "Green Valley", "price": 1.09, "url": "https://greenvalley.example/product/zucchini", "logo": "https://greenvalley.example/logo.png"},
+      {"store": "Supermart", "price": 1.19, "url": "https://supermart.example/product/zucchini", "logo": "https://supermart.example/logo.png"}
+    ],
+    "cheapest": {"price": 1.09, "store": "Green Valley"}
+  },
+  {
+    "name": "Bell Peppers",
+    "unit": "each",
+    "image": "https://via.placeholder.com/400x300?text=Bell+Peppers",
+    "price": 1.29,
+    "category": "Produce",
+    "category_path": ["Products", "Fruit & Vegetables", "Vegetables", "Peppers"],
+    "category_slugs": ["products", "fruit-vegetables", "vegetables", "peppers"],
+    "description": "Colorful bell peppers, each.",
+    "stores": [
+      {"store": "Fresh & Co", "price": 1.29, "url": "https://freshco.example/product/bell-pepper", "logo": "https://freshco.example/logo.png"},
+      {"store": "Supermart", "price": 1.39, "url": "https://supermart.example/product/bell-pepper", "logo": "https://supermart.example/logo.png"}
+    ],
+    "cheapest": {"price": 1.29, "store": "Fresh & Co"}
+  },
+  {
+    "name": "Kale",
+    "unit": "bunch",
+    "image": "https://via.placeholder.com/400x300?text=Kale",
+    "price": 2.19,
+    "category": "Produce",
+    "category_path": ["Products", "Fruit & Vegetables", "Vegetables", "Kale"],
+    "category_slugs": ["products", "fruit-vegetables", "vegetables", "kale"],
+    "description": "Fresh kale bunch.",
+    "stores": [
+      {"store": "Green Valley", "price": 2.19, "url": "https://greenvalley.example/product/kale", "logo": "https://greenvalley.example/logo.png"},
+      {"store": "Supermart", "price": 2.39, "url": "https://supermart.example/product/kale", "logo": "https://supermart.example/logo.png"}
+    ],
+    "cheapest": {"price": 2.19, "store": "Green Valley"}
+  },
+  {
+    "name": "Cabbage",
+    "unit": "head",
+    "image": "https://via.placeholder.com/400x300?text=Cabbage",
+    "price": 1.89,
+    "category": "Produce",
+    "category_path": ["Products", "Fruit & Vegetables", "Vegetables", "Cabbage"],
+    "category_slugs": ["products", "fruit-vegetables", "vegetables", "cabbage"],
+    "description": "Green cabbage head.",
+    "stores": [
+      {"store": "Supermart", "price": 1.89, "url": "https://supermart.example/product/cabbage", "logo": "https://supermart.example/logo.png"},
+      {"store": "Fresh & Co", "price": 1.99, "url": "https://freshco.example/product/cabbage", "logo": "https://freshco.example/logo.png"}
+    ],
+    "cheapest": {"price": 1.89, "store": "Supermart"}
+  },
+  {
+    "name": "Sweet Corn",
+    "unit": "4-pack",
+    "image": "https://via.placeholder.com/400x300?text=Sweet+Corn",
+    "price": 3.19,
+    "category": "Produce",
+    "category_path": ["Products", "Fruit & Vegetables", "Vegetables", "Corn"],
+    "category_slugs": ["products", "fruit-vegetables", "vegetables", "corn"],
+    "description": "Sweet corn cobs, 4-pack.",
+    "stores": [
+      {"store": "Green Valley", "price": 3.19, "url": "https://greenvalley.example/product/sweet-corn", "logo": "https://greenvalley.example/logo.png"},
+      {"store": "Supermart", "price": 3.39, "url": "https://supermart.example/product/sweet-corn", "logo": "https://supermart.example/logo.png"}
+    ],
+    "cheapest": {"price": 3.19, "store": "Green Valley"}
+  },
+  {
+    "name": "Green Beans",
+    "unit": "300g",
+    "image": "https://via.placeholder.com/400x300?text=Green+Beans",
+    "price": 2.39,
+    "category": "Produce",
+    "category_path": ["Products", "Fruit & Vegetables", "Vegetables", "Green Beans"],
+    "category_slugs": ["products", "fruit-vegetables", "vegetables", "green-beans"],
+    "description": "Fresh green beans, 300g.",
+    "stores": [
+      {"store": "Fresh & Co", "price": 2.39, "url": "https://freshco.example/product/green-beans", "logo": "https://freshco.example/logo.png"},
+      {"store": "Supermart", "price": 2.59, "url": "https://supermart.example/product/green-beans", "logo": "https://supermart.example/logo.png"}
+    ],
+    "cheapest": {"price": 2.39, "store": "Fresh & Co"}
+  },
+  {
+    "name": "Pears",
+    "unit": "kg",
+    "image": "https://via.placeholder.com/400x300?text=Pears",
+    "price": 2.59,
+    "category": "Produce",
+    "category_path": ["Products", "Fruit & Vegetables", "Fruits", "Pears"],
+    "category_slugs": ["products", "fruit-vegetables", "fruits", "pears"],
+    "description": "Juicy pears, per kg.",
+    "stores": [
+      {"store": "Supermart", "price": 2.59, "url": "https://supermart.example/product/pears", "logo": "https://supermart.example/logo.png"},
+      {"store": "Fresh & Co", "price": 2.79, "url": "https://freshco.example/product/pears", "logo": "https://freshco.example/logo.png"}
+    ],
+    "cheapest": {"price": 2.59, "store": "Supermart"}
+  },
+  {
+    "name": "Peaches",
+    "unit": "kg",
+    "image": "https://via.placeholder.com/400x300?text=Peaches",
+    "price": 3.29,
+    "category": "Produce",
+    "category_path": ["Products", "Fruit & Vegetables", "Fruits", "Peaches"],
+    "category_slugs": ["products", "fruit-vegetables", "fruits", "peaches"],
+    "description": "Sweet peaches, per kg.",
+    "stores": [
+      {"store": "Fresh & Co", "price": 3.29, "url": "https://freshco.example/product/peaches", "logo": "https://freshco.example/logo.png"},
+      {"store": "Supermart", "price": 3.59, "url": "https://supermart.example/product/peaches", "logo": "https://supermart.example/logo.png"}
+    ],
+    "cheapest": {"price": 3.29, "store": "Fresh & Co"}
+  },
+  {
+    "name": "Mangoes",
+    "unit": "each",
+    "image": "https://via.placeholder.com/400x300?text=Mango",
+    "price": 1.99,
+    "category": "Produce",
+    "category_path": ["Products", "Fruit & Vegetables", "Fruits", "Mangoes"],
+    "category_slugs": ["products", "fruit-vegetables", "fruits", "mangoes"],
+    "description": "Ripe mango, each.",
+    "stores": [
+      {"store": "Supermart", "price": 1.99, "url": "https://supermart.example/product/mango", "logo": "https://supermart.example/logo.png"},
+      {"store": "Green Valley", "price": 2.19, "url": "https://greenvalley.example/product/mango", "logo": "https://greenvalley.example/logo.png"}
+    ],
+    "cheapest": {"price": 1.99, "store": "Supermart"}
+  },
+  {
+    "name": "Pineapple",
+    "unit": "each",
+    "image": "https://via.placeholder.com/400x300?text=Pineapple",
+    "price": 3.49,
+    "category": "Produce",
+    "category_path": ["Products", "Fruit & Vegetables", "Fruits", "Pineapple"],
+    "category_slugs": ["products", "fruit-vegetables", "fruits", "pineapple"],
+    "description": "Whole pineapple.",
+    "stores": [
+      {"store": "Fresh & Co", "price": 3.49, "url": "https://freshco.example/product/pineapple", "logo": "https://freshco.example/logo.png"},
+      {"store": "Supermart", "price": 3.69, "url": "https://supermart.example/product/pineapple", "logo": "https://supermart.example/logo.png"}
+    ],
+    "cheapest": {"price": 3.49, "store": "Fresh & Co"}
+  },
+  {
+    "name": "Watermelon",
+    "unit": "each",
+    "image": "https://via.placeholder.com/400x300?text=Watermelon",
+    "price": 5.99,
+    "category": "Produce",
+    "category_path": ["Products", "Fruit & Vegetables", "Fruits", "Watermelon"],
+    "category_slugs": ["products", "fruit-vegetables", "fruits", "watermelon"],
+    "description": "Whole seedless watermelon.",
+    "stores": [
+      {"store": "Supermart", "price": 5.99, "url": "https://supermart.example/product/watermelon", "logo": "https://supermart.example/logo.png"},
+      {"store": "BigBox", "price": 6.49, "url": "https://bigbox.example/product/watermelon", "logo": "https://bigbox.example/logo.png"}
+    ],
+    "cheapest": {"price": 5.99, "store": "Supermart"}
+  },
+  {
+    "name": "Lemons",
+    "unit": "each",
+    "image": "https://via.placeholder.com/400x300?text=Lemons",
+    "price": 0.59,
+    "category": "Produce",
+    "category_path": ["Products", "Fruit & Vegetables", "Fruits", "Lemons"],
+    "category_slugs": ["products", "fruit-vegetables", "fruits", "lemons"],
+    "description": "Fresh lemon, each.",
+    "stores": [
+      {"store": "Fresh & Co", "price": 0.59, "url": "https://freshco.example/product/lemon", "logo": "https://freshco.example/logo.png"},
+      {"store": "Supermart", "price": 0.65, "url": "https://supermart.example/product/lemon", "logo": "https://supermart.example/logo.png"}
+    ],
+    "cheapest": {"price": 0.59, "store": "Fresh & Co"}
+  },
+  {
+    "name": "Limes",
+    "unit": "each",
+    "image": "https://via.placeholder.com/400x300?text=Limes",
+    "price": 0.49,
+    "category": "Produce",
+    "category_path": ["Products", "Fruit & Vegetables", "Fruits", "Limes"],
+    "category_slugs": ["products", "fruit-vegetables", "fruits", "limes"],
+    "description": "Fresh lime, each.",
+    "stores": [
+      {"store": "Supermart", "price": 0.49, "url": "https://supermart.example/product/lime", "logo": "https://supermart.example/logo.png"},
+      {"store": "Fresh & Co", "price": 0.55, "url": "https://freshco.example/product/lime", "logo": "https://freshco.example/logo.png"}
+    ],
+    "cheapest": {"price": 0.49, "store": "Supermart"}
+  },
+  {
+    "name": "Kiwi",
+    "unit": "each",
+    "image": "https://via.placeholder.com/400x300?text=Kiwi",
+    "price": 0.69,
+    "category": "Produce",
+    "category_path": ["Products", "Fruit & Vegetables", "Fruits", "Kiwi"],
+    "category_slugs": ["products", "fruit-vegetables", "fruits", "kiwi"],
+    "description": "Green kiwi fruit, each.",
+    "stores": [
+      {"store": "Fresh & Co", "price": 0.69, "url": "https://freshco.example/product/kiwi", "logo": "https://freshco.example/logo.png"},
+      {"store": "Supermart", "price": 0.75, "url": "https://supermart.example/product/kiwi", "logo": "https://supermart.example/logo.png"}
+    ],
+    "cheapest": {"price": 0.69, "store": "Fresh & Co"}
+  },
+  {
+    "name": "Plums",
+    "unit": "kg",
+    "image": "https://via.placeholder.com/400x300?text=Plums",
+    "price": 2.99,
+    "category": "Produce",
+    "category_path": ["Products", "Fruit & Vegetables", "Fruits", "Plums"],
+    "category_slugs": ["products", "fruit-vegetables", "fruits", "plums"],
+    "description": "Sweet plums, per kg.",
+    "stores": [
+      {"store": "Supermart", "price": 2.99, "url": "https://supermart.example/product/plums", "logo": "https://supermart.example/logo.png"},
+      {"store": "Fresh & Co", "price": 3.19, "url": "https://freshco.example/product/plums", "logo": "https://freshco.example/logo.png"}
+    ],
+    "cheapest": {"price": 2.99, "store": "Supermart"}
+  },
+  {
+    "name": "Raspberries",
+    "unit": "box",
+    "image": "https://via.placeholder.com/400x300?text=Raspberries",
+    "price": 3.69,
+    "category": "Produce",
+    "category_path": ["Products", "Fruit & Vegetables", "Fruits", "Raspberries"],
+    "category_slugs": ["products", "fruit-vegetables", "fruits", "raspberries"],
+    "description": "Fresh raspberries, 125g box.",
+    "stores": [
+      {"store": "Fresh & Co", "price": 3.69, "url": "https://freshco.example/product/raspberries", "logo": "https://freshco.example/logo.png"},
+      {"store": "Supermart", "price": 3.89, "url": "https://supermart.example/product/raspberries", "logo": "https://supermart.example/logo.png"}
+    ],
+    "cheapest": {"price": 3.69, "store": "Fresh & Co"}
+  },
+  {
+    "name": "Blackberries",
+    "unit": "box",
+    "image": "https://via.placeholder.com/400x300?text=Blackberries",
+    "price": 3.79,
+    "category": "Produce",
+    "category_path": ["Products", "Fruit & Vegetables", "Fruits", "Blackberries"],
+    "category_slugs": ["products", "fruit-vegetables", "fruits", "blackberries"],
+    "description": "Fresh blackberries, 125g box.",
+    "stores": [
+      {"store": "Fresh & Co", "price": 3.79, "url": "https://freshco.example/product/blackberries", "logo": "https://freshco.example/logo.png"},
+      {"store": "Supermart", "price": 3.99, "url": "https://supermart.example/product/blackberries", "logo": "https://supermart.example/logo.png"}
+    ],
+    "cheapest": {"price": 3.79, "store": "Fresh & Co"}
+  },
+  {
+    "name": "Baguette",
+    "unit": "loaf",
+    "image": "https://via.placeholder.com/400x300?text=Baguette",
+    "price": 1.99,
+    "category": "Bakery",
+    "category_path": ["Products", "Bread & Pastries", "Bread", "Baguette"],
+    "category_slugs": ["products", "bread-pastries", "bread", "baguette"],
+    "description": "Crispy French baguette.",
+    "stores": [
+      {"store": "Boulangerie", "price": 1.99, "url": "https://boulangerie.example/product/baguette", "logo": "https://boulangerie.example/logo.png"},
+      {"store": "Supermart", "price": 2.19, "url": "https://supermart.example/product/baguette", "logo": "https://supermart.example/logo.png"}
+    ],
+    "cheapest": {"price": 1.99, "store": "Boulangerie"}
+  },
+  {
+    "name": "Cinnamon Roll",
+    "unit": "piece",
+    "image": "https://via.placeholder.com/400x300?text=Cinnamon+Roll",
+    "price": 2.49,
+    "category": "Bakery",
+    "category_path": ["Products", "Bread & Pastries", "Pastries", "Cinnamon Roll"],
+    "category_slugs": ["products", "bread-pastries", "pastries", "cinnamon-roll"],
+    "description": "Iced cinnamon roll.",
+    "stores": [
+      {"store": "Boulangerie", "price": 2.49, "url": "https://boulangerie.example/product/cinnamon-roll", "logo": "https://boulangerie.example/logo.png"},
+      {"store": "Fresh & Co", "price": 2.69, "url": "https://freshco.example/product/cinnamon-roll", "logo": "https://freshco.example/logo.png"}
+    ],
+    "cheapest": {"price": 2.49, "store": "Boulangerie"}
+  },
+  {
+    "name": "Cheddar Cheese",
+    "unit": "200g",
+    "image": "https://via.placeholder.com/400x300?text=Cheddar+Cheese",
+    "price": 3.99,
+    "category": "Dairy",
+    "category_path": ["Products", "Dairy Products & Alternatives", "Cheese", "Cheddar"],
+    "category_slugs": ["products", "dairy-products-alternatives", "cheese", "cheddar"],
+    "description": "Mature cheddar block, 200g.",
+    "stores": [
+      {"store": "Supermart", "price": 3.99, "url": "https://supermart.example/product/cheddar", "logo": "https://supermart.example/logo.png"},
+      {"store": "Fresh & Co", "price": 4.19, "url": "https://freshco.example/product/cheddar", "logo": "https://freshco.example/logo.png"}
+    ],
+    "cheapest": {"price": 3.99, "store": "Supermart"}
+  },
+  {
+    "name": "Mozzarella Cheese",
+    "unit": "200g",
+    "image": "https://via.placeholder.com/400x300?text=Mozzarella",
+    "price": 3.59,
+    "category": "Dairy",
+    "category_path": ["Products", "Dairy Products & Alternatives", "Cheese", "Mozzarella"],
+    "category_slugs": ["products", "dairy-products-alternatives", "cheese", "mozzarella"],
+    "description": "Shredded mozzarella, 200g.",
+    "stores": [
+      {"store": "Supermart", "price": 3.59, "url": "https://supermart.example/product/mozzarella", "logo": "https://supermart.example/logo.png"},
+      {"store": "Fresh & Co", "price": 3.79, "url": "https://freshco.example/product/mozzarella", "logo": "https://freshco.example/logo.png"}
+    ],
+    "cheapest": {"price": 3.59, "store": "Supermart"}
+  },
+  {
+    "name": "Almond Milk",
+    "unit": "1L",
+    "image": "https://via.placeholder.com/400x300?text=Almond+Milk",
+    "price": 2.99,
+    "category": "Dairy",
+    "category_path": ["Products", "Dairy Products & Alternatives", "Alternatives", "Almond Milk"],
+    "category_slugs": ["products", "dairy-products-alternatives", "alternatives", "almond-milk"],
+    "description": "Unsweetened almond milk, 1L.",
+    "stores": [
+      {"store": "Supermart", "price": 2.99, "url": "https://supermart.example/product/almond-milk", "logo": "https://supermart.example/logo.png"},
+      {"store": "Fresh & Co", "price": 3.19, "url": "https://freshco.example/product/almond-milk", "logo": "https://freshco.example/logo.png"}
+    ],
+    "cheapest": {"price": 2.99, "store": "Supermart"}
+  },
+  {
+    "name": "Oat Milk",
+    "unit": "1L",
+    "image": "https://via.placeholder.com/400x300?text=Oat+Milk",
+    "price": 2.89,
+    "category": "Dairy",
+    "category_path": ["Products", "Dairy Products & Alternatives", "Alternatives", "Oat Milk"],
+    "category_slugs": ["products", "dairy-products-alternatives", "alternatives", "oat-milk"],
+    "description": "Barista oat milk, 1L.",
+    "stores": [
+      {"store": "Fresh & Co", "price": 2.89, "url": "https://freshco.example/product/oat-milk", "logo": "https://freshco.example/logo.png"},
+      {"store": "Supermart", "price": 2.99, "url": "https://supermart.example/product/oat-milk", "logo": "https://supermart.example/logo.png"}
+    ],
+    "cheapest": {"price": 2.89, "store": "Fresh & Co"}
+  },
+  {
+    "name": "Frozen Mixed Berries",
+    "unit": "500g",
+    "image": "https://via.placeholder.com/400x300?text=Frozen+Berries",
+    "price": 5.49,
+    "category": "Frozen",
+    "category_path": ["Products", "Frozen products", "Fruits", "Frozen Mixed Berries"],
+    "category_slugs": ["products", "frozen-products", "fruits", "frozen-mixed-berries"],
+    "description": "Frozen mixed berries, 500g.",
+    "stores": [
+      {"store": "BigBox", "price": 5.49, "url": "https://bigbox.example/product/frozen-berries", "logo": "https://bigbox.example/logo.png"},
+      {"store": "Supermart", "price": 5.79, "url": "https://supermart.example/product/frozen-berries", "logo": "https://supermart.example/logo.png"}
+    ],
+    "cheapest": {"price": 5.49, "store": "BigBox"}
+  },
+  {
+    "name": "Frozen French Fries",
+    "unit": "1kg",
+    "image": "https://via.placeholder.com/400x300?text=Frozen+Fries",
+    "price": 3.49,
+    "category": "Frozen",
+    "category_path": ["Products", "Frozen products", "Sides", "French Fries"],
+    "category_slugs": ["products", "frozen-products", "sides", "french-fries"],
+    "description": "Crispy frozen French fries, 1kg.",
+    "stores": [
+      {"store": "BigBox", "price": 3.49, "url": "https://bigbox.example/product/frozen-fries", "logo": "https://bigbox.example/logo.png"},
+      {"store": "Supermart", "price": 3.69, "url": "https://supermart.example/product/frozen-fries", "logo": "https://supermart.example/logo.png"}
+    ],
+    "cheapest": {"price": 3.49, "store": "BigBox"}
+  },
+  {
+    "name": "Frozen Chicken Nuggets",
+    "unit": "750g",
+    "image": "https://via.placeholder.com/400x300?text=Chicken+Nuggets",
+    "price": 6.49,
+    "category": "Frozen",
+    "category_path": ["Products", "Frozen products", "Meals", "Chicken Nuggets"],
+    "category_slugs": ["products", "frozen-products", "meals", "chicken-nuggets"],
+    "description": "Breaded chicken nuggets, 750g.",
+    "stores": [
+      {"store": "Supermart", "price": 6.49, "url": "https://supermart.example/product/chicken-nuggets", "logo": "https://supermart.example/logo.png"},
+      {"store": "BigBox", "price": 6.79, "url": "https://bigbox.example/product/chicken-nuggets", "logo": "https://bigbox.example/logo.png"}
+    ],
+    "cheapest": {"price": 6.49, "store": "Supermart"}
+  },
+  {
+    "name": "Ground Beef",
+    "unit": "500g",
+    "image": "https://via.placeholder.com/400x300?text=Ground+Beef",
+    "price": 5.99,
+    "category": "Meat",
+    "category_path": ["Products", "Sausage, meat, eggs & fish", "Meat", "Ground Beef"],
+    "category_slugs": ["products", "sausage-meat-eggs-fish", "meat", "ground-beef"],
+    "description": "Lean ground beef, 500g.",
+    "stores": [
+      {"store": "Supermart", "price": 5.99, "url": "https://supermart.example/product/ground-beef", "logo": "https://supermart.example/logo.png"},
+      {"store": "Green Valley", "price": 6.29, "url": "https://greenvalley.example/product/ground-beef", "logo": "https://greenvalley.example/logo.png"}
+    ],
+    "cheapest": {"price": 5.99, "store": "Supermart"}
+  },
+  {
+    "name": "Salmon Fillet",
+    "unit": "300g",
+    "image": "https://via.placeholder.com/400x300?text=Salmon+Fillet",
+    "price": 7.99,
+    "category": "Meat",
+    "category_path": ["Products", "Sausage, meat, eggs & fish", "Fish", "Salmon Fillet"],
+    "category_slugs": ["products", "sausage-meat-eggs-fish", "fish", "salmon-fillet"],
+    "description": "Fresh Atlantic salmon fillet, 300g.",
+    "stores": [
+      {"store": "Fresh & Co", "price": 7.99, "url": "https://freshco.example/product/salmon-fillet", "logo": "https://freshco.example/logo.png"},
+      {"store": "Supermart", "price": 8.29, "url": "https://supermart.example/product/salmon-fillet", "logo": "https://supermart.example/logo.png"}
+    ],
+    "cheapest": {"price": 7.99, "store": "Fresh & Co"}
+  },
+  {
+    "name": "Shrimp",
+    "unit": "400g",
+    "image": "https://via.placeholder.com/400x300?text=Shrimp",
+    "price": 9.49,
+    "category": "Meat",
+    "category_path": ["Products", "Sausage, meat, eggs & fish", "Fish", "Shrimp"],
+    "category_slugs": ["products", "sausage-meat-eggs-fish", "fish", "shrimp"],
+    "description": "Raw peeled shrimp, 400g.",
+    "stores": [
+      {"store": "BigBox", "price": 9.49, "url": "https://bigbox.example/product/shrimp", "logo": "https://bigbox.example/logo.png"},
+      {"store": "Supermart", "price": 9.79, "url": "https://supermart.example/product/shrimp", "logo": "https://supermart.example/logo.png"}
+    ],
+    "cheapest": {"price": 9.49, "store": "BigBox"}
+  },
+  {
+    "name": "Basmati Rice",
+    "unit": "1kg",
+    "image": "https://via.placeholder.com/400x300?text=Basmati+Rice",
+    "price": 3.99,
+    "category": "Pantry",
+    "category_path": ["Products", "Side dishes, vinegar, oil & spices", "Grains", "Basmati Rice"],
+    "category_slugs": ["products", "side-dishes-vinegar-oil-spices", "grains", "basmati-rice"],
+    "description": "Aromatic basmati rice, 1kg.",
+    "stores": [
+      {"store": "Supermart", "price": 3.99, "url": "https://supermart.example/product/basmati-rice", "logo": "https://supermart.example/logo.png"},
+      {"store": "BigBox", "price": 3.89, "url": "https://bigbox.example/product/basmati-rice", "logo": "https://bigbox.example/logo.png"}
+    ],
+    "cheapest": {"price": 3.89, "store": "BigBox"}
+  },
+  {
+    "name": "Penne Pasta",
+    "unit": "500g",
+    "image": "https://via.placeholder.com/400x300?text=Penne+Pasta",
+    "price": 1.49,
+    "category": "Pantry",
+    "category_path": ["Products", "Side dishes, vinegar, oil & spices", "Pasta", "Penne"],
+    "category_slugs": ["products", "side-dishes-vinegar-oil-spices", "pasta", "penne"],
+    "description": "Durum wheat penne, 500g.",
+    "stores": [
+      {"store": "Supermart", "price": 1.49, "url": "https://supermart.example/product/penne", "logo": "https://supermart.example/logo.png"},
+      {"store": "BigBox", "price": 1.59, "url": "https://bigbox.example/product/penne", "logo": "https://bigbox.example/logo.png"}
+    ],
+    "cheapest": {"price": 1.49, "store": "Supermart"}
+  },
+  {
+    "name": "Tomato Basil Sauce",
+    "unit": "680g",
+    "image": "https://via.placeholder.com/400x300?text=Tomato+Sauce",
+    "price": 3.29,
+    "category": "Pantry",
+    "category_path": ["Products", "Side dishes, vinegar, oil & spices", "Sauces", "Tomato Basil Sauce"],
+    "category_slugs": ["products", "side-dishes-vinegar-oil-spices", "sauces", "tomato-basil-sauce"],
+    "description": "Tomato basil pasta sauce, 680g jar.",
+    "stores": [
+      {"store": "Supermart", "price": 3.29, "url": "https://supermart.example/product/tomato-sauce", "logo": "https://supermart.example/logo.png"},
+      {"store": "Fresh & Co", "price": 3.49, "url": "https://freshco.example/product/tomato-sauce", "logo": "https://freshco.example/logo.png"}
+    ],
+    "cheapest": {"price": 3.29, "store": "Supermart"}
+  },
+  {
+    "name": "Peanut Butter",
+    "unit": "340g",
+    "image": "https://via.placeholder.com/400x300?text=Peanut+Butter",
+    "price": 3.79,
+    "category": "Pantry",
+    "category_path": ["Products", "Side dishes, vinegar, oil & spices", "Spreads", "Peanut Butter"],
+    "category_slugs": ["products", "side-dishes-vinegar-oil-spices", "spreads", "peanut-butter"],
+    "description": "Creamy peanut butter, 340g jar.",
+    "stores": [
+      {"store": "Supermart", "price": 3.79, "url": "https://supermart.example/product/peanut-butter", "logo": "https://supermart.example/logo.png"},
+      {"store": "Corner Shop", "price": 3.99, "url": "https://cornershop.example/product/peanut-butter", "logo": "https://cornershop.example/logo.png"}
+    ],
+    "cheapest": {"price": 3.79, "store": "Supermart"}
+  },
+  {
+    "name": "Salted Potato Chips",
+    "unit": "200g",
+    "image": "https://via.placeholder.com/400x300?text=Potato+Chips",
+    "price": 2.49,
+    "category": "Snacks",
+    "category_path": ["Products", "Sweet & Salty", "Snacks", "Salted Potato Chips"],
+    "category_slugs": ["products", "sweet-salty", "snacks", "salted-potato-chips"],
+    "description": "Crispy salted potato chips, 200g.",
+    "stores": [
+      {"store": "Supermart", "price": 2.49, "url": "https://supermart.example/product/potato-chips", "logo": "https://supermart.example/logo.png"},
+      {"store": "BigBox", "price": 2.39, "url": "https://bigbox.example/product/potato-chips", "logo": "https://bigbox.example/logo.png"}
+    ],
+    "cheapest": {"price": 2.39, "store": "BigBox"}
+  },
+  {
+    "name": "Cola Soda",
+    "unit": "2L",
+    "image": "https://via.placeholder.com/400x300?text=Cola",
+    "price": 1.99,
+    "category": "Beverages",
+    "category_path": ["Products", "Fast Food & To Go", "Drinks", "Cola Soda"],
+    "category_slugs": ["products", "fast-food-to-go", "drinks", "cola-soda"],
+    "description": "Classic cola soda, 2L bottle.",
+    "stores": [
+      {"store": "Supermart", "price": 1.99, "url": "https://supermart.example/product/cola", "logo": "https://supermart.example/logo.png"},
+      {"store": "BigBox", "price": 1.89, "url": "https://bigbox.example/product/cola", "logo": "https://bigbox.example/logo.png"}
+    ],
+    "cheapest": {"price": 1.89, "store": "BigBox"}
+  },
+  {
+    "name": "Lemon Iced Tea",
+    "unit": "1.5L",
+    "image": "https://via.placeholder.com/400x300?text=Iced+Tea",
+    "price": 2.29,
+    "category": "Beverages",
+    "category_path": ["Products", "Baking & Breakfast", "Drinks", "Lemon Iced Tea"],
+    "category_slugs": ["products", "baking-breakfast", "drinks", "lemon-iced-tea"],
+    "description": "Lemon flavored iced tea, 1.5L.",
+    "stores": [
+      {"store": "Supermart", "price": 2.29, "url": "https://supermart.example/product/iced-tea", "logo": "https://supermart.example/logo.png"},
+      {"store": "Fresh & Co", "price": 2.49, "url": "https://freshco.example/product/iced-tea", "logo": "https://freshco.example/logo.png"}
+    ],
+    "cheapest": {"price": 2.29, "store": "Supermart"}
+  },
+  {
+    "name": "Energy Drink",
+    "unit": "500ml",
+    "image": "https://via.placeholder.com/400x300?text=Energy+Drink",
+    "price": 2.59,
+    "category": "Beverages",
+    "category_path": ["Products", "Fast Food & To Go", "Drinks", "Energy Drink"],
+    "category_slugs": ["products", "fast-food-to-go", "drinks", "energy-drink"],
+    "description": "Carbonated energy drink, 500ml can.",
+    "stores": [
+      {"store": "Corner Shop", "price": 2.59, "url": "https://cornershop.example/product/energy-drink", "logo": "https://cornershop.example/logo.png"},
+      {"store": "Supermart", "price": 2.69, "url": "https://supermart.example/product/energy-drink", "logo": "https://supermart.example/logo.png"}
+    ],
+    "cheapest": {"price": 2.59, "store": "Corner Shop"}
+  },
+  {
+    "name": "Granola Bars",
+    "unit": "6-pack",
+    "image": "https://via.placeholder.com/400x300?text=Granola+Bars",
+    "price": 3.49,
+    "category": "Snacks",
+    "category_path": ["Products", "Sweet & Salty", "Snacks", "Granola Bars"],
+    "category_slugs": ["products", "sweet-salty", "snacks", "granola-bars"],
+    "description": "Oats and honey granola bars, 6-pack.",
+    "stores": [
+      {"store": "Supermart", "price": 3.49, "url": "https://supermart.example/product/granola-bars", "logo": "https://supermart.example/logo.png"},
+      {"store": "Fresh & Co", "price": 3.69, "url": "https://freshco.example/product/granola-bars", "logo": "https://freshco.example/logo.png"}
+    ],
+    "cheapest": {"price": 3.49, "store": "Supermart"}
+  },
+  {
+    "name": "Baby Diapers",
+    "unit": "Size 3, 40ct",
+    "image": "https://via.placeholder.com/400x300?text=Baby+Diapers",
+    "price": 14.99,
+    "category": "Baby food",
+    "category_path": ["Products", "Baby food", "Diapers", "Baby Diapers"],
+    "category_slugs": ["products", "baby-food", "diapers", "baby-diapers"],
+    "description": "Baby diapers size 3, pack of 40.",
+    "stores": [
+      {"store": "BigBox", "price": 14.99, "url": "https://bigbox.example/product/baby-diapers", "logo": "https://bigbox.example/logo.png"},
+      {"store": "Supermart", "price": 15.49, "url": "https://supermart.example/product/baby-diapers", "logo": "https://supermart.example/logo.png"}
+    ],
+    "cheapest": {"price": 14.99, "store": "BigBox"}
+  },
+  {
+    "name": "Baby Formula",
+    "unit": "800g",
+    "image": "https://via.placeholder.com/400x300?text=Baby+Formula",
+    "price": 24.99,
+    "category": "Baby food",
+    "category_path": ["Products", "Baby food", "Formula", "Baby Formula"],
+    "category_slugs": ["products", "baby-food", "formula", "baby-formula"],
+    "description": "Infant formula powder, 800g.",
+    "stores": [
+      {"store": "Supermart", "price": 24.99, "url": "https://supermart.example/product/baby-formula", "logo": "https://supermart.example/logo.png"},
+      {"store": "BigBox", "price": 25.49, "url": "https://bigbox.example/product/baby-formula", "logo": "https://bigbox.example/logo.png"}
+    ],
+    "cheapest": {"price": 24.99, "store": "Supermart"}
+  },
+  {
+    "name": "Baby Wipes",
+    "unit": "72ct",
+    "image": "https://via.placeholder.com/400x300?text=Baby+Wipes",
+    "price": 3.29,
+    "category": "Baby food",
+    "category_path": ["Products", "Baby food", "Wipes", "Baby Wipes"],
+    "category_slugs": ["products", "baby-food", "wipes", "baby-wipes"],
+    "description": "Sensitive baby wipes, 72 count.",
+    "stores": [
+      {"store": "Supermart", "price": 3.29, "url": "https://supermart.example/product/baby-wipes", "logo": "https://supermart.example/logo.png"},
+      {"store": "Corner Shop", "price": 3.49, "url": "https://cornershop.example/product/baby-wipes", "logo": "https://cornershop.example/logo.png"}
+    ],
+    "cheapest": {"price": 3.29, "store": "Supermart"}
+  },
+  {
+    "name": "Ketchup",
+    "unit": "500ml",
+    "image": "https://via.placeholder.com/400x300?text=Ketchup",
+    "price": 2.49,
+    "category": "Pantry",
+    "category_path": ["Products", "Side dishes, vinegar, oil & spices", "Condiments", "Ketchup"],
+    "category_slugs": ["products", "side-dishes-vinegar-oil-spices", "condiments", "ketchup"],
+    "description": "Tomato ketchup, 500ml bottle.",
+    "stores": [
+      {"store": "Supermart", "price": 2.49, "url": "https://supermart.example/product/ketchup", "logo": "https://supermart.example/logo.png"},
+      {"store": "BigBox", "price": 2.39, "url": "https://bigbox.example/product/ketchup", "logo": "https://bigbox.example/logo.png"}
+    ],
+    "cheapest": {"price": 2.39, "store": "BigBox"}
+  },
+  {
+    "name": "Yellow Mustard",
+    "unit": "400ml",
+    "image": "https://via.placeholder.com/400x300?text=Mustard",
+    "price": 1.99,
+    "category": "Pantry",
+    "category_path": ["Products", "Side dishes, vinegar, oil & spices", "Condiments", "Mustard"],
+    "category_slugs": ["products", "side-dishes-vinegar-oil-spices", "condiments", "mustard"],
+    "description": "Classic yellow mustard, 400ml bottle.",
+    "stores": [
+      {"store": "Supermart", "price": 1.99, "url": "https://supermart.example/product/mustard", "logo": "https://supermart.example/logo.png"},
+      {"store": "Corner Shop", "price": 2.09, "url": "https://cornershop.example/product/mustard", "logo": "https://cornershop.example/logo.png"}
+    ],
+    "cheapest": {"price": 1.99, "store": "Supermart"}
+  },
+  {
+    "name": "Olive Tapenade",
+    "unit": "180g",
+    "image": "https://via.placeholder.com/400x300?text=Olive+Tapenade",
+    "price": 4.59,
+    "category": "Pantry",
+    "category_path": ["Products", "Side dishes, vinegar, oil & spices", "Spreads", "Olive Tapenade"],
+    "category_slugs": ["products", "side-dishes-vinegar-oil-spices", "spreads", "olive-tapenade"],
+    "description": "Black olive tapenade spread, 180g.",
+    "stores": [
+      {"store": "Gourmet Market", "price": 4.59, "url": "https://gourmet.example/product/olive-tapenade", "logo": "https://gourmet.example/logo.png"},
+      {"store": "Supermart", "price": 4.79, "url": "https://supermart.example/product/olive-tapenade", "logo": "https://supermart.example/logo.png"}
+    ],
+    "cheapest": {"price": 4.59, "store": "Gourmet Market"}
+  },
+  {
+    "name": "Yogurt Drink",
+    "unit": "330ml",
+    "image": "https://via.placeholder.com/400x300?text=Yogurt+Drink",
+    "price": 1.69,
+    "category": "Dairy",
+    "category_path": ["Products", "Dairy Products & Alternatives", "Yogurt", "Yogurt Drink"],
+    "category_slugs": ["products", "dairy-products-alternatives", "yogurt", "yogurt-drink"],
+    "description": "Strawberry yogurt drink, 330ml.",
+    "stores": [
+      {"store": "Supermart", "price": 1.69, "url": "https://supermart.example/product/yogurt-drink", "logo": "https://supermart.example/logo.png"},
+      {"store": "Fresh & Co", "price": 1.79, "url": "https://freshco.example/product/yogurt-drink", "logo": "https://freshco.example/logo.png"}
+    ],
+    "cheapest": {"price": 1.69, "store": "Supermart"}
   }
 ]
