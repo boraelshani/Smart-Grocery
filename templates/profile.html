@@ -340,10 +340,16 @@
                   <div class="mb-4">
                     <label class="form-label fw-semibold">Preferred Stores</label>
                     <select class="form-select" id="preferred-stores" multiple>
-                      <option value="walmart">Walmart</option>
-                      <option value="target">Target</option>
-                      <option value="costco">Costco</option>
-                      <option value="safeway">Safeway</option>
+                      {% if stores %}
+                        {% set preferred = (user_data.get('preferences') or {}).get('preferred_stores', []) if user_data else [] %}
+                        {% for store in stores %}
+                          {% set store_value = store.get('id') or store.get('name') or store.get('store') %}
+                          {% set store_label = store.get('name') or store.get('store') or 'Store' %}
+                          <option value="{{ store_value }}" {% if store_value in preferred %}selected{% endif %}>{{ store_label }}</option>
+                        {% endfor %}
+                      {% else %}
+                        <option disabled>No stores available</option>
+                      {% endif %}
                     </select>
                     <small class="text-muted">Select stores you shop at most frequently</small>
                   </div>

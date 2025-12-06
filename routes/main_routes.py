@@ -17,6 +17,76 @@ def _db_available():
     return HAS_DB and mongo is not None and getattr(mongo, 'db', None) is not None
 
 
+def _preferred_store_sets(user_doc):
+    """Return (preferred_ids, preferred_names_lower) from a user document."""
+    prefs = (user_doc or {}).get('preferences') or {}
+    preferred = prefs.get('preferred_stores') or []
+    preferred_ids = set()
+    preferred_names = set()
+    for val in preferred:
+        if val is None:
+            continue
+        val_str = str(val)
+        if val_str:
+            preferred_ids.add(val_str)
+            preferred_names.add(val_str.lower())
+    return preferred_ids, preferred_names
+
+
+def _is_preferred_store(store_doc, preferred_ids, preferred_names):
+    sid = ''
+    if isinstance(store_doc, dict):
+        sid = str(store_doc.get('id') or store_doc.get('_id') or '')
+        name = str(store_doc.get('name') or store_doc.get('store') or '').lower()
+    else:
+        sid = str(store_doc)
+        name = str(store_doc).lower()
+    return (sid and sid in preferred_ids) or (name and name in preferred_names)
+
+
+def _sort_stores_with_preferences(stores, preferred_ids, preferred_names):
+    if not stores or (not preferred_ids and not preferred_names):
+        return stores
+    def sort_key(s):
+        name = ''
+        if isinstance(s, dict):
+            name = str(s.get('name') or s.get('store') or '').lower()
+            sid = str(s.get('id') or s.get('_id') or '')
+        else:
+            name = str(s).lower()
+            sid = str(s)
+        preferred_rank = 0 if _is_preferred_store(s, preferred_ids, preferred_names) else 1
+        secondary = name or sid
+        return (preferred_rank, secondary)
+    try:
+        return sorted(stores, key=sort_key)
+    except Exception:
+        return stores
+
+
+def _sort_products_by_preferred_store(products, preferred_ids, preferred_names):
+    if not products or (not preferred_ids and not preferred_names):
+        return products
+
+    def product_has_preferred(p):
+        stores = p.get('stores') if isinstance(p, dict) else []
+        if isinstance(stores, list):
+            return any(_is_preferred_store(s, preferred_ids, preferred_names) for s in stores)
+        return False
+
+    def sort_key(p):
+        name = ''
+        if isinstance(p, dict):
+            name = str(p.get('name') or p.get('title') or '').lower()
+        preferred_rank = 0 if product_has_preferred(p) else 1
+        return (preferred_rank, name)
+
+    try:
+        return sorted(products, key=sort_key)
+    except Exception:
+        return products
+
+
 def get_db():
     """Return a working pymongo Database instance. Prefer the Flask-PyMongo `mongo.db` when available;
     otherwise open a fresh MongoClient using the configured URI in the app config or environment.
@@ -74,11 +144,17 @@ def home():
     if not user_email:
         return render_template('entry.html')
 
+    preferred_ids = set()
+    preferred_names = set()
+
     # Load stores/products/deals from MongoDB when available, otherwise use in-memory mocks
     using_fallback = False
     db = get_db()
     if db is not None:
         try:
+            user_doc = db.users.find_one({'email': user_email}, {'preferences': 1})
+            preferred_ids, preferred_names = _preferred_store_sets(user_doc)
+
             stores = list(db.stores.find({}))
             products = list(db.products.find({}))
             featured_deals = list(db.featured_deals.find({}))
@@ -89,6 +165,18 @@ def home():
             for d in doc_list:
                 if '_id' in d:
                     d['id'] = str(d['_id'])
+
+        # Reorder stores/products so preferred stores appear first
+        stores = _sort_stores_with_preferences(stores, preferred_ids, preferred_names)
+        products = _sort_products_by_preferred_store(products, preferred_ids, preferred_names)
+        for p in products:
+            if isinstance(p, dict) and isinstance(p.get('stores'), list):
+                p['stores'] = _sort_stores_with_preferences(p['stores'], preferred_ids, preferred_names)
+
+        featured_deals = _sort_products_by_preferred_store(featured_deals, preferred_ids, preferred_names)
+        for d in featured_deals:
+            if isinstance(d, dict) and isinstance(d.get('stores'), list):
+                d['stores'] = _sort_stores_with_preferences(d['stores'], preferred_ids, preferred_names)
     else:
         using_fallback = True
         print('WARNING: Using in-memory fallback data for home page (DB unavailable)')
@@ -121,13 +209,24 @@ def stores_page():
 @main_bp.route('/featured-deals')
 def featured_deals_page():
     using_fallback = False
+    user_email = session.get('user')
+    preferred_ids = set()
+    preferred_names = set()
     db = get_db()
     if db is not None:
         try:
+            if user_email:
+                user_doc = db.users.find_one({'email': user_email}, {'preferences': 1})
+                preferred_ids, preferred_names = _preferred_store_sets(user_doc)
+
             deals = list(db.featured_deals.find({}))
             for d in deals:
                 if '_id' in d:
                     d['id'] = str(d['_id'])
+            deals = _sort_products_by_preferred_store(deals, preferred_ids, preferred_names)
+            for d in deals:
+                if isinstance(d, dict) and isinstance(d.get('stores'), list):
+                    d['stores'] = _sort_stores_with_preferences(d['stores'], preferred_ids, preferred_names)
         except Exception:
             using_fallback = True
             print('WARNING: Using in-memory fallback data for featured deals (DB query failed)')
@@ -141,13 +240,23 @@ def featured_deals_page():
 @main_bp.route('/compare-prices')
 def compare_prices():
     using_fallback = False
+    user_email = session.get('user')
+    preferred_ids = set()
+    preferred_names = set()
     db = get_db()
     if db is not None:
         try:
+            if user_email:
+                user_doc = db.users.find_one({'email': user_email}, {'preferences': 1})
+                preferred_ids, preferred_names = _preferred_store_sets(user_doc)
             products = list(db.products.find({}))
             for p in products:
                 if '_id' in p:
                     p['id'] = str(p['_id'])
+            products = _sort_products_by_preferred_store(products, preferred_ids, preferred_names)
+            for p in products:
+                if isinstance(p, dict) and isinstance(p.get('stores'), list):
+                    p['stores'] = _sort_stores_with_preferences(p['stores'], preferred_ids, preferred_names)
         except Exception:
             using_fallback = True
             print('WARNING: Using in-memory fallback data for compare prices (DB query failed)')
@@ -339,21 +448,37 @@ def shopping_list():
 @main_bp.route('/profile')
 def profile():
     user_email = session.get('user')
+    stores = []
+    db = get_db()
+
     if _db_available() and user_email:
         user = mongo.db.users.find_one({'email': user_email})
         if user and '_id' in user:
             user['id'] = str(user['_id'])
-        
+
         # Initialize favorites and recent_views if not present
         if user and 'favorites' not in user:
             user['favorites'] = []
         if user and 'recent_views' not in user:
             user['recent_views'] = []
-        
+
         user_data = user or {}
     else:
         user_data = getattr(m, 'users', {}).get('user1@example.com', {})
-    return render_template('profile.html', user_data=user_data)
+
+    # Load stores for preference selection
+    if db is not None:
+        try:
+            stores = list(db.stores.find({}))
+            for s in stores:
+                if '_id' in s:
+                    s['id'] = str(s['_id'])
+        except Exception:
+            stores = getattr(m, 'stores', [])
+    else:
+        stores = getattr(m, 'stores', [])
+
+    return render_template('profile.html', user_data=user_data, stores=stores)
 
 @main_bp.route('/about')
 def about():
@@ -664,6 +789,30 @@ def save_preferences():
         db = get_db()
         if db is None:
             return jsonify({'error': 'Database not available'}), 500
+
+        # Only persist preferred stores that exist in the database to prevent invalid entries
+        try:
+            stores_cursor = db.stores.find({}, {'_id': 1, 'name': 1, 'store': 1})
+            valid_ids = set()
+            valid_names = set()
+            for s in stores_cursor:
+                if '_id' in s:
+                    valid_ids.add(str(s['_id']))
+                if isinstance(s.get('name'), str):
+                    valid_names.add(s['name'].lower())
+                if isinstance(s.get('store'), str):
+                    valid_names.add(s['store'].lower())
+            preferred = data.get('preferred_stores') or []
+            cleaned = []
+            for val in preferred:
+                if not val:
+                    continue
+                if val in valid_ids or val.lower() in valid_names:
+                    cleaned.append(val)
+            data['preferred_stores'] = cleaned
+        except Exception:
+            # If validation fails, keep original payload so we don't block the user
+            pass
         
         db.users.update_one(
             {'email': user_email},
