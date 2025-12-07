@@ -1,0 +1,1380 @@
+[
+  {
+    "title": "Organic Strawberries 1lb",
+    "unit": "1 lb clamshell",
+    "image": "https://via.placeholder.com/400x300?text=Strawberries",
+    "price": 3.99,
+    "original_price": 5.49,
+    "discount_percent": 27,
+    "discount_label": "27% off",
+    "offer": "Standard discount",
+    "store": "Fresh & Co",
+    "url": "https://example.com/organic-strawberries",
+    "category": "Produce",
+    "category_path": [
+      "Products",
+      "Produce",
+      "Berries"
+    ],
+    "category_slugs": [
+      "products",
+      "produce",
+      "berries"
+    ],
+    "description": "Sweet organic strawberries picked this week.",
+    "name": "Organic Strawberries 1lb",
+    "id": "fd_001"
+  },
+  {
+    "title": "Blueberries Pint",
+    "unit": "1 pint",
+    "image": "https://via.placeholder.com/400x300?text=Blueberries",
+    "price": 2.99,
+    "original_price": 4.49,
+    "discount_percent": 33,
+    "discount_label": "Buy 2 Get 1 Free",
+    "offer": "Buy 2 Get 1 Free",
+    "store": "Fresh & Co",
+    "url": "https://example.com/blueberries-pint",
+    "category": "Produce",
+    "category_path": [
+      "Products",
+      "Produce",
+      "Berries"
+    ],
+    "category_slugs": [
+      "products",
+      "produce",
+      "berries"
+    ],
+    "description": "Plump blueberries perfect for breakfast and baking.",
+    "name": "Blueberries Pint",
+    "id": "fd_002"
+  },
+  {
+    "title": "Gala Apples 3lb Bag",
+    "unit": "3 lb",
+    "image": "https://via.placeholder.com/400x300?text=Gala+Apples",
+    "price": 3.49,
+    "original_price": 4.99,
+    "discount_percent": 30,
+    "discount_label": "30% off",
+    "offer": "Standard discount",
+    "store": "Supermart",
+    "url": "https://example.com/gala-apples",
+    "category": "Produce",
+    "category_path": [
+      "Products",
+      "Produce",
+      "Apples"
+    ],
+    "category_slugs": [
+      "products",
+      "produce",
+      "apples"
+    ],
+    "description": "Crisp and mildly sweet Gala apples in a value bag.",
+    "name": "Gala Apples 3lb Bag",
+    "id": "fd_003"
+  },
+  {
+    "title": "Hass Avocados 5ct Bag",
+    "unit": "5 count",
+    "image": "https://via.placeholder.com/400x300?text=Avocados",
+    "price": 4.99,
+    "original_price": 7.49,
+    "discount_percent": 33,
+    "discount_label": "33% off",
+    "offer": "Standard discount",
+    "store": "Green Basket",
+    "url": "https://example.com/hass-avocados",
+    "category": "Produce",
+    "category_path": [
+      "Products",
+      "Produce",
+      "Avocados"
+    ],
+    "category_slugs": [
+      "products",
+      "produce",
+      "avocados"
+    ],
+    "description": "Creamy Hass avocados perfect for guacamole.",
+    "name": "Hass Avocados 5ct Bag",
+    "id": "fd_004"
+  },
+  {
+    "title": "Romaine Hearts 3ct",
+    "unit": "3 count",
+    "image": "https://via.placeholder.com/400x300?text=Romaine+Hearts",
+    "price": 2.49,
+    "original_price": 3.49,
+    "discount_percent": 29,
+    "discount_label": "29% off",
+    "offer": "Standard discount",
+    "store": "Supermart",
+    "url": "https://example.com/romaine-hearts",
+    "category": "Produce",
+    "category_path": [
+      "Products",
+      "Produce",
+      "Lettuce"
+    ],
+    "category_slugs": [
+      "products",
+      "produce",
+      "lettuce"
+    ],
+    "description": "Crisp romaine hearts for salads and wraps.",
+    "name": "Romaine Hearts 3ct",
+    "id": "fd_005"
+  },
+  {
+    "title": "Baby Spinach 10oz",
+    "unit": "10 oz",
+    "image": "https://via.placeholder.com/400x300?text=Baby+Spinach",
+    "price": 3.29,
+    "original_price": 4.29,
+    "discount_percent": 25,
+    "discount_label": "Buy 1 Get 1 50% Off",
+    "offer": "Buy 1 Get 1 50% Off",
+    "store": "Fresh & Co",
+    "url": "https://example.com/baby-spinach",
+    "category": "Produce",
+    "category_path": [
+      "Products",
+      "Produce",
+      "Leafy Greens"
+    ],
+    "category_slugs": [
+      "products",
+      "produce",
+      "leafy-greens"
+    ],
+    "description": "Washed and ready-to-eat tender baby spinach.",
+    "name": "Baby Spinach 10oz",
+    "id": "fd_006"
+  },
+  {
+    "title": "Broccoli Crowns",
+    "unit": "1.25 lb",
+    "image": "https://via.placeholder.com/400x300?text=Broccoli",
+    "price": 1.79,
+    "original_price": 2.49,
+    "discount_percent": 28,
+    "discount_label": "28% off",
+    "offer": "Standard discount",
+    "store": "Green Basket",
+    "url": "https://example.com/broccoli-crowns",
+    "category": "Produce",
+    "category_path": [
+      "Products",
+      "Produce",
+      "Cruciferous"
+    ],
+    "category_slugs": [
+      "products",
+      "produce",
+      "cruciferous"
+    ],
+    "description": "Fresh broccoli crowns great for roasting and steaming.",
+    "name": "Broccoli Crowns",
+    "id": "fd_007"
+  },
+  {
+    "title": "Baby Carrots 2lb",
+    "unit": "2 lb",
+    "image": "https://via.placeholder.com/400x300?text=Baby+Carrots",
+    "price": 2.19,
+    "original_price": 3.29,
+    "discount_percent": 33,
+    "discount_label": "33% off",
+    "offer": "Standard discount",
+    "store": "Supermart",
+    "url": "https://example.com/baby-carrots",
+    "category": "Produce",
+    "category_path": [
+      "Products",
+      "Produce",
+      "Carrots"
+    ],
+    "category_slugs": [
+      "products",
+      "produce",
+      "carrots"
+    ],
+    "description": "Snack-ready baby carrots in a value pack.",
+    "name": "Baby Carrots 2lb",
+    "id": "fd_008"
+  },
+  {
+    "title": "Sweet Corn 4ct",
+    "unit": "4 ears",
+    "image": "https://via.placeholder.com/400x300?text=Sweet+Corn",
+    "price": 2.49,
+    "original_price": 3.49,
+    "discount_percent": 29,
+    "discount_label": "29% off",
+    "offer": "Standard discount",
+    "store": "Green Basket",
+    "url": "https://example.com/sweet-corn",
+    "category": "Produce",
+    "category_path": [
+      "Products",
+      "Produce",
+      "Corn"
+    ],
+    "category_slugs": [
+      "products",
+      "produce",
+      "corn"
+    ],
+    "description": "Fresh sweet corn, perfect for grilling.",
+    "name": "Sweet Corn 4ct",
+    "id": "fd_009"
+  },
+  {
+    "title": "Seedless Watermelon",
+    "unit": "10 lb avg",
+    "image": "https://via.placeholder.com/400x300?text=Watermelon",
+    "price": 4.99,
+    "original_price": 6.99,
+    "discount_percent": 29,
+    "discount_label": "29% off",
+    "offer": "Standard discount",
+    "store": "Fresh & Co",
+    "url": "https://example.com/seedless-watermelon",
+    "category": "Produce",
+    "category_path": [
+      "Products",
+      "Produce",
+      "Melons"
+    ],
+    "category_slugs": [
+      "products",
+      "produce",
+      "melons"
+    ],
+    "description": "Juicy seedless watermelon for summer snacking.",
+    "name": "Seedless Watermelon",
+    "id": "fd_010"
+  },
+  {
+    "title": "Atlantic Salmon Fillet",
+    "unit": "per lb",
+    "image": "https://via.placeholder.com/400x300?text=Salmon",
+    "price": 8.99,
+    "original_price": 12.99,
+    "discount_percent": 31,
+    "discount_label": "31% off",
+    "offer": "Standard discount",
+    "store": "Harbor Market",
+    "url": "https://example.com/atlantic-salmon",
+    "category": "Meat & Seafood",
+    "category_path": [
+      "Products",
+      "Meat & Seafood",
+      "Seafood"
+    ],
+    "category_slugs": [
+      "products",
+      "meat-seafood",
+      "seafood"
+    ],
+    "description": "Fresh Atlantic salmon fillet, skin-on.",
+    "name": "Atlantic Salmon Fillet",
+    "id": "fd_011"
+  },
+  {
+    "title": "Raw Shrimp 31-40 ct",
+    "unit": "2 lb bag",
+    "image": "https://via.placeholder.com/400x300?text=Shrimp",
+    "price": 11.99,
+    "original_price": 15.99,
+    "discount_percent": 25,
+    "discount_label": "Buy 3 Get 1 Free",
+    "offer": "Buy 3 Get 1 Free",
+    "store": "Harbor Market",
+    "url": "https://example.com/raw-shrimp",
+    "category": "Meat & Seafood",
+    "category_path": [
+      "Products",
+      "Meat & Seafood",
+      "Seafood"
+    ],
+    "category_slugs": [
+      "products",
+      "meat-seafood",
+      "seafood"
+    ],
+    "description": "Peeled and deveined raw shrimp, tail-off.",
+    "name": "Raw Shrimp 31-40 ct",
+    "id": "fd_012"
+  },
+  {
+    "title": "Chicken Breast Family Pack",
+    "unit": "2 lb",
+    "image": "https://via.placeholder.com/400x300?text=Chicken+Breast",
+    "price": 6.49,
+    "original_price": 8.99,
+    "discount_percent": 28,
+    "discount_label": "28% off",
+    "offer": "Standard discount",
+    "store": "Supermart",
+    "url": "https://example.com/chicken-breast",
+    "category": "Meat & Seafood",
+    "category_path": [
+      "Products",
+      "Meat & Seafood",
+      "Poultry"
+    ],
+    "category_slugs": [
+      "products",
+      "meat-seafood",
+      "poultry"
+    ],
+    "description": "Boneless skinless chicken breasts value pack.",
+    "name": "Chicken Breast Family Pack",
+    "id": "fd_013"
+  },
+  {
+    "title": "Ground Beef 80/20",
+    "unit": "3 lb roll",
+    "image": "https://via.placeholder.com/400x300?text=Ground+Beef",
+    "price": 8.49,
+    "original_price": 11.99,
+    "discount_percent": 29,
+    "discount_label": "29% off",
+    "offer": "Standard discount",
+    "store": "Supermart",
+    "url": "https://example.com/ground-beef",
+    "category": "Meat & Seafood",
+    "category_path": [
+      "Products",
+      "Meat & Seafood",
+      "Beef"
+    ],
+    "category_slugs": [
+      "products",
+      "meat-seafood",
+      "beef"
+    ],
+    "description": "80/20 ground beef great for burgers and chili.",
+    "name": "Ground Beef 80/20",
+    "id": "fd_014"
+  },
+  {
+    "title": "Thick Cut Bacon",
+    "unit": "16 oz",
+    "image": "https://via.placeholder.com/400x300?text=Bacon",
+    "price": 5.49,
+    "original_price": 7.49,
+    "discount_percent": 27,
+    "discount_label": "27% off",
+    "offer": "Standard discount",
+    "store": "Green Basket",
+    "url": "https://example.com/thick-cut-bacon",
+    "category": "Meat & Seafood",
+    "category_path": [
+      "Products",
+      "Meat & Seafood",
+      "Pork"
+    ],
+    "category_slugs": [
+      "products",
+      "meat-seafood",
+      "pork"
+    ],
+    "description": "Applewood smoked thick cut bacon slices.",
+    "name": "Thick Cut Bacon",
+    "id": "fd_015"
+  },
+  {
+    "title": "Cage-Free Eggs Large",
+    "unit": "12 count",
+    "image": "https://via.placeholder.com/400x300?text=Eggs",
+    "price": 2.79,
+    "original_price": 3.79,
+    "discount_percent": 26,
+    "discount_label": "26% off",
+    "offer": "Standard discount",
+    "store": "Supermart",
+    "url": "https://example.com/cage-free-eggs",
+    "category": "Dairy",
+    "category_path": [
+      "Products",
+      "Dairy Products & Alternatives",
+      "Eggs"
+    ],
+    "category_slugs": [
+      "products",
+      "dairy-products-alternatives",
+      "eggs"
+    ],
+    "description": "Large brown cage-free eggs.",
+    "name": "Cage-Free Eggs Large",
+    "id": "fd_016"
+  },
+  {
+    "title": "Greek Yogurt Variety 4ct",
+    "unit": "4 x 5.3 oz",
+    "image": "https://via.placeholder.com/400x300?text=Greek+Yogurt",
+    "price": 3.49,
+    "original_price": 5.24,
+    "discount_percent": 33,
+    "discount_label": "Buy 2 Get 1 Free",
+    "offer": "Buy 2 Get 1 Free",
+    "store": "Fresh & Co",
+    "url": "https://example.com/greek-yogurt-4pk",
+    "category": "Dairy",
+    "category_path": [
+      "Products",
+      "Dairy Products & Alternatives",
+      "Yogurt"
+    ],
+    "category_slugs": [
+      "products",
+      "dairy-products-alternatives",
+      "yogurt"
+    ],
+    "description": "Creamy Greek yogurt multipack assorted flavors.",
+    "name": "Greek Yogurt Variety 4ct",
+    "id": "fd_017"
+  },
+  {
+    "title": "Almond Milk Unsweetened",
+    "unit": "64 oz",
+    "image": "https://via.placeholder.com/400x300?text=Almond+Milk",
+    "price": 2.79,
+    "original_price": 3.79,
+    "discount_percent": 26,
+    "discount_label": "26% off",
+    "offer": "Standard discount",
+    "store": "Green Basket",
+    "url": "https://example.com/almond-milk",
+    "category": "Dairy",
+    "category_path": [
+      "Products",
+      "Dairy Products & Alternatives",
+      "Milk Alternatives"
+    ],
+    "category_slugs": [
+      "products",
+      "dairy-products-alternatives",
+      "milk-alternatives"
+    ],
+    "description": "Unsweetened almond milk with calcium.",
+    "name": "Almond Milk Unsweetened",
+    "id": "fd_018"
+  },
+  {
+    "title": "Sharp Cheddar Cheese",
+    "unit": "8 oz block",
+    "image": "https://via.placeholder.com/400x300?text=Cheddar+Cheese",
+    "price": 2.99,
+    "original_price": 4.29,
+    "discount_percent": 30,
+    "discount_label": "30% off",
+    "offer": "Standard discount",
+    "store": "Supermart",
+    "url": "https://example.com/sharp-cheddar",
+    "category": "Dairy",
+    "category_path": [
+      "Products",
+      "Dairy Products & Alternatives",
+      "Cheese"
+    ],
+    "category_slugs": [
+      "products",
+      "dairy-products-alternatives",
+      "cheese"
+    ],
+    "description": "Aged sharp cheddar cheese block.",
+    "name": "Sharp Cheddar Cheese",
+    "id": "fd_019"
+  },
+  {
+    "title": "Unsalted Butter",
+    "unit": "1 lb",
+    "image": "https://via.placeholder.com/400x300?text=Butter",
+    "price": 3.49,
+    "original_price": 4.99,
+    "discount_percent": 30,
+    "discount_label": "30% off",
+    "offer": "Standard discount",
+    "store": "Fresh & Co",
+    "url": "https://example.com/unsalted-butter",
+    "category": "Dairy",
+    "category_path": [
+      "Products",
+      "Dairy Products & Alternatives",
+      "Butter"
+    ],
+    "category_slugs": [
+      "products",
+      "dairy-products-alternatives",
+      "butter"
+    ],
+    "description": "Creamy unsalted butter for baking and cooking.",
+    "name": "Unsalted Butter",
+    "id": "fd_020"
+  },
+  {
+    "title": "Orange Juice No Pulp",
+    "unit": "52 oz",
+    "image": "https://via.placeholder.com/400x300?text=Orange+Juice",
+    "price": 3.99,
+    "original_price": 5.49,
+    "discount_percent": 27,
+    "discount_label": "27% off",
+    "offer": "Standard discount",
+    "store": "Supermart",
+    "url": "https://example.com/orange-juice",
+    "category": "Beverages",
+    "category_path": [
+      "Products",
+      "Beverages",
+      "Juice"
+    ],
+    "category_slugs": [
+      "products",
+      "beverages",
+      "juice"
+    ],
+    "description": "100% orange juice, no pulp.",
+    "name": "Orange Juice No Pulp",
+    "id": "fd_021"
+  },
+  {
+    "title": "Sparkling Water 12pk",
+    "unit": "12 x 12 oz",
+    "image": "https://via.placeholder.com/400x300?text=Sparkling+Water",
+    "price": 5.99,
+    "original_price": 11.98,
+    "discount_percent": 50,
+    "discount_label": "Buy 1 Get 1 Free",
+    "offer": "Buy 1 Get 1 Free",
+    "store": "Fresh & Co",
+    "url": "https://example.com/sparkling-water",
+    "category": "Beverages",
+    "category_path": [
+      "Products",
+      "Beverages",
+      "Water"
+    ],
+    "category_slugs": [
+      "products",
+      "beverages",
+      "water"
+    ],
+    "description": "Variety pack sparkling water cans.",
+    "name": "Sparkling Water 12pk",
+    "id": "fd_022"
+  },
+  {
+    "title": "Cold Brew Coffee 48oz",
+    "unit": "48 oz",
+    "image": "https://via.placeholder.com/400x300?text=Cold+Brew",
+    "price": 6.49,
+    "original_price": 8.99,
+    "discount_percent": 28,
+    "discount_label": "28% off",
+    "offer": "Standard discount",
+    "store": "Green Basket",
+    "url": "https://example.com/cold-brew",
+    "category": "Beverages",
+    "category_path": [
+      "Products",
+      "Beverages",
+      "Coffee"
+    ],
+    "category_slugs": [
+      "products",
+      "beverages",
+      "coffee"
+    ],
+    "description": "Ready-to-drink smooth cold brew coffee.",
+    "name": "Cold Brew Coffee 48oz",
+    "id": "fd_023"
+  },
+  {
+    "title": "Honey Oat Cereal",
+    "unit": "18 oz",
+    "image": "https://via.placeholder.com/400x300?text=Honey+Oat+Cereal",
+    "price": 3.49,
+    "original_price": 5.24,
+    "discount_percent": 33,
+    "discount_label": "Buy 2 Get 1 Free",
+    "offer": "Buy 2 Get 1 Free",
+    "store": "Supermart",
+    "url": "https://example.com/honey-oat-cereal",
+    "category": "Pantry",
+    "category_path": [
+      "Products",
+      "Pantry",
+      "Cereal"
+    ],
+    "category_slugs": [
+      "products",
+      "pantry",
+      "cereal"
+    ],
+    "description": "Toasted oats cereal with a touch of honey.",
+    "name": "Honey Oat Cereal",
+    "id": "fd_024"
+  },
+  {
+    "title": "Protein Granola",
+    "unit": "12 oz",
+    "image": "https://via.placeholder.com/400x300?text=Protein+Granola",
+    "price": 4.49,
+    "original_price": 6.49,
+    "discount_percent": 31,
+    "discount_label": "31% off",
+    "offer": "Standard discount",
+    "store": "Fresh & Co",
+    "url": "https://example.com/protein-granola",
+    "category": "Pantry",
+    "category_path": [
+      "Products",
+      "Pantry",
+      "Breakfast"
+    ],
+    "category_slugs": [
+      "products",
+      "pantry",
+      "breakfast"
+    ],
+    "description": "Crunchy granola with added protein.",
+    "name": "Protein Granola",
+    "id": "fd_025"
+  },
+  {
+    "title": "Penne Pasta 16oz",
+    "unit": "16 oz",
+    "image": "https://via.placeholder.com/400x300?text=Penne+Pasta",
+    "price": 1.09,
+    "original_price": 1.69,
+    "discount_percent": 36,
+    "discount_label": "36% off",
+    "offer": "Standard discount",
+    "store": "Supermart",
+    "url": "https://example.com/penne-pasta",
+    "category": "Pantry",
+    "category_path": [
+      "Products",
+      "Pantry",
+      "Pasta"
+    ],
+    "category_slugs": [
+      "products",
+      "pantry",
+      "pasta"
+    ],
+    "description": "Enriched penne pasta perfect for weeknight meals.",
+    "name": "Penne Pasta 16oz",
+    "id": "fd_026"
+  },
+  {
+    "title": "Marinara Sauce 24oz",
+    "unit": "24 oz",
+    "image": "https://via.placeholder.com/400x300?text=Marinara+Sauce",
+    "price": 2.29,
+    "original_price": 3.29,
+    "discount_percent": 30,
+    "discount_label": "30% off",
+    "offer": "Standard discount",
+    "store": "Green Basket",
+    "url": "https://example.com/marinara-sauce",
+    "category": "Pantry",
+    "category_path": [
+      "Products",
+      "Pantry",
+      "Pasta Sauce"
+    ],
+    "category_slugs": [
+      "products",
+      "pantry",
+      "pasta-sauce"
+    ],
+    "description": "Slow-simmered tomato basil marinara.",
+    "name": "Marinara Sauce 24oz",
+    "id": "fd_027"
+  },
+  {
+    "title": "Extra Virgin Olive Oil",
+    "unit": "750 ml",
+    "image": "https://via.placeholder.com/400x300?text=Olive+Oil",
+    "price": 8.99,
+    "original_price": 12.99,
+    "discount_percent": 31,
+    "discount_label": "31% off",
+    "offer": "Standard discount",
+    "store": "Fresh & Co",
+    "url": "https://example.com/extra-virgin-olive-oil",
+    "category": "Pantry",
+    "category_path": [
+      "Products",
+      "Pantry",
+      "Oils & Vinegars"
+    ],
+    "category_slugs": [
+      "products",
+      "pantry",
+      "oils-vinegars"
+    ],
+    "description": "Cold-pressed Mediterranean olive oil.",
+    "name": "Extra Virgin Olive Oil",
+    "id": "fd_028"
+  },
+  {
+    "title": "Balsamic Vinegar 16oz",
+    "unit": "16 oz",
+    "image": "https://via.placeholder.com/400x300?text=Balsamic+Vinegar",
+    "price": 3.99,
+    "original_price": 5.49,
+    "discount_percent": 27,
+    "discount_label": "27% off",
+    "offer": "Standard discount",
+    "store": "Green Basket",
+    "url": "https://example.com/balsamic-vinegar",
+    "category": "Pantry",
+    "category_path": [
+      "Products",
+      "Pantry",
+      "Oils & Vinegars"
+    ],
+    "category_slugs": [
+      "products",
+      "pantry",
+      "oils-vinegars"
+    ],
+    "description": "Rich balsamic vinegar for salads and glazes.",
+    "name": "Balsamic Vinegar 16oz",
+    "id": "fd_029"
+  },
+  {
+    "title": "Basmati Rice 10lb",
+    "unit": "10 lb",
+    "image": "https://via.placeholder.com/400x300?text=Basmati+Rice",
+    "price": 12.99,
+    "original_price": 17.99,
+    "discount_percent": 28,
+    "discount_label": "28% off",
+    "offer": "Standard discount",
+    "store": "Supermart",
+    "url": "https://example.com/basmati-rice",
+    "category": "Pantry",
+    "category_path": [
+      "Products",
+      "Pantry",
+      "Rice"
+    ],
+    "category_slugs": [
+      "products",
+      "pantry",
+      "rice"
+    ],
+    "description": "Fragrant long-grain basmati rice bulk bag.",
+    "name": "Basmati Rice 10lb",
+    "id": "fd_030"
+  },
+  {
+    "title": "Black Beans 15oz",
+    "unit": "15 oz can",
+    "image": "https://via.placeholder.com/400x300?text=Black+Beans",
+    "price": 0.99,
+    "original_price": 1.39,
+    "discount_percent": 29,
+    "discount_label": "29% off",
+    "offer": "Standard discount",
+    "store": "Supermart",
+    "url": "https://example.com/black-beans",
+    "category": "Pantry",
+    "category_path": [
+      "Products",
+      "Pantry",
+      "Canned Beans"
+    ],
+    "category_slugs": [
+      "products",
+      "pantry",
+      "canned-beans"
+    ],
+    "description": "Seasoned black beans, no BPA lining.",
+    "name": "Black Beans 15oz",
+    "id": "fd_031"
+  },
+  {
+    "title": "Chickpeas 15oz",
+    "unit": "15 oz can",
+    "image": "https://via.placeholder.com/400x300?text=Chickpeas",
+    "price": 0.99,
+    "original_price": 1.39,
+    "discount_percent": 29,
+    "discount_label": "29% off",
+    "offer": "Standard discount",
+    "store": "Green Basket",
+    "url": "https://example.com/chickpeas",
+    "category": "Pantry",
+    "category_path": [
+      "Products",
+      "Pantry",
+      "Canned Beans"
+    ],
+    "category_slugs": [
+      "products",
+      "pantry",
+      "canned-beans"
+    ],
+    "description": "Ready-to-eat garbanzo beans for salads and hummus.",
+    "name": "Chickpeas 15oz",
+    "id": "fd_032"
+  },
+  {
+    "title": "Creamy Peanut Butter",
+    "unit": "16 oz",
+    "image": "https://via.placeholder.com/400x300?text=Peanut+Butter",
+    "price": 2.79,
+    "original_price": 3.99,
+    "discount_percent": 30,
+    "discount_label": "30% off",
+    "offer": "Standard discount",
+    "store": "Supermart",
+    "url": "https://example.com/peanut-butter",
+    "category": "Pantry",
+    "category_path": [
+      "Products",
+      "Pantry",
+      "Nut Butter"
+    ],
+    "category_slugs": [
+      "products",
+      "pantry",
+      "nut-butter"
+    ],
+    "description": "Creamy classic peanut butter.",
+    "name": "Creamy Peanut Butter",
+    "id": "fd_033"
+  },
+  {
+    "title": "Almond Butter 12oz",
+    "unit": "12 oz",
+    "image": "https://via.placeholder.com/400x300?text=Almond+Butter",
+    "price": 6.99,
+    "original_price": 9.99,
+    "discount_percent": 30,
+    "discount_label": "30% off",
+    "offer": "Standard discount",
+    "store": "Fresh & Co",
+    "url": "https://example.com/almond-butter",
+    "category": "Pantry",
+    "category_path": [
+      "Products",
+      "Pantry",
+      "Nut Butter"
+    ],
+    "category_slugs": [
+      "products",
+      "pantry",
+      "nut-butter"
+    ],
+    "description": "Roasted almond butter, no added sugar.",
+    "name": "Almond Butter 12oz",
+    "id": "fd_034"
+  },
+  {
+    "title": "Strawberry Jam 18oz",
+    "unit": "18 oz",
+    "image": "https://via.placeholder.com/400x300?text=Strawberry+Jam",
+    "price": 3.29,
+    "original_price": 4.79,
+    "discount_percent": 31,
+    "discount_label": "31% off",
+    "offer": "Standard discount",
+    "store": "Green Basket",
+    "url": "https://example.com/strawberry-jam",
+    "category": "Pantry",
+    "category_path": [
+      "Products",
+      "Pantry",
+      "Spreads"
+    ],
+    "category_slugs": [
+      "products",
+      "pantry",
+      "spreads"
+    ],
+    "description": "Chunky strawberry jam with cane sugar.",
+    "name": "Strawberry Jam 18oz",
+    "id": "fd_035"
+  },
+  {
+    "title": "Tortilla Chips 13oz",
+    "unit": "13 oz",
+    "image": "https://via.placeholder.com/400x300?text=Tortilla+Chips",
+    "price": 2.49,
+    "original_price": 3.49,
+    "discount_percent": 29,
+    "discount_label": "29% off",
+    "offer": "Standard discount",
+    "store": "Supermart",
+    "url": "https://example.com/tortilla-chips",
+    "category": "Snacks",
+    "category_path": [
+      "Products",
+      "Snacks",
+      "Chips"
+    ],
+    "category_slugs": [
+      "products",
+      "snacks",
+      "chips"
+    ],
+    "description": "Restaurant-style tortilla chips.",
+    "name": "Tortilla Chips 13oz",
+    "id": "fd_036"
+  },
+  {
+    "title": "Medium Salsa 16oz",
+    "unit": "16 oz",
+    "image": "https://via.placeholder.com/400x300?text=Salsa",
+    "price": 2.29,
+    "original_price": 3.29,
+    "discount_percent": 30,
+    "discount_label": "30% off",
+    "offer": "Standard discount",
+    "store": "Fresh & Co",
+    "url": "https://example.com/medium-salsa",
+    "category": "Snacks",
+    "category_path": [
+      "Products",
+      "Snacks",
+      "Dips"
+    ],
+    "category_slugs": [
+      "products",
+      "snacks",
+      "dips"
+    ],
+    "description": "Medium heat tomato salsa with cilantro.",
+    "name": "Medium Salsa 16oz",
+    "id": "fd_037"
+  },
+  {
+    "title": "Ice Cream Pint",
+    "unit": "16 oz",
+    "image": "https://via.placeholder.com/400x300?text=Ice+Cream",
+    "price": 3.99,
+    "original_price": 5.49,
+    "discount_percent": 27,
+    "discount_label": "27% off",
+    "offer": "Standard discount",
+    "store": "Green Basket",
+    "url": "https://example.com/ice-cream-pint",
+    "category": "Frozen",
+    "category_path": [
+      "Products",
+      "Frozen Foods",
+      "Ice Cream"
+    ],
+    "category_slugs": [
+      "products",
+      "frozen-foods",
+      "ice-cream"
+    ],
+    "description": "Premium ice cream assorted flavors.",
+    "name": "Ice Cream Pint",
+    "id": "fd_038"
+  },
+  {
+    "title": "Frozen Pizza Thin Crust",
+    "unit": "12 in",
+    "image": "https://via.placeholder.com/400x300?text=Frozen+Pizza",
+    "price": 4.49,
+    "original_price": 6.49,
+    "discount_percent": 31,
+    "discount_label": "31% off",
+    "offer": "Standard discount",
+    "store": "Supermart",
+    "url": "https://example.com/frozen-pizza",
+    "category": "Frozen",
+    "category_path": [
+      "Products",
+      "Frozen Foods",
+      "Pizza"
+    ],
+    "category_slugs": [
+      "products",
+      "frozen-foods",
+      "pizza"
+    ],
+    "description": "Thin crust pepperoni frozen pizza.",
+    "name": "Frozen Pizza Thin Crust",
+    "id": "fd_039"
+  },
+  {
+    "title": "Frozen Veggie Medley",
+    "unit": "16 oz",
+    "image": "https://via.placeholder.com/400x300?text=Frozen+Veggies",
+    "price": 1.49,
+    "original_price": 2.19,
+    "discount_percent": 32,
+    "discount_label": "32% off",
+    "offer": "Standard discount",
+    "store": "Fresh & Co",
+    "url": "https://example.com/frozen-veggies",
+    "category": "Frozen",
+    "category_path": [
+      "Products",
+      "Frozen Foods",
+      "Vegetables"
+    ],
+    "category_slugs": [
+      "products",
+      "frozen-foods",
+      "vegetables"
+    ],
+    "description": "Frozen peas, carrots, corn, and green beans.",
+    "name": "Frozen Veggie Medley",
+    "id": "fd_040"
+  },
+  {
+    "title": "Laundry Detergent 92oz",
+    "unit": "92 oz",
+    "image": "https://via.placeholder.com/400x300?text=Laundry+Detergent",
+    "price": 9.99,
+    "original_price": 13.99,
+    "discount_percent": 29,
+    "discount_label": "29% off",
+    "offer": "Standard discount",
+    "store": "Supermart",
+    "url": "https://example.com/laundry-detergent",
+    "category": "Household",
+    "category_path": [
+      "Products",
+      "Household",
+      "Laundry"
+    ],
+    "category_slugs": [
+      "products",
+      "household",
+      "laundry"
+    ],
+    "description": "HE compatible liquid detergent, fresh scent.",
+    "name": "Laundry Detergent 92oz",
+    "id": "fd_041"
+  },
+  {
+    "title": "Paper Towels 6ct",
+    "unit": "6 rolls",
+    "image": "https://via.placeholder.com/400x300?text=Paper+Towels",
+    "price": 7.49,
+    "original_price": 10.49,
+    "discount_percent": 29,
+    "discount_label": "29% off",
+    "offer": "Standard discount",
+    "store": "Green Basket",
+    "url": "https://example.com/paper-towels",
+    "category": "Household",
+    "category_path": [
+      "Products",
+      "Household",
+      "Paper"
+    ],
+    "category_slugs": [
+      "products",
+      "household",
+      "paper"
+    ],
+    "description": "Select-a-size paper towels, 6 mega rolls.",
+    "name": "Paper Towels 6ct",
+    "id": "fd_042"
+  },
+  {
+    "title": "Toilet Paper 12 Mega",
+    "unit": "12 mega rolls",
+    "image": "https://via.placeholder.com/400x300?text=Toilet+Paper",
+    "price": 12.49,
+    "original_price": 15.99,
+    "discount_percent": 22,
+    "discount_label": "22% off",
+    "offer": "Standard discount",
+    "store": "Supermart",
+    "url": "https://example.com/toilet-paper",
+    "category": "Household",
+    "category_path": [
+      "Products",
+      "Household",
+      "Paper"
+    ],
+    "category_slugs": [
+      "products",
+      "household",
+      "paper"
+    ],
+    "description": "Soft 2-ply toilet paper, 12 mega rolls.",
+    "name": "Toilet Paper 12 Mega",
+    "id": "fd_043"
+  },
+  {
+    "title": "Dish Soap 24oz",
+    "unit": "24 oz",
+    "image": "https://via.placeholder.com/400x300?text=Dish+Soap",
+    "price": 2.49,
+    "original_price": 3.59,
+    "discount_percent": 31,
+    "discount_label": "31% off",
+    "offer": "Standard discount",
+    "store": "Fresh & Co",
+    "url": "https://example.com/dish-soap",
+    "category": "Household",
+    "category_path": [
+      "Products",
+      "Household",
+      "Cleaning"
+    ],
+    "category_slugs": [
+      "products",
+      "household",
+      "cleaning"
+    ],
+    "description": "Grease-cutting dish soap, lemon scent.",
+    "name": "Dish Soap 24oz",
+    "id": "fd_044"
+  },
+  {
+    "title": "Trash Bags 13 Gal 40ct",
+    "unit": "40 count",
+    "image": "https://via.placeholder.com/400x300?text=Trash+Bags",
+    "price": 6.99,
+    "original_price": 9.99,
+    "discount_percent": 30,
+    "discount_label": "30% off",
+    "offer": "Standard discount",
+    "store": "Green Basket",
+    "url": "https://example.com/trash-bags",
+    "category": "Household",
+    "category_path": [
+      "Products",
+      "Household",
+      "Trash Bags"
+    ],
+    "category_slugs": [
+      "products",
+      "household",
+      "trash-bags"
+    ],
+    "description": "13-gallon kitchen trash bags with drawstrings.",
+    "name": "Trash Bags 13 Gal 40ct",
+    "id": "fd_045"
+  },
+  {
+    "title": "Cat Food Salmon 5lb",
+    "unit": "5 lb bag",
+    "image": "https://via.placeholder.com/400x300?text=Cat+Food",
+    "price": 11.99,
+    "original_price": 15.99,
+    "discount_percent": 25,
+    "discount_label": "25% off",
+    "offer": "Standard discount",
+    "store": "Pet Pantry",
+    "url": "https://example.com/cat-food-salmon",
+    "category": "Pet",
+    "category_path": [
+      "Products",
+      "Pet",
+      "Cat Food"
+    ],
+    "category_slugs": [
+      "products",
+      "pet",
+      "cat-food"
+    ],
+    "description": "Grain-free salmon recipe dry cat food.",
+    "name": "Cat Food Salmon 5lb",
+    "id": "fd_046"
+  },
+  {
+    "title": "Dog Food Chicken 12lb",
+    "unit": "12 lb bag",
+    "image": "https://via.placeholder.com/400x300?text=Dog+Food",
+    "price": 19.99,
+    "original_price": 27.99,
+    "discount_percent": 29,
+    "discount_label": "29% off",
+    "offer": "Standard discount",
+    "store": "Pet Pantry",
+    "url": "https://example.com/dog-food-chicken",
+    "category": "Pet",
+    "category_path": [
+      "Products",
+      "Pet",
+      "Dog Food"
+    ],
+    "category_slugs": [
+      "products",
+      "pet",
+      "dog-food"
+    ],
+    "description": "Chicken and brown rice dry dog food.",
+    "name": "Dog Food Chicken 12lb",
+    "id": "fd_047"
+  },
+  {
+    "title": "Baby Diapers Size 3",
+    "unit": "72 count",
+    "image": "https://via.placeholder.com/400x300?text=Baby+Diapers",
+    "price": 18.99,
+    "original_price": 24.99,
+    "discount_percent": 24,
+    "discount_label": "24% off",
+    "offer": "Standard discount",
+    "store": "Baby Depot",
+    "url": "https://example.com/baby-diapers-size3",
+    "category": "Baby",
+    "category_path": [
+      "Products",
+      "Baby",
+      "Diapers"
+    ],
+    "category_slugs": [
+      "products",
+      "baby",
+      "diapers"
+    ],
+    "description": "Size 3 diapers with wetness indicator.",
+    "name": "Baby Diapers Size 3",
+    "id": "fd_048"
+  },
+  {
+    "title": "Baby Wipes 3 Pack",
+    "unit": "3 x 72 ct",
+    "image": "https://via.placeholder.com/400x300?text=Baby+Wipes",
+    "price": 6.99,
+    "original_price": 9.49,
+    "discount_percent": 26,
+    "discount_label": "26% off",
+    "offer": "Standard discount",
+    "store": "Baby Depot",
+    "url": "https://example.com/baby-wipes",
+    "category": "Baby",
+    "category_path": [
+      "Products",
+      "Baby",
+      "Wipes"
+    ],
+    "category_slugs": [
+      "products",
+      "baby",
+      "wipes"
+    ],
+    "description": "Fragrance-free, hypoallergenic baby wipes.",
+    "name": "Baby Wipes 3 Pack",
+    "id": "fd_049"
+  },
+  {
+    "title": "2+1 Pasta Sauce Deal",
+    "unit": "24 oz x3",
+    "image": "https://via.placeholder.com/400x300?text=2%2B1+Pasta+Sauce",
+    "price": 6.58,
+    "original_price": 9.87,
+    "discount_percent": 33,
+    "discount_label": "2+1 Free (~33% off)",
+    "offer": "Buy 2 get 1 free",
+    "store": "Supermart",
+    "url": "https://example.com/pasta-sauce-2plus1",
+    "category": "Pantry",
+    "category_path": [
+      "Products",
+      "Pantry",
+      "Pasta Sauce"
+    ],
+    "category_slugs": [
+      "products",
+      "pantry",
+      "pasta-sauce"
+    ],
+    "description": "Buy 2 marinara jars, get 1 free (price shown for 3).",
+    "name": "2+1 Pasta Sauce Deal",
+    "id": "fd_050"
+  },
+  {
+    "title": "2+1 Sparkling Water Deal",
+    "unit": "3 x 8-pack",
+    "image": "https://via.placeholder.com/400x300?text=2%2B1+Sparkling+Water",
+    "price": 9.98,
+    "original_price": 14.97,
+    "discount_percent": 33,
+    "discount_label": "2+1 Free (~33% off)",
+    "offer": "Buy 2 get 1 free",
+    "store": "Fresh & Co",
+    "url": "https://example.com/sparkling-water-2plus1",
+    "category": "Beverages",
+    "category_path": [
+      "Products",
+      "Beverages",
+      "Water"
+    ],
+    "category_slugs": [
+      "products",
+      "beverages",
+      "water"
+    ],
+    "description": "Buy two 8-packs, get one free (price for all three).",
+    "name": "2+1 Sparkling Water Deal",
+    "id": "fd_051"
+  },
+  {
+    "title": "Family Pack Granola Bars",
+    "unit": "24 count",
+    "image": "https://via.placeholder.com/400x300?text=Granola+Bars",
+    "price": 7.99,
+    "original_price": 10.99,
+    "discount_percent": 27,
+    "discount_label": "27% off",
+    "offer": "Standard discount",
+    "store": "Supermart",
+    "url": "https://example.com/granola-bars",
+    "category": "Snacks",
+    "category_path": [
+      "Products",
+      "Snacks",
+      "Bars"
+    ],
+    "category_slugs": [
+      "products",
+      "snacks",
+      "bars"
+    ],
+    "description": "Variety pack chewy granola bars.",
+    "name": "Family Pack Granola Bars",
+    "id": "fd_052"
+  },
+  {
+    "title": "Shampoo Moisture 16oz",
+    "unit": "16 oz",
+    "image": "https://via.placeholder.com/400x300?text=Shampoo",
+    "price": 4.99,
+    "original_price": 7.49,
+    "discount_percent": 33,
+    "discount_label": "33% off",
+    "offer": "Standard discount",
+    "store": "Green Basket",
+    "url": "https://example.com/shampoo-moisture",
+    "category": "Personal Care",
+    "category_path": [
+      "Products",
+      "Personal Care",
+      "Hair"
+    ],
+    "category_slugs": [
+      "products",
+      "personal-care",
+      "hair"
+    ],
+    "description": "Hydrating shampoo with aloe and argan oil.",
+    "name": "Shampoo Moisture 16oz",
+    "id": "fd_053"
+  }
+]

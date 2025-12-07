@@ -360,7 +360,7 @@
                   <span class="price-badge">
                     <i class="bi bi-tag-fill"></i> {{ (p.get('cheapest') and p.get('cheapest').get('price')) or p.get('price','N/A') }}
                   </span>
-                    <button class="btn btn-sm position-absolute top-0 end-0 m-2 bg-white border-0 shadow-sm rounded-circle" 
+                    <button class="btn btn-sm position-absolute top-0 start-0 m-2 bg-white border-0 shadow-sm rounded-circle" 
                       style="width: 35px; height: 35px; z-index: 10;"
                       onclick="quickFavorite(event, this.dataset.productId, this)"
                       data-product-id="{{ p.get('id') }}">
