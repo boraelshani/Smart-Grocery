@@ -1,4 +1,4 @@
-from flask import render_template, jsonify, session, request, current_app
+from flask import render_template, jsonify, session, request, current_app, url_for
 from . import main_bp
 from models import models as m
 from bson.decimal128 import Decimal128
@@ -140,7 +140,7 @@ def featured_deals_page():
 
 @main_bp.route('/compare-prices')
 def compare_prices():
-    """Render compare page with server-side pagination (30 products per page)."""
+    """Render compare page with server-side pagination (30 per page) and category filter across all pages."""
     using_fallback = False
     per_page = 30
     try:
@@ -149,40 +149,69 @@ def compare_prices():
         page = 1
     page = max(page, 1)
 
+    category_filter = (request.args.get('category') or '').strip()
+
     total_products = 0
     total_pages = 1
     products = []
     db = get_db()
+    category_options = []
+
+    def apply_category_filter(items):
+        if not category_filter:
+            return items
+        cf = category_filter.lower()
+        return [p for p in items if isinstance(p, dict) and str(p.get('category','')).strip().lower() == cf]
 
     if db is not None:
         try:
-            total_products = int(db.products.count_documents({}))
+            query = {}
+            if category_filter:
+                import re as _re
+                query['category'] = {'$regex': f"^{_re.escape(category_filter)}$", '$options': 'i'}
+
+            total_products = int(db.products.count_documents(query))
             total_pages = (total_products + per_page - 1) // per_page if total_products else 1
             page = min(page, total_pages) if total_products else 1
             skip_amount = (page - 1) * per_page
-            cursor = db.products.find({}).skip(skip_amount).limit(per_page)
+            cursor = db.products.find(query).skip(skip_amount).limit(per_page)
             products = list(cursor)
             for p in products:
                 if '_id' in p:
                     p['id'] = str(p['_id'])
+            try:
+                from collections import Counter
+                # Count categories across ALL products, not just distinct list
+                all_prods = list(db.products.find({}, {'category': 1}))
+                cat_counts = Counter(p.get('category') for p in all_prods if p.get('category'))
+                # Sort by count (desc), then alphabetically
+                category_options = sorted(cat_counts.keys(), key=lambda c: (-cat_counts[c], c.lower()))
+            except Exception:
+                category_options = []
         except Exception:
             using_fallback = True
             print('WARNING: Using in-memory fallback data for compare prices (DB query failed)')
-            products_all = getattr(m, 'products', [])
+            products_all = apply_category_filter(getattr(m, 'products', []))
             total_products = len(products_all)
             total_pages = (total_products + per_page - 1) // per_page if total_products else 1
             page = min(page, total_pages) if total_products else 1
             skip_amount = (page - 1) * per_page
             products = products_all[skip_amount:skip_amount + per_page]
+            from collections import Counter
+            cat_counts = Counter(p.get('category') for p in getattr(m, 'products', []) if p.get('category'))
+            category_options = sorted(cat_counts.keys(), key=lambda c: (-cat_counts[c], c.lower()))
     else:
         using_fallback = True
         print('WARNING: Using in-memory fallback data for compare prices (DB unavailable)')
-        products_all = getattr(m, 'products', [])
+        products_all = apply_category_filter(getattr(m, 'products', []))
         total_products = len(products_all)
         total_pages = (total_products + per_page - 1) // per_page if total_products else 1
         page = min(page, total_pages) if total_products else 1
         skip_amount = (page - 1) * per_page
         products = products_all[skip_amount:skip_amount + per_page]
+        from collections import Counter
+        cat_counts = Counter(p.get('category') for p in getattr(m, 'products', []) if p.get('category'))
+        category_options = sorted(cat_counts.keys(), key=lambda c: (-cat_counts[c], c.lower()))
 
     has_prev = page > 1
     has_next = page < total_pages
@@ -201,6 +230,8 @@ def compare_prices():
         has_next=has_next,
         showing_start=showing_start,
         showing_end=showing_end,
+        category_filter=category_filter,
+        category_options=category_options,
     )
 
 @main_bp.route('/product/<product_id>')
@@ -232,6 +263,8 @@ def product_detail(product_id):
 def shopping_list():
     user_email = session.get('user')
     db = get_db()
+    
+    # Get user data
     if db is not None and user_email:
         try:
             user = db.users.find_one({'email': user_email})
@@ -242,8 +275,37 @@ def shopping_list():
             user_data = getattr(m, 'users', {}).get('user1@example.com', {})
     else:
         user_data = getattr(m, 'users', {}).get('user1@example.com', {})
+    
+    # Get all lists for this user using new multi-list structure
+    from models.users_model import get_user_lists
+    lists_data = get_user_lists(user_email) if user_email else {'lists': [], 'active_list_id': None}
+    all_lists = lists_data.get('lists', [])
+    # Rename 'items' key to 'list_items' to avoid conflict with Jinja2 dict.items() method
+    for lst in all_lists:
+        if 'items' in lst:
+            lst['list_items'] = lst.pop('items')
+    active_list_id = lists_data.get('active_list_id')
+    
+    # Get the active list or create a default one if none exist
+    active_list = None
+    if all_lists:
+        if active_list_id:
+            active_list = next((lst for lst in all_lists if lst.get('id') == active_list_id), all_lists[0])
+        else:
+            active_list = all_lists[0]
+    else:
+        # Create default list if user has none
+        from models.users_model import create_shopping_list, set_active_list
+        if user_email:
+            new_id = create_shopping_list(user_email, 'My List')
+            if new_id:
+                set_active_list(user_email, new_id)
+                lists_data = get_user_lists(user_email)
+                all_lists = lists_data.get('lists', [])
+                active_list = all_lists[0] if all_lists else None
+    
     # Build items list with price/store information for the template
-    shopping_entries = user_data.get('shopping_list', []) if isinstance(user_data, dict) else []
+    shopping_entries = active_list.get('items', []) if active_list else []
 
     # load products to try to find prices
     db = get_db()
@@ -379,7 +441,11 @@ def shopping_list():
         v['price'] = f"${total:.2f}"
         items.append(v)
 
-    return render_template('shopping_list.html', user_data=user_data, items=items)
+    return render_template('shopping_list.html', 
+                         user_data=user_data, 
+                         items=items,
+                         all_lists=all_lists,
+                         active_list=active_list)
 
 @main_bp.route('/profile')
 def profile():
@@ -405,13 +471,18 @@ def profile():
         except Exception:
             stores_options = []
         try:
-            category_options = sorted({c for c in mongo.db.products.distinct('category') if c})
+            from collections import Counter
+            all_prods = list(mongo.db.products.find({}, {'category': 1}))
+            cat_counts = Counter(p.get('category') for p in all_prods if p.get('category'))
+            category_options = sorted(cat_counts.keys(), key=lambda c: (-cat_counts[c], c.lower()))
         except Exception:
             category_options = []
     else:
         user_data = getattr(m, 'users', {}).get('user1@example.com', {})
         stores_options = [s.get('name') for s in getattr(m, 'stores', []) if s.get('name')]
-        category_options = sorted({p.get('category') for p in getattr(m, 'products', []) if p.get('category')})
+        from collections import Counter
+        cat_counts = Counter(p.get('category') for p in getattr(m, 'products', []) if p.get('category'))
+        category_options = sorted(cat_counts.keys(), key=lambda c: (-cat_counts[c], c.lower()))
 
     return render_template('profile.html', user_data=user_data, stores_options=stores_options, category_options=category_options)
 
@@ -764,3 +835,422 @@ def save_preferences():
     
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
+# Shopping List API Endpoints
+@main_bp.route('/api/list/create', methods=['POST'])
+def create_shopping_list_api():
+    """Create a new shopping list"""
+    try:
+        user_email = session.get('user')
+        if not user_email:
+            return jsonify({'success': False, 'error': 'Not authenticated'}), 401
+        
+        data = request.get_json()
+        list_name = data.get('name', '').strip()
+        
+        if not list_name:
+            return jsonify({'success': False, 'error': 'List name is required'}), 400
+        
+        from models.users_model import create_shopping_list, set_active_list
+        new_list_id = create_shopping_list(user_email, list_name)
+        
+        if new_list_id:
+            set_active_list(user_email, new_list_id)
+            return jsonify({'success': True, 'list_id': new_list_id})
+        else:
+            return jsonify({'success': False, 'error': 'Failed to create list'}), 500
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@main_bp.route('/api/list/rename', methods=['POST'])
+def rename_shopping_list_api():
+    """Rename a shopping list"""
+    try:
+        user_email = session.get('user')
+        if not user_email:
+            return jsonify({'success': False, 'error': 'Not authenticated'}), 401
+        
+        data = request.get_json()
+        list_id = data.get('list_id')
+        new_name = data.get('name', '').strip()
+        
+        if not list_id or not new_name:
+            return jsonify({'success': False, 'error': 'List ID and name are required'}), 400
+        
+        from models.users_model import rename_shopping_list
+        success = rename_shopping_list(user_email, list_id, new_name)
+        return jsonify({'success': success})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@main_bp.route('/api/list/delete', methods=['POST'])
+def delete_shopping_list_api():
+    """Delete a shopping list"""
+    try:
+        user_email = session.get('user')
+        if not user_email:
+            return jsonify({'success': False, 'error': 'Not authenticated'}), 401
+        
+        data = request.get_json()
+        list_id = data.get('list_id')
+        
+        if not list_id:
+            return jsonify({'success': False, 'error': 'List ID is required'}), 400
+        
+        from models.users_model import delete_shopping_list
+        success = delete_shopping_list(user_email, list_id)
+        return jsonify({'success': success})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@main_bp.route('/api/list/set-active', methods=['POST'])
+def set_active_list_api():
+    """Set the active shopping list"""
+    try:
+        user_email = session.get('user')
+        if not user_email:
+            return jsonify({'success': False, 'error': 'Not authenticated'}), 401
+        
+        data = request.get_json()
+        list_id = data.get('list_id')
+        
+        if not list_id:
+            return jsonify({'success': False, 'error': 'List ID is required'}), 400
+        
+        from models.users_model import set_active_list
+        success = set_active_list(user_email, list_id)
+        return jsonify({'success': success})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@main_bp.route('/api/list/duplicate', methods=['POST'])
+def duplicate_shopping_list_api():
+    """Duplicate a shopping list"""
+    try:
+        user_email = session.get('user')
+        if not user_email:
+            return jsonify({'success': False, 'error': 'Not authenticated'}), 401
+        
+        data = request.get_json()
+        list_id = data.get('list_id')
+        
+        if not list_id:
+            return jsonify({'success': False, 'error': 'List ID is required'}), 400
+        
+        from models.users_model import get_user_lists, create_shopping_list, update_list_items
+        lists_data = get_user_lists(user_email)
+        source_list = next((lst for lst in lists_data['lists'] if lst['id'] == list_id), None)
+        
+        if not source_list:
+            return jsonify({'success': False, 'error': 'List not found'}), 404
+        
+        new_name = f"{source_list['name']} (Copy)"
+        new_list_id = create_shopping_list(user_email, new_name)
+        
+        if new_list_id:
+            items = source_list.get('items', [])
+            update_list_items(user_email, new_list_id, items)
+            return jsonify({'success': True, 'list_id': new_list_id})
+        else:
+            return jsonify({'success': False, 'error': 'Failed to duplicate list'}), 500
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@main_bp.route('/api/list/update-items', methods=['POST'])
+def update_list_items_api():
+    """Update items in the active shopping list"""
+    try:
+        user_email = session.get('user')
+        if not user_email:
+            return jsonify({'success': False, 'error': 'Not authenticated'}), 401
+        
+        data = request.get_json()
+        items = data.get('items', [])
+        
+        from models.users_model import get_user_lists, update_list_items
+        lists_data = get_user_lists(user_email)
+        active_list_id = lists_data.get('active_list_id')
+        
+        if not active_list_id:
+            return jsonify({'success': False, 'error': 'No active list'}), 400
+        
+        success = update_list_items(user_email, active_list_id, items)
+        return jsonify({'success': success})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@main_bp.route('/api/list/remove-item', methods=['POST'])
+def remove_item_from_list_api():
+    """Remove an item from the active shopping list"""
+    try:
+        user_email = session.get('user')
+        if not user_email:
+            return jsonify({'success': False, 'error': 'Not authenticated'}), 401
+        
+        data = request.get_json()
+        item_name = data.get('item_name')
+        
+        if not item_name:
+            return jsonify({'success': False, 'error': 'Item name is required'}), 400
+        
+        from models.users_model import get_user_lists, remove_item_from_list
+        lists_data = get_user_lists(user_email)
+        active_list_id = lists_data.get('active_list_id')
+        
+        if not active_list_id:
+            return jsonify({'success': False, 'error': 'No active list'}), 400
+        
+        success = remove_item_from_list(user_email, active_list_id, item_name)
+        return jsonify({'success': success})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@main_bp.route('/api/list/clear-completed', methods=['POST'])
+def clear_completed_items_api():
+    """Clear completed items from the active shopping list"""
+    try:
+        user_email = session.get('user')
+        if not user_email:
+            return jsonify({'success': False, 'error': 'Not authenticated'}), 401
+        
+        from models.users_model import get_user_lists, update_list_items
+        lists_data = get_user_lists(user_email)
+        active_list_id = lists_data.get('active_list_id')
+        
+        if not active_list_id:
+            return jsonify({'success': False, 'error': 'No active list'}), 400
+        
+        active_list = next((lst for lst in lists_data['lists'] if lst['id'] == active_list_id), None)
+        if not active_list:
+            return jsonify({'success': False, 'error': 'List not found'}), 404
+        
+        items = active_list.get('items', [])
+        remaining_items = [item for item in items if not (isinstance(item, dict) and item.get('purchased'))]
+        success = update_list_items(user_email, active_list_id, remaining_items)
+        return jsonify({'success': success})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@main_bp.route('/api/list/clear-all', methods=['POST'])
+def clear_all_items_api():
+    """Clear all items from the active shopping list"""
+    try:
+        user_email = session.get('user')
+        if not user_email:
+            return jsonify({'success': False, 'error': 'Not authenticated'}), 401
+        
+        from models.users_model import get_user_lists, update_list_items
+        lists_data = get_user_lists(user_email)
+        active_list_id = lists_data.get('active_list_id')
+        
+        if not active_list_id:
+            return jsonify({'success': False, 'error': 'No active list'}), 400
+        
+        success = update_list_items(user_email, active_list_id, [])
+        return jsonify({'success': success})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@main_bp.route('/api/list/move-item', methods=['POST'])
+def move_item_to_list_api():
+    """Move an item from active list to another list"""
+    try:
+        user_email = session.get('user')
+        if not user_email:
+            return jsonify({'success': False, 'error': 'Not authenticated'}), 401
+        
+        data = request.get_json()
+        item_name = data.get('item_name')
+        target_list_id = data.get('target_list_id')
+        
+        if not item_name or not target_list_id:
+            return jsonify({'success': False, 'error': 'Item name and target list are required'}), 400
+        
+        from models.users_model import get_user_lists, remove_item_from_list, add_item_to_list
+        lists_data = get_user_lists(user_email)
+        active_list_id = lists_data.get('active_list_id')
+        
+        if not active_list_id:
+            return jsonify({'success': False, 'error': 'No active list'}), 400
+        
+        active_list = next((lst for lst in lists_data['lists'] if lst['id'] == active_list_id), None)
+        if not active_list:
+            return jsonify({'success': False, 'error': 'List not found'}), 404
+        
+        item_to_move = None
+        for item in active_list.get('items', []):
+            if isinstance(item, dict) and item.get('name') == item_name:
+                item_to_move = item
+                break
+            elif isinstance(item, str) and item == item_name:
+                item_to_move = item
+                break
+        
+        if not item_to_move:
+            return jsonify({'success': False, 'error': 'Item not found'}), 404
+        
+        success = add_item_to_list(user_email, target_list_id, item_to_move)
+        if success:
+            success = remove_item_from_list(user_email, active_list_id, item_name)
+        return jsonify({'success': success})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@main_bp.route('/api/list/add-item', methods=['POST'])
+def add_item_to_active_list_api():
+    """Add an item to a shopping list (supports specifying which list)"""
+    try:
+        user_email = session.get('user')
+        if not user_email:
+            return jsonify({'success': False, 'error': 'Not authenticated'}), 401
+        
+        data = request.get_json()
+        item = data.get('item')
+        target_list_id = data.get('list_id')
+        
+        if not item:
+            return jsonify({'success': False, 'error': 'Item is required'}), 400
+        
+        from models.users_model import get_user_lists, add_item_to_list
+        lists_data = get_user_lists(user_email)
+        
+        # If no list_id specified, use active list
+        if not target_list_id:
+            target_list_id = lists_data.get('active_list_id')
+        
+        if not target_list_id:
+            return jsonify({'success': False, 'error': 'No list specified and no active list'}), 400
+        
+        success = add_item_to_list(user_email, target_list_id, item)
+        return jsonify({'success': success})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@main_bp.route('/api/get-lists', methods=['GET'])
+def get_lists_api():
+    """Get all shopping lists for the current user"""
+    try:
+        user_email = session.get('user')
+        if not user_email:
+            return jsonify({'success': False, 'error': 'Not authenticated'}), 401
+        
+        from models.users_model import get_user_lists
+        lists_data = get_user_lists(user_email)
+        
+        # Return lists with basic info (id, name, item count)
+        lists = []
+        for lst in lists_data.get('lists', []):
+            lists.append({
+                'id': lst.get('id'),
+                'name': lst.get('name'),
+                'items': lst.get('items', [])
+            })
+        
+        return jsonify({'success': True, 'lists': lists})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@main_bp.route('/api/list/<list_id>/items', methods=['GET'])
+def get_list_items_api(list_id):
+    """Get all items for a specific shopping list"""
+    try:
+        user_email = session.get('user')
+        if not user_email:
+            return jsonify({'success': False, 'error': 'Not authenticated'}), 401
+        
+        from models.users_model import get_user_lists
+        lists_data = get_user_lists(user_email)
+        
+        # Find the specific list
+        target_list = None
+        for lst in lists_data.get('lists', []):
+            if lst.get('id') == list_id:
+                target_list = lst
+                break
+        
+        if not target_list:
+            return jsonify({'success': False, 'error': 'List not found'}), 404
+        
+        # Enrich items with product images (and fallback placeholder)
+        raw_items = target_list.get('items', [])
+
+        db = get_db()
+        products = []
+        if db is not None:
+            try:
+                products = list(db.products.find({}))
+                for p in products:
+                    if '_id' in p:
+                        p['id'] = str(p['_id'])
+            except Exception:
+                products = []
+
+        def find_product_by_name(name):
+            if not name:
+                return None
+            name_l = name.lower()
+            for p in products:
+                try:
+                    if isinstance(p.get('name'), str) and p.get('name').lower() == name_l:
+                        return p
+                except Exception:
+                    continue
+            for p in products:
+                try:
+                    if isinstance(p.get('name'), str) and name_l in p.get('name').lower():
+                        return p
+                except Exception:
+                    continue
+            return None
+
+        placeholder_url = url_for('static', filename='placeholder.svg')
+        enriched_items = []
+        for entry in raw_items:
+            if isinstance(entry, dict):
+                name = entry.get('name') or ''
+                img_val = entry.get('image') or ''
+            else:
+                name = str(entry)
+                img_val = ''
+
+            product = find_product_by_name(name)
+            if not img_val and product:
+                try:
+                    img_val = product.get('image') or (product.get('images') and product.get('images')[0]) or ''
+                except Exception:
+                    img_val = ''
+            if not img_val:
+                img_val = placeholder_url
+
+            # preserve other fields
+            if isinstance(entry, dict):
+                enriched = dict(entry)
+                enriched['image'] = img_val
+            else:
+                enriched = {'name': name, 'qty': 1, 'image': img_val}
+            enriched_items.append(enriched)
+
+        return jsonify({
+            'success': True,
+            'list_id': list_id,
+            'name': target_list.get('name'),
+            'items': enriched_items,
+            'created_at': target_list.get('created_at')
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+

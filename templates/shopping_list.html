@@ -3,135 +3,1305 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Smart Grocery | Shopping List</title>
+<title>Smart Grocery | Shopping Lists</title>
 
 <!-- Bootstrap CSS -->
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<!-- Bootstrap Icons -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
 
 <!-- Custom CSS -->
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+<style>
+.list-tab {
+	cursor: pointer;
+	transition: all 0.3s ease;
+	border: 2px solid transparent;
+}
+.list-tab:hover {
+	background: #f8f9fa;
+	transform: translateY(-2px);
+	box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+.list-tab.active {
+	border-color: #0d6efd;
+	background: linear-gradient(135deg, #e7f1ff 0%, #f8f9fa 100%);
+}
+.list-tab.active.enlarged {
+	transform: translateY(-2px) scale(1.02);
+	box-shadow: 0 10px 24px rgba(13,110,253,0.18);
+	border-width: 2px;
+}
+.header-chip {
+	background: #f8faff;
+	border: 1px solid #e2e8f0;
+	border-radius: 12px;
+	padding: 0.55rem 0.85rem;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+	font-weight: 600;
+}
+.header-chip .muted {
+	color: #6c757d;
+	font-weight: 500;
+}
+.item-row {
+	transition: all 0.2s ease;
+	border-left: 3px solid transparent;
+}
+.item-row:hover {
+	background: #f8f9fa;
+	border-left-color: #0d6efd;
+}
+.item-row.completed {
+	opacity: 0.6;
+	background: #f8f9fa;
+}
+.item-row.completed .item-name {
+	text-decoration: line-through;
+}
+.list-stats {
+	display: flex;
+	gap: 1rem;
+	flex-wrap: wrap;
+}
+.stat-badge {
+	padding: 0.5rem 1rem;
+	border-radius: 8px;
+	background: linear-gradient(135deg, #e7f1ff 0%, #f0f4ff 100%);
+	border: 1px solid #d0e2ff;
+}
+.empty-list-state {
+	padding: 3rem 1rem;
+	text-align: center;
+	color: #6c757d;
+}
+.list-header-actions {
+	display: flex;
+	gap: 0.5rem;
+	flex-wrap: wrap;
+	justify-content: flex-end;
+	margin-left: auto;
+}
+.total-summary {
+	background: linear-gradient(135deg, #d1f2eb 0%, #e8f8f5 100%);
+	border: 2px solid #20c997;
+	border-radius: 12px;
+	padding: 1.5rem;
+}
+.qty-control {
+	min-width: 140px;
+}
+.qty-container {
+	display: flex;
+	align-items: center;
+	gap: 0;
+	background: #f8f9fa;
+	border: 2px solid #e9ecef;
+	border-radius: 12px;
+	padding: 2px;
+	transition: all 0.2s ease;
+}
+.qty-container:hover {
+	border-color: #667eea;
+	box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
+}
+.qty-btn {
+	background: transparent;
+	border: none;
+	color: #667eea;
+	width: 40px;
+	height: 40px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	font-size: 1.1rem;
+	border-radius: 8px;
+}
+.qty-btn:hover {
+	background: #667eea;
+	color: white;
+	transform: scale(1.05);
+}
+.qty-btn:active {
+	transform: scale(0.95);
+}
+.qty-input {
+	width: 50px;
+	height: 40px;
+	border: none;
+	background: white;
+	text-align: center;
+	font-weight: 700;
+	font-size: 1rem;
+	color: #212529;
+	border-radius: 6px;
+	transition: all 0.2s ease;
+}
+.qty-input:focus {
+	outline: none;
+	background: #e7f1ff;
+	color: #667eea;
+}
+.qty-input::-webkit-outer-spin-button,
+.qty-input::-webkit-inner-spin-button {
+	-webkit-appearance: none;
+	margin: 0;
+}
+.qty-input[type=number] {
+	appearance: textfield;
+	-moz-appearance: textfield;
+}
+.list-actions {
+	display: flex;
+	gap: 6px;
+}
+.btn-list-action {
+	background: #f8f9fa;
+	border: 2px solid #e9ecef;
+	color: #667eea;
+	width: 36px;
+	height: 36px;
+	border-radius: 8px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	font-size: 0.95rem;
+	padding: 0;
+}
+.btn-list-action:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+	border-color: #667eea;
+}
+.btn-list-action:active {
+	transform: translateY(0);
+}
+.btn-rename {
+	color: #0d6efd;
+}
+.btn-rename:hover {
+	background: #e7f1ff;
+	border-color: #0d6efd;
+}
+.btn-delete {
+	color: #dc3545;
+}
+.btn-delete:hover {
+	background: #f8d7da;
+	border-color: #dc3545;
+}
+</style>
 </head>
 <body>
 <!-- Navbar -->
 <nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
-<div class="container">
-<a class="navbar-brand fw-bold" href="{{ url_for('main.home') }}">Smart Grocery</a>
-<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-<span class="navbar-toggler-icon"></span>
-</button>
-<div class="collapse navbar-collapse" id="navbarNav">
-<ul class="navbar-nav ms-auto">
-<li class="nav-item">
-<a class="nav-link" href="{{ url_for('main.home') }}">Home</a>
-</li>
-<li class="nav-item">
-<a class="nav-link" href="{{ url_for('main.stores_page') }}">Stores</a>
-</li>
-<li class="nav-item">
-<a class="nav-link" href="{{ url_for('main.featured_deals_page') }}">Featured Deals</a>
-</li>
-<li class="nav-item">
-<a class="nav-link" href="{{ url_for('main.compare_prices') }}">Compare Prices</a>
-</li>
-<li class="nav-item">
-<a class="nav-link active" href="{{ url_for('main.shopping_list') }}">Shopping List</a>
-</li>
-<li class="nav-item">
-<a class="nav-link" href="{{ url_for('main.profile') }}">Profile</a>
-</li>
-        
-</ul>
-</div>
-</div>
+	<div class="container">
+		<a class="navbar-brand fw-bold" href="{{ url_for('main.home') }}">Smart Grocery</a>
+		<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+			<span class="navbar-toggler-icon"></span>
+		</button>
+		<div class="collapse navbar-collapse" id="navbarNav">
+			<ul class="navbar-nav ms-auto">
+				<li class="nav-item"><a class="nav-link" href="{{ url_for('main.home') }}">Home</a></li>
+				<li class="nav-item"><a class="nav-link" href="{{ url_for('main.stores_page') }}">Stores</a></li>
+				<li class="nav-item"><a class="nav-link" href="{{ url_for('main.featured_deals_page') }}">Featured Deals</a></li>
+				<li class="nav-item"><a class="nav-link" href="{{ url_for('main.compare_prices') }}">Compare Prices</a></li>
+				<li class="nav-item"><a class="nav-link active" href="{{ url_for('main.shopping_list') }}">Shopping List</a></li>
+				<li class="nav-item"><a class="nav-link" href="{{ url_for('main.profile') }}">Profile</a></li>
+			</ul>
+		</div>
+	</div>
 </nav>
 
-<!-- Shopping List -->
-<section class="container py-5">
-	<h1 class="mb-2">Shopping List</h1>
-	<p class="text-muted mb-4">Manage your grocery items</p>
+<section class="container py-4">
+	<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+		<div>
+			<h2 class="mb-1">Shopping Lists</h2>
+			<p class="text-muted mb-0">Pick a list to view and manage items.</p>
+		</div>
+		<div class="d-flex gap-2">
+			<button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createListModal">
+				<i class="bi bi-plus-circle me-2"></i>New List
+			</button>
+		</div>
+	</div>
 
-	<div class="max-w-3xl mx-auto">
-		<div class="card">
-			<div class="card-header d-flex align-items-center justify-content-between">
-				<div class="d-flex align-items-center gap-2">
-					<svg class="icon icon-cart" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6h15l-1.5 9h-12z"/><circle cx="9" cy="20" r="1"/><circle cx="19" cy="20" r="1"/></svg>
-					<strong>Items ({{ items|length if items is defined else (user_data.shopping_list|length if user_data and user_data.shopping_list else 0) }})</strong>
-				</div>
-				<a href="{{ url_for('main.featured_deals_page') }}" class="btn btn-add">+
-					<span class="d-none d-sm-inline"> Add Item</span>
-				</a>
-			</div>
-
-			<div class="card-content p-3">
-				{% set items = items if items is defined else (user_data.shopping_list if user_data and user_data.shopping_list else []) %}
-				{% if items and items|length > 0 %}
-					<div class="list-rows">
-						{% for it in items %}
-							{# support both object items and simple string items #}
-							{% set name = (it.name if it.name is defined else it) %}
-							{% set item_id = (it.id if it.id is defined else (it if it is string else '')) %}
-							{% set store = (it.store if it.store is defined else '') %}
-							{% set purchased = (it.purchased if it.purchased is defined else false) %}
-							{% set img = (it.image if it.image is defined else (it.images[0] if it.images is defined and it.images else '')) %}
-							{# normalize price: prefer numeric price_val, fall back to price and strip $/commas #}
-							{% set raw_price = (it.price_val if it.price_val is defined else (it.price if it.price is defined else '')) %}
-							{% set raw_price = (raw_price|string).replace('$','').replace(',','') if raw_price is not none else '' %}
-							{# compute unit and qty early so attributes can reference them #}
-							{% set unit = (it.price_val if it.price_val is defined else (raw_price|float if raw_price is defined else 0.0)) %}
-							{% set qty = (it.qty if it.qty is defined else 1) %}
-							<div class="item-row d-flex items-center gap-3 p-3 rounded-lg" draggable="true" data-name="{{ name }}" data-id="{{ item_id }}" data-price="{{ raw_price }}" data-qty="{{ qty }}">
-								<div class="form-check me-3">
-									<input class="form-check-input checkbox-item" type="checkbox" id="chk-{{ loop.index0 }}" {% if purchased %}checked{% endif %}>
+	<div class="row g-3 mb-3" id="list-tabs">
+		{% if all_lists %}
+			{% for shopping_list in all_lists %}
+			{% set list_count = shopping_list.list_items|length if shopping_list.list_items is defined else (shopping_list.items|length if shopping_list.items is defined else 0) %}
+			<div class="col-md-6 col-lg-4">
+				<div class="card list-tab {{ 'active enlarged' if active_list and shopping_list.id == active_list.id else '' }}" data-list-id="{{ shopping_list.id }}" onclick="switchList('{{ shopping_list.id }}')">
+					<div class="card-body d-flex flex-column gap-2">
+						<div class="d-flex justify-content-between align-items-start gap-2">
+							<div>
+								<h5 class="mb-1">{{ shopping_list.name }}</h5>
+								<div class="d-flex gap-2 text-muted small flex-wrap">
+									<span><i class="bi bi-cart-check me-1"></i>{{ list_count }} items</span>
+									<span><i class="bi bi-clock me-1"></i>{{ shopping_list.created_at[:10] if shopping_list.created_at else 'Recently' }}</span>
 								</div>
-																<div class="me-3">
-																	<img src="{{ prefer_processed(img if img else url_for('static', filename='placeholder.svg')) or (img if img else url_for('static', filename='placeholder.svg')) }}" alt="{{ name }}" class="item-icon rounded" />
-																</div>
-								<div class="flex-grow-1">
-									<p class="mb-0 item-name {{ 'text-decoration-line-through text-muted' if purchased }}">{{ name }}</p>
-									<small class="text-muted">{{ store }}</small>
-								</div>
-								<div class="text-end me-3">
-									{# display total for this row = unit price * qty #}
-									<div class="fw-semibold item-price">${{ '%.2f'|format((unit|float) * (qty|int)) }}</div>
-								</div>
-								<div class="mx-2 d-flex flex-column align-items-center">
-								  <button class="btn btn-sm btn-outline-secondary qty-incr" type="button" aria-label="Increase">+</button>
-								  <div class="badge bg-light text-dark qty-badge my-1">{{ qty }}</div>
-								  <button class="btn btn-sm btn-outline-secondary qty-decr" type="button" aria-label="Decrease">−</button>
-								</div>
-								<button class="btn btn-ghost btn-icon remove-item-btn" data-name="{{ name }}" data-id="{{ item_id }}" aria-label="Remove">
-									<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m5 0V4a2 2 0 0 1 2-2h0a2 2 0 0 1 2 2v2"/></svg>
+							</div>
+							<div class="list-actions d-flex gap-1">
+								<button class="btn-list-action btn-rename" title="Rename list" onclick="event.stopPropagation(); renameList('{{ shopping_list.id }}', '{{ shopping_list.name }}');">
+									<i class="bi bi-pencil-square"></i>
+								</button>
+								<button class="btn-list-action btn-delete" title="Delete list" onclick="event.stopPropagation(); deleteList('{{ shopping_list.id }}');">
+									<i class="bi bi-trash-fill"></i>
 								</button>
 							</div>
-						{% endfor %}
+						</div>
+						<div class="d-flex gap-2 flex-wrap">
+							<span class="header-chip">
+								<i class="bi bi-check-circle"></i>
+								<span>{{ shopping_list.completed|default([], true)|length }}</span>
+								<span class="muted">done</span>
+							</span>
+							<span class="header-chip">
+								<i class="bi bi-currency-dollar"></i>
+								<span>{{ shopping_list.estimated_total|default('$0.00', true) }}</span>
+							</span>
+						</div>
 					</div>
-				{% else %}
-					<div class="empty-state text-center py-5">
-						<svg class="mb-3 opacity-50" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6h15l-1.5 9h-12z"/><circle cx="9" cy="20" r="1"/><circle cx="19" cy="20" r="1"/></svg>
-						<p class="mb-3 text-muted">Your shopping list is empty</p>
-						<a href="{{ url_for('main.featured_deals_page') }}" class="btn btn-primary">+ Add Your First Item</a>
-					</div>
-				{% endif %}
+				</div>
 			</div>
+			{% endfor %}
+		{% else %}
+			<div class="col-12">
+				<div class="alert alert-info">
+					<i class="bi bi-info-circle me-2"></i>No lists yet. Create your first shopping list to get started!
+				</div>
+			</div>
+		{% endif %}
+	</div>
 
+	<!-- Placeholder when no list selected / after exit -->
+	<div id="list-placeholder" class="card shadow-sm mb-3 {% if active_list %}d-none{% endif %}">
+		<div class="card-body text-center text-muted">
+			<i class="bi bi-arrow-left-right display-5"></i>
+			<h5 class="mt-2 mb-1">Select a list to view items</h5>
+			<p class="mb-0">Choose any list above to see its contents here.</p>
+		</div>
+	</div>
+
+	<!-- Active List Content -->
+	{% if active_list %}
+
+	<div id="active-list-wrapper" class="card shadow-sm">
+		<div class="card-header bg-white border-bottom" id="active-list-header">
+			<div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+				<div>
+					<h4 class="mb-1" id="active-list-title">
+						<i class="bi bi-basket2-fill text-primary me-2"></i>{{ active_list.name }}
+					</h4>
+					<div class="d-flex flex-wrap align-items-center gap-2">
+						<span class="header-chip">
+							<i class="bi bi-box"></i>
+							<span>{{ items|length }}</span>
+							<span class="muted">items</span>
+						</span>
+						<span class="header-chip">
+							<i class="bi bi-check-circle"></i>
+							<span id="completed-count">0</span>
+							<span class="muted">completed</span>
+						</span>
+						<span class="header-chip">
+							<i class="bi bi-currency-dollar"></i>
+							<span id="total-price">$0.00</span>
+						</span>
+					</div>
+				</div>
+				<div class="list-header-actions">
+
+					<a href="{{ url_for('main.featured_deals_page') }}" class="btn btn-outline-primary">
+						<i class="bi bi-plus-circle me-2"></i>Add Items
+					</a>
+					<button class="btn btn-outline-secondary" onclick="printList()">
+						<i class="bi bi-printer me-2"></i>Print
+					</button>
+					<button class="btn btn-outline-success" onclick="exportList()">
+						<i class="bi bi-download me-2"></i>Export
+					</button>
+				</div>
+			</div>
+		</div>
+
+		<div class="card-body p-0" id="active-list-body">
 			{% if items and items|length > 0 %}
-				<div class="card-footer d-flex items-center justify-content-between p-3 border-top">
-					<div>
-						<button id="clear-purchased" class="btn btn-outline-secondary btn-sm">Clear Purchased</button>
-						<button id="clear-all" class="btn btn-outline-danger btn-sm">Clear All</button>
-						<button id="save-order" class="btn btn-outline-primary btn-sm">Save Order</button>
+				<!-- Filter/Sort Bar -->
+				<div class="p-3 border-bottom bg-light">
+					<div class="row g-2 align-items-center">
+						<div class="col-md-5">
+							<div class="input-group">
+								<span class="input-group-text"><i class="bi bi-search"></i></span>
+								<input type="text" class="form-control" id="search-items" placeholder="Search items...">
+							</div>
+						</div>
+						<div class="col-md-3">
+							<button class="btn btn-outline-secondary w-100" onclick="toggleCompletedItems()">
+								<i class="bi bi-eye-slash me-1"></i><span id="toggle-text">Hide Done</span>
+							</button>
+						</div>
 					</div>
-					<div class="text-end">
-						<p class="mb-0 text-lg">Total</p>
-						<p class="h4 mb-0 text-primary" id="total-value">$0.00</p>
-					</div>
+				</div>
+
+				<!-- Items List -->
+				<div class="list-group list-group-flush" id="items-container">
+					{% for it in items %}
+						{% set name = (it.name if it.name is defined else it) %}
+						{% set item_id = (it.id if it.id is defined else (it if it is string else '')) %}
+						{% set store = (it.store if it.store is defined else '') %}
+						{% set purchased = (it.purchased if it.purchased is defined else false) %}
+						{% set img = (it.image if it.image is defined else (it.images[0] if it.images is defined and it.images else '')) %}
+						{% set raw_price = (it.price_val if it.price_val is defined else (it.price if it.price is defined else '')) %}
+						{% set raw_price = (raw_price|string).replace('$','').replace(',','') if raw_price is not none else '' %}
+						{% set unit = (it.price_val if it.price_val is defined else (raw_price|float if raw_price is defined else 0.0)) %}
+						{% set qty = (it.qty if it.qty is defined else 1) %}
+						
+						<div class="list-group-item item-row {{ 'completed' if purchased }}" 
+						     draggable="true" 
+						     data-item-id="{{ item_id }}"
+						     data-name="{{ name }}" 
+						     data-price="{{ raw_price }}" 
+						     data-qty="{{ qty }}"
+						     data-store="{{ store }}">
+							<div class="d-flex align-items-center gap-3">
+								<!-- Checkbox -->
+								<div class="form-check">
+									<input class="form-check-input item-checkbox" type="checkbox" 
+									       id="item-{{ loop.index0 }}" 
+									       {% if purchased %}checked{% endif %}
+									       onchange="toggleItemComplete(this)">
+									<label class="form-check-label" for="item-{{ loop.index0 }}"></label>
+								</div>
+
+								<!-- Drag Handle -->
+								<div class="text-muted" style="cursor: move;">
+									<i class="bi bi-grip-vertical"></i>
+								</div>
+
+								<!-- Image -->
+								<div style="width: 60px; height: 60px; flex-shrink: 0;">
+									<img src="{{ prefer_processed(img if img else url_for('static', filename='placeholder.svg')) or (img if img else url_for('static', filename='placeholder.svg')) }}" 
+									     alt="{{ name }}" 
+									     class="rounded" 
+									     style="width: 100%; height: 100%; object-fit: cover;">
+								</div>
+
+								<!-- Item Details -->
+								<div class="flex-grow-1">
+									<h6 class="mb-1 item-name">{{ name }}</h6>
+									<div class="d-flex gap-3 text-muted small">
+										{% if store %}
+										<span><i class="bi bi-shop me-1"></i>{{ store }}</span>
+										{% endif %}
+									</div>
+								</div>
+
+								<!-- Quantity Controls -->
+								<div class="d-flex flex-column align-items-center justify-content-center qty-control">
+									<div class="qty-container">
+										<button class="qty-btn qty-decr" onclick="changeQuantity(this, -1)" title="Decrease quantity">
+											<i class="bi bi-dash"></i>
+										</button>
+										<input type="number" class="qty-input" value="{{ qty }}" min="1" onchange="setQuantity(this)" onkeypress="if(event.key==='Enter') setQuantity(this)">
+										<button class="qty-btn qty-incr" onclick="changeQuantity(this, 1)" title="Increase quantity">
+											<i class="bi bi-plus"></i>
+										</button>
+									</div>
+								</div>
+
+								<!-- Price -->
+								<div class="text-end" style="min-width: 90px;">
+									<div class="fw-bold text-success item-price">${{ '%.2f'|format((unit|float) * (qty|int)) }}</div>
+									<small class="text-muted">${{ '%.2f'|format(unit|float) }} each</small>
+								</div>
+
+								<!-- Actions -->
+								<button class="btn btn-sm text-danger" onclick="removeItem(this)" title="Delete item">
+									<i class="bi bi-trash-fill"></i>
+								</button>
+							</div>
+						</div>
+					{% endfor %}
+				</div>
+			{% else %}
+				<div class="empty-list-state">
+					<i class="bi bi-basket3 display-1 text-muted"></i>
+					<h5 class="mt-3 text-muted">This list is empty</h5>
+					<p class="text-muted">Start adding items to your shopping list</p>
+					<a href="{{ url_for('main.featured_deals_page') }}" class="btn btn-primary mt-2">
+						<i class="bi bi-plus-circle me-2"></i>Browse Products
+					</a>
 				</div>
 			{% endif %}
 		</div>
+
+		{% if items and items|length > 0 %}
+		<div class="card-footer bg-white border-top">
+			<div class="row align-items-center">
+				<div class="col-md-6">
+					<div class="btn-group" role="group">
+						<button class="btn btn-outline-secondary" onclick="clearCompleted()">
+							<i class="bi bi-check-circle me-2"></i>Clear Completed
+						</button>
+						<button class="btn btn-outline-warning" onclick="clearAll()">
+							<i class="bi bi-trash me-2"></i>Clear All
+						</button>
+					</div>
+				</div>
+				<div class="col-md-6">
+					<div class="total-summary text-center">
+						<div class="text-muted mb-1">Estimated Total</div>
+						<h3 class="mb-0 text-success" id="total-value">$0.00</h3>
+					</div>
+				</div>
+			</div>
+		</div>
+		{% endif %}
 	</div>
+	{% endif %}
 </section>
+
+<!-- Create List Modal -->
+<div class="modal fade" id="createListModal" tabindex="-1">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title"><i class="bi bi-plus-circle me-2"></i>Create New List</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+			</div>
+			<div class="modal-body">
+				<div class="mb-3">
+					<label class="form-label">List Name</label>
+					<input type="text" class="form-control" id="new-list-name" placeholder="e.g., Weekly Groceries, Party Supplies">
+				</div>
+				<div class="mb-3">
+					<label class="form-label">Quick Start Templates</label>
+					<div class="d-flex gap-2 flex-wrap">
+						<button class="btn btn-sm btn-outline-primary" onclick="document.getElementById('new-list-name').value='Weekly Groceries'">
+							Weekly Groceries
+						</button>
+						<button class="btn btn-sm btn-outline-primary" onclick="document.getElementById('new-list-name').value='Party Supplies'">
+							Party Supplies
+						</button>
+						<button class="btn btn-sm btn-outline-primary" onclick="document.getElementById('new-list-name').value='Meal Prep'">
+							Meal Prep
+						</button>
+						<button class="btn btn-sm btn-outline-primary" onclick="document.getElementById('new-list-name').value='Breakfast Items'">
+							Breakfast Items
+						</button>
+					</div>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+				<button type="button" class="btn btn-primary" onclick="createList()">
+					<i class="bi bi-check-circle me-2"></i>Create List
+				</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Rename List Modal -->
+<div class="modal fade" id="renameListModal" tabindex="-1">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title"><i class="bi bi-pencil me-2"></i>Rename List</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+			</div>
+			<div class="modal-body">
+				<input type="hidden" id="rename-list-id">
+				<div class="mb-3">
+					<label class="form-label">New Name</label>
+					<input type="text" class="form-control" id="rename-list-name">
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+				<button type="button" class="btn btn-primary" onclick="confirmRename()">
+					<i class="bi bi-check-circle me-2"></i>Rename
+				</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Move Item Modal -->
+<div class="modal fade" id="moveItemModal" tabindex="-1">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title"><i class="bi bi-arrow-left-right me-2"></i>Move Item to List</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+			</div>
+			<div class="modal-body">
+				<input type="hidden" id="move-item-name">
+				<div class="mb-3">
+					<label class="form-label">Select Destination List</label>
+					<select class="form-select" id="move-to-list">
+						{% for list in all_lists %}
+							{% if active_list and list.id != active_list.id %}
+							<option value="{{ list.id }}">{{ list.name }}</option>
+							{% endif %}
+						{% endfor %}
+					</select>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+				<button type="button" class="btn btn-primary" onclick="confirmMoveItem()">
+					<i class="bi bi-check-circle me-2"></i>Move Item
+				</button>
+			</div>
+		</div>
+	</div>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+
+<script>
+// Initialize totals on page load
+document.addEventListener('DOMContentLoaded', () => {
+	computeTotals();
+	updateListStats();
+});
+
+// Compute totals
+function computeTotals() {
+	let total = 0;
+	let completed = 0;
+	document.querySelectorAll('.item-row').forEach(row => {
+		const price = parseFloat(row.getAttribute('data-price') || 0);
+		const qty = parseInt(row.getAttribute('data-qty') || 1);
+		const isCompleted = row.classList.contains('completed');
+		
+		total += price * qty;
+		if (isCompleted) completed++;
+	});
+	
+	const totalEl = document.getElementById('total-value');
+	const priceEl = document.getElementById('total-price');
+	const completedEl = document.getElementById('completed-count');
+	
+	if (totalEl) totalEl.textContent = `$${total.toFixed(2)}`;
+	if (priceEl) priceEl.textContent = `$${total.toFixed(2)}`;
+	if (completedEl) completedEl.textContent = completed;
+}
+
+function updateListStats() {
+	computeTotals();
+}
+
+// Switch active list
+function switchList(listId) {
+	// Save this list as the last opened list
+	localStorage.setItem('lastOpenedListId', listId);
+	
+	// Update active tab styling
+	document.querySelectorAll('.list-tab').forEach(tab => {
+		tab.classList.remove('active');
+		tab.classList.remove('enlarged');
+	});
+	document.querySelector(`[data-list-id="${listId}"]`).classList.add('active');
+	document.querySelector(`[data-list-id="${listId}"]`).classList.add('enlarged');
+
+	// Scroll active area into view for better focus
+	setTimeout(() => {
+		const target = document.getElementById('active-list-wrapper');
+		if (target && target.scrollIntoView) {
+			target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+		}
+	}, 50);
+	
+	// Fetch and display list items
+	fetch(`/api/list/${listId}/items`)
+		.then(r => r.json())
+		.then(data => {
+			if (data.success) {
+				// Show active wrapper, hide placeholder only after data is fetched
+				const activeWrapper = document.getElementById('active-list-wrapper');
+				const placeholder = document.getElementById('list-placeholder');
+				
+				displayListItems(data);
+				
+				// Update the item count and total on the list card
+				const listTab = document.querySelector(`[data-list-id="${listId}"]`);
+				if (listTab) {
+					const headerChips = listTab.querySelectorAll('.header-chip');
+					if (headerChips.length > 0) {
+						const itemCount = (data.items || []).length;
+						headerChips[0].innerHTML = `<i class="bi bi-cart-check me-1"></i><span>${itemCount}</span><span class="muted">items</span>`;
+					}
+					
+					// Calculate and update estimated total
+					if (headerChips.length > 1) {
+						const items = data.items || [];
+						let total = 0;
+						items.forEach(item => {
+							const price = parseFloat(item.price_val !== undefined ? item.price_val : item.price || 0);
+							const qty = parseInt(item.qty || 1);
+							total += price * qty;
+						});
+						headerChips[1].innerHTML = `<i class="bi bi-currency-dollar"></i><span>$${total.toFixed(2)}</span>`;
+					}
+				}
+				
+				if (activeWrapper) activeWrapper.classList.remove('d-none');
+				if (placeholder) placeholder.classList.add('d-none');
+				
+				// Set as active list on server
+				fetch('/api/list/set-active', {
+					method: 'POST',
+					headers: {'Content-Type': 'application/json'},
+					body: JSON.stringify({list_id: listId})
+				});
+			} else {
+									showNotification('Error loading list: ' + (data.error || 'Unknown error'), 'danger');
+			}
+		})
+		.catch(err => {
+			console.error('Error:', err);
+			showNotification('Error loading list', 'danger');
+		});
+}
+
+// Exit list view without leaving page
+function exitListView() {
+	const activeWrapper = document.getElementById('active-list-wrapper');
+	const placeholder = document.getElementById('list-placeholder');
+	if (activeWrapper) activeWrapper.classList.add('d-none');
+	if (placeholder) placeholder.classList.remove('d-none');
+	// remove active highlight from tabs
+	document.querySelectorAll('.list-tab').forEach(tab => tab.classList.remove('active'));
+	// Clear the stored last opened list
+	localStorage.removeItem('lastOpenedListId');
+}
+
+// Initialize: auto-open the last viewed list on page load
+function restoreLastOpenedList() {
+	const lastListId = localStorage.getItem('lastOpenedListId');
+	if (lastListId) {
+		const listTab = document.querySelector(`[data-list-id="${lastListId}"]`);
+		if (listTab) {
+			// Trigger the switchList function with slight delay to ensure DOM is ready
+			setTimeout(() => switchList(lastListId), 100);
+		}
+	}
+}
+
+// Run restore on page load
+if (document.readyState === 'loading') {
+	document.addEventListener('DOMContentLoaded', restoreLastOpenedList);
+} else {
+	restoreLastOpenedList();
+}
+
+// Merge duplicate items by name and sum quantities
+function mergeItemsByName(items) {
+	const merged = {};
+	
+	items.forEach((item, index) => {
+		const name = (typeof item === 'string') ? item : (item.name || '');
+		const name_key = name.toLowerCase().trim();
+		
+		if (merged[name_key]) {
+			// Item exists - add quantities
+			const qty = (item.qty || item.quantity || 1);
+			merged[name_key].qty = parseInt(merged[name_key].qty || 1) + parseInt(qty || 1);
+			// Update other fields if missing
+			if (!merged[name_key].price_val && item.price_val) merged[name_key].price_val = item.price_val;
+			if (!merged[name_key].image && item.image) merged[name_key].image = item.image;
+			if (!merged[name_key].store && item.store) merged[name_key].store = item.store;
+			if (!merged[name_key].category && item.category) merged[name_key].category = item.category;
+		} else {
+			// New item
+			merged[name_key] = {
+				...item,
+				name: name,
+				qty: (item.qty || item.quantity || 1),
+				id: item.id || name,
+				purchased: item.purchased || false,
+				image: item.image || '',
+				store: item.store || '',
+				category: item.category || 'Uncategorized'
+			};
+		}
+	});
+	
+	return Object.values(merged);
+}
+
+const PLACEHOLDER_IMG = "{{ url_for('static', filename='placeholder.svg') }}";
+
+// Display list items dynamically
+function displayListItems(data) {
+	const listId = data.list_id;
+	const listName = data.name;
+	let items = data.items || [];
+	
+	// Merge duplicate items by name
+	items = mergeItemsByName(items);
+	
+	// Update header (specific to active list card)
+	const header = document.getElementById('active-list-header');
+	if (header) {
+		const titleEl = document.getElementById('active-list-title');
+		if (titleEl) {
+			titleEl.innerHTML = `<i class="bi bi-basket2-fill text-primary me-2"></i>${listName}`;
+		}
+		
+		// Update item count in header
+		const itemCountSpans = header.querySelectorAll('.header-chip');
+		if (itemCountSpans.length > 0) {
+			itemCountSpans[0].innerHTML = `<i class="bi bi-box"></i><span>${items.length}</span><span class="muted">items</span>`;
+		}
+	}
+
+	// Update items container in the active card body only
+	const cardBody = document.getElementById('active-list-body');
+	
+	if (!items || items.length === 0) {
+		// Show empty state
+		if (cardBody) {
+			cardBody.innerHTML = `
+				<div class="empty-list-state">
+					<i class="bi bi-basket3 display-1 text-muted"></i>
+					<h5 class="mt-3 text-muted">This list is empty</h5>
+					<p class="text-muted">Start adding items to your shopping list</p>
+					<a href="{{ url_for('main.featured_deals_page') }}" class="btn btn-primary mt-2">
+						<i class="bi bi-plus-circle me-2"></i>Browse Products
+					</a>
+				</div>
+			`;
+		}
+		return;
+	}
+	
+	// Build HTML for items
+	let itemsHTML = `
+		<div class="p-3 border-bottom bg-light">
+			<div class="row g-2 align-items-center">
+				<div class="col-md-5">
+					<div class="input-group">
+						<span class="input-group-text"><i class="bi bi-search"></i></span>
+						<input type="text" class="form-control" id="search-items" placeholder="Search items...">
+					</div>
+				</div>
+				<div class="col-md-3">
+					<button class="btn btn-outline-secondary w-100" onclick="toggleCompletedItems()">
+						<i class="bi bi-eye-slash me-1"></i><span id="toggle-text">Hide Done</span>
+					</button>
+				</div>
+			</div>
+		</div>
+		<div class="list-group list-group-flush" id="items-container">
+	`;
+	
+	items.forEach((it, index) => {
+		const name = (typeof it === 'string') ? it : (it.name || '');
+		const item_id = (it.id || name);
+		const store = (it.store || '');
+		const purchased = (it.purchased || false);
+		const img = (it.image || (it.images && it.images[0]) || PLACEHOLDER_IMG);
+		const raw_price = (it.price_val !== undefined ? it.price_val : it.price || 0);
+		const unit = parseFloat(raw_price) || 0;
+		const qty = (it.qty || 1);
+
+		itemsHTML += `
+			<div class="list-group-item item-row ${purchased ? 'completed' : ''}" 
+				 draggable="true" 
+				 data-item-id="${item_id}"
+				 data-name="${name}" 
+				 data-price="${unit}" 
+				 data-qty="${qty}"
+				 data-store="${store}">
+				<div class="d-flex align-items-center gap-3 w-100">
+					<div class="d-flex align-items-center gap-3 flex-grow-1">
+						<div class="form-check mb-0">
+							<input class="form-check-input item-checkbox" type="checkbox" 
+							       id="item-${index}" 
+							       ${purchased ? 'checked' : ''}
+							       onchange="toggleItemComplete(this)">
+						</div>
+						<div class="text-muted" style="cursor: move;">
+							<i class="bi bi-grip-vertical"></i>
+						</div>
+						<div style="width: 60px; height: 60px; flex-shrink: 0;">
+							<img src="${img}" 
+								 alt="${name}" 
+								 class="rounded" 
+								 style="width: 100%; height: 100%; object-fit: cover;" 
+								 onerror="this.src='{{ url_for('static', filename='placeholder.svg') }}'">
+						</div>
+						<div class="flex-grow-1">
+							<h6 class="mb-1 item-name">${name}</h6>
+							<div class="d-flex gap-3 text-muted small">
+								${store ? `<span><i class="bi bi-shop me-1"></i>${store}</span>` : ''}
+							</div>
+						</div>
+					</div>
+
+					<div class="d-flex flex-column align-items-center justify-content-center qty-control">
+						<div class="qty-container">
+							<button class="qty-btn qty-decr" onclick="changeQuantity(this, -1)" title="Decrease quantity">
+								<i class="bi bi-dash"></i>
+							</button>
+							<input type="number" class="qty-input" value="${qty}" min="1" onchange="setQuantity(this)" onkeypress="if(event.key==='Enter') setQuantity(this)">
+							<button class="qty-btn qty-incr" onclick="changeQuantity(this, 1)" title="Increase quantity">
+								<i class="bi bi-plus"></i>
+							</button>
+						</div>
+					</div>
+
+					<div class="d-flex align-items-center gap-3 flex-shrink-0" style="min-width: 150px; justify-content: flex-end;">
+						<div class="text-end">
+							<div class="fw-bold text-success item-price">$${(unit * qty).toFixed(2)}</div>
+							<small class="text-muted">$${unit.toFixed(2)} each</small>
+						</div>
+						<button class="btn btn-sm text-danger" onclick="removeItem(this)" title="Delete item">
+							<i class="bi bi-trash-fill"></i>
+						</button>
+					</div>
+				</div>
+		</div>
+		`;
+	});
+	
+	itemsHTML += `</div>`;
+	
+	// Replace card body content
+	if (cardBody) {
+		cardBody.innerHTML = itemsHTML;
+	}
+	
+	// Update stats after DOM render
+	setTimeout(() => {
+		computeTotals();
+		updateListStats();
+	}, 100);
+}
+
+// Create new list
+function createList() {
+	const name = document.getElementById('new-list-name').value.trim();
+	if (!name) {
+		showNotification('Please enter a list name', 'warning');
+		return;
+	}
+	
+	fetch('/api/list/create', {
+		method: 'POST',
+		headers: {'Content-Type': 'application/json'},
+		body: JSON.stringify({name: name})
+	})
+	.then(r => r.json())
+	.then(data => {
+		if (data.success) {
+			bootstrap.Modal.getInstance(document.getElementById('createListModal')).hide();
+			window.location.reload();
+		}
+	});
+}
+
+// Rename list
+function renameList(listId, currentName) {
+	event.stopPropagation();
+	document.getElementById('rename-list-id').value = listId;
+	document.getElementById('rename-list-name').value = currentName;
+	new bootstrap.Modal(document.getElementById('renameListModal')).show();
+}
+
+function confirmRename() {
+	const listId = document.getElementById('rename-list-id').value;
+	const newName = document.getElementById('rename-list-name').value.trim();
+	
+	if (!newName) {
+		showNotification('Please enter a name', 'warning');
+		return;
+	}
+	
+	fetch('/api/list/rename', {
+		method: 'POST',
+		headers: {'Content-Type': 'application/json'},
+		body: JSON.stringify({list_id: listId, name: newName})
+	})
+	.then(r => r.json())
+	.then(data => {
+		if (data.success) {
+			bootstrap.Modal.getInstance(document.getElementById('renameListModal')).hide();
+			window.location.reload();
+		}
+	});
+}
+
+// Delete list
+function deleteList(listId) {
+	event.stopPropagation();
+	if (!confirm('Are you sure you want to delete this list?')) return;
+	
+	fetch('/api/list/delete', {
+		method: 'POST',
+		headers: {'Content-Type': 'application/json'},
+		body: JSON.stringify({list_id: listId})
+	})
+	.then(r => r.json())
+	.then(data => {
+		if (data.success) {
+			window.location.reload();
+		}
+	});
+}
+
+// Duplicate list
+function duplicateList(listId) {
+	event.stopPropagation();
+	fetch('/api/list/duplicate', {
+		method: 'POST',
+		headers: {'Content-Type': 'application/json'},
+		body: JSON.stringify({list_id: listId})
+	})
+	.then(r => r.json())
+	.then(data => {
+		if (data.success) {
+			window.location.reload();
+		}
+	});
+}
+
+// Share list
+function shareList(listId) {
+	event.stopPropagation();
+	const shareUrl = `${window.location.origin}/shared-list/${listId}`;
+	navigator.clipboard.writeText(shareUrl).then(() => {
+		showNotification('Share link copied to clipboard!', 'success');
+	});
+}
+
+// Toggle item completion
+function toggleItemComplete(checkbox) {
+	const row = checkbox.closest('.item-row');
+	if (checkbox.checked) {
+		row.classList.add('completed');
+	} else {
+		row.classList.remove('completed');
+	}
+	updateListStats();
+	saveListState();
+}
+
+// Change quantity
+function changeQuantity(btn, delta) {
+	const row = btn.closest('.item-row');
+	const input = row.querySelector('.qty-input');
+	let qty = parseInt(input.value || 1);
+	
+	qty = Math.max(1, qty + delta);
+	input.value = qty;
+	row.setAttribute('data-qty', qty);
+	
+	// Update price
+	const unitPrice = parseFloat(row.getAttribute('data-price') || 0);
+	const priceEl = row.querySelector('.item-price');
+	if (priceEl) {
+		priceEl.textContent = `$${(unitPrice * qty).toFixed(2)}`;
+	}
+	
+	updateListStats();
+	saveListState();
+}
+
+function setQuantity(input) {
+	const row = input.closest('.item-row');
+	let qty = parseInt(input.value || 1);
+	
+	// Validate quantity
+	if (isNaN(qty) || qty < 1) {
+		qty = 1;
+		input.value = 1;
+	}
+	
+	row.setAttribute('data-qty', qty);
+	
+	// Update price
+	const unitPrice = parseFloat(row.getAttribute('data-price') || 0);
+	const priceEl = row.querySelector('.item-price');
+	if (priceEl) {
+		priceEl.textContent = `$${(unitPrice * qty).toFixed(2)}`;
+	}
+	
+	updateListStats();
+	saveListState();
+}
+
+// Remove item
+function removeItem(btn) {
+	const row = btn.closest('.item-row');
+	const name = row.getAttribute('data-name');
+	
+	fetch('/api/list/remove-item', {
+		method: 'POST',
+		headers: {'Content-Type': 'application/json'},
+		body: JSON.stringify({item_name: name})
+	})
+	.then(r => r.json())
+	.then(data => {
+		if (data.success) {
+			row.style.transition = 'all 0.3s ease';
+			row.style.opacity = '0';
+			row.style.transform = 'translateX(20px)';
+			setTimeout(() => {
+				row.remove();
+				updateListStats();
+				showNotification(`"${name}" removed from list`, 'success');
+			}, 300);
+		} else {
+			showNotification('Failed to remove item', 'danger');
+		}
+	})
+	.catch(err => showNotification('Error removing item', 'danger'));
+}
+
+// Clear completed items
+function clearCompleted() {
+	const completed = document.querySelectorAll('.item-row.completed');
+	if (completed.length === 0) {
+		showNotification('No completed items to clear', 'info');
+		return;
+	}
+	
+	const count = completed.length;
+	fetch('/api/list/clear-completed', {
+		method: 'POST',
+		headers: {'Content-Type': 'application/json'}
+	})
+	.then(r => r.json())
+	.then(data => {
+		if (data.success) {
+			showNotification(`${count} completed item${count > 1 ? 's' : ''} removed`, 'success');
+			setTimeout(() => window.location.reload(), 500);
+		} else {
+			showNotification('Failed to clear completed items', 'danger');
+		}
+	})
+	.catch(err => showNotification('Error clearing items', 'danger'));
+}
+
+// Clear all items
+function clearAll() {
+	fetch('/api/list/clear-all', {
+		method: 'POST',
+		headers: {'Content-Type': 'application/json'}
+	})
+	.then(r => r.json())
+	.then(data => {
+		if (data.success) {
+			showNotification('All items cleared from list', 'success');
+			setTimeout(() => window.location.reload(), 500);
+		} else {
+			showNotification('Failed to clear all items', 'danger');
+		}
+	})
+	.catch(err => showNotification('Error clearing list', 'danger'));
+}
+
+// Save order
+function saveOrder() {
+	saveListState();
+	showNotification('List order saved!', 'success');
+}
+
+// Save list state
+function saveListState() {
+	const items = Array.from(document.querySelectorAll('.item-row')).map(row => ({
+		name: row.getAttribute('data-name'),
+		qty: parseInt(row.getAttribute('data-qty') || 1),
+		purchased: row.classList.contains('completed'),
+		price: parseFloat(row.getAttribute('data-price') || 0)
+	}));
+	
+	fetch('/api/list/update-items', {
+		method: 'POST',
+		headers: {'Content-Type': 'application/json'},
+		body: JSON.stringify({items: items})
+	});
+}
+
+// Print list
+function printList() {
+	window.print();
+}
+
+// Export list
+function exportList() {
+	const items = Array.from(document.querySelectorAll('.item-row')).map(row => ({
+		name: row.getAttribute('data-name'),
+		quantity: row.getAttribute('data-qty'),
+		price: row.getAttribute('data-price'),
+		store: row.getAttribute('data-store'),
+		completed: row.classList.contains('completed')
+	}));
+	
+	const csv = 'Item,Quantity,Price,Store,Completed\n' + 
+		items.map(i => `"${i.name}",${i.quantity},$${i.price},"${i.store}",${i.completed}`).join('\n');
+	
+	const blob = new Blob([csv], {type: 'text/csv'});
+	const url = window.URL.createObjectURL(blob);
+	const a = document.createElement('a');
+	a.href = url;
+	a.download = 'shopping-list.csv';
+	a.click();
+}
+
+// Toggle completed items visibility
+let hideCompleted = false;
+function toggleCompletedItems() {
+	hideCompleted = !hideCompleted;
+	document.querySelectorAll('.item-row.completed').forEach(row => {
+		row.style.display = hideCompleted ? 'none' : '';
+	});
+	document.getElementById('toggle-text').textContent = hideCompleted ? 'Show Done' : 'Hide Done';
+}
+
+// Search items
+document.getElementById('search-items')?.addEventListener('input', function(e) {
+	const query = e.target.value.toLowerCase();
+	document.querySelectorAll('.item-row').forEach(row => {
+		const name = row.getAttribute('data-name').toLowerCase();
+		row.style.display = name.includes(query) ? '' : 'none';
+	});
+});
+
+// Drag and drop
+let draggedItem = null;
+document.addEventListener('dragstart', function(e) {
+	if (e.target.classList.contains('item-row')) {
+		draggedItem = e.target;
+		e.target.style.opacity = '0.5';
+	}
+});
+
+document.addEventListener('dragend', function(e) {
+	if (e.target.classList.contains('item-row')) {
+		e.target.style.opacity = '';
+		saveListState();
+	}
+});
+
+document.addEventListener('dragover', function(e) {
+	e.preventDefault();
+});
+
+document.addEventListener('drop', function(e) {
+	e.preventDefault();
+	if (e.target.classList.contains('item-row') && draggedItem) {
+		const container = document.getElementById('items-container');
+		const items = Array.from(container.children);
+		const draggedIdx = items.indexOf(draggedItem);
+		const targetIdx = items.indexOf(e.target);
+		
+		if (draggedIdx < targetIdx) {
+			e.target.after(draggedItem);
+		} else {
+			e.target.before(draggedItem);
+		}
+	}
+});
+
+// Show list selector modal when adding an item
+function showListSelector(item) {
+	pendingItemToAdd = item;
+	const modal = new bootstrap.Modal(document.getElementById('listSelectorModal'));
+	const body = document.getElementById('listSelectorBody');
+	
+	body.innerHTML = '';
+	
+	// Fetch all lists from the current page data
+	const listTabs = document.querySelectorAll('[data-list-id]');
+	
+	if (listTabs.length === 0) {
+		body.innerHTML = '<p class="text-muted">No lists available. Create a list first.</p>';
+		modal.show();
+		return;
+	}
+	
+	listTabs.forEach(tab => {
+		const listId = tab.getAttribute('data-list-id');
+		const listName = tab.querySelector('h5')?.textContent || 'Unknown List';
+		const itemCount = tab.querySelector('.bi-cart-check')?.parentElement?.textContent || '0 items';
+		const isActive = tab.classList.contains('active');
+		
+		const card = document.createElement('div');
+		card.className = 'card mb-2 list-option';
+		card.innerHTML = `
+			<div class="card-body p-3">
+				<div class="d-flex justify-content-between align-items-center">
+					<div>
+						<h6 class="mb-1">
+							<i class="bi bi-list-ul me-2"></i>${listName.trim()}
+						</h6>
+						<small class="text-muted">${itemCount.trim()}</small>
+						${isActive ? '<span class="badge bg-primary">Active</span>' : ''}
+					</div>
+					<button class="btn btn-sm btn-primary" onclick="addItemToList('${listId}')">
+						<i class="bi bi-plus-circle me-1"></i>Add
+					</button>
+				</div>
+			</div>
+		`;
+		body.appendChild(card);
+	});
+	
+	modal.show();
+}
+
+function addItemToList(listId) {
+	if (!pendingItemToAdd) {
+		showNotification('No item to add', 'danger');
+		return;
+	}
+	
+	apiPostJson('/api/list/add-item', { item: pendingItemToAdd, list_id: listId })
+		.then(res => {
+			if (res && res.success) {
+				showNotification(`${pendingItemToAdd.name} added to list`, 'success');
+				bootstrap.Modal.getInstance(document.getElementById('listSelectorModal')).hide();
+				window.location.reload();
+			} else {
+				showNotification(res?.error || 'Could not add item', 'danger');
+			}
+		})
+		.catch(err => showNotification('Error adding item', 'danger'));
+}
+</script>
+
+<!-- List Selector Modal -->
+<div class="modal fade" id="listSelectorModal" tabindex="-1" aria-hidden="true">
+	<div class="modal-dialog modal-dialog-centered">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title">
+					<i class="bi bi-diagram-3 me-2"></i>Select Shopping List
+				</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+			</div>
+			<div class="modal-body" id="listSelectorBody">
+				<!-- List options will be populated here -->
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+			</div>
+		</div>
+	</div>
+</div>
 </body>
 </html>

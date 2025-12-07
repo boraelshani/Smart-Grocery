@@ -105,14 +105,54 @@
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       border: none;
       color: white;
-      border-radius: 10px;
-      padding: 10px 20px;
-      font-weight: 600;
-      transition: transform 0.2s ease;
+      border-radius: 12px;
+      padding: 12px 18px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      text-decoration: none !important;
+      box-shadow: 0 4px 14px rgba(102, 126, 234, 0.3);
     }
     .btn-add-cart:hover {
-      transform: scale(1.05);
+      transform: translateY(-2px);
       color: white;
+      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+      text-decoration: none !important;
+    }
+    .btn-add-cart:active {
+      transform: translateY(0);
+    }
+    /* Light purple add-to-list CTA */
+    .add-to-list-btn {
+      background: linear-gradient(135deg, #d8c4ff 0%, #c0a6ff 100%);
+      border: 2px solid #b799ff;
+      color: #3b2a61;
+      font-weight: 700;
+      font-size: 0.95rem;
+      border-radius: 12px;
+      padding: 12px 18px;
+      box-shadow: 0 4px 14px rgba(95, 69, 168, 0.2);
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+    }
+    .add-to-list-btn:hover {
+      color: #2c1f4f;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(95, 69, 168, 0.3);
+      border-color: #a380ff;
+      background: linear-gradient(135deg, #e0d4ff 0%, #cdb5ff 100%);
+    }
+    .add-to-list-btn:active {
+      transform: translateY(0);
     }
     .form-control:focus, .form-select:focus {
       border-color: #667eea;
@@ -234,14 +274,11 @@
               <label class="form-label"><i class="bi bi-grid"></i> Category</label>
               <select id="category-filter" class="form-select">
                 <option value="">All Categories</option>
-                <option value="dairy">Dairy</option>
-                <option value="produce">Produce</option>
-                <option value="meat">Meat & Seafood</option>
-                <option value="bakery">Bakery</option>
-                <option value="snacks">Snacks</option>
-                <option value="beverages">Beverages</option>
-                <option value="frozen">Frozen Foods</option>
-                <option value="pantry">Pantry</option>
+                {% set cats = category_options if category_options is defined else [] %}
+                {% for cat in cats %}
+                  {% set val = cat|lower %}
+                  <option value="{{ val }}" {% if category_filter and val==category_filter|lower %}selected{% endif %}>{{ cat }}</option>
+                {% endfor %}
               </select>
             </div>
 
@@ -286,19 +323,11 @@
 
     <!-- Category chips -->
     <div class="category-chip-row mb-3">
-      {% set category_list = [
-        ('fruit-vegetables', 'Fruit & Vegetables'),
-        ('bread-pastries', 'Bread & Pastries'),
-        ('dairy-products-alternatives', 'Dairy Products & Alternatives'),
-        ('frozen-products', 'Frozen products'),
-        ('sausage-meat-eggs-fish', 'Sausage, meat, eggs & fish'),
-        ('side-dishes-vinegar-oil-spices', 'Side dishes, vinegar, oil & spices'),
-        ('baking-breakfast', 'Baking & Breakfast'),
-        ('sweet-salty', 'Sweet & Salty'),
-        ('fast-food-to-go', 'Fast Food & To Go'),
-      ] %}
-      {% for slug, label in category_list %}
-        <button type="button" class="category-chip" data-category-chip="{{ slug }}" data-category-label="{{ label }}">{{ label }}</button>
+      {% set cats = category_options if category_options is defined else [] %}
+      <button type="button" class="category-chip {% if not category_filter %}active{% endif %}" data-category-chip="" data-category-label="All">All</button>
+      {% for cat in cats %}
+        {% set slug = cat|lower %}
+        <button type="button" class="category-chip {% if category_filter and slug==category_filter|lower %}active{% endif %}" data-category-chip="{{ slug }}" data-category-label="{{ cat }}">{{ cat }}</button>
       {% endfor %}
     </div>
     
@@ -378,13 +407,20 @@
                 
                 <div class="mt-auto">
                   {% if p.get('expires') %}
-                    <p class="text-muted small mb-2">
+                    <p class="text-muted small mb-3">
                       <i class="bi bi-clock-history"></i> Expires in {{ p.get('expires') }}
                     </p>
                   {% endif %}
                   <div class="d-grid gap-2">
+                    <button type="button" class="btn add-to-list-btn" 
+                      data-product-name="{{ p.get('name') or p.get('title','') }}" 
+                      data-product-id="{{ p.get('id') }}"
+                      data-product-price="{{ (p.get('cheapest') and p.get('cheapest').get('price')) or p.get('price','N/A') }}"
+                      data-product-image="{{ prefer_processed(p.get('image') or (p.get('images') and p.get('images')[0]) or url_for('static', filename='placeholder.svg')) }}">
+                      <i class="bi bi-cart-plus-fill"></i> Add to List
+                    </button>
                     <span class="btn btn-add-cart">
-                      <i class="bi bi-eye"></i> View Details
+                      <i class="bi bi-zoom-in"></i> View Details
                     </span>
                   </div>
                 </div>
@@ -407,15 +443,15 @@
       <nav aria-label="Compare prices pagination" class="w-100 w-sm-auto">
         <ul class="pagination justify-content-center mb-0 flex-wrap gap-1">
           <li class="page-item {% if not has_prev %}disabled{% endif %}">
-            <a class="page-link" data-pagination-link="true" href="{% if has_prev %}{{ url_for('main.compare_prices', page=page-1) }}{% else %}#{% endif %}" tabindex="{% if not has_prev %}-1{% endif %}"><i class="bi bi-chevron-left"></i></a>
+            <a class="page-link" data-pagination-link="true" href="{% if has_prev %}{{ url_for('main.compare_prices', page=page-1, category=category_filter) }}{% else %}#{% endif %}" tabindex="{% if not has_prev %}-1{% endif %}"><i class="bi bi-chevron-left"></i></a>
           </li>
           {% for pnum in range(1, total_pages + 1) %}
           <li class="page-item {% if pnum == page %}active{% endif %}">
-            <a class="page-link" data-pagination-link="true" href="{{ url_for('main.compare_prices', page=pnum) }}">{{ pnum }}</a>
+            <a class="page-link" data-pagination-link="true" href="{{ url_for('main.compare_prices', page=pnum, category=category_filter) }}">{{ pnum }}</a>
           </li>
           {% endfor %}
           <li class="page-item {% if not has_next %}disabled{% endif %}">
-            <a class="page-link" data-pagination-link="true" href="{% if has_next %}{{ url_for('main.compare_prices', page=page+1) }}{% else %}#{% endif %}"><i class="bi bi-chevron-right"></i></a>
+            <a class="page-link" data-pagination-link="true" href="{% if has_next %}{{ url_for('main.compare_prices', page=page+1, category=category_filter) }}{% else %}#{% endif %}"><i class="bi bi-chevron-right"></i></a>
           </li>
         </ul>
       </nav>
@@ -442,6 +478,34 @@
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
           <button type="button" class="btn btn-primary add-to-cart-btn">Add to Cart</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal for Selecting Shopping List -->
+  <div class="modal fade" id="listSelectorModal" tabindex="-1" aria-labelledby="listSelectorLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content" style="border-radius: 16px; border: none; box-shadow: 0 12px 40px rgba(0,0,0,0.15);">
+        <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 16px 16px 0 0; padding: 1.5rem;">
+          <h5 class="modal-title" id="listSelectorLabel">
+            <i class="bi bi-cart-plus me-2"></i>Add to Shopping List
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" style="padding: 1.75rem;">
+          <div class="mb-4 p-3" style="background: #f0f4ff; border-left: 4px solid #667eea; border-radius: 8px;">
+            <p class="mb-0 small text-muted">Adding to list:</p>
+            <p class="mb-0 fw-bold" id="itemNameDisplay" style="color: #3b2a61; font-size: 1.1rem;"></p>
+          </div>
+          <div id="listSelectorContainer" class="d-flex flex-column gap-3">
+            <!-- Lists will be populated here -->
+          </div>
+        </div>
+        <div class="modal-footer" style="border-top: 1px solid #e9ecef; padding: 1rem 1.75rem;">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+            <i class="bi bi-x-circle me-1"></i>Cancel
+          </button>
         </div>
       </div>
     </div>
@@ -503,7 +567,7 @@
 
       function filterAndSortProducts() {
         const searchTerm = searchInput.value.toLowerCase().trim();
-        const selectedCategory = activeCategorySlug || slugifyCategory(categoryFilter.value);
+        const selectedCategory = ''; // category filtering now handled server-side via page reload
         const selectedStore = storeFilter.value;
         const minPrice = parseFloat(minPriceInput.value) || 0;
         const maxPrice = parseFloat(maxPriceInput.value) || Infinity;
@@ -646,7 +710,18 @@
       if (searchInput) searchInput.addEventListener('keyup', (e) => {
         if (e.key === 'Enter') filterAndSortProducts();
       });
-      if (categoryFilter) categoryFilter.addEventListener('change', filterAndSortProducts);
+      if (categoryFilter) categoryFilter.addEventListener('change', () => {
+        const val = (categoryFilter.value || '').toLowerCase();
+        const params = new URLSearchParams(window.location.search);
+        if (val) {
+          params.set('category', val);
+          params.set('page', '1');
+        } else {
+          params.delete('category');
+          params.set('page', '1');
+        }
+        window.location.search = params.toString();
+      });
       if (storeFilter) storeFilter.addEventListener('change', filterAndSortProducts);
       if (minPriceInput) minPriceInput.addEventListener('change', filterAndSortProducts);
       if (maxPriceInput) maxPriceInput.addEventListener('change', filterAndSortProducts);
@@ -655,15 +730,17 @@
 
       categoryChips.forEach(chip => {
         chip.addEventListener('click', () => {
-          const slug = chip.dataset.categoryChip;
-          const label = chip.dataset.categoryLabel || chip.textContent;
-          // toggle off if clicking the active chip
-          if (activeCategorySlug === slug) {
-            setActiveChip('', '');
+          const slug = (chip.dataset.categoryChip || '').toLowerCase();
+          const params = new URLSearchParams(window.location.search);
+          const current = (params.get('category') || '').toLowerCase();
+          const willClear = slug === '' || slug === current;
+          if (willClear) {
+            params.delete('category');
           } else {
-            setActiveChip(slug, label);
+            params.set('category', slug);
           }
-          filterAndSortProducts();
+          params.set('page', '1');
+          window.location.search = params.toString();
         });
       });
       
@@ -701,7 +778,7 @@
         } else {
           const error = await response.json();
           if (error.error === 'Not logged in') {
-            alert('Please log in to add favorites');
+            showNotification('Please log in to add favorites', 'warning');
             window.location.href = '/login';
           }
         }
@@ -760,11 +837,141 @@
         } else {
           const error = await response.json();
           if (error.error === 'Not logged in') {
-            alert('Please log in to add favorites');
+            showNotification('Please log in to add favorites', 'warning');
           }
         }
       } catch (error) {
         console.error('Error toggling favorite:', error);
+      }
+    }
+
+    // Handle Add to Shopping List button
+    let pendingItemToAdd = null;
+
+    document.addEventListener('click', function(e) {
+      if (e.target.classList.contains('add-to-list-btn') || e.target.closest('.add-to-list-btn')) {
+        const btn = e.target.classList.contains('add-to-list-btn') ? e.target : e.target.closest('.add-to-list-btn');
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const productName = btn.dataset.productName;
+        const productId = btn.dataset.productId;
+        const productPrice = btn.dataset.productPrice;
+        const productImage = btn.dataset.productImage;
+        
+        pendingItemToAdd = {
+          name: productName,
+          product_id: productId,
+          price: productPrice,
+          image: productImage,
+          qty: 1
+        };
+        
+        // Show list selector modal
+        showListSelector(productName);
+      }
+    });
+
+    // Show list selector modal
+    async function showListSelector(productName) {
+      const itemNameDisplay = document.getElementById('itemNameDisplay');
+      const listSelectorContainer = document.getElementById('listSelectorContainer');
+      
+      if (itemNameDisplay) {
+        itemNameDisplay.textContent = productName;
+      }
+      
+      try {
+        // Fetch user's shopping lists
+        const response = await fetch('/api/get-lists');
+        if (!response.ok) {
+          showNotification('Unable to fetch your shopping lists', 'danger');
+          return;
+        }
+        
+        const data = await response.json();
+        const lists = data.lists || [];
+        
+        if (lists.length === 0) {
+          listSelectorContainer.innerHTML = '<p class="text-muted">No shopping lists found. <a href="/shopping-list">Create one first</a></p>';
+        } else {
+          listSelectorContainer.innerHTML = lists.map(list => `
+            <div class="card list-select-card p-3" data-list-id="${list.id}" style="cursor: pointer; border: 2px solid #e9ecef; border-radius: 12px; transition: all 0.3s ease; background: #fff;">
+              <div class="d-flex justify-content-between align-items-start gap-2">
+                <div class="flex-grow-1">
+                  <h6 class="mb-1 fw-bold" style="color: #2d3748;">
+                    <i class="bi bi-list-ul me-2" style="color: #667eea;"></i>${list.name}
+                  </h6>
+                  <small class="text-muted">${(list.items || []).length} item${(list.items || []).length !== 1 ? 's' : ''}</small>
+                </div>
+                <span class="badge" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); font-size: 0.85rem;">
+                  <i class="bi bi-plus-circle me-1"></i>Add
+                </span>
+              </div>
+            </div>
+          `).join('');
+          
+          // Add hover and click handlers for list selection
+          document.querySelectorAll('.list-select-card').forEach(card => {
+            card.addEventListener('mouseenter', function() {
+              this.style.borderColor = '#667eea';
+              this.style.backgroundColor = '#f8faff';
+              this.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.15)';
+              this.style.transform = 'translateY(-2px)';
+            });
+            card.addEventListener('mouseleave', function() {
+              this.style.borderColor = '#e9ecef';
+              this.style.backgroundColor = '#fff';
+              this.style.boxShadow = 'none';
+              this.style.transform = 'translateY(0)';
+            });
+            card.addEventListener('click', () => {
+              const listId = card.dataset.listId;
+              addItemToList(listId);
+            });
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching lists:', error);
+        listSelectorContainer.innerHTML = '<p class="text-danger">Error fetching lists</p>';
+      }
+      
+      // Show modal
+      const modal = new bootstrap.Modal(document.getElementById('listSelectorModal'));
+      modal.show();
+    }
+
+    // Add item to selected list
+    async function addItemToList(listId) {
+      if (!pendingItemToAdd) {
+        showNotification('No item selected', 'warning');
+        return;
+      }
+      
+      try {
+        const response = await fetch('/api/list/add-item', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ item: pendingItemToAdd, list_id: listId })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          // Close modal
+          const modal = bootstrap.Modal.getInstance(document.getElementById('listSelectorModal'));
+          if (modal) modal.hide();
+          
+          showNotification(`${pendingItemToAdd.name} added to your shopping list!`, 'success');
+          pendingItemToAdd = null;
+        } else {
+          showNotification('Error: ' + (data.error || 'Could not add item'), 'danger');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        showNotification('Error adding item to shopping list', 'danger');
       }
     }
   </script>

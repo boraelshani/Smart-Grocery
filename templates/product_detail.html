@@ -304,7 +304,7 @@
         } else {
           const error = await response.json();
           if (error.error === 'Not logged in') {
-            alert('Please log in to add favorites');
+            showNotification('Please log in to add favorites', 'warning');
             window.location.href = '/login';
           }
         }

@@ -245,7 +245,7 @@
             button.classList.remove('active');
           }
         } else if (response.status === 401) {
-          alert('Please log in to add favorites');
+          showNotification('Please log in to add favorites', 'warning');
           window.location.href = '/login';
         }
       } catch (error) {

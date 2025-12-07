@@ -74,6 +74,8 @@ function setupCompareFilters() {
   const searchInput = document.getElementById('product-search-input');
   const searchBtn = document.getElementById('product-search-btn');
   const storeSelect = document.getElementById('store-filter');
+  const categorySelect = document.getElementById('category-filter');
+  const categoryChipsRow = document.querySelector('.category-chip-row');
   const minInput = document.getElementById('min-price');
   const maxInput = document.getElementById('max-price');
   const sortSelect = document.getElementById('sort-order');
@@ -84,7 +86,7 @@ function setupCompareFilters() {
   let allProducts = [];
 
   // collect available stores from rendered cards
-  const collectStores = () => {
+  const collectStoresAndCategories = () => {
     const productDivs = Array.from(productsRow.querySelectorAll('[data-stores]'));
     allProducts = productDivs;
     const set = new Set();
@@ -94,16 +96,21 @@ function setupCompareFilters() {
         stores.forEach(s => { if (s && (s.store || s.name)) set.add((s.store||s.name).trim()); });
       } catch (e) { }
     });
-    // populate select
-    if (!storeSelect) return;
-    const existing = new Set(Array.from(storeSelect.options).map(o => o.value));
-    set.forEach(name => { if (!existing.has(name)) { const opt = document.createElement('option'); opt.value = name; opt.textContent = name; storeSelect.appendChild(opt); } });
+    if (storeSelect) {
+      const existing = new Set(Array.from(storeSelect.options).map(o => o.value));
+      set.forEach(name => { if (!existing.has(name)) { const opt = document.createElement('option'); opt.value = name; opt.textContent = name; storeSelect.appendChild(opt); } });
+    }
+    // Leave categories as rendered by the server so chips stay visible and active highlighting remains.
   };
 
   const parsePrice = (v) => { if (v === null || v === undefined || v === '') return Number.POSITIVE_INFINITY; const n = Number(String(v).toString().replace(/[^0-9.\-]/g, '')); return isNaN(n) ? Number.POSITIVE_INFINITY : n; };
 
   const applyFilters = () => {
     const searchVal = searchInput ? searchInput.value.trim().toLowerCase() : '';
+    const activeChip = categoryChipsRow ? categoryChipsRow.querySelector('.category-chip.active') : null;
+    const chipVal = activeChip ? (activeChip.dataset.categoryChip || '').trim() : '';
+    const selectCategoryVal = categorySelect ? (categorySelect.value || '').trim() : '';
+    const categoryVal = chipVal || selectCategoryVal;
     const storeVal = storeSelect ? storeSelect.value : '';
     const minVal = minInput ? parseFloat(minInput.value) : NaN;
     const maxVal = maxInput ? parseFloat(maxInput.value) : NaN;
@@ -132,12 +139,19 @@ function setupCompareFilters() {
         } catch (e) { storeMatch = false; }
       }
 
+      // category match
+      let categoryMatch = true;
+      if (categoryVal) {
+        const cat = (col.getAttribute('data-category') || '').trim().toLowerCase();
+        categoryMatch = cat === categoryVal.toLowerCase();
+      }
+
       // price range match
       let priceMatch = true;
       if (!isNaN(minVal)) priceMatch = priceMatch && (price >= minVal);
       if (!isNaN(maxVal)) priceMatch = priceMatch && (price <= maxVal);
 
-      if (searchMatch && storeMatch && priceMatch) {
+      if (searchMatch && storeMatch && categoryMatch && priceMatch) {
         col.style.display = '';
         visible.push({ col, price, name: productName });
       } else {
@@ -160,13 +174,15 @@ function setupCompareFilters() {
   const clearFilters = () => {
     if (searchInput) searchInput.value = '';
     if (storeSelect) storeSelect.value = '';
+    if (categorySelect) categorySelect.value = '';
+    if (categoryChipsRow) categoryChipsRow.querySelectorAll('.category-chip').forEach(ch => ch.classList.remove('active'));
     if (minInput) minInput.value = '';
     if (maxInput) maxInput.value = '';
     if (sortSelect) sortSelect.value = 'price-asc';
     allProducts.forEach(col => { if (col) col.style.display = ''; });
   };
 
-  collectStores();
+  collectStoresAndCategories();
   
   // Add search event listeners to apply filters on search
   searchInput && searchInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); applyFilters(); } });
@@ -175,6 +191,20 @@ function setupCompareFilters() {
   
   applyBtn && applyBtn.addEventListener('click', (e) => { e.preventDefault(); applyFilters(); });
   clearBtn && clearBtn.addEventListener('click', (e) => { e.preventDefault(); clearFilters(); });
+  categorySelect && categorySelect.addEventListener('change', () => {
+    if (categoryChipsRow) categoryChipsRow.querySelectorAll('.category-chip').forEach(ch => ch.classList.remove('active'));
+    applyFilters();
+  });
+  if (categoryChipsRow) {
+    categoryChipsRow.addEventListener('click', (e) => {
+      const btn = e.target.closest('.category-chip');
+      if (!btn) return;
+      categoryChipsRow.querySelectorAll('.category-chip').forEach(ch => ch.classList.remove('active'));
+      btn.classList.add('active');
+      if (categorySelect) categorySelect.value = '';
+      applyFilters();
+    });
+  }
 }
 
 // Smooth-ish transition when paging compare results (fade grid, then navigate)
@@ -559,15 +589,23 @@ function setupProductModalHandlers() {
       const price = target.getAttribute('data-price') || '';
       const id = target.getAttribute('data-id') || null;
       const img = target.getAttribute('data-image') || '';
+      
+      // Create item object and show list selector
       const item = { name, price, id };
       if (img) item.image = img;
-      try {
-        const res = await apiPostJson('/shopping-list/add', { item });
-        if (res && (res.success || res.success === true)) {
-          showNotification('Added to shopping list', 'success');
-          refreshShoppingListUI();
-        } else if (res && res.error) {
-          showNotification(res.error, 'danger');
+      
+      // Call showListSelector if available (from shopping_list.html)
+      if (window.showListSelector) {
+        window.showListSelector(item);
+      } else {
+        // Fallback: add to active list directly
+        try {
+          const res = await apiPostJson('/api/list/add-item', { item });
+          if (res && (res.success || res.success === true)) {
+            showNotification('Added to shopping list', 'success');
+            refreshShoppingListUI();
+          } else if (res && res.error) {
+            showNotification(res.error, 'danger');
         } else {
           showNotification('Could not add to list', 'danger');
         }
