@@ -2,6 +2,8 @@ from flask import render_template, jsonify, session, request, current_app, url_f
 from . import main_bp
 from models import models as m
 from bson.decimal128 import Decimal128
+import json
+import os
 try:
     from utils.db import mongo
     HAS_DB = True
@@ -15,6 +17,17 @@ _FALLBACK_CLIENT = None
 
 def _db_available():
     return HAS_DB and mongo is not None and getattr(mongo, 'db', None) is not None
+
+
+def load_featured_deals_fallback():
+    """Load featured deals from the static JSON fallback file."""
+    try:
+        path = os.path.join(current_app.root_path, 'data', 'featured_deals.json')
+        with open(path, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except Exception as e:
+        print(f'WARNING: Failed to load featured deals fallback: {e}')
+        return []
 
 
 def get_db():
@@ -82,8 +95,14 @@ def home():
             stores = list(db.stores.find({}))
             products = list(db.products.find({}))
             featured_deals = list(db.featured_deals.find({}))
+            # If no featured deals in DB, use JSON fallback
+            if not featured_deals:
+                using_fallback = True
+                featured_deals = load_featured_deals_fallback()
         except Exception:
-            stores = products = featured_deals = []
+            stores = products = []
+            using_fallback = True
+            featured_deals = load_featured_deals_fallback()
         # convert ObjectId to string id for templates
         for doc_list in (stores, products, featured_deals):
             for d in doc_list:
@@ -94,7 +113,7 @@ def home():
         print('WARNING: Using in-memory fallback data for home page (DB unavailable)')
         stores = getattr(m, 'stores', [])
         products = getattr(m, 'products', [])
-        featured_deals = getattr(m, 'featured_deals', [])
+        featured_deals = load_featured_deals_fallback()
 
     return render_template('home.html', stores=stores, products=products, featured_deals=featured_deals, using_fallback=using_fallback)
 
@@ -173,14 +192,18 @@ def featured_deals_page():
             for d in deals:
                 if '_id' in d:
                     d['id'] = str(d['_id'])
+            # If no featured deals in MongoDB, use JSON fallback
+            if not deals:
+                using_fallback = True
+                deals = load_featured_deals_fallback()
         except Exception:
             using_fallback = True
-            print('WARNING: Using in-memory fallback data for featured deals (DB query failed)')
-            deals = getattr(m, 'featured_deals', [])
+            print('WARNING: MongoDB query failed for featured deals, using JSON fallback')
+            deals = load_featured_deals_fallback()
     else:
         using_fallback = True
-        print('WARNING: Using in-memory fallback data for featured deals (DB unavailable)')
-        deals = getattr(m, 'featured_deals', [])
+        print('WARNING: DB unavailable for featured deals, using JSON fallback')
+        deals = load_featured_deals_fallback()
     return render_template('featured_deals.html', deals=deals, using_fallback=using_fallback)
 
 @main_bp.route('/compare-prices')
@@ -284,6 +307,7 @@ def product_detail(product_id):
     db = get_db()
     product = None
     
+    # Check database first (MongoDB)
     if db is not None:
         try:
             from bson import ObjectId
@@ -294,10 +318,25 @@ def product_detail(product_id):
                 # If not a valid ObjectId, try as string id
                 product = db.products.find_one({'id': product_id})
             
+            # Also check featured_deals collection in MongoDB
+            if not product:
+                try:
+                    product = db.featured_deals.find_one({'_id': ObjectId(product_id)})
+                except:
+                    product = db.featured_deals.find_one({'id': product_id})
+            
             if product and '_id' in product:
                 product['id'] = str(product['_id'])
         except Exception as e:
-            print(f'Error fetching product: {e}')
+            print(f'Error fetching product from MongoDB: {e}')
+    
+    # If not found in database, fall back to JSON featured deals
+    if not product:
+        featured_deals = load_featured_deals_fallback()
+        for deal in featured_deals:
+            if deal.get('id') == product_id:
+                product = deal
+                break
     
     if not product:
         return render_template('404.html'), 404
