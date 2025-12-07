@@ -118,6 +118,51 @@ def stores_page():
         stores = getattr(m, 'stores', [])
     return render_template('stores.html', stores=stores, using_fallback=using_fallback)
 
+@main_bp.route('/stores/<store_name>')
+def store_products_page(store_name):
+    """Display all products for a specific store."""
+    db = get_db()
+    products = []
+    store_info = None
+    
+    if db is not None:
+        try:
+            # Get store info
+            store_info = db.stores.find_one({'name': {'$regex': f'^{re.escape(store_name)}$', '$options': 'i'}})
+            if store_info and '_id' in store_info:
+                store_info['id'] = str(store_info['_id'])
+            
+            # Get products for this store
+            regex = {'$regex': re.escape(store_name), '$options': 'i'}
+            prod_cursor = db.products.find({
+                '$or': [
+                    {'stores': {'$elemMatch': {'$or': [{'store': regex}, {'name': regex}]}}},
+                    {'store': regex}
+                ]
+            })
+            
+            for prod in prod_cursor:
+                if '_id' in prod:
+                    prod['id'] = str(prod['_id'])
+                # Extract matched store data
+                matched_stores = [s for s in (prod.get('stores') or []) 
+                                if (s.get('store') or '').lower() == store_name.lower()]
+                if matched_stores:
+                    prod['store_price'] = matched_stores[0].get('price')
+                    prod['store_image'] = matched_stores[0].get('image') or prod.get('image')
+                else:
+                    prod['store_price'] = prod.get('price')
+                    prod['store_image'] = prod.get('image')
+                products.append(prod)
+        except Exception as e:
+            print(f'ERROR loading products for {store_name}: {e}')
+    
+    return render_template('store_products.html', 
+                         store_name=store_name, 
+                         store=store_info,
+                         products=products,
+                         product_count=len(products))
+
 @main_bp.route('/featured-deals')
 def featured_deals_page():
     using_fallback = False
@@ -653,6 +698,96 @@ def api_get_stores():
         return jsonify({'stores': out})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
+@main_bp.route('/api/store/<store_name>/products')
+def api_get_store_products(store_name):
+    """Return products for a given store name (no featured deals).
+
+    Searches `products` for any entry where the `stores` array (or top-level `store`) matches
+    the provided name case-insensitively. Only the matching store entries are returned in
+    `matched_stores` so the UI can display per-store prices/images cleanly.
+    """
+    if not store_name:
+        return jsonify({'error': 'missing_store'}), 400
+
+    store_query = store_name.strip()
+    if not store_query:
+        return jsonify({'error': 'missing_store'}), 400
+
+    store_lc = store_query.lower()
+
+    def _normalize(doc):
+        if not isinstance(doc, dict):
+            return {}
+        shaped = dict(doc)
+        if '_id' in shaped:
+            shaped['id'] = str(shaped['_id'])
+            shaped.pop('_id', None)
+        return shaped
+
+    def _match_store_entry(entry):
+        try:
+            val = (entry.get('store') or entry.get('name') or '').strip()
+        except Exception:
+            val = ''
+        return val and val.lower() == store_lc
+
+    def _shape_product(prod):
+        shaped = _normalize(prod)
+        matched_stores = [s for s in (shaped.get('stores') or []) if _match_store_entry(s)]
+        # Some legacy docs may store a single store field at top-level
+        if not matched_stores and isinstance(shaped.get('store'), str) and shaped.get('store', '').lower() == store_lc:
+            matched_stores.append({'store': shaped.get('store'), 'price': shaped.get('price'), 'image': shaped.get('image')})
+        shaped['matched_stores'] = matched_stores
+        # Prefer price from matching store entry, otherwise use cheapest/price
+        price_val = None
+        if matched_stores:
+            price_val = matched_stores[0].get('price')
+        if price_val in (None, ''):
+            price_val = (shaped.get('cheapest') or {}).get('price') or shaped.get('price')
+        # normalize Decimal128 or other to string/float-ish
+        try:
+            from bson.decimal128 import Decimal128
+            if isinstance(price_val, Decimal128):
+                price_val = float(price_val.to_decimal())
+        except Exception:
+            pass
+        shaped['price'] = price_val
+        shaped['source'] = 'product'
+        return shaped
+
+    def _shape_deal(deal):
+        shaped = _normalize(deal)
+        shaped['source'] = 'featured_deal'
+        return shaped
+
+    products = []
+    db = get_db()
+    try:
+        if db is not None:
+            # match contains (not anchored) to be tolerant of casing/spacing
+            regex = {'$regex': re.escape(store_query), '$options': 'i'}
+            prod_cursor = db.products.find({
+                '$or': [
+                    {'stores': {'$elemMatch': {'$or': [{'store': regex}, {'name': regex}]}}},
+                    {'store': regex}
+                ]
+            })
+            products = [_shape_product(p) for p in prod_cursor]
+            # if DB query returns nothing, allow fallback to in-memory products as a safety net
+            if not products:
+                products = [_shape_product(p) for p in getattr(m, 'products', []) if any(_match_store_entry(s) for s in (p.get('stores') or [])) or (isinstance(p.get('store'), str) and p.get('store', '').lower() == store_lc)]
+        else:
+            products = [_shape_product(p) for p in getattr(m, 'products', []) if any(_match_store_entry(s) for s in (p.get('stores') or [])) or (isinstance(p.get('store'), str) and p.get('store', '').lower() == store_lc)]
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+    return jsonify({
+        'store': store_query,
+        'products': products,
+        'count': len(products)
+    })
 
 
 @main_bp.route('/api/claim-deal', methods=['POST'])

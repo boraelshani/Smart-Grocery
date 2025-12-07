@@ -5,111 +5,211 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Smart Grocery | Stores</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    .hero-gradient { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; margin-top: 0; padding-top: 3.5rem; padding-bottom: 3rem; }
+    .hero-gradient h1 { margin: 0 0 0.75rem 0; }
+    .hero-gradient p { margin: 0; }
+    body { margin: 0; background: #f7f8fc; }
+    .navbar { margin-bottom: 0; }
+    .store-card { 
+      border: none; 
+      border-radius: 20px; 
+      overflow: hidden;
+      transition: all 0.3s ease; 
+      background: white;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+      height: 100%;
+    }
+    .store-card:hover { 
+      transform: translateY(-8px); 
+      box-shadow: 0 12px 30px rgba(102,126,234,0.25);
+    }
+    .store-card-link {
+      text-decoration: none;
+      color: inherit;
+      display: block;
+      height: 100%;
+    }
+    .store-image-wrapper {
+      height: 200px;
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+    .store-image-wrapper::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(135deg, rgba(102,126,234,0.1) 0%, rgba(118,75,162,0.1) 100%);
+      z-index: 1;
+    }
+    .store-image-wrapper img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      position: relative;
+      z-index: 2;
+    }
+    .store-card-body {
+      padding: 1.5rem;
+    }
+    .store-name {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #2d3748;
+      margin-bottom: 0.5rem;
+    }
+    .store-location {
+      display: none;
+    }
+    .store-hours {
+      color: #48bb78;
+      font-size: 0.85rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+    .store-badge {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 0.4rem 0.8rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    .search-box {
+      border-radius: 50px;
+      border: 2px solid #e2e8f0;
+      padding: 0.75rem 1.5rem;
+      padding-left: 3rem;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+    }
+    .search-box:focus {
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
+    }
+    .search-wrapper {
+      position: relative;
+    }
+    .search-icon {
+      position: absolute;
+      left: 1.2rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #a0aec0;
+      font-size: 1.2rem;
+    }
+    .section-title {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #2d3748;
+      margin-bottom: 0.5rem;
+    }
+    .section-subtitle {
+      color: #718096;
+      font-size: 1.1rem;
+    }
+  </style>
 </head>
 <body>
   <!-- Navbar -->
   <nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
-  <div class="container">
-    <a class="navbar-brand fw-bold" href="{{ url_for('main.home') }}">Smart Grocery</a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="navbarNav">
-      <ul class="navbar-nav ms-auto">
-        <li class="nav-item">
-          <a class="nav-link" href="{{ url_for('main.home') }}">Home</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link active" href="{{ url_for('main.stores_page') }}">Stores</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="{{ url_for('main.featured_deals_page') }}">Featured Deals</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="{{ url_for('main.compare_prices') }}">Compare Prices</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="{{ url_for('main.shopping_list') }}">Shopping List</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="{{ url_for('main.profile') }}">Profile</a>
-        </li>
-        
-      </ul>
+    <div class="container">
+      <a class="navbar-brand fw-bold" href="{{ url_for('main.home') }}">Smart Grocery</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.home') }}">Home</a></li>
+          <li class="nav-item"><a class="nav-link active" href="{{ url_for('main.stores_page') }}">Stores</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.featured_deals_page') }}">Featured Deals</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.compare_prices') }}">Compare Prices</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.shopping_list') }}">Shopping List</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.profile') }}">Profile</a></li>
+        </ul>
+      </div>
     </div>
-  </div>
-</nav>
+  </nav>
 
   <!-- Page Header -->
   <section class="text-center py-5 bg-light">
+  <!-- Hero Header -->
+  <section class="hero-gradient text-center py-5">
     <div class="container">
-      <h1 class="fw-bold">Local Stores Near You</h1>
-      <p class="lead text-muted">Browse stores and check out their active deals.</p>
+      <h1 class="display-4 fw-bold mb-3">Discover Local Stores</h1>
+      <p class="lead mb-0">Browse your favorite grocery stores and explore their products</p>
     </div>
   </section>
 
-  <!-- Search Bar Section -->
-  <section class="container py-4">
-    <div class="search-container">
-      <div class="search-bar position-relative" style="max-width:720px;margin:auto;">
-        <input id="stores-search-input" type="text" class="search-input form-control" placeholder="Search for stores by name or location..." autocomplete="off" />
-        <div id="store-suggestions" class="list-group position-absolute w-100" style="display:none; max-height: 300px; overflow-y: auto; z-index: 1000; top: 100%; margin-top: 5px;"></div>
-        <button id="stores-search-btn" class="search-btn btn btn-primary mt-2">Search</button>
-      </div>
-    </div>
-  </section>
-
-  <!-- Stores Section -->
+  <!-- Search and Stores Grid -->
   <section class="container py-5">
-    <h2 class="mb-4">Stores</h2>
-    <!-- Selected store detail (shown when a user selects a store) -->
-    <div id="store-detail" class="mb-4" style="display:none;"></div>
+    <!-- Section Header -->
+    <div class="text-center mb-4">
+      <h2 class="section-title">Available Stores</h2>
+      <p class="section-subtitle">Click on any store to view their products</p>
+    </div>
+
+    <!-- Stores Grid -->
     <div id="stores-grid" class="row g-4">
-      <!-- Stores loaded from database -->
       {% if stores %}
         {% for store in stores %}
-          <div class="col-md-4">
-            <div class="card shadow-sm h-100 d-flex flex-column">
-              <img src="{{ prefer_processed(store.image or 'https://via.placeholder.com/300x200') or (store.image or 'https://via.placeholder.com/300x200') }}" class="card-img-top" alt="{{ store.name }}" style="height: 200px; object-fit: cover;">
-              <div class="card-body d-flex flex-column">
-                <h5 class="card-title">{{ store.name }}</h5>
-                {% if store.distance %}
-                  <p class="card-text text-muted">Distance: {{ store.distance }} mi</p>
-                {% endif %}
-                {% if store.hours %}
-                  <p class="card-text text-success">Hours: {{ store.hours }}</p>
-                {% endif %}
-                {% if store.url %}
-                  <a href="{{ store.url }}" target="_blank" class="btn btn-primary btn-sm mt-auto">Visit Store</a>
-                {% endif %}
-              </div>
+          <div class="col-12 col-md-6 col-lg-4 col-xl-3">
+            <div class="store-card">
+              <a href="{{ url_for('main.store_products_page', store_name=store.name) }}" class="store-card-link">
+                <div class="store-image-wrapper">
+                  <img src="{{ prefer_processed(store.image or 'https://via.placeholder.com/200x150') or (store.image or 'https://via.placeholder.com/200x150') }}" alt="{{ store.name }}">
+                </div>
+                <div class="store-card-body">
+                  <h3 class="store-name">{{ store.name }}</h3>
+                  
+                  {% if store.location or store.city or store.address %}
+                    <div class="store-location">
+                      <i class="bi bi-geo-alt-fill"></i>
+                      {{ store.location or store.city or store.address }}
+                    </div>
+                  {% endif %}
+                  
+                  <div class="d-flex justify-content-between align-items-center">
+                    {% if store.hours %}
+                      <span class="store-hours">
+                        <i class="bi bi-clock-fill"></i>
+                        {{ store.hours }}
+                      </span>
+                    {% else %}
+                      <span></span>
+                    {% endif %}
+                    
+                    {% if store.distance %}
+                      <span class="store-badge">{{ store.distance }} mi</span>
+                    {% endif %}
+                  </div>
+                </div>
+              </a>
             </div>
           </div>
         {% endfor %}
       {% else %}
         <div class="col-12">
-          <p class="text-muted text-center">No stores available. Please check back later.</p>
+          <div class="text-center py-5">
+            <i class="bi bi-shop" style="font-size: 4rem; color: #cbd5e0;"></i>
+            <h3 class="mt-3 text-muted">No stores available</h3>
+            <p class="text-muted">Check back later for store listings</p>
+          </div>
         </div>
       {% endif %}
     </div>
-
-    <!-- Pagination (hidden if no stores) -->
-    {% if stores %}
-      <nav aria-label="Page navigation" class="mt-5">
-        <ul class="pagination justify-content-center">
-          <li class="page-item disabled">
-            <a class="page-link" href="#" tabindex="-1">Previous</a>
-          </li>
-          <li class="page-item active"><a class="page-link" href="#">1</a></li>
-          <li class="page-item"><a class="page-link" href="#">2</a></li>
-          <li class="page-item"><a class="page-link" href="#">3</a></li>
-          <li class="page-item">
-            <a class="page-link" href="#">Next</a>
-          </li>
-        </ul>
-      </nav>
-    {% endif %}
   </section>
 
   <!-- Footer -->

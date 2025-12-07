@@ -13,6 +13,9 @@ load_dotenv()
 class ProductsModel:
     def __init__(self):
         mongo_uri = os.getenv('MONGO_URI') or 'mongodb://localhost:27017/smart_grocery'
+        # guard against empty/whitespace values which trigger pymongo ConfigurationError
+        if isinstance(mongo_uri, str) and not mongo_uri.strip():
+            mongo_uri = 'mongodb://localhost:27017/smart_grocery'
         # sanitize common mistake: remove angle-brackets if user pasted URI with <...>
         if '<' in mongo_uri or '>' in mongo_uri:
             mongo_uri = mongo_uri.replace('<', '').replace('>', '')

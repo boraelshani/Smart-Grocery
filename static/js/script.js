@@ -359,38 +359,145 @@ function noop() {}
 // Store suggestions for stores page: fetch stores and show dropdown on focus/hover
 function setupStoreSuggestions() {
   const input = document.getElementById('stores-search-input');
-  const btn = document.getElementById('stores-search-btn');
-  const suggestions = document.getElementById('store-suggestions');
   const grid = document.getElementById('stores-grid');
-  if (!input || !grid) return;
-  // Hide the purple suggestion dropdown entirely
-  if (suggestions) suggestions.style.display = 'none';
+  const list = document.getElementById('store-products-list');
+  const empty = document.getElementById('store-products-empty');
+  const title = document.getElementById('store-products-title');
+  const subtitle = document.getElementById('store-products-subtitle');
+  const loading = document.getElementById('store-products-loading');
+  if (!grid) {
+    console.log('setupStoreSuggestions: grid element not found, skipping setup');
+    return;
+  }
 
-  const cards = Array.from(grid.querySelectorAll('.card'));
+  const cards = Array.from(grid.querySelectorAll('.store-card-btn'));
+  console.log('setupStoreSuggestions: Found', cards.length, 'store cards');
 
-  function filterGrid(q) {
+  const renderProducts = (items = [], storeName = '') => {
+    if (!list) return;
+    list.innerHTML = '';
+    if (!items.length) {
+      if (empty) empty.style.display = 'block';
+      list.style.display = 'none';
+      if (subtitle) subtitle.textContent = 'No products or deals found for this store.';
+      return;
+    }
+    if (empty) empty.style.display = 'none';
+    list.style.display = '';
+    if (subtitle) subtitle.textContent = `${items.length} item${items.length === 1 ? '' : 's'} from ${storeName}`;
+
+    const toHtml = (item) => {
+      const name = item.name || item.title || 'Product';
+      const price = item.price || (item.matched_stores && item.matched_stores[0] && item.matched_stores[0].price) || '';
+      // Prefer store-specific image from matched_stores, fallback to item.image
+      let img = 'https://via.placeholder.com/320x200';
+      if (Array.isArray(item.matched_stores) && item.matched_stores.length && item.matched_stores[0].image) {
+        img = item.matched_stores[0].image;
+      } else if (item.image) {
+        img = item.image;
+      } else if (item.images && item.images[0]) {
+        img = item.images[0];
+      }
+      const storeTags = [];
+      if (Array.isArray(item.matched_stores) && item.matched_stores.length) {
+        item.matched_stores.forEach(s => {
+          const label = (s.store || s.name || '').trim();
+          const priceLabel = s.price ? ` · ${s.price}` : '';
+          if (label) storeTags.push(`${label}${priceLabel}`);
+        });
+      } else if (item.store) {
+        storeTags.push(item.store);
+      }
+      const source = item.source === 'featured_deal' ? 'Featured Deal' : 'Product';
+      const storeBadges = storeTags.map(t => `<span class="badge bg-light text-dark border">${escapeHtml(t)}</span>`).join(' ');
+      return `
+        <div class="col-md-6">
+          <div class="store-product-card h-100 d-flex flex-column">
+            <img src="${img}" alt="${escapeHtml(name)}" class="product-image">
+            <div class="p-3 d-flex flex-column flex-grow-1">
+              <div class="d-flex justify-content-between align-items-start gap-2">
+                <h6 class="mb-1 fw-bold">${escapeHtml(name)}</h6>
+                <span class="badge ${item.source === 'featured_deal' ? 'bg-success' : 'bg-primary'}">${source}</span>
+              </div>
+              ${price ? `<div class="text-success fw-semibold mb-2">${escapeHtml(String(price))}</div>` : ''}
+              <div class="d-flex flex-wrap gap-1 mb-2">${storeBadges}</div>
+              <div class="text-muted small mt-auto">${escapeHtml(item.category || '')}</div>
+            </div>
+          </div>
+        </div>`;
+    };
+
+    list.innerHTML = items.map(toHtml).join('');
+  };
+
+  const fetchStore = async (storeName) => {
+    if (!storeName) return;
+    if (loading) loading.style.display = 'inline-block';
+    if (empty) empty.style.display = 'none';
+    if (list) list.style.display = 'none';
+    if (subtitle) subtitle.textContent = 'Loading products...';
+    try {
+      const res = await fetch(`/api/store/${encodeURIComponent(storeName)}/products`, { credentials: 'same-origin' });
+      if (!res.ok) throw new Error('Request failed');
+      const data = await res.json();
+      const items = [...(data.products || [])];
+      if (!items.length) {
+        if (subtitle) subtitle.textContent = `No products found for ${storeName}`;
+        if (empty) empty.style.display = 'block';
+        return;
+      }
+      renderProducts(items, storeName);
+    } catch (err) {
+      renderProducts([], storeName);
+      showNotification && showNotification('Could not load products for this store', 'danger');
+    } finally {
+      if (loading) loading.style.display = 'none';
+    }
+  };
+
+  const activateCard = (btn) => {
+    cards.forEach(c => c.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+  };
+
+  grid.addEventListener('click', (e) => {
+    const btn = e.target.closest('.store-card-btn');
+    if (!btn) return;
+    e.preventDefault();
+    const storeName = btn.getAttribute('data-store-name');
+    console.log('Store clicked:', storeName);
+    if (!storeName) return;
+    activateCard(btn);
+    if (title) title.textContent = storeName;
+    fetchStore(storeName);
+  });
+
+  const filterGrid = (q) => {
     const query = (q || '').toLowerCase();
-    let shown = 0;
-    cards.forEach(card => {
-      const title = (card.querySelector('.card-title')?.textContent || '').toLowerCase();
-      const location = (card.querySelector('.card-text')?.textContent || '').toLowerCase();
-      const col = card.closest('.col-md-4');
+    let visible = 0;
+    cards.forEach(btn => {
+      const name = (btn.getAttribute('data-store-name') || '').toLowerCase();
+      const location = (btn.textContent || '').toLowerCase();
+      const col = btn.closest('.col-12');
       if (!col) return;
-      if (!query || title.includes(query) || location.includes(query)) {
+      if (!query || name.includes(query) || location.includes(query)) {
         col.style.display = '';
-        shown += 1;
+        visible += 1;
       } else {
         col.style.display = 'none';
       }
     });
-    if (shown === 0) {
-      showNotification('No stores found matching your search', 'info');
+    if (visible === 0) {
+      showNotification && showNotification('No stores found matching your search', 'info');
     }
-  }
+  };
 
-  input.addEventListener('input', () => { filterGrid(input.value.trim()); });
-  btn?.addEventListener('click', (e) => { e.preventDefault(); filterGrid(input.value.trim()); });
-  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); filterGrid(input.value.trim()); } });
+  input?.addEventListener('input', () => filterGrid(input.value.trim()));
+  input?.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); filterGrid(input.value.trim()); }});
+
+  if (cards.length) {
+    cards[0].click();
+  }
 }
 
 
