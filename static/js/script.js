@@ -713,11 +713,12 @@ function setupProductModalHandlers() {
             refreshShoppingListUI();
           } else if (res && res.error) {
             showNotification(res.error, 'danger');
-        } else {
-          showNotification('Could not add to list', 'danger');
+          } else {
+            showNotification('Could not add to list', 'danger');
+          }
+        } catch (err) {
+          showNotification('Server error adding item', 'danger');
         }
-      } catch (err) {
-        showNotification('Server error adding item', 'danger');
       }
       return;
     }

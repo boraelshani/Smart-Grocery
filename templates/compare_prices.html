@@ -66,8 +66,9 @@
     }
     .product-image {
       height: 240px;
-      object-fit: cover;
-      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      object-fit: contain;
+      background: #ffffff !important;
+      padding: 15px;
     }
     .price-badge {
       position: absolute;
@@ -217,6 +218,7 @@
     #products-grid.fade-out {
       opacity: 0.15;
     }
+
   </style>
   </head>
 <body>
@@ -457,7 +459,6 @@
       </nav>
     </div>
     {% endif %}
-  </section>
 
   <!-- Modal for Product Details -->
   <div class="modal fade" id="productModal" tabindex="-1" aria-labelledby="productModalLabel" aria-hidden="true">
@@ -859,18 +860,74 @@
         const productPrice = btn.dataset.productPrice;
         const productImage = btn.dataset.productImage;
         
+        // Get stores data from the product card
+        const productCard = btn.closest('.product-card');
+        let stores = [];
+        if (productCard) {
+          try {
+            const storesJson = productCard.dataset.stores;
+            stores = JSON.parse(storesJson) || [];
+          } catch (e) {
+            stores = [];
+          }
+        }
+        
         pendingItemToAdd = {
           name: productName,
           product_id: productId,
           price: productPrice,
           image: productImage,
+          stores: stores,
+          selected_store: null,
           qty: 1
         };
         
-        // Show list selector modal
-        showListSelector(productName);
+        // If there are multiple stores, show store selector first
+        if (stores && stores.length > 1) {
+          showStoreSelector(productName, stores);
+        } else if (stores && stores.length === 1) {
+          // Auto-select the only store
+          pendingItemToAdd.selected_store = stores[0].store || stores[0].name;
+          pendingItemToAdd.price = stores[0].price;
+          showListSelector(productName);
+        } else {
+          // No stores found, just use the price shown
+          showListSelector(productName);
+        }
       }
     });
+
+    // Show store selector modal
+    function showStoreSelector(productName, stores) {
+      const itemNameDisplay = document.getElementById('itemNameDisplay');
+      if (itemNameDisplay) {
+        itemNameDisplay.textContent = productName;
+      }
+      
+      const listSelectorContainer = document.getElementById('listSelectorContainer');
+      listSelectorContainer.innerHTML = stores.map(store => `
+        <div class="card list-select-card p-3" data-store-name="${store.store || store.name}" data-store-price="${store.price}" style="cursor: pointer; border: 2px solid #e9ecef; border-radius: 12px; transition: all 0.3s ease; background: #fff; text-align: center;">
+          <div class="fw-bold" style="margin-bottom: 0.5rem;">${store.store || store.name}</div>
+          <div class="text-success fw-bold" style="font-size: 1.25rem;">${store.price}</div>
+          ${store.discount ? `<span class="badge bg-danger mt-2">${store.discount}</span>` : ''}
+        </div>
+      `).join('');
+      
+      // Add click handlers to store cards
+      document.querySelectorAll('.list-select-card').forEach(card => {
+        card.addEventListener('click', function() {
+          const storeName = this.dataset.storeName;
+          const storePrice = this.dataset.storePrice;
+          pendingItemToAdd.selected_store = storeName;
+          pendingItemToAdd.price = storePrice;
+          // Directly add the item
+          addItemToList();
+        });
+      });
+      
+      const modal = new bootstrap.Modal(document.getElementById('listSelectorModal'));
+      modal.show();
+    }
 
     // Show list selector modal
     async function showListSelector(productName) {
@@ -878,7 +935,10 @@
       const listSelectorContainer = document.getElementById('listSelectorContainer');
       
       if (itemNameDisplay) {
-        itemNameDisplay.textContent = productName;
+        const displayText = pendingItemToAdd.selected_store 
+          ? `${productName} from ${pendingItemToAdd.selected_store}`
+          : productName;
+        itemNameDisplay.textContent = displayText;
       }
       
       try {
@@ -942,30 +1002,38 @@
     }
 
     // Add item to selected list
-    async function addItemToList(listId) {
+    async function addItemToList() {
       if (!pendingItemToAdd) {
         showNotification('No item selected', 'warning');
         return;
       }
       
       try {
-        const response = await fetch('/api/list/add-item', {
+        const itemToAdd = {
+          name: pendingItemToAdd.name,
+          price: pendingItemToAdd.price,
+          store: pendingItemToAdd.selected_store || 'Unknown',
+          image: pendingItemToAdd.image,
+          qty: 1
+        };
+        
+        const response = await fetch('/shopping-list/add', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ item: pendingItemToAdd, list_id: listId })
+          body: JSON.stringify({ item: itemToAdd })
         });
         
         const data = await response.json();
         
         if (data.success) {
+          showNotification(`${pendingItemToAdd.name} from ${pendingItemToAdd.selected_store} added to your shopping list!`, 'success');
+          pendingItemToAdd = null;
+          
           // Close modal
           const modal = bootstrap.Modal.getInstance(document.getElementById('listSelectorModal'));
           if (modal) modal.hide();
-          
-          showNotification(`${pendingItemToAdd.name} added to your shopping list!`, 'success');
-          pendingItemToAdd = null;
         } else {
           showNotification('Error: ' + (data.error || 'Could not add item'), 'danger');
         }

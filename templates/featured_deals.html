@@ -137,14 +137,15 @@
           <div class="col-md-6 col-lg-4 product-card" data-stores='{{ p.get("stores")|tojson }}' data-price="{{ p.get('price','') }}" data-name="{{ p.get('title','')|lower }}" data-category="{{ p.get('category','')|lower }}">
             <div class="card product-card-inner h-100 shadow-sm border-0" style="transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 8px 24px rgba(102, 126, 234, 0.25)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 .125rem .25rem rgba(0,0,0,.075)'">
               <div class="position-relative">
+                {% set pid = p.get('_id') or p.get('id') %}
                 <img src="{{ prefer_processed(p.get('image') or url_for('static', filename='placeholder.svg')) }}" class="card-img-top product-image" alt="{{ p.get('title') or p.get('name','Product') }}">
                 <span class="price-badge">
                   <i class="bi bi-tag-fill"></i> {{ p.get('price','') }}
                 </span>
                 <button class="btn btn-sm position-absolute top-0 start-0 m-2 bg-white border-0 shadow-sm rounded-circle" 
                         style="width: 36px; height: 36px; z-index: 10;"
-                        onclick="quickFavorite(event, '{{ p.get('_id') or p.get('id') }}', this)"
-                        data-product-id="{{ p.get('_id') or p.get('id') }}"
+                        onclick="quickFavorite(event, '{{ pid }}', this)"
+                        data-product-id="{{ pid }}"
                         title="Add to favorites">
                   <i class="bi bi-heart text-danger" style="font-size: 1.1rem;"></i>
                 </button>

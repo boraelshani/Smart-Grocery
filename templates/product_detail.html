@@ -21,27 +21,107 @@
       border-radius: 15px;
       padding: 20px;
     }
-    .price-card {
+    .best-price-banner {
       background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
       color: white;
-      padding: 2rem;
+      padding: 1.5rem;
       border-radius: 15px;
       text-align: center;
       box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+      margin-bottom: 2rem;
     }
-    .store-comparison-card {
-      border: none;
-      border-radius: 15px;
-      overflow: hidden;
-      margin-bottom: 1rem;
-      transition: transform 0.2s;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    .best-price-banner h3 {
+      font-size: 0.9rem;
+      opacity: 0.9;
+      margin-bottom: 0.5rem;
     }
-    .store-comparison-card:hover {
-      transform: translateX(5px);
+    .best-price-banner .price {
+      font-size: 2.5rem;
+      font-weight: bold;
     }
-    .best-price {
+    .best-price-banner .store-name {
+      font-size: 0.95rem;
+      opacity: 0.9;
+    }
+    .store-selection-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .store-card {
+      border: 2px solid #e9ecef;
+      border-radius: 12px;
+      padding: 1.25rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-align: center;
+      background: white;
+    }
+    .store-card:hover {
+      border-color: #667eea;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+      transform: translateY(-2px);
+    }
+    .store-card.selected {
+      border-color: #667eea;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+    }
+    .store-card .store-name {
+      font-weight: 700;
+      font-size: 1rem;
+      margin-bottom: 0.5rem;
+    }
+    .store-card .store-price {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #667eea;
+    }
+    .store-card.selected .store-price {
+      color: white;
+    }
+    .store-card .store-discount {
+      font-size: 0.85rem;
+      margin-top: 0.5rem;
+    }
+    .selected-store-info {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-radius: 12px;
+      padding: 1.25rem;
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+    .selected-store-info .price {
+      font-size: 2rem;
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+    }
+    .selected-store-info .store-name {
+      font-size: 1rem;
+      opacity: 0.95;
+    }
+    .action-buttons {
+      display: grid;
+      gap: 1rem;
+    }
+    .add-to-list-btn {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none;
+      color: white;
+      padding: 1rem;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-decoration: none !important;
+    }
+    .add-to-list-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
       color: white;
     }
     .category-badge {
@@ -50,6 +130,29 @@
       padding: 8px 16px;
       border-radius: 20px;
       display: inline-block;
+    }
+    .store-comparison-card {
+      border: 1px solid #e9ecef;
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 1rem;
+      transition: all 0.2s;
+      background: white;
+    }
+    .store-comparison-card:hover {
+      box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+    }
+    .store-comparison-header {
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid #e9ecef;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .store-comparison-price {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #667eea;
     }
   </style>
 </head>
@@ -117,44 +220,52 @@
 
       <!-- Product Info -->
       <div class="col-lg-6">
-        <div class="price-card mb-4">
-          <h3 class="mb-2">Best Price</h3>
-          <h1 class="display-3 fw-bold">
-            {{ (product.cheapest and product.cheapest.price) or product.price or 'N/A' }}
-          </h1>
+        <!-- Best Price Banner -->
+        <div class="best-price-banner">
+          <h3><i class="bi bi-lightning-fill"></i> Best Price</h3>
+          <div class="price">{{ (product.cheapest and product.cheapest.price) or product.price or 'N/A' }}</div>
           {% if product.cheapest and product.cheapest.store %}
-            <p class="mb-0 opacity-75">
-              <i class="bi bi-shop"></i> at {{ product.cheapest.store }}
-            </p>
+            <div class="store-name">at <strong>{{ product.cheapest.store }}</strong></div>
           {% endif %}
         </div>
 
-        <div class="d-grid gap-2 mb-4">
-          <div class="row g-2">
-            <div class="col-9">
-              <button class="btn btn-primary btn-lg w-100 add-to-cart-btn" 
-                      data-id="{{ product.id }}" 
-                      data-name="{{ product.name }}" 
-                      data-price="{{ (product.cheapest and product.cheapest.price) or product.price }}">
-                <i class="bi bi-cart-plus"></i> Add to Shopping List
-              </button>
-            </div>
-            <div class="col-3">
-              <button class="btn btn-outline-danger btn-lg w-100 favorite-btn" 
-                      id="favorite-btn"
-                      data-product-id="{{ product.id }}"
-                      onclick="toggleProductFavorite()">
-                <i class="bi bi-heart" id="favorite-icon"></i>
-              </button>
-            </div>
+        <!-- Store Selection Cards -->
+        {% if product.stores and product.stores|length > 1 %}
+        <div class="mb-4">
+          <label style="font-weight: 700; display: block; margin-bottom: 1rem;"><i class="bi bi-shop"></i> Select a Store</label>
+          <div class="store-selection-grid">
+            {% for store in product.stores %}
+              <div class="store-card {% if loop.first %}selected{% endif %}" data-store-index="{{ loop.index0 }}" data-store="{{ store.store or store.name }}" data-price="{{ store.price }}">
+                <div class="store-name">{{ store.store or store.name }}</div>
+                <div class="store-price">{{ store.price }}</div>
+                {% if store.discount %}
+                  <div class="store-discount"><span class="badge bg-danger">{{ store.discount }}</span></div>
+                {% endif %}
+              </div>
+            {% endfor %}
           </div>
-          <a href="{{ url_for('main.compare_prices') }}" class="btn btn-outline-secondary">
+        </div>
+        {% endif %}
+
+        <!-- Action Buttons -->
+        <div class="action-buttons mb-4">
+          <button class="btn add-to-list-btn" id="add-to-list-btn"
+                  data-id="{{ product.id }}" 
+                  data-name="{{ product.name }}">
+            <i class="bi bi-cart-plus"></i> Add to Shopping List
+          </button>
+          <button class="btn btn-outline-danger" id="favorite-btn"
+                  data-product-id="{{ product.id }}"
+                  onclick="toggleProductFavorite()" style="padding: 0.75rem; font-weight: 700;">
+            <i class="bi bi-heart" id="favorite-icon"></i> Add to Favorites
+          </button>
+          <a href="{{ url_for('main.compare_prices') }}" class="btn btn-outline-secondary" style="padding: 0.75rem; font-weight: 700;">
             <i class="bi bi-arrow-left"></i> Back to Products
           </a>
         </div>
 
         {% if product.unit %}
-          <p><strong>Unit:</strong> {{ product.unit }}</p>
+          <p><strong><i class="bi bi-info-circle"></i> Unit:</strong> {{ product.unit }}</p>
         {% endif %}
       </div>
     </div>
@@ -163,30 +274,25 @@
     {% if product.stores and product.stores|length > 0 %}
       <div class="row mt-5">
         <div class="col-12">
-          <h2 class="mb-4"><i class="bi bi-graph-up-arrow"></i> Price Comparison</h2>
+          <h2 class="mb-4"><i class="bi bi-graph-up-arrow"></i> Prices at Other Stores</h2>
           {% for store in product.stores %}
-            <div class="card store-comparison-card {% if loop.first %}best-price{% endif %}">
-              <div class="card-body">
-                <div class="row align-items-center">
-                  <div class="col-md-6">
-                    <h5 class="mb-1 {% if loop.first %}text-white{% endif %}">
-                      <i class="bi bi-shop-window"></i> {{ store.store or store.name }}
-                      {% if loop.first %}
-                        <span class="badge bg-warning text-dark ms-2">Best Price</span>
-                      {% endif %}
-                    </h5>
-                    {% if store.url %}
-                      <a href="{{ store.url }}" target="_blank" class="{% if loop.first %}text-white{% else %}text-muted{% endif %} text-decoration-none">
-                        <i class="bi bi-box-arrow-up-right"></i> Visit Store
-                      </a>
-                    {% endif %}
-                  </div>
-                  <div class="col-md-6 text-md-end">
-                    <h3 class="mb-0 {% if loop.first %}text-white{% endif %}">{{ store.price }}</h3>
-                    {% if store.discount %}
-                      <span class="badge bg-danger">{{ store.discount }}</span>
-                    {% endif %}
-                  </div>
+            <div class="store-comparison-card">
+              <div class="store-comparison-header">
+                <div>
+                  <h5 class="mb-0">
+                    <i class="bi bi-shop-window"></i> {{ store.store or store.name }}
+                  </h5>
+                  {% if store.url %}
+                    <a href="{{ store.url }}" target="_blank" class="text-muted text-decoration-none small">
+                      <i class="bi bi-box-arrow-up-right"></i> Visit Store
+                    </a>
+                  {% endif %}
+                </div>
+                <div class="text-end">
+                  <div class="store-comparison-price">{{ store.price }}</div>
+                  {% if store.discount %}
+                    <span class="badge bg-danger">{{ store.discount }}</span>
+                  {% endif %}
                 </div>
               </div>
             </div>
@@ -204,51 +310,81 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="{{ url_for('static', filename='js/script.js') }}"></script>
   <script>
-    // Add to cart functionality
+    // Store selector functionality
     document.addEventListener('DOMContentLoaded', function() {
-      const addToCartBtn = document.querySelector('.add-to-cart-btn');
-      if (addToCartBtn) {
-        addToCartBtn.addEventListener('click', async function() {
-          const productId = this.dataset.id;
-          const productName = this.dataset.name;
-          const productPrice = this.dataset.price;
+      const storeCards = document.querySelectorAll('.store-card');
+      const selectedPriceEl = document.getElementById('selected-price');
+      const selectedStoreEl = document.getElementById('selected-store');
+      const addToListBtn = document.getElementById('add-to-list-btn');
+      const productName = addToListBtn.dataset.name;
+      const productId = addToListBtn.dataset.id;
+
+      // Handle store card clicks
+      storeCards.forEach(card => {
+        card.addEventListener('click', function() {
+          // Remove selected class from all cards
+          storeCards.forEach(c => c.classList.remove('selected'));
+          
+          // Add selected class to clicked card
+          this.classList.add('selected');
+          
+          const store = this.dataset.store;
+          const price = this.dataset.price;
+          
+          // Update selected price and store (if elements exist)
+          if (selectedPriceEl) selectedPriceEl.textContent = price;
+          if (selectedStoreEl) selectedStoreEl.textContent = store;
+          
+          // Update the add to list button's data
+          if (addToListBtn) {
+            addToListBtn.dataset.price = price;
+            addToListBtn.dataset.store = store;
+          }
+        });
+      });
+
+      // Add to shopping list functionality
+      if (addToListBtn) {
+        addToListBtn.addEventListener('click', async function() {
+          const price = this.dataset.price || '{{ (product.stores[0] and product.stores[0].price) or product.price }}';
+          const store = this.dataset.store || '{{ (product.stores[0] and product.stores[0].store) or product.stores[0].name }}';
           
           try {
-            const response = await fetch('/api/add-to-shopping-list', {
+            const response = await fetch('/shopping-list/add', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
               },
               body: JSON.stringify({
-                item: {
-                  id: productId,
-                  name: productName,
-                  price: productPrice,
-                  qty: 1
-                }
+                name: productName,
+                price: price,
+                store: store,
+                qty: 1
               })
             });
             
-            if (response.ok) {
+            const data = await response.json();
+            if (data.success || response.ok) {
               // Show success message
-              const originalText = this.innerHTML;
+              const originalHTML = this.innerHTML;
               this.innerHTML = '<i class="bi bi-check-circle"></i> Added to List!';
-              this.classList.remove('btn-primary');
-              this.classList.add('btn-success');
+              this.style.background = 'linear-gradient(135deg, #28a745 0%, #20c997 100%)';
               
               setTimeout(() => {
-                this.innerHTML = originalText;
-                this.classList.remove('btn-success');
-                this.classList.add('btn-primary');
+                this.innerHTML = originalHTML;
+                this.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
               }, 2000);
+            } else {
+              showNotification('Error adding to list', 'danger');
             }
           } catch (error) {
-            console.error('Error adding to cart:', error);
+            console.error('Error adding to list:', error);
+            showNotification('Error adding to list', 'danger');
           }
         });
       }
 
-      // Check if product is favorited on page load
+      // Load favorite state
       checkFavoriteStatus();
     });
 
@@ -264,8 +400,6 @@
         if (data.is_favorite) {
           document.getElementById('favorite-icon').classList.remove('bi-heart');
           document.getElementById('favorite-icon').classList.add('bi-heart-fill');
-          document.getElementById('favorite-btn').classList.remove('btn-outline-danger');
-          document.getElementById('favorite-btn').classList.add('btn-danger');
         }
       } catch (error) {
         console.error('Error checking favorite status:', error);
@@ -288,18 +422,13 @@
         if (response.ok) {
           const data = await response.json();
           const icon = document.getElementById('favorite-icon');
-          const btn = document.getElementById('favorite-btn');
           
           if (data.is_favorite) {
             icon.classList.remove('bi-heart');
             icon.classList.add('bi-heart-fill');
-            btn.classList.remove('btn-outline-danger');
-            btn.classList.add('btn-danger');
           } else {
             icon.classList.remove('bi-heart-fill');
             icon.classList.add('bi-heart');
-            btn.classList.remove('btn-danger');
-            btn.classList.add('btn-outline-danger');
           }
         } else {
           const error = await response.json();
@@ -311,6 +440,24 @@
       } catch (error) {
         console.error('Error toggling favorite:', error);
       }
+    }
+
+    function showNotification(message, type = 'info') {
+      const el = document.createElement('div');
+      el.className = `alert alert-${type} alert-dismissible fade show`;
+      el.style.position = 'fixed';
+      el.style.top = '20px';
+      el.style.right = '20px';
+      el.style.zIndex = 9999;
+      el.style.minWidth = '260px';
+      el.innerHTML = `${message}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>`;
+      document.body.appendChild(el);
+      
+      setTimeout(() => {
+        try {
+          new bootstrap.Alert(el).close();
+        } catch(e) {}
+      }, 3500);
     }
   </script>
 </body>

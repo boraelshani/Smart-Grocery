@@ -417,7 +417,7 @@ def shopping_list():
         return None
 
     items = []
-    # Aggregate duplicates by name so multiple additions stack into a single line with qty
+    # Aggregate duplicates by name + store so multiple additions stack into a single line with qty
     agg = {}
     for idx, entry in enumerate(shopping_entries):
         # entry might be a plain string or dict
@@ -433,8 +433,28 @@ def shopping_list():
         product = find_product_by_name(name)
         price_val = 0.0
         store_name = ''
-        # If we found a product in the catalog, prefer that product's price.
-        if product:
+        
+        # PRIORITY 1: Use price from the entry if it exists (sent from add-to-list)
+        if isinstance(entry, dict):
+            entry_price = entry.get('price') or entry.get('price_val')
+            store_name = entry.get('store', '')
+            if entry_price is not None:
+                try:
+                    if isinstance(entry_price, (int, float)):
+                        price_val = float(entry_price)
+                    elif isinstance(entry_price, Decimal128):
+                        try:
+                            price_val = float(entry_price.to_decimal())
+                        except Exception:
+                            price_val = 0.0
+                    else:
+                        cleaned = re.sub(r"[^0-9.]", "", str(entry_price))
+                        price_val = float(cleaned) if cleaned else 0.0
+                except Exception:
+                    price_val = 0.0
+        
+        # PRIORITY 2: If no price in entry, try to get from product catalog
+        if (not price_val or price_val == 0) and product:
             # try common fields for price on product
             cheapest = product.get('cheapest') or {}
             price_field = cheapest.get('price') if isinstance(cheapest, dict) else product.get('price')
@@ -444,7 +464,8 @@ def shopping_list():
                     stores_list = product.get('stores', [])
                     if stores_list and isinstance(stores_list, list):
                         price_field = stores_list[0].get('price')
-                        store_name = stores_list[0].get('store') or stores_list[0].get('name')
+                        if not store_name:
+                            store_name = stores_list[0].get('store') or stores_list[0].get('name')
                 except Exception:
                     price_field = None
             if price_field is not None:
@@ -467,24 +488,19 @@ def shopping_list():
                     store_name = (product.get('cheapest') or {}).get('store', '')
                 except Exception:
                     store_name = ''
-        # If product price is missing or zero, but the stored entry contains a price, use it.
-        if (not price_val or price_val == 0) and isinstance(entry, dict):
-            entry_price = entry.get('price') or entry.get('price_val')
-            if entry_price is not None:
-                try:
-                    if isinstance(entry_price, (int, float)):
-                        price_val = float(entry_price)
-                    else:
-                        cleaned = re.sub(r"[^0-9.]", "", str(entry_price))
-                        price_val = float(cleaned) if cleaned else price_val
-                except Exception:
-                    pass
 
-        # Prefer to aggregate by product id when possible (more reliable), otherwise use normalized name
+        # Prefer to aggregate by product id + store when possible (more reliable), otherwise use normalized name + store
+        # This ensures same product from different stores appear as separate items
+        store_from_entry = ''
+        if isinstance(entry, dict):
+            store_from_entry = entry.get('store', '')
+        if not store_from_entry:
+            store_from_entry = store_name
+        
         if product and product.get('id'):
-            item_key = str(product.get('id'))
+            item_key = f"{str(product.get('id'))}#{store_from_entry}"
         else:
-            item_key = (name or f'item-{idx}').strip().lower()
+            item_key = f"{(name or f'item-{idx}').strip().lower()}#{store_from_entry}"
         existing = agg.get(item_key)
         image_val = ''
         # try to get image from product or entry
@@ -511,7 +527,7 @@ def shopping_list():
                 'id': product.get('id') if product and product.get('id') else f'item-{idx}',
                 'name': name,
                 'price_val': price_val,
-                'store': store_name,
+                'store': store_from_entry or store_name,
                 'qty': qty,
                 'purchased': purchased,
                 'image': image_val or ''

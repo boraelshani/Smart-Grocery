@@ -185,6 +185,7 @@ def add_shopping_item():
                 pass
 
             # persist the item by fetching the user doc and setting the list explicitly
+            # IMPORTANT: Store-specific items are treated as separate entries (not merged by name alone)
             user_doc = mongo.db.users.find_one({'email': email})
             if not user_doc:
                 # create new user doc with shopping_list
