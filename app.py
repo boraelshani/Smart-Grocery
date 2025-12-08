@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, session
+from flask import Flask, jsonify, session, url_for, request
 import os
 import certifi
 from dotenv import load_dotenv, find_dotenv
@@ -17,7 +17,6 @@ if not os.environ.get('SSL_CERT_FILE'):
 
 from utils.db import mongo
 import hashlib
-from flask import url_for
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key')
