@@ -223,8 +223,8 @@
           </li>
           <li class="nav-item">
             <a class="nav-link position-relative" href="{{ url_for('main.shopping_list') }}">
-              <i class="bi bi-cart3"></i> Cart
-              <span id="shopping-list-count" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.65rem; {% if not cart_count %}display: none;{% endif %}">
+              <i class="bi bi-cart3"></i> Shopping List
+              <span id="shopping-list-count" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.65rem;" {% if not cart_count %}style="display: none;"{% endif %}>
                 {{ cart_count if cart_count else '' }}
               </span>
             </a>
@@ -294,7 +294,7 @@
             <h6 class="text-muted text-uppercase fw-semibold mb-3">At a glance</h6>
             <div class="d-flex flex-wrap gap-2">
               <div class="stat-chip"><i class="bi bi-heart-fill"></i> Favorites: {{ user_data.favorites|length if user_data and user_data.get('favorites') else 0 }}</div>
-              <div class="stat-chip"><i class="bi bi-cart-fill"></i> In Cart: {{ user_data.shopping_list|length if user_data and user_data.get('shopping_list') else 0 }}</div>
+              <div class="stat-chip"><i class="bi bi-cart-fill"></i> In Shopping List: {{ user_data.shopping_list|length if user_data and user_data.get('shopping_list') else 0 }}</div>
             </div>
           </div>
         </div>
