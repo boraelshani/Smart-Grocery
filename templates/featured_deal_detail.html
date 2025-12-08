@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ deal.get('title') or deal.get('name') }} | Featured Deal</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    body { background: #f8f9fa; }
+    .product-detail-hero {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 3rem 0;
+      border-bottom-left-radius: 24px;
+      border-bottom-right-radius: 24px;
+    }
+    .breadcrumb { margin-bottom: 0.75rem; }
+    .breadcrumb a { color: white; text-decoration: none; }
+    .breadcrumb-item + .breadcrumb-item::before { color: rgba(255,255,255,0.7); }
+    .category-badge {
+      display: inline-block;
+      background: rgba(255,255,255,0.15);
+      color: white;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-weight: 700;
+      border: 1px solid rgba(255,255,255,0.3);
+    }
+    .product-image-large {
+      width: 100%;
+      height: 420px;
+      object-fit: contain;
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+      padding: 16px;
+    }
+    .best-price-banner {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-radius: 16px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 1.25rem;
+      box-shadow: 0 10px 24px rgba(102,126,234,0.3);
+    }
+    .best-price-banner h3 { font-weight: 800; margin-bottom: 0.25rem; }
+    .best-price-banner .price { font-size: 2rem; font-weight: 900; }
+    .best-price-banner .store-name { font-size: 1rem; opacity: 0.9; }
+    .meta-chips .badge { font-weight: 700; }
+    .description { color: #4b5563; line-height: 1.6; }
+    .action-buttons .btn { min-width: 160px; }
+    .link-card {
+      border: 1px dashed #d1d5db;
+      border-radius: 14px;
+      padding: 14px 16px;
+      background: #fff;
+      transition: all 0.2s ease;
+    }
+    .link-card:hover {
+      border-color: #667eea;
+      box-shadow: 0 8px 20px rgba(102,126,234,0.15);
+      transform: translateY(-2px);
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
+    <div class="container">
+      <a class="navbar-brand fw-bold" href="{{ url_for('main.home') }}" style="font-size: 1.5rem; color: #667eea;">
+        <i class="bi bi-cart-check-fill me-2"></i>Smart Grocery
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        {% set cart_count = shopping_list_count or 0 %}
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.home') }}">Home</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.stores_page') }}">Stores</a></li>
+          <li class="nav-item"><a class="nav-link active fw-semibold" href="{{ url_for('main.featured_deals_page') }}">Deals</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.compare_prices') }}">Compare</a></li>
+          <li class="nav-item">
+            <a class="nav-link position-relative" href="{{ url_for('main.shopping_list') }}">
+              <i class="bi bi-cart3"></i> Cart
+              <span id="shopping-list-count" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.65rem; {% if not cart_count %}display: none;{% endif %}">
+                {{ cart_count if cart_count else '' }}
+              </span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('main.profile') }}">
+              <i class="bi bi-person-circle"></i> Profile
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <section class="product-detail-hero">
+    <div class="container">
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          {% set trail = deal.get('category_path') if deal.get('category_path') else [] %}
+          {% if not trail and deal.get('category') %}
+            {% set trail = ['Products', deal.get('category')] %}
+          {% endif %}
+          <li class="breadcrumb-item"><a href="{{ url_for('main.home') }}" class="text-white breadcrumb-link">Home</a></li>
+          <li class="breadcrumb-item"><a href="{{ url_for('main.compare_prices') }}" class="text-white breadcrumb-link">Products</a></li>
+          {% if trail %}
+            {% for crumb in trail %}
+              {% if crumb != 'Products' %}
+                {% if loop.last %}
+                  <li class="breadcrumb-item active text-white" aria-current="page">{{ crumb }}</li>
+                {% else %}
+                  <li class="breadcrumb-item">
+                    <a href="{{ url_for('main.compare_prices', category=crumb) }}" class="text-white breadcrumb-link">{{ crumb }}</a>
+                  </li>
+                {% endif %}
+              {% endif %}
+            {% endfor %}
+          {% else %}
+            <li class="breadcrumb-item active text-white" aria-current="page">{{ deal.get('title') or deal.get('name') }}</li>
+          {% endif %}
+        </ol>
+      </nav>
+      <h1 class="display-5 fw-bold">{{ deal.get('title') or deal.get('name') }}</h1>
+      {% if deal.get('category') or (deal.get('category_path') and deal.get('category_path')|length) %}
+        <span class="category-badge mt-2">{{ (deal.get('category_path') and deal.get('category_path')[-1]) or deal.get('category') }}</span>
+      {% endif %}
+    </div>
+  </section>
+
+  <section class="container py-5">
+    <div class="container">
+      <div class="row">
+        <!-- Product Image -->
+        <div class="col-lg-6 mb-4">
+          <img src="{{ deal.get('image') or url_for('static', filename='placeholder.svg') }}" alt="{{ deal.get('title') or deal.get('name') }}" class="product-image-large">
+        </div>
+
+        <!-- Product Info -->
+        <div class="col-lg-6">
+          <!-- Best Price Banner -->
+          <div class="best-price-banner">
+            <h3><i class="bi bi-lightning-fill"></i> Price</h3>
+            <div class="price">€{{ deal.get('price', 'N/A') }}</div>
+            {% if deal.get('store') or deal.get('source') %}
+              <div class="store-name">at <strong>{{ deal.get('store') or deal.get('source') }}</strong></div>
+            {% endif %}
+            {% if deal.get('original_price') %}
+              <div class="mt-2 text-white-75">Was €{{ deal.get('original_price') }}</div>
+            {% endif %}
+            {% if deal.get('discount_label') or deal.get('discount_percent') %}
+              <div class="mt-2"><span class="badge bg-light text-dark">{{ deal.get('discount_label') or (deal.get('discount_percent') ~ '% OFF') }}</span></div>
+            {% endif %}
+          </div>
+
+          <div class="meta-chips mb-3 d-flex flex-wrap gap-2">
+            {% if deal.get('unit') %}
+            <span class="badge bg-light text-dark border"><i class="bi bi-info-circle"></i> {{ deal.get('unit') }}</span>
+            {% endif %}
+            {% if deal.get('category') %}
+            <span class="badge bg-light text-dark border"><i class="bi bi-tag"></i> {{ deal.get('category') }}</span>
+            {% endif %}
+          </div>
+
+          {% if deal.get('description') %}
+          <p class="description mb-3"><strong><i class="bi bi-file-text"></i> Description:</strong> {{ deal.get('description') }}</p>
+          {% endif %}
+
+          {% if deal.get('url') %}
+          <a href="{{ deal.get('url') }}" target="_blank" rel="noopener noreferrer" class="link-card d-flex align-items-center justify-content-between text-decoration-none text-dark mb-3">
+            <div class="d-flex align-items-center gap-2">
+              <i class="bi bi-box-arrow-up-right text-primary"></i>
+              <div>
+                <div class="fw-bold">Go to store</div>
+                <div class="text-muted small">Opens the store website</div>
+              </div>
+            </div>
+            <i class="bi bi-arrow-right text-primary"></i>
+          </a>
+          {% endif %}
+
+          <div class="action-buttons mb-4 d-flex flex-wrap gap-2">
+            <a href="{{ url_for('main.compare_prices') }}" class="btn btn-outline-secondary">
+              <i class="bi bi-arrow-left"></i> Back
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="text-center py-4 bg-light border-top">
+    <p class="mb-0 text-muted">&copy; 2025 Smart Grocery Team</p>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

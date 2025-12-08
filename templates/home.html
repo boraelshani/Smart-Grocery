@@ -3,224 +3,1046 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Smart Grocery | Home</title>
+  <title>Smart Grocery | Your Smart Shopping Destination</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    /* Hero Section */
+    .hero-section {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 5rem 0 4rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-section::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+      opacity: 0.1;
+    }
+    .hero-content {
+      position: relative;
+      z-index: 1;
+    }
+    .hero-title {
+      font-size: 3.5rem;
+      font-weight: 800;
+      margin-bottom: 1.5rem;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+    }
+    .hero-subtitle {
+      font-size: 1.3rem;
+      opacity: 0.95;
+      margin-bottom: 2rem;
+    }
+    .search-box {
+      background: white;
+      border-radius: 50px;
+      padding: 8px 8px 8px 25px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+      display: flex;
+      align-items: center;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    .search-box input {
+      border: none;
+      outline: none;
+      flex: 1;
+      padding: 10px;
+      font-size: 1.1rem;
+    }
+    .search-box button {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none;
+      color: white;
+      padding: 12px 30px;
+      border-radius: 50px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+    .search-box button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    /* Stats Section */
+    .stats-section {
+      background: #f8f9fa;
+      padding: 3rem 0;
+      margin-top: -2rem;
+      position: relative;
+      z-index: 2;
+    }
+    .stat-card {
+      text-align: center;
+      padding: 2rem 1rem;
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+      transition: all 0.3s ease;
+    }
+    .stat-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    .stat-icon {
+      width: 60px;
+      height: 60px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1rem;
+      font-size: 1.8rem;
+      color: white;
+    }
+    .stat-number {
+      font-size: 2.5rem;
+      font-weight: 800;
+      color: #667eea;
+      margin-bottom: 0.5rem;
+    }
+    .stat-label {
+      color: #6c757d;
+      font-weight: 500;
+    }
+
+    /* Section Headers */
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+    }
+    .section-title {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #333;
+      margin: 0;
+    }
+    .section-subtitle {
+      color: #6c757d;
+      font-size: 1rem;
+    }
+    .view-all-btn {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 10px 25px;
+      border-radius: 25px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .view-all-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+      color: white;
+    }
+
+    /* Horizontal Scroll Container */
+    .scroll-container {
+      position: relative;
+      overflow: hidden;
+      margin: 0 -15px;
+      padding: 0 15px;
+    }
+    .scroll-wrapper {
+      display: flex;
+      gap: 1.5rem;
+      overflow-x: auto;
+      scroll-behavior: smooth;
+      padding: 1rem 0;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    .scroll-wrapper::-webkit-scrollbar {
+      display: none;
+    }
+    .scroll-arrow {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background: white;
+      border: none;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 10;
+      transition: all 0.3s ease;
+    }
+    .scroll-arrow:hover {
+      background: #667eea;
+      color: white;
+      transform: translateY(-50%) scale(1.1);
+    }
+    .scroll-arrow.left {
+      left: 0;
+    }
+    .scroll-arrow.right {
+      right: 0;
+    }
+    .scroll-arrow i {
+      font-size: 1.5rem;
+    }
+
+    /* Product Cards */
+    .product-card-horizontal {
+      min-width: 280px;
+      max-width: 280px;
+      background: white;
+      border-radius: 15px;
+      overflow: hidden;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+      transition: all 0.3s ease;
+      position: relative;
+    }
+    .product-card-horizontal:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+    }
+    .product-card-horizontal img {
+      width: 100%;
+      height: 200px;
+      object-fit: contain;
+      background: #ffffff;
+      padding: 15px;
+    }
+    .product-card-body {
+      padding: 1.25rem;
+      background-color: #f8f9fa;
+    }
+    .product-name {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #333;
+      margin-bottom: 0.5rem;
+      display: -webkit-box;
+      line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .product-price {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: #667eea;
+      margin-bottom: 0.75rem;
+    }
+    .product-store {
+      font-size: 0.85rem;
+      color: #6c757d;
+      margin-bottom: 0.75rem;
+    }
+    .discount-badge {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      color: white;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      box-shadow: 0 3px 10px rgba(245, 87, 108, 0.3);
+    }
+    .favorite-btn {
+      position: absolute;
+      top: 15px;
+      left: 15px;
+      background: white;
+      border: none;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      z-index: 5;
+    }
+    .favorite-btn:hover {
+      transform: scale(1.1);
+      box-shadow: 0 5px 15px rgba(220, 53, 69, 0.3);
+    }
+    .favorite-btn i {
+      color: #dc3545;
+      font-size: 1.2rem;
+      transition: all 0.3s ease;
+    }
+    .favorite-btn.active i {
+      color: #dc3545;
+      text-shadow: 0 0 8px rgba(220, 53, 69, 0.6);
+    }
+    .favorite-btn.active {
+      background: linear-gradient(135deg, #ffe0e6 0%, #fff0f3 100%);
+      box-shadow: 0 5px 15px rgba(220, 53, 69, 0.3);
+    }
+    .add-to-cart-btn-modern {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      width: 100%;
+      padding: 12px;
+      border-radius: 10px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .add-to-cart-btn-modern:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    /* Store Cards */
+    .store-card {
+      min-width: 250px;
+      max-width: 250px;
+      background: white;
+      border-radius: 15px;
+      overflow: hidden;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+      transition: all 0.3s ease;
+      text-decoration: none;
+      color: inherit;
+    }
+    .store-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+      text-decoration: none;
+    }
+    .store-card-img {
+      width: 100%;
+      height: 150px;
+      object-fit: contain;
+      background: #ffffff;
+      padding: 20px;
+    }
+    .store-card-body {
+      padding: 1.5rem;
+      text-align: center;
+      background: #f8f9fa;
+    }
+    .store-name {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #333;
+      margin-bottom: 0.5rem;
+    }
+    .store-products-count {
+      color: #6c757d;
+      font-size: 0.9rem;
+    }
+
+    /* Categories */
+    .category-card {
+      min-width: 180px;
+      max-width: 180px;
+      height: 120px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 15px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      text-decoration: none;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      position: relative;
+      overflow: hidden;
+    }
+    .category-card::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+      transition: all 0.5s ease;
+    }
+    .category-card:hover::before {
+      top: -100%;
+      right: -100%;
+    }
+    .category-card:hover {
+      transform: translateY(-8px) scale(1.05);
+      box-shadow: 0 12px 30px rgba(102, 126, 234, 0.3);
+      text-decoration: none;
+      color: white;
+    }
+    .category-icon {
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .category-name {
+      font-weight: 600;
+      font-size: 1rem;
+    }
+
+    /* Newsletter Section */
+    .newsletter-section {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 4rem 0;
+      margin-top: 4rem;
+    }
+    .newsletter-title {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+    .newsletter-subtitle {
+      font-size: 1.2rem;
+      opacity: 0.9;
+      margin-bottom: 2rem;
+    }
+    .newsletter-form {
+      max-width: 500px;
+      margin: 0 auto;
+      display: flex;
+      gap: 10px;
+    }
+    .newsletter-form input {
+      flex: 1;
+      padding: 15px 20px;
+      border: none;
+      border-radius: 50px;
+      font-size: 1rem;
+    }
+    .newsletter-form button {
+      background: white;
+      color: #667eea;
+      border: none;
+      padding: 15px 30px;
+      border-radius: 50px;
+      font-weight: 700;
+      transition: all 0.3s ease;
+    }
+    .newsletter-form button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 5px 15px rgba(255,255,255,0.3);
+    }
+
+    /* Section Spacing */
+    .content-section {
+      padding: 4rem 0;
+    }
+  </style>
 </head>
 <body>
-<!-- Navbar -->
-<nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
-  <div class="container">
-    <a class="navbar-brand fw-bold" href="{{ url_for('main.home') }}">Smart Grocery</a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="navbarNav">
-      <ul class="navbar-nav ms-auto">
-        <li class="nav-item">
-          <a class="nav-link active" href="{{ url_for('main.home') }}">Home</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="{{ url_for('main.stores_page') }}">Stores</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="{{ url_for('main.featured_deals_page') }}">Featured Deals</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="{{ url_for('main.compare_prices') }}">Compare Prices</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="{{ url_for('main.shopping_list') }}">Shopping List</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="{{ url_for('main.profile') }}">Profile</a>
-        </li>
-        
-      </ul>
-    </div>
-  </div>
-</nav>
-
-  <!-- Alert Notification -->
-  <div class="alert alert-dismissible fade show" role="alert" style="background-color: #f3e8ff; border: 1px solid #e9d5ff; color: #5b21b6; margin: 0;">
-    <strong>Welcome!</strong> Check out our new featured deals today and save up to 25%.
-    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-  </div>
-
-  <!-- Hero section -->
-  <section class="text-center py-5 bg-light">
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
     <div class="container">
-        <h1 class="display-4 fw-bold mb-3">
-          <i class="bi bi-graph-up-arrow"></i> Find the Best Grocery Prices Instantly
-        </h1>
-        <p class="lead text-muted">Compare prices from multiple stores and save money every week.</p>
-        <a href="{{ url_for('main.compare_prices') }}" class="btn btn-primary btn-lg mt-3">Start Comparing</a>
+      <a class="navbar-brand fw-bold" href="{{ url_for('main.home') }}" style="font-size: 1.5rem; color: #667eea;">
+        <i class="bi bi-cart-check-fill me-2"></i>Smart Grocery
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item">
+            <a class="nav-link active fw-semibold" href="{{ url_for('main.home') }}">Home</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('main.stores_page') }}">Stores</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('main.featured_deals_page') }}">Deals</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('main.compare_prices') }}">Compare</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link position-relative" href="{{ url_for('main.shopping_list') }}">
+              <i class="bi bi-cart3"></i> Cart
+              <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.65rem;">
+                0
+              </span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('main.profile') }}">
+              <i class="bi bi-person-circle"></i> Profile
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero-section">
+    <div class="container hero-content">
+      <div class="text-center">
+        <h1 class="hero-title">Find Your Best Grocery Deals</h1>
+        <p class="hero-subtitle">Compare prices from multiple stores and save money on every purchase</p>
+        <div class="search-box">
+          <input type="text" placeholder="Search for products, stores, or deals..." id="hero-search">
+          <button onclick="handleHeroSearch()">
+            <i class="bi bi-search me-2"></i>Search
+          </button>
+        </div>
+      </div>
     </div>
   </section>
 
-  <!-- Search & Filters Section -->
-  <section class="container py-4">
-    <div class="row align-items-end mb-3 compare-search-row">
-      <div class="col-md-12">
-        <label class="form-label d-block"><i class="bi bi-search"></i> Search Products</label>
-        <div class="input-group">
-          <input id="home-search-input" type="text" class="form-control" placeholder="Search by product name..." autocomplete="off" />
-          <div class="btn-group" role="group">
-            <button id="home-search-btn" class="btn btn-primary">
-              <i class="bi bi-search"></i>
-            </button>
-            <div class="dropdown">
-              <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="filtersDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false">
-                <i class="bi bi-funnel"></i> Filters
-              </button>
-              <div class="dropdown-menu dropdown-menu-end p-3" aria-labelledby="filtersDropdownBtn" style="min-width: 320px;">
-                <div class="mb-2">
-                  <label class="form-label"><i class="bi bi-grid"></i> Category</label>
-                  <select id="category-filter" class="form-select">
-                    <option value="">All Categories</option>
-                    <option value="dairy">Dairy</option>
-                    <option value="produce">Produce</option>
-                    <option value="meat">Meat & Seafood</option>
-                    <option value="bakery">Bakery</option>
-                    <option value="snacks">Snacks</option>
-                    <option value="beverages">Beverages</option>
-                    <option value="frozen">Frozen Foods</option>
-                    <option value="pantry">Pantry</option>
-                  </select>
-                </div>
-
-                <div class="mb-2">
-                  <label class="form-label"><i class="bi bi-shop"></i> Store</label>
-                  <select id="store-filter" class="form-select">
-                    <option value="">All Stores</option>
-                  </select>
-                </div>
-
-                <div class="mb-2">
-                  <label class="form-label"><i class="bi bi-currency-dollar"></i> Price Range</label>
-                  <div class="input-group">
-                    <input id="min-price" type="number" step="0.01" class="form-control" placeholder="Min">
-                    <span class="input-group-text">to</span>
-                    <input id="max-price" type="number" step="0.01" class="form-control" placeholder="Max">
-                  </div>
-                </div>
-
-                <div class="mb-2">
-                  <label class="form-label"><i class="bi bi-sort-down"></i> Sort By</label>
-                  <select id="sort-order" class="form-select">
-                    <option value="price-asc">Price: Low to High</option>
-                    <option value="price-desc">Price: High to Low</option>
-                    <option value="name-asc">Name: A to Z</option>
-                    <option value="name-desc">Name: Z to A</option>
-                  </select>
-                </div>
-
-                <div class="d-flex gap-2 mt-3">
-                  <button id="apply-filters" class="btn btn-primary flex-grow-1">Apply</button>
-                  <button id="clear-filters" class="btn btn-outline-secondary">Clear</button>
-                </div>
-
-                <div id="active-filters" class="mt-3 d-flex flex-wrap gap-2" style="display:none;">
-                  <!-- Filter badges will appear here -->
-                </div>
-              </div>
+  <!-- Stats Section -->
+  <section class="stats-section">
+    <div class="container">
+      <div class="row g-4">
+        <div class="col-md-3 col-6">
+          <div class="stat-card">
+            <div class="stat-icon">
+              <i class="bi bi-shop"></i>
             </div>
+            <div class="stat-number">{{ stores|length }}</div>
+            <div class="stat-label">Stores</div>
+          </div>
+        </div>
+        <div class="col-md-3 col-6">
+          <div class="stat-card">
+            <div class="stat-icon">
+              <i class="bi bi-box-seam"></i>
+            </div>
+            <div class="stat-number">{{ total_product_count }}</div>
+            <div class="stat-label">Products</div>
+          </div>
+        </div>
+        <div class="col-md-3 col-6">
+          <div class="stat-card">
+            <div class="stat-icon">
+              <i class="bi bi-lightning-fill"></i>
+            </div>
+            <div class="stat-number">{{ featured_deals|length }}</div>
+            <div class="stat-label">Hot Deals</div>
+          </div>
+        </div>
+        <div class="col-md-3 col-6">
+          <div class="stat-card">
+            <div class="stat-icon">
+              <i class="bi bi-percent"></i>
+            </div>
+            <div class="stat-number">{{ max_savings }}%</div>
+            <div class="stat-label">Max Savings</div>
           </div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Search Results -->
-  <section class="container py-4" id="search-results-section" style="display:none;">
-    <h3 class="mb-3">Search Results</h3>
-    <div id="search-results" class="row g-4"></div>
+  <!-- Categories Section -->
+  <section class="content-section">
+    <div class="container">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">Shop by Category</h2>
+          <p class="section-subtitle">Browse our popular categories</p>
+        </div>
+      </div>
+      <div class="scroll-container">
+        <button class="scroll-arrow left" onclick="scrollSection('categories', 'left')">
+          <i class="bi bi-chevron-left"></i>
+        </button>
+        <div class="scroll-wrapper" id="categories-scroll">
+          <a href="{{ url_for('main.compare_prices') }}?category=dairy" class="category-card">
+            <div class="category-icon"><i class="bi bi-egg-fried"></i></div>
+            <div class="category-name">Dairy & Eggs</div>
+          </a>
+          <a href="{{ url_for('main.compare_prices') }}?category=produce" class="category-card">
+            <div class="category-icon"><i class="bi bi-apple"></i></div>
+            <div class="category-name">Fresh Produce</div>
+          </a>
+          <a href="{{ url_for('main.compare_prices') }}?category=meat" class="category-card">
+            <div class="category-icon"><i class="bi bi-basket2"></i></div>
+            <div class="category-name">Meat & Seafood</div>
+          </a>
+          <a href="{{ url_for('main.compare_prices') }}?category=bakery" class="category-card">
+            <div class="category-icon"><i class="bi bi-cake2"></i></div>
+            <div class="category-name">Bakery</div>
+          </a>
+          <a href="{{ url_for('main.compare_prices') }}?category=snacks" class="category-card">
+            <div class="category-icon"><i class="bi bi-cup-straw"></i></div>
+            <div class="category-name">Snacks</div>
+          </a>
+          <a href="{{ url_for('main.compare_prices') }}?category=beverages" class="category-card">
+            <div class="category-icon"><i class="bi bi-droplet-fill"></i></div>
+            <div class="category-name">Beverages</div>
+          </a>
+          <a href="{{ url_for('main.compare_prices') }}?category=frozen" class="category-card">
+            <div class="category-icon"><i class="bi bi-snow"></i></div>
+            <div class="category-name">Frozen Foods</div>
+          </a>
+          <a href="{{ url_for('main.compare_prices') }}?category=pantry" class="category-card">
+            <div class="category-icon"><i class="bi bi-archive"></i></div>
+            <div class="category-name">Pantry Staples</div>
+          </a>
+        </div>
+        <button class="scroll-arrow right" onclick="scrollSection('categories', 'right')">
+          <i class="bi bi-chevron-right"></i>
+        </button>
+      </div>
+    </div>
   </section>
 
-  {% if using_fallback %}
-  <section class="container py-2">
-    <div class="alert alert-warning" role="alert">Warning: using local fallback data — database unavailable.</div>
-  </section>
-  {% endif %}
-
-  <!-- Featured deals section (unified product grid) -->
-  <section class="container py-5">
-    <h2 class="mb-4">Featured Deals</h2>
-    <div class="row g-4" id="products-grid">
-      {% if featured_deals %}
-        {% for p in featured_deals %}
-          <div class="col-md-6 col-lg-4 product-card" data-stores='{{ p.get("stores")|tojson }}' data-price="{{ p.get('price','') }}" data-name="{{ p.get('title','')|lower }}" data-category="{{ p.get('category','')|lower }}">
-            <div class="card product-card-inner h-100">
-              <div class="position-relative">
-                <img src="{{ prefer_processed(p.get('image') or url_for('static', filename='placeholder.svg')) }}" class="card-img-top product-image" alt="{{ p.get('title') or p.get('name','Product') }}">
-                <span class="price-badge">
-                  <i class="bi bi-tag-fill"></i> {{ p.get('price','') }}
-                </span>
-                <button class="btn btn-sm position-absolute top-0 end-0 m-2 bg-white border-0 shadow-sm rounded-circle" 
-                        style="width: 36px; height: 36px; z-index: 10;"
-                        onclick="quickFavorite(event, '{{ p.get('_id') or p.get('id') }}', this)"
-                        data-product-id="{{ p.get('_id') or p.get('id') }}"
-                        title="Add to favorites">
-                  <i class="bi bi-heart text-danger" style="font-size: 1.1rem;"></i>
+  <!-- Featured Deals Section -->
+  <section class="content-section" style="background: #f8f9fa;">
+    <div class="container">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title"><i class="bi bi-lightning-fill text-warning me-2"></i>Featured Deals</h2>
+          <p class="section-subtitle">Limited time offers you don't want to miss</p>
+        </div>
+        <a href="{{ url_for('main.featured_deals_page') }}" class="view-all-btn">
+          View All <i class="bi bi-arrow-right"></i>
+        </a>
+      </div>
+      <div class="scroll-container">
+        <button class="scroll-arrow left" onclick="scrollSection('deals', 'left')">
+          <i class="bi bi-chevron-left"></i>
+        </button>
+        <div class="scroll-wrapper" id="deals-scroll">
+          {% for deal in featured_deals[:12] %}
+          <div class="product-card-horizontal">
+            {% if deal.get('discount_label') or deal.get('discount_percent') %}
+            <div class="discount-badge">
+              {{ deal.get('discount_label') or (deal.get('discount_percent') ~ '% OFF') }}
+            </div>
+            {% endif %}
+            <button class="favorite-btn" data-product-id="{{ deal.get('_id') or deal.get('id') }}" onclick="favoriteProduct(event, this.dataset.productId)">
+              <i class="bi bi-heart"></i>
+            </button>
+            <img src="{{ deal.get('image') or 'https://via.placeholder.com/280x200' }}" alt="{{ deal.get('title') or deal.get('name') }}">
+            <div class="product-card-body">
+              <div class="product-name">{{ deal.get('title') or deal.get('name', 'Product') }}</div>
+              <div class="product-store"><i class="bi bi-shop me-1"></i>{{ deal.get('store') or deal.get('source', 'Store') }}</div>
+              <div class="product-price">€{{ deal.get('price', '0.00') }}</div>
+              <div class="d-flex gap-2 flex-wrap">
+                <button class="add-to-cart-btn-modern claim-deal-btn" 
+                        data-id="{{ deal.get('id') or deal.get('_id') }}" 
+                        data-title="{{ deal.get('title') or deal.get('name') }}" 
+                        data-price="{{ deal.get('price') }}">
+                  <i class="bi bi-cart-plus"></i> Add to Cart
                 </button>
-              </div>
-              <div class="card-body d-flex flex-column">
-                <div class="d-flex justify-content-between align-items-start mb-3">
-                  <h5 class="card-title mb-0 fw-bold">{{ p.get('title') or p.get('name','') }}</h5>
-                </div>
-                <p class="text-muted small mb-2">{{ p.get('store') or p.get('source','') }}</p>
-                <div class="mt-auto d-flex gap-2">
-                  <button type="button" class="btn btn-sm btn-primary view-details-btn" data-bs-toggle="modal" data-bs-target="#productModal" data-title="{{ p.get('title') or p.get('name','') }}" data-price="{{ p.get('price','') }}" data-store="{{ p.get('store') or p.get('source','') }}" data-image="{{ prefer_processed(p.get('image') or '') }}">Details</button>
-                  <button type="button" class="btn btn-sm btn-success claim-deal-btn" data-id="{{ p.get('id') or p.get('title','') }}" data-title="{{ p.get('title') or p.get('name','') }}" data-price="{{ p.get('price','') }}">Claim / Add</button>
-                </div>
+                <a href="{{ url_for('main.featured_deal_detail', deal_id=deal.get('id') or deal.get('_id')) }}" class="btn btn-outline-secondary btn-sm">
+                  <i class="bi bi-info-circle"></i> View Details
+                </a>
               </div>
             </div>
           </div>
-        {% endfor %}
+          {% endfor %}
+        </div>
+        <button class="scroll-arrow right" onclick="scrollSection('deals', 'right')">
+          <i class="bi bi-chevron-right"></i>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Favorites Section -->
+  <section class="content-section">
+    <div class="container">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title"><i class="bi bi-heart-fill text-danger me-2"></i>Your Favorites</h2>
+          <p class="section-subtitle">Loved items saved for quick access</p>
+        </div>
+        <a href="{{ url_for('main.compare_prices') }}" class="view-all-btn">
+          Browse More <i class="bi bi-arrow-right"></i>
+        </a>
+      </div>
+
+      {% if favorites and favorites|length > 0 %}
+      <div class="scroll-container">
+        <button class="scroll-arrow left" onclick="scrollSection('favorites', 'left')">
+          <i class="bi bi-chevron-left"></i>
+        </button>
+        <div class="scroll-wrapper" id="favorites-scroll">
+          {% for fav in favorites %}
+          <div class="product-card-horizontal">
+            <button class="favorite-btn active" data-product-id="{{ fav.get('id') }}" onclick="favoriteProduct(event, this.dataset.productId)">
+              <i class="bi bi-heart-fill"></i>
+            </button>
+            <img src="{{ fav.get('image') or url_for('static', filename='placeholder.svg') }}" alt="{{ fav.get('name', 'Product') }}">
+            <div class="product-card-body">
+              <div class="product-name">{{ fav.get('name', 'Product') }}</div>
+              {% if fav.get('category') %}
+              <div class="product-store"><i class="bi bi-tag me-1"></i>{{ fav.get('category') }}</div>
+              {% endif %}
+              <div class="product-price">{{ fav.get('best_price') or 'N/A' }}</div>
+              <a href="{{ url_for('main.product_detail', product_id=fav.get('id')) }}" class="add-to-cart-btn-modern">
+                <i class="bi bi-info-circle"></i> View Details
+              </a>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        <button class="scroll-arrow right" onclick="scrollSection('favorites', 'right')">
+          <i class="bi bi-chevron-right"></i>
+        </button>
+      </div>
       {% else %}
-        <div class="col-12"><p class="text-muted">No featured deals right now.</p></div>
+      <div class="text-center py-5 bg-light rounded-4">
+        <h5 class="fw-bold mb-2">No favorites yet</h5>
+        <p class="text-muted mb-4">Tap the heart on any product to save it here.</p>
+        <a href="{{ url_for('main.compare_prices') }}" class="btn btn-primary">
+          <i class="bi bi-search"></i> Discover products
+        </a>
+      </div>
       {% endif %}
     </div>
   </section>
 
-  <!-- Footer -->
-  <footer class="text-center py-4 bg-light border-top">
-    <p class="mb-0 text-muted">&copy; 2025 Smart Grocery Team</p>
-  </footer>
-
-  <!-- Modal for Product Details (used by Home featured deals and other details buttons) -->
-  <div class="modal fade" id="productModal" tabindex="-1" aria-labelledby="productModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="productModalLabel">Product Details</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+  <!-- Popular Stores Section -->
+  <section class="content-section">
+    <div class="container">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title"><i class="bi bi-shop me-2" style="color: #667eea;"></i>Popular Stores</h2>
+          <p class="section-subtitle">Shop from your favorite stores</p>
         </div>
-        <div class="modal-body">
-          <img src="{{ prefer_processed(url_for('static', filename='placeholder.svg')) or url_for('static', filename='placeholder.svg') }}" class="img-fluid mb-3 product-modal-image" alt="Product">
-          <h6 class="product-modal-title">Product Name</h6>
-          <p class="product-modal-price"><strong>Best Price:</strong> <span></span></p>
-          <p class="product-modal-stores"><strong>Available at:</strong> <span></span></p>
-          <p class="product-modal-discount"><strong>Discount:</strong> <span></span></p>
-          <p class="product-modal-expires"><strong>Expires in:</strong> <span></span></p>
+        <a href="{{ url_for('main.stores_page') }}" class="view-all-btn">
+          View All <i class="bi bi-arrow-right"></i>
+        </a>
+      </div>
+      <div class="scroll-container">
+        <button class="scroll-arrow left" onclick="scrollSection('stores', 'left')">
+          <i class="bi bi-chevron-left"></i>
+        </button>
+        <div class="scroll-wrapper" id="stores-scroll">
+          {% for store in stores %}
+          <a href="{{ url_for('main.store_products_page', store_name=store.get('name')) }}" class="store-card">
+            <img src="{{ store.get('image') or 'https://via.placeholder.com/250x150' }}" alt="{{ store.get('name') }}" class="store-card-img">
+            <div class="store-card-body">
+              <div class="store-name">{{ store.get('name') }}</div>
+              <div class="store-products-count">
+                <i class="bi bi-box-seam me-1"></i>{{ store.get('product_count', 0) }} products
+              </div>
+            </div>
+          </a>
+          {% endfor %}
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-          <button type="button" class="btn btn-primary add-to-cart-btn">Add to Cart</button>
-        </div>
+        <button class="scroll-arrow right" onclick="scrollSection('stores', 'right')">
+          <i class="bi bi-chevron-right"></i>
+        </button>
       </div>
     </div>
-  </div>
+  </section>
+
+  <!-- Products from First Store -->
+  {% if stores and stores|length > 0 %}
+  {% set first_store = stores[0] %}
+  <section class="content-section" style="background: #f8f9fa;">
+    <div class="container">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">Products from {{ first_store.get('name') }}</h2>
+          <p class="section-subtitle">Fresh picks from one of our top stores</p>
+        </div>
+        <a href="{{ url_for('main.store_products_page', store_name=first_store.get('name')) }}" class="view-all-btn">
+          View All <i class="bi bi-arrow-right"></i>
+        </a>
+      </div>
+      <div class="scroll-container">
+        <button class="scroll-arrow left" onclick="scrollSection('store-products', 'left')">
+          <i class="bi bi-chevron-left"></i>
+        </button>
+        <div class="scroll-wrapper" id="store-products-scroll">
+          {% for product in products[:12] if product.get('stores') and product.get('stores')|length > 0 %}
+          {% set store_data = product.get('stores')[0] %}
+          <div class="product-card-horizontal">
+            <button class="favorite-btn" data-product-id="{{ product.get('_id') or product.get('id') }}">
+              <i class="bi bi-heart"></i>
+            </button>
+            <img src="{{ product.get('image') or 'https://via.placeholder.com/280x200' }}" alt="{{ product.get('name') }}">
+            <div class="product-card-body">
+              <div class="product-name">{{ product.get('name', 'Product') }}</div>
+              <div class="product-store"><i class="bi bi-shop me-1"></i>{{ store_data.get('store_name', first_store.get('name')) }}</div>
+              <div class="product-price">€{{ store_data.get('price', '0.00') }}</div>
+              <button class="add-to-cart-btn-modern add-to-cart-btn" 
+                      data-name="{{ product.get('name') }}" 
+                      data-price="{{ store_data.get('price') }}" 
+                      data-image="{{ product.get('image') }}"
+                      data-store="{{ store_data.get('store_name', first_store.get('name')) }}">
+                <i class="bi bi-cart-plus"></i> Add to Cart
+              </button>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        <button class="scroll-arrow right" onclick="scrollSection('store-products', 'right')">
+          <i class="bi bi-chevron-right"></i>
+        </button>
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+  <!-- Compare Prices Section -->
+  <section class="content-section">
+    <div class="container">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title"><i class="bi bi-bar-chart me-2" style="color: #667eea;"></i>Compare Prices</h2>
+          <p class="section-subtitle">Find the best deals across all stores</p>
+        </div>
+        <a href="{{ url_for('main.compare_prices') }}" class="view-all-btn">
+          Compare All <i class="bi bi-arrow-right"></i>
+        </a>
+      </div>
+      <div class="scroll-container">
+        <button class="scroll-arrow left" onclick="scrollSection('compare', 'left')">
+          <i class="bi bi-chevron-left"></i>
+        </button>
+        <div class="scroll-wrapper" id="compare-scroll">
+          {% for product in products[:12] %}
+          <div class="product-card-horizontal">
+            <button class="favorite-btn" data-product-id="{{ product.get('_id') or product.get('id') }}">
+              <i class="bi bi-heart"></i>
+            </button>
+            <img src="{{ product.get('image') or 'https://via.placeholder.com/280x200' }}" alt="{{ product.get('name') }}">
+            <div class="product-card-body">
+              <div class="product-name">{{ product.get('name', 'Product') }}</div>
+              {% if product.get('stores') and product.get('stores')|length > 0 %}
+              {% set prices = [] %}
+              {% for store in product.get('stores', []) %}
+                {% set price_val = store.get('price') %}
+                {% if price_val %}
+                  {% set _ = prices.append(price_val|float if price_val is string else price_val) %}
+                {% endif %}
+              {% endfor %}
+              {% if prices|length > 0 %}
+              {% set min_price = prices|min %}
+              {% set max_price = prices|max %}
+              <div class="product-store">
+                <i class="bi bi-shop me-1"></i>{{ product.get('stores')|length }} stores
+              </div>
+              <div class="product-price">€{{ "%.2f"|format(min_price) }}{% if min_price != max_price %} - €{{ "%.2f"|format(max_price) }}{% endif %}</div>
+              {% endif %}
+              {% endif %}
+              <a href="{{ url_for('main.compare_prices') }}?search={{ product.get('name') }}" class="add-to-cart-btn-modern" style="text-decoration: none;">
+                <i class="bi bi-bar-chart"></i> Compare Prices
+              </a>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        <button class="scroll-arrow right" onclick="scrollSection('compare', 'right')">
+          <i class="bi bi-chevron-right"></i>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Newsletter Section -->
+  <section class="newsletter-section">
+    <div class="container text-center">
+      <h2 class="newsletter-title">Stay Updated with Best Deals</h2>
+      <p class="newsletter-subtitle">Subscribe to our newsletter and never miss a great offer</p>
+      <form class="newsletter-form" onsubmit="handleNewsletterSubmit(event)">
+        <input type="email" placeholder="Enter your email address" required>
+        <button type="submit">Subscribe</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="bg-dark text-white py-5">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-4 mb-4">
+          <h5 class="fw-bold mb-3"><i class="bi bi-cart-check-fill me-2"></i>Smart Grocery</h5>
+          <p class="text-white-50">Your trusted companion for smart grocery shopping. Compare prices, find deals, and save money.</p>
+        </div>
+        <div class="col-md-2 mb-4">
+          <h6 class="fw-bold mb-3">Quick Links</h6>
+          <ul class="list-unstyled">
+            <li class="mb-2"><a href="{{ url_for('main.home') }}" class="text-white-50 text-decoration-none">Home</a></li>
+            <li class="mb-2"><a href="{{ url_for('main.stores_page') }}" class="text-white-50 text-decoration-none">Stores</a></li>
+            <li class="mb-2"><a href="{{ url_for('main.featured_deals_page') }}" class="text-white-50 text-decoration-none">Deals</a></li>
+            <li class="mb-2"><a href="{{ url_for('main.compare_prices') }}" class="text-white-50 text-decoration-none">Compare</a></li>
+          </ul>
+        </div>
+        <div class="col-md-3 mb-4">
+          <h6 class="fw-bold mb-3">Account</h6>
+          <ul class="list-unstyled">
+            <li class="mb-2"><a href="{{ url_for('main.profile') }}" class="text-white-50 text-decoration-none">Profile</a></li>
+            <li class="mb-2"><a href="{{ url_for('main.shopping_list') }}" class="text-white-50 text-decoration-none">Shopping List</a></li>
+          </ul>
+        </div>
+        <div class="col-md-3 mb-4">
+          <h6 class="fw-bold mb-3">Follow Us</h6>
+          <div class="d-flex gap-3">
+            <a href="#" class="text-white-50" style="font-size: 1.5rem;"><i class="bi bi-facebook"></i></a>
+            <a href="#" class="text-white-50" style="font-size: 1.5rem;"><i class="bi bi-twitter"></i></a>
+            <a href="#" class="text-white-50" style="font-size: 1.5rem;"><i class="bi bi-instagram"></i></a>
+            <a href="#" class="text-white-50" style="font-size: 1.5rem;"><i class="bi bi-linkedin"></i></a>
+          </div>
+        </div>
+      </div>
+      <hr class="my-4 bg-white opacity-25">
+      <div class="text-center text-white-50">
+        <p class="mb-0">&copy; 2025 Smart Grocery Team. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="{{ url_for('static', filename='js/script.js') }}"></script>
-  
   <script>
-    // Quick favorite function
-    async function quickFavorite(event, productId, button) {
+    // Horizontal scroll functionality
+    function scrollSection(sectionId, direction) {
+      const container = document.getElementById(sectionId + '-scroll');
+      const scrollAmount = 300;
+      if (direction === 'left') {
+        container.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+      } else {
+        container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+      }
+    }
+
+    // Hero search functionality
+    function handleHeroSearch() {
+      const searchInput = document.getElementById('hero-search');
+      const searchTerm = searchInput.value.trim();
+      if (searchTerm) {
+        window.location.href = `{{ url_for('main.compare_prices') }}?search=${encodeURIComponent(searchTerm)}`;
+      }
+    }
+
+    // Allow enter key in hero search
+    document.getElementById('hero-search').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        handleHeroSearch();
+      }
+    });
+
+    // Newsletter form handling
+    function handleNewsletterSubmit(e) {
+      e.preventDefault();
+      const email = e.target.querySelector('input').value;
+      alert('Thank you for subscribing! We\'ll send you the best deals to ' + email);
+      e.target.reset();
+    }
+
+    // Hide scroll arrows when at start/end
+    function updateScrollArrows() {
+      const scrollWrappers = document.querySelectorAll('.scroll-wrapper');
+      scrollWrappers.forEach(wrapper => {
+        const container = wrapper.closest('.scroll-container');
+        const leftArrow = container.querySelector('.scroll-arrow.left');
+        const rightArrow = container.querySelector('.scroll-arrow.right');
+        
+        // Check if scrollable
+        if (wrapper.scrollWidth <= wrapper.clientWidth) {
+          leftArrow.style.display = 'none';
+          rightArrow.style.display = 'none';
+        } else {
+          leftArrow.style.display = wrapper.scrollLeft > 0 ? 'flex' : 'none';
+          rightArrow.style.display = wrapper.scrollLeft < wrapper.scrollWidth - wrapper.clientWidth - 10 ? 'flex' : 'none';
+        }
+      });
+    }
+
+    // Update arrows on scroll
+    document.querySelectorAll('.scroll-wrapper').forEach(wrapper => {
+      wrapper.addEventListener('scroll', updateScrollArrows);
+    });
+
+    // Initial arrow state
+    window.addEventListener('load', updateScrollArrows);
+    window.addEventListener('resize', updateScrollArrows);
+
+    // Simple favorite function for inline onclick
+    function favoriteProduct(event, productId) {
       event.preventDefault();
       event.stopPropagation();
+      
+      const button = event.currentTarget;
+      console.log('=== FAVORITE BUTTON CLICKED ===');
+      console.log('Product ID:', productId);
+      console.log('Button element:', button);
+      
+      if (!productId || productId === 'None' || productId === 'undefined') {
+        console.error('Invalid product ID:', productId);
+        alert('Unable to favorite: Invalid product ID');
+        return;
+      }
+      
+      console.log('Sending request to /api/toggle-favorite with ID:', productId);
+      
+      fetch('/api/toggle-favorite', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ product_id: productId })
+      })
+      .then(response => {
+        console.log('Response status:', response.status);
+        if (response.ok) {
+          return response.json();
+        } else if (response.status === 401) {
+          alert('Please log in to add favorites');
+          window.location.href = '/login';
+          throw new Error('Not authenticated');
+        }
+        return response.json().then(err => {
+          throw new Error(err.error || `HTTP ${response.status}`);
+        });
+      })
+      .then(data => {
+        console.log('API Response:', data);
+        const icon = button.querySelector('i');
+        
+        if (data.is_favorite) {
+          icon.classList.remove('bi-heart');
+          icon.classList.add('bi-heart-fill');
+          button.classList.add('active');
+          console.log('Added to favorites');
+        } else {
+          icon.classList.remove('bi-heart-fill');
+          icon.classList.add('bi-heart');
+          button.classList.remove('active');
+          console.log('Removed from favorites');
+        }
+      })
+      .catch(error => {
+        console.error('Error toggling favorite:', error);
+        alert('Error: ' + error.message);
+      });
+    }
+
+    // Quick favorite toggle function
+    async function quickFavorite(event, productId, button) {
+      if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      
+      if (!productId) return;
       
       try {
         const response = await fetch('/api/toggle-favorite', {
@@ -245,38 +1067,62 @@
             button.classList.remove('active');
           }
         } else if (response.status === 401) {
-          showNotification('Please log in to add favorites', 'warning');
+          alert('Please log in to add favorites');
           window.location.href = '/login';
+        } else {
+          console.error('Failed to toggle favorite:', response.status);
         }
       } catch (error) {
         console.error('Error toggling favorite:', error);
       }
     }
 
-    // Load favorite states for all products
+    // Event delegation for favorite buttons
+    document.addEventListener('click', function(e) {
+      const button = e.target.closest('.favorite-btn');
+      if (button) {
+        const productId = button.getAttribute('data-product-id');
+        console.log('Favorite button clicked, productId:', productId);
+        if (productId) {
+          quickFavorite(e, productId, button);
+        } else {
+          console.error('No product ID found on favorite button');
+        }
+      }
+    }, true); // Use capture phase to ensure we catch the event
+
+    // Load favorite states for all products on the page
     async function loadFavoriteStates() {
-      const favoriteButtons = document.querySelectorAll('[data-product-id]');
+      const favoriteButtons = document.querySelectorAll('.favorite-btn');
       
-      for (const button of favoriteButtons) {
-        const productId = button.dataset.productId;
+      for (const btn of favoriteButtons) {
+        const productId = btn.dataset.productId;
+        if (!productId) continue;
+        
         try {
-          const response = await fetch(`/api/check-favorite/${productId}`);
+          const response = await fetch(`/api/check-favorite?product_id=${productId}`);
           const data = await response.json();
           
+          const icon = btn.querySelector('i');
           if (data.is_favorite) {
-            const icon = button.querySelector('i');
             icon.classList.remove('bi-heart');
             icon.classList.add('bi-heart-fill');
-            button.classList.add('active');
+          } else {
+            icon.classList.remove('bi-heart-fill');
+            icon.classList.add('bi-heart');
           }
         } catch (error) {
-          console.error('Error checking favorite:', error);
+          console.error('Error checking favorite status:', error);
+          // Default to unfilled heart on error
+          const icon = btn.querySelector('i');
+          icon.classList.remove('bi-heart-fill');
+          icon.classList.add('bi-heart');
         }
       }
     }
 
-    // Load favorites on page load
-    document.addEventListener('DOMContentLoaded', loadFavoriteStates);
+    // Load favorites when page loads
+    window.addEventListener('load', loadFavoriteStates);
   </script>
 </body>
 </html>

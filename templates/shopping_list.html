@@ -201,20 +201,34 @@
 </head>
 <body>
 <!-- Navbar -->
-<nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
+<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
 	<div class="container">
-		<a class="navbar-brand fw-bold" href="{{ url_for('main.home') }}">Smart Grocery</a>
+		<a class="navbar-brand fw-bold" href="{{ url_for('main.home') }}" style="font-size: 1.5rem; color: #667eea;">
+			<i class="bi bi-cart-check-fill me-2"></i>Smart Grocery
+		</a>
 		<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
 			<span class="navbar-toggler-icon"></span>
 		</button>
 		<div class="collapse navbar-collapse" id="navbarNav">
+			{% set cart_count = shopping_list_count or 0 %}
 			<ul class="navbar-nav ms-auto">
 				<li class="nav-item"><a class="nav-link" href="{{ url_for('main.home') }}">Home</a></li>
 				<li class="nav-item"><a class="nav-link" href="{{ url_for('main.stores_page') }}">Stores</a></li>
-				<li class="nav-item"><a class="nav-link" href="{{ url_for('main.featured_deals_page') }}">Featured Deals</a></li>
-				<li class="nav-item"><a class="nav-link" href="{{ url_for('main.compare_prices') }}">Compare Prices</a></li>
-				<li class="nav-item"><a class="nav-link active" href="{{ url_for('main.shopping_list') }}">Shopping List</a></li>
-				<li class="nav-item"><a class="nav-link" href="{{ url_for('main.profile') }}">Profile</a></li>
+				<li class="nav-item"><a class="nav-link" href="{{ url_for('main.featured_deals_page') }}">Deals</a></li>
+				<li class="nav-item"><a class="nav-link" href="{{ url_for('main.compare_prices') }}">Compare</a></li>
+				<li class="nav-item">
+					<a class="nav-link position-relative active fw-semibold" href="{{ url_for('main.shopping_list') }}">
+						<i class="bi bi-cart3"></i> Cart
+						<span id="shopping-list-count" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.65rem; {% if not cart_count %}display: none;{% endif %}">
+							{{ cart_count if cart_count else '' }}
+						</span>
+					</a>
+				</li>
+				<li class="nav-item">
+					<a class="nav-link" href="{{ url_for('main.profile') }}">
+						<i class="bi bi-person-circle"></i> Profile
+					</a>
+				</li>
 			</ul>
 		</div>
 	</div>
@@ -252,7 +266,7 @@
 								<button class="btn-list-action btn-rename" title="Rename list" onclick="event.stopPropagation(); renameList('{{ shopping_list.id }}', '{{ shopping_list.name }}');">
 									<i class="bi bi-pencil-square"></i>
 								</button>
-								<button class="btn-list-action btn-delete" title="Delete list" onclick="event.stopPropagation(); deleteList('{{ shopping_list.id }}');">
+								<button class="btn-list-action btn-delete" title="Delete list" onclick="event.stopPropagation(); deleteList('{{ shopping_list.id }}', '{{ shopping_list.name }}');">
 									<i class="bi bi-trash-fill"></i>
 								</button>
 							</div>
@@ -535,6 +549,32 @@
 	</div>
 </div>
 
+<!-- Delete List Modal -->
+<div class="modal fade" id="deleteListModal" tabindex="-1">
+	<div class="modal-dialog modal-dialog-centered">
+		<div class="modal-content">
+			<div class="modal-header border-0 pb-0">
+				<h5 class="modal-title d-flex align-items-center gap-2">
+					<i class="bi bi-exclamation-triangle text-danger"></i>
+					Delete List
+				</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body pt-2">
+				<p class="mb-2">You're about to delete <strong id="delete-list-name">this list</strong>.</p>
+				<p class="text-muted small mb-0">All items in this list will be removed. This action cannot be undone.</p>
+				<input type="hidden" id="delete-list-id">
+			</div>
+			<div class="modal-footer border-0 pt-0 d-flex justify-content-end gap-2">
+				<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+				<button type="button" class="btn btn-danger" onclick="confirmDeleteList()">
+					<i class="bi bi-trash-fill me-1"></i>Delete
+				</button>
+			</div>
+		</div>
+	</div>
+</div>
+
 <!-- Move Item Modal -->
 <div class="modal fade" id="moveItemModal" tabindex="-1">
 	<div class="modal-dialog">
@@ -709,35 +749,39 @@ if (document.readyState === 'loading') {
 // Merge duplicate items by name and sum quantities
 function mergeItemsByName(items) {
 	const merged = {};
-	
-	items.forEach((item, index) => {
+
+	items.forEach((item) => {
 		const name = (typeof item === 'string') ? item : (item.name || '');
-		const name_key = name.toLowerCase().trim();
-		
-		if (merged[name_key]) {
-			// Item exists - add quantities
-			const qty = (item.qty || item.quantity || 1);
-			merged[name_key].qty = parseInt(merged[name_key].qty || 1) + parseInt(qty || 1);
-			// Update other fields if missing
-			if (!merged[name_key].price_val && item.price_val) merged[name_key].price_val = item.price_val;
-			if (!merged[name_key].image && item.image) merged[name_key].image = item.image;
-			if (!merged[name_key].store && item.store) merged[name_key].store = item.store;
-			if (!merged[name_key].category && item.category) merged[name_key].category = item.category;
+		const store = (item.store || item.store_name || '').toString();
+		const nameKey = name.toLowerCase().trim();
+		const storeKey = store.toLowerCase().trim();
+		const mergedKey = `${nameKey}__${storeKey}`;
+		const incomingQty = parseInt(item.qty || item.quantity || 1) || 1;
+		const incomingPrice = parseFloat(item.price_val !== undefined ? item.price_val : item.price || 0) || 0;
+
+		if (merged[mergedKey]) {
+			merged[mergedKey].qty = parseInt(merged[mergedKey].qty || 1) + incomingQty;
+			if (!merged[mergedKey].price_val && incomingPrice) merged[mergedKey].price_val = incomingPrice;
+			if (!merged[mergedKey].price && incomingPrice) merged[mergedKey].price = incomingPrice;
+			if (!merged[mergedKey].image && item.image) merged[mergedKey].image = item.image;
+			if (!merged[mergedKey].store && store) merged[mergedKey].store = store;
+			if (!merged[mergedKey].category && item.category) merged[mergedKey].category = item.category;
 		} else {
-			// New item
-			merged[name_key] = {
+			merged[mergedKey] = {
 				...item,
 				name: name,
-				qty: (item.qty || item.quantity || 1),
+				store: store,
+				qty: incomingQty,
 				id: item.id || name,
 				purchased: item.purchased || false,
 				image: item.image || '',
-				store: item.store || '',
-				category: item.category || 'Uncategorized'
+				category: item.category || 'Uncategorized',
+				price_val: incomingPrice || item.price_val,
+				price: item.price || incomingPrice
 			};
 		}
 	});
-	
+
 	return Object.values(merged);
 }
 
@@ -945,10 +989,25 @@ function confirmRename() {
 }
 
 // Delete list
-function deleteList(listId) {
-	event.stopPropagation();
-	if (!confirm('Are you sure you want to delete this list?')) return;
-	
+let deleteListTargetId = null;
+
+function deleteList(listId, listName) {
+	deleteListTargetId = listId;
+	const nameEl = document.getElementById('delete-list-name');
+	const idEl = document.getElementById('delete-list-id');
+	if (nameEl) nameEl.textContent = listName || 'this list';
+	if (idEl) idEl.value = listId;
+	const modalEl = document.getElementById('deleteListModal');
+	if (modalEl) new bootstrap.Modal(modalEl).show();
+}
+
+function confirmDeleteList() {
+	const listId = deleteListTargetId || document.getElementById('delete-list-id')?.value;
+	if (!listId) {
+		showNotification('List id missing', 'danger');
+		return;
+	}
+
 	fetch('/api/list/delete', {
 		method: 'POST',
 		headers: {'Content-Type': 'application/json'},
@@ -957,7 +1016,18 @@ function deleteList(listId) {
 	.then(r => r.json())
 	.then(data => {
 		if (data.success) {
-			window.location.reload();
+			showNotification('List deleted', 'success');
+			setTimeout(() => window.location.reload(), 300);
+		} else {
+			showNotification('Could not delete list', 'danger');
+		}
+	})
+	.catch(() => showNotification('Error deleting list', 'danger'))
+	.finally(() => {
+		const modalEl = document.getElementById('deleteListModal');
+		if (modalEl) {
+			const inst = bootstrap.Modal.getInstance(modalEl);
+			if (inst) inst.hide();
 		}
 	});
 }
@@ -1172,13 +1242,15 @@ function toggleCompletedItems() {
 	document.getElementById('toggle-text').textContent = hideCompleted ? 'Show Done' : 'Hide Done';
 }
 
-// Search items
-document.getElementById('search-items')?.addEventListener('input', function(e) {
-	const query = e.target.value.toLowerCase();
-	document.querySelectorAll('.item-row').forEach(row => {
-		const name = row.getAttribute('data-name').toLowerCase();
-		row.style.display = name.includes(query) ? '' : 'none';
-	});
+// Search items - use event delegation to handle dynamically added search inputs
+document.addEventListener('input', function(e) {
+	if (e.target.id === 'search-items') {
+		const query = e.target.value.toLowerCase();
+		document.querySelectorAll('.item-row').forEach(row => {
+			const name = row.getAttribute('data-name')?.toLowerCase() || '';
+			row.style.display = name.includes(query) ? '' : 'none';
+		});
+	}
 });
 
 // Drag and drop

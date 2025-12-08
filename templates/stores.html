@@ -34,7 +34,7 @@
     }
     .store-image-wrapper {
       height: 200px;
-      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      background: #ffffff !important;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -49,7 +49,7 @@
       left: 0;
       right: 0;
       bottom: 0;
-      background: linear-gradient(135deg, rgba(102,126,234,0.1) 0%, rgba(118,75,162,0.1) 100%);
+      background: transparent;
       z-index: 1;
     }
     .store-image-wrapper img {
@@ -124,20 +124,34 @@
 </head>
 <body>
   <!-- Navbar -->
-  <nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
+  <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
     <div class="container">
-      <a class="navbar-brand fw-bold" href="{{ url_for('main.home') }}">Smart Grocery</a>
+      <a class="navbar-brand fw-bold" href="{{ url_for('main.home') }}" style="font-size: 1.5rem; color: #667eea;">
+        <i class="bi bi-cart-check-fill me-2"></i>Smart Grocery
+      </a>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
         <span class="navbar-toggler-icon"></span>
       </button>
       <div class="collapse navbar-collapse" id="navbarNav">
+        {% set cart_count = shopping_list_count or 0 %}
         <ul class="navbar-nav ms-auto">
           <li class="nav-item"><a class="nav-link" href="{{ url_for('main.home') }}">Home</a></li>
-          <li class="nav-item"><a class="nav-link active" href="{{ url_for('main.stores_page') }}">Stores</a></li>
-          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.featured_deals_page') }}">Featured Deals</a></li>
-          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.compare_prices') }}">Compare Prices</a></li>
-          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.shopping_list') }}">Shopping List</a></li>
-          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.profile') }}">Profile</a></li>
+          <li class="nav-item"><a class="nav-link active fw-semibold" href="{{ url_for('main.stores_page') }}">Stores</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.featured_deals_page') }}">Deals</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.compare_prices') }}">Compare</a></li>
+          <li class="nav-item">
+            <a class="nav-link position-relative" href="{{ url_for('main.shopping_list') }}">
+              <i class="bi bi-cart3"></i> Cart
+              <span id="shopping-list-count" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.65rem; {% if not cart_count %}display: none;{% endif %}">
+                {{ cart_count if cart_count else '' }}
+              </span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('main.profile') }}">
+              <i class="bi bi-person-circle"></i> Profile
+            </a>
+          </li>
         </ul>
       </div>
     </div>

@@ -115,6 +115,14 @@ def add_shopping_item():
         pass
     if not item:
         return jsonify({'error': 'no_item_provided'}), 400
+    def _unpurchased_count(seq):
+        try:
+            return sum(1 for it in (seq or []) if not (isinstance(it, dict) and it.get('purchased')))
+        except Exception:
+            return 0
+
+    shopping_count = 0
+
     try:
         if mongo is not None and getattr(mongo, 'db', None) is not None:
             # If item is an object and missing a usable unit price, try to enrich it
@@ -191,14 +199,21 @@ def add_shopping_item():
                 # create new user doc with shopping_list
                 mongo.db.users.insert_one({'email': email, 'shopping_list': [item], 'total_cost': 0.0})
                 success = True
+                shopping_count = _unpurchased_count([item])
             else:
                 sl = user_doc.get('shopping_list', []) or []
                 sl.append(item)
                 res = mongo.db.users.update_one({'email': email}, {'$set': {'shopping_list': sl}})
                 success = getattr(res, 'modified_count', 0) > 0
+                shopping_count = _unpurchased_count(sl)
         else:
             success = users_model.add_to_shopping_list(email, item)
-        return jsonify({'success': bool(success)})
+            try:
+                user_doc = users_model.get_user_by_email(email)
+                shopping_count = _unpurchased_count(user_doc.get('shopping_list', [])) if user_doc else 0
+            except Exception:
+                shopping_count = 0
+        return jsonify({'success': bool(success), 'count': shopping_count})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

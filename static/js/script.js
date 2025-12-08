@@ -514,11 +514,107 @@ async function apiPostJson(url, body) {
 function refreshShoppingListUI() { window.location.reload(); }
 
 function showNotification(message, type = 'info') {
-  const el = document.createElement('div'); el.className = `alert alert-${type} alert-dismissible fade show`; el.style.position='fixed'; el.style.top='20px'; el.style.right='20px'; el.style.zIndex=9999; el.style.minWidth='260px'; el.innerHTML = `${message}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>`; document.body.appendChild(el);
-  setTimeout(()=>{ try{ new bootstrap.Alert(el).close(); }catch(e){} }, 3500);
+  if (!message) return;
+
+  // Toast container (top-right stack)
+  let container = document.getElementById('sg-toast-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'sg-toast-container';
+    container.style.position = 'fixed';
+    container.style.top = '18px';
+    container.style.right = '18px';
+    container.style.zIndex = '9999';
+    container.style.display = 'flex';
+    container.style.flexDirection = 'column';
+    container.style.gap = '10px';
+    container.style.maxWidth = '320px';
+    document.body.appendChild(container);
+  }
+
+  // Purple-forward palette variants
+  const palettes = {
+    success: { bg: '#f2ebff', border: '#7a5af8', text: '#2f1b6d' },
+    danger: { bg: '#fbebf1', border: '#d63384', text: '#6b103f' },
+    warning: { bg: '#f6edff', border: '#b388ff', text: '#3f2a73' },
+    info: { bg: '#ede7ff', border: '#6f42c1', text: '#2f1b6d' },
+    default: { bg: '#f1ecff', border: '#8a63f5', text: '#2f1b6d' }
+  };
+  const palette = palettes[type] || palettes.default;
+
+  const toast = document.createElement('div');
+  toast.style.background = palette.bg;
+  toast.style.border = `1px solid ${palette.border}`;
+  toast.style.color = palette.text;
+  toast.style.borderRadius = '12px';
+  toast.style.boxShadow = '0 8px 30px rgba(0,0,0,0.12)';
+  toast.style.padding = '12px 14px';
+  toast.style.fontWeight = '600';
+  toast.style.display = 'flex';
+  toast.style.alignItems = 'center';
+  toast.style.justifyContent = 'space-between';
+  toast.style.opacity = '0';
+  toast.style.transform = 'translateY(-6px)';
+  toast.style.transition = 'all 0.2s ease';
+
+  const textSpan = document.createElement('span');
+  textSpan.textContent = message;
+  textSpan.style.flex = '1';
+
+  const closeBtn = document.createElement('button');
+  closeBtn.type = 'button';
+  closeBtn.innerHTML = '&times;';
+  closeBtn.style.background = 'transparent';
+  closeBtn.style.border = 'none';
+  closeBtn.style.color = palette.text;
+  closeBtn.style.fontSize = '18px';
+  closeBtn.style.lineHeight = '1';
+  closeBtn.style.marginLeft = '10px';
+  closeBtn.style.cursor = 'pointer';
+  closeBtn.setAttribute('aria-label', 'Close notification');
+  closeBtn.addEventListener('click', () => removeToast());
+
+  toast.appendChild(textSpan);
+  toast.appendChild(closeBtn);
+  container.appendChild(toast);
+
+  // Entrance animation
+  requestAnimationFrame(() => {
+    toast.style.opacity = '1';
+    toast.style.transform = 'translateY(0)';
+  });
+
+  const removeToast = () => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateY(-6px)';
+    setTimeout(() => toast.remove(), 160);
+  };
+
+  setTimeout(removeToast, 3600);
 }
 
 function formatPrice(price) { if (typeof price === 'string') price = price.replace(/[^0-9.]/g,''); return Number(price)||0; }
+
+// Central helper to add an item to the shopping list, preferring the multi-list API
+async function addItemToShoppingList(item) {
+  if (!item) return { success: false, error: 'missing_item' };
+
+  // If a list selector is available (shopping list page), use it so the user can pick the destination list
+  if (typeof window.showListSelector === 'function') {
+    try {
+      window.showListSelector(item);
+      return { success: true, deferred: true };
+    } catch (err) {
+      // fall through to direct add
+    }
+  }
+
+  try {
+    return await apiPostJson('/api/list/add-item', { item });
+  } catch (err) {
+    return { success: false, error: 'request_failed' };
+  }
+}
 
 // Escape HTML to safely insert into innerHTML
 function escapeHtml(unsafe) {
@@ -673,8 +769,14 @@ function setupProductModalHandlers() {
       const store = target.getAttribute('data-store') || '';
       const image = target.getAttribute('data-image') || modalRoot?.querySelector('img')?.src || '';
       const item = { name, price, store, image };
+      const priceVal = formatPrice(price);
+      if (!isNaN(priceVal) && priceVal > 0) item.price_val = priceVal;
       try {
-        const res = await apiPostJson('/shopping-list/add', { item });
+        const res = await addItemToShoppingList(item);
+        if (res && res.deferred) {
+          showNotification('Select a list to add this item', 'info');
+          return;
+        }
         if (res && (res.success || res.success === true)) {
           showNotification('Added to shopping list', 'success');
           try { const modalEl = bootstrap.Modal.getInstance(modalRoot); if (modalEl) modalEl.hide(); } catch(e){}
@@ -695,30 +797,33 @@ function setupProductModalHandlers() {
       const name = target.getAttribute('data-name') || target.getAttribute('data-title') || 'Item';
       const price = target.getAttribute('data-price') || '';
       const id = target.getAttribute('data-id') || null;
+      const store = target.getAttribute('data-store') || '';
       const img = target.getAttribute('data-image') || '';
       
       // Create item object and show list selector
       const item = { name, price, id };
       if (img) item.image = img;
-      
-      // Call showListSelector if available (from shopping_list.html)
-      if (window.showListSelector) {
-        window.showListSelector(item);
-      } else {
-        // Fallback: add to active list directly
-        try {
-          const res = await apiPostJson('/api/list/add-item', { item });
-          if (res && (res.success || res.success === true)) {
-            showNotification('Added to shopping list', 'success');
-            refreshShoppingListUI();
-          } else if (res && res.error) {
-            showNotification(res.error, 'danger');
-          } else {
-            showNotification('Could not add to list', 'danger');
-          }
-        } catch (err) {
-          showNotification('Server error adding item', 'danger');
+      if (store) item.store = store;
+      const priceVal = formatPrice(price);
+      if (!isNaN(priceVal) && priceVal > 0) item.price_val = priceVal;
+
+      // Prefer list selector when available; otherwise add to the active list directly
+      try {
+        const res = await addItemToShoppingList(item);
+        if (res && res.deferred) {
+          showNotification('Select a list to add this item', 'info');
+          return;
         }
+        if (res && (res.success || res.success === true)) {
+          showNotification('Added to shopping list', 'success');
+          refreshShoppingListUI();
+        } else if (res && res.error) {
+          showNotification(res.error, 'danger');
+        } else {
+          showNotification('Could not add to list', 'danger');
+        }
+      } catch (err) {
+        showNotification('Server error adding item', 'danger');
       }
       return;
     }

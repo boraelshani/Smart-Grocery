@@ -115,7 +115,63 @@ def home():
         products = getattr(m, 'products', [])
         featured_deals = load_featured_deals_fallback()
 
-    return render_template('home.html', stores=stores, products=products, featured_deals=featured_deals, using_fallback=using_fallback)
+    # Calculate total product count: count each store entry in products + featured deals
+    total_product_count = 0
+    for product in products:
+        stores_list = product.get('stores', [])
+        total_product_count += len(stores_list) if stores_list else 1
+    total_product_count += len(featured_deals)
+
+    # Calculate max savings percentage from featured deals
+    max_savings = 0
+    for deal in featured_deals:
+        # Check for discount_percent field
+        discount = deal.get('discount_percent')
+        if discount:
+            try:
+                discount_value = float(discount)
+                max_savings = max(max_savings, discount_value)
+            except:
+                pass
+        
+        # Calculate from original_price and price if available
+        original = deal.get('original_price')
+        current = deal.get('price')
+        if original and current:
+            try:
+                original_val = float(original)
+                current_val = float(current)
+                if original_val > 0:
+                    discount_pct = ((original_val - current_val) / original_val) * 100
+                    max_savings = max(max_savings, discount_pct)
+            except:
+                pass
+    
+    # Round to nearest integer
+    max_savings = int(round(max_savings)) if max_savings > 0 else 25
+
+    # Load user favorites to power the liked products section
+    favorites = []
+    if db is not None:
+        try:
+            user = db.users.find_one({'email': user_email})
+            if user:
+                favorites = user.get('favorites', []) or []
+                # Normalize id to string for template usage
+                for fav in favorites:
+                    if isinstance(fav, dict) and fav.get('id'):
+                        fav['id'] = str(fav['id'])
+        except Exception as e:
+            print(f'WARNING: Failed to load favorites: {e}')
+
+    return render_template('home.html', 
+                         stores=stores, 
+                         products=products, 
+                         featured_deals=featured_deals, 
+                         favorites=favorites,
+                         using_fallback=using_fallback, 
+                         total_product_count=total_product_count, 
+                         max_savings=max_savings)
 
 @main_bp.route('/stores')
 def stores_page():
@@ -173,6 +229,25 @@ def store_products_page(store_name):
                     prod['store_price'] = prod.get('price')
                     prod['store_image'] = prod.get('image')
                 products.append(prod)
+            
+            # Also get featured deals for this store
+            deals_cursor = db.featured_deals.find({
+                '$or': [
+                    {'store': regex},
+                    {'source': regex}
+                ]
+            })
+            
+            for deal in deals_cursor:
+                if '_id' in deal:
+                    deal['id'] = str(deal['_id'])
+                # Use deal's name field as 'name' for consistency
+                if 'title' in deal and 'name' not in deal:
+                    deal['name'] = deal['title']
+                # Set store-specific price and image
+                deal['store_price'] = deal.get('price')
+                deal['store_image'] = deal.get('image')
+                products.append(deal)
         except Exception as e:
             print(f'ERROR loading products for {store_name}: {e}')
     
@@ -340,8 +415,81 @@ def product_detail(product_id):
     
     if not product:
         return render_template('404.html'), 404
+
+    # Ensure a minimal stores array exists for featured deals or products without stores
+    if not product.get('stores'):
+        store_name = product.get('store') or product.get('source') or 'Store'
+        price_val = product.get('price') or product.get('best_price') or product.get('original_price') or 'N/A'
+        product['stores'] = [{
+            'store': store_name,
+            'price': price_val,
+            'image': product.get('image')
+        }]
     
     return render_template('product_detail.html', product=product)
+
+
+@main_bp.route('/featured-deal/<deal_id>')
+def featured_deal_detail(deal_id):
+    """Display a single featured deal with store link."""
+    db = get_db()
+    deal = None
+
+    if db is not None:
+        try:
+            from bson import ObjectId
+            try:
+                deal = db.featured_deals.find_one({'_id': ObjectId(deal_id)})
+            except Exception:
+                deal = db.featured_deals.find_one({'id': deal_id})
+            if deal and '_id' in deal:
+                deal['id'] = str(deal['_id'])
+        except Exception as e:
+            print(f'ERROR loading featured deal {deal_id}: {e}')
+
+    if deal is None:
+        all_deals = load_featured_deals_fallback()
+        for d in all_deals:
+            if str(d.get('id')) == str(deal_id) or str(d.get('_id', '')) == str(deal_id):
+                deal = d
+                break
+
+    if deal is None:
+        return render_template('404.html'), 404
+
+    return render_template('featured_deal_detail.html', deal=deal)
+
+
+@main_bp.route('/product-info/<product_id>')
+def product_info(product_id):
+    """Simple product info page showing just description and unit"""
+    db = get_db()
+    product = None
+    
+    # Get store-specific information from query parameters
+    store_name = request.args.get('store_name', '')
+    store_price = request.args.get('store_price', '')
+    
+    # Check database for product
+    if db is not None:
+        try:
+            from bson import ObjectId
+            # Try to find by ObjectId first
+            try:
+                product = db.products.find_one({'_id': ObjectId(product_id)})
+            except:
+                # If not a valid ObjectId, try as string id
+                product = db.products.find_one({'id': product_id})
+            
+            if product and '_id' in product:
+                product['id'] = str(product['_id'])
+        except Exception as e:
+            print(f'Error fetching product from MongoDB: {e}')
+    
+    if not product:
+        return render_template('404.html'), 404
+    
+    return render_template('product_info.html', product=product, store_name=store_name, store_price=store_price)
 
 @main_bp.route('/shopping-list')
 def shopping_list():
@@ -713,6 +861,29 @@ def api_get_product():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@main_bp.route('/api/categories')
+def api_get_categories():
+    """Return all unique categories from products, sorted by frequency."""
+    try:
+        db = get_db()
+        if db is not None:
+            try:
+                from collections import Counter
+                all_prods = list(db.products.find({}, {'category': 1}))
+                cat_counts = Counter(p.get('category') for p in all_prods if p.get('category'))
+                categories = sorted(cat_counts.keys(), key=lambda c: (-cat_counts[c], c.lower()))
+                return jsonify({'categories': categories}), 200
+            except Exception as e:
+                print(f'WARNING: Failed to fetch categories from DB: {e}')
+        # Fallback to in-memory data
+        from collections import Counter
+        cat_counts = Counter(p.get('category') for p in getattr(m, 'products', []) if p.get('category'))
+        categories = sorted(cat_counts.keys(), key=lambda c: (-cat_counts[c], c.lower()))
+        return jsonify({'categories': categories}), 200
+    except Exception as e:
+        print(f'ERROR in api_get_categories: {e}')
+        return jsonify({'categories': [], 'error': str(e)}), 500
+
 
 @main_bp.route('/api/stores')
 def api_get_stores():
@@ -936,13 +1107,21 @@ def toggle_favorite():
             return jsonify({'success': True, 'action': 'removed', 'is_favorite': False})
         else:
             # Add to favorites
-            # Get product details
+            # Get product details from products or featured_deals
+            product = None
             try:
                 from bson import ObjectId
                 try:
                     product = db.products.find_one({'_id': ObjectId(product_id)})
                 except:
                     product = db.products.find_one({'id': product_id})
+                
+                # If not found in products, check featured_deals
+                if not product:
+                    try:
+                        product = db.featured_deals.find_one({'_id': ObjectId(product_id)})
+                    except:
+                        product = db.featured_deals.find_one({'id': product_id})
             except Exception as e:
                 return jsonify({'error': f'Product not found: {str(e)}'}), 404
             
@@ -952,7 +1131,7 @@ def toggle_favorite():
             # Create favorite entry
             favorite_entry = {
                 'id': str(product.get('_id', product_id)),
-                'name': product.get('name', ''),
+                'name': product.get('name') or product.get('title', ''),
                 'image': product.get('image', ''),
                 'category': product.get('category', ''),
                 'best_price': (product.get('cheapest') and product.get('cheapest').get('price')) or product.get('price', 'N/A')
@@ -968,10 +1147,18 @@ def toggle_favorite():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@main_bp.route('/api/check-favorite', methods=['GET'])
 @main_bp.route('/api/check-favorite/<product_id>', methods=['GET'])
-def check_favorite(product_id):
+def check_favorite(product_id=None):
     """Check if a product is in user's favorites"""
     try:
+        # Support both URL parameter and query parameter
+        if not product_id:
+            product_id = request.args.get('product_id')
+        
+        if not product_id:
+            return jsonify({'error': 'Product ID required'}), 400
+        
         user_email = session.get('user')
         if not user_email:
             return jsonify({'is_favorite': False})
@@ -1314,6 +1501,16 @@ def add_item_to_active_list_api():
         
         from models.users_model import get_user_lists, add_item_to_list
         lists_data = get_user_lists(user_email)
+
+        def _unpurchased_total(lists_payload):
+            try:
+                total = 0
+                for lst in (lists_payload.get('lists', []) or []):
+                    items = lst.get('items', []) or []
+                    total += sum(1 for it in items if not (isinstance(it, dict) and it.get('purchased')))
+                return total
+            except Exception:
+                return 0
         
         # If no list_id specified, use active list
         if not target_list_id:
@@ -1323,7 +1520,8 @@ def add_item_to_active_list_api():
             return jsonify({'success': False, 'error': 'No list specified and no active list'}), 400
         
         success = add_item_to_list(user_email, target_list_id, item)
-        return jsonify({'success': success})
+        updated_lists = get_user_lists(user_email) if success else lists_data
+        return jsonify({'success': success, 'count': _unpurchased_total(updated_lists)})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 

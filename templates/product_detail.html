@@ -57,6 +57,7 @@
       transition: all 0.2s ease;
       text-align: center;
       background: white;
+      position: relative;
     }
     .store-card:hover {
       border-color: #667eea;
@@ -85,6 +86,36 @@
     .store-card .store-discount {
       font-size: 0.85rem;
       margin-top: 0.5rem;
+    }
+    .store-visit-arrow {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: rgba(102, 126, 234, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      color: #667eea;
+      font-size: 0.9rem;
+      z-index: 10;
+    }
+    .store-visit-arrow:hover {
+      background: #667eea;
+      color: white;
+      transform: scale(1.15);
+    }
+    .store-card.selected .store-visit-arrow {
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+    }
+    .store-card.selected .store-visit-arrow:hover {
+      background: white;
+      color: #667eea;
     }
     .selected-store-info {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -158,20 +189,34 @@
 </head>
 <body>
   <!-- Navbar -->
-  <nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
+  <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
     <div class="container">
-      <a class="navbar-brand fw-bold" href="{{ url_for('main.home') }}">Smart Grocery</a>
+      <a class="navbar-brand fw-bold" href="{{ url_for('main.home') }}" style="font-size: 1.5rem; color: #667eea;">
+        <i class="bi bi-cart-check-fill me-2"></i>Smart Grocery
+      </a>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
         <span class="navbar-toggler-icon"></span>
       </button>
       <div class="collapse navbar-collapse" id="navbarNav">
+        {% set cart_count = shopping_list_count or 0 %}
         <ul class="navbar-nav ms-auto">
           <li class="nav-item"><a class="nav-link" href="{{ url_for('main.home') }}">Home</a></li>
           <li class="nav-item"><a class="nav-link" href="{{ url_for('main.stores_page') }}">Stores</a></li>
-          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.featured_deals_page') }}">Featured Deals</a></li>
-          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.compare_prices') }}">Compare Prices</a></li>
-          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.shopping_list') }}">Shopping List</a></li>
-          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.profile') }}">Profile</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.featured_deals_page') }}">Deals</a></li>
+          <li class="nav-item"><a class="nav-link active fw-semibold" href="{{ url_for('main.compare_prices') }}">Compare</a></li>
+          <li class="nav-item">
+            <a class="nav-link position-relative" href="{{ url_for('main.shopping_list') }}">
+              <i class="bi bi-cart3"></i> Cart
+              <span id="shopping-list-count" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.65rem; {% if not cart_count %}display: none;{% endif %}">
+                {{ cart_count if cart_count else '' }}
+              </span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('main.profile') }}">
+              <i class="bi bi-person-circle"></i> Profile
+            </a>
+          </li>
         </ul>
       </div>
     </div>
@@ -186,14 +231,18 @@
           {% if not trail and product.get('category') %}
             {% set trail = ['Products', product.get('category')] %}
           {% endif %}
-          <li class="breadcrumb-item"><a href="{{ url_for('main.home') }}" class="text-white">Home</a></li>
-          <li class="breadcrumb-item"><a href="{{ url_for('main.compare_prices') }}" class="text-white">Products</a></li>
+          <li class="breadcrumb-item"><a href="{{ url_for('main.home') }}" class="text-white breadcrumb-link">Home</a></li>
+          <li class="breadcrumb-item"><a href="{{ url_for('main.compare_prices') }}" class="text-white breadcrumb-link">Products</a></li>
           {% if trail %}
             {% for crumb in trail %}
-              {% if loop.last %}
-                <li class="breadcrumb-item active text-white" aria-current="page">{{ crumb }}</li>
-              {% else %}
-                <li class="breadcrumb-item text-white">{{ crumb }}</li>
+              {% if crumb != 'Products' %}
+                {% if loop.last %}
+                  <li class="breadcrumb-item active text-white" aria-current="page">{{ crumb }}</li>
+                {% else %}
+                  <li class="breadcrumb-item">
+                    <a href="{{ url_for('main.compare_prices', category=crumb) }}" class="text-white breadcrumb-link">{{ crumb }}</a>
+                  </li>
+                {% endif %}
               {% endif %}
             {% endfor %}
           {% else %}
@@ -213,7 +262,9 @@
     <div class="row">
       <!-- Product Image -->
       <div class="col-lg-6 mb-4">
-           <img src="{{ prefer_processed(product.image or (product.images and product.images[0]) or url_for('static', filename='placeholder.svg')) }}" 
+           <img id="product-main-img"
+             src="{{ prefer_processed(product.image or (product.images and product.images[0]) or url_for('static', filename='placeholder.svg')) }}" 
+             data-default-src="{{ prefer_processed(product.image or (product.images and product.images[0]) or url_for('static', filename='placeholder.svg')) }}"
              alt="{{ product.name }}" 
              class="product-image-large shadow-lg">
       </div>
@@ -230,12 +281,17 @@
         </div>
 
         <!-- Store Selection Cards -->
-        {% if product.stores and product.stores|length > 1 %}
+          {% if product.stores and product.stores|length > 0 %}
         <div class="mb-4">
           <label style="font-weight: 700; display: block; margin-bottom: 1rem;"><i class="bi bi-shop"></i> Select a Store</label>
           <div class="store-selection-grid">
             {% for store in product.stores %}
-              <div class="store-card {% if loop.first %}selected{% endif %}" data-store-index="{{ loop.index0 }}" data-store="{{ store.store or store.name }}" data-price="{{ store.price }}">
+              <div class="store-card {% if loop.first %}selected{% endif %}" data-store-index="{{ loop.index0 }}" data-store="{{ store.store or store.name }}" data-price="{{ store.price }}" data-image="{{ store.image or product.image or (product.images and product.images[0]) }}">
+                {% if store.url %}
+                <a href="{{ store.url }}" class="store-visit-arrow" onclick="event.stopPropagation();" target="_blank" rel="noopener noreferrer" title="Visit {{ store.store or store.name }} website">
+                  <i class="bi bi-box-arrow-up-right"></i>
+                </a>
+                {% endif %}
                 <div class="store-name">{{ store.store or store.name }}</div>
                 <div class="store-price">{{ store.price }}</div>
                 {% if store.discount %}
@@ -257,12 +313,17 @@
           <button class="btn btn-outline-danger" id="favorite-btn"
                   data-product-id="{{ product.id }}"
                   onclick="toggleProductFavorite()" style="padding: 0.75rem; font-weight: 700;">
-            <i class="bi bi-heart" id="favorite-icon"></i> Add to Favorites
+            <i class="bi bi-heart" id="favorite-icon"></i> <span id="favorite-text">Add to Favorites</span>
           </button>
           <a href="{{ url_for('main.compare_prices') }}" class="btn btn-outline-secondary" style="padding: 0.75rem; font-weight: 700;">
             <i class="bi bi-arrow-left"></i> Back to Products
           </a>
         </div>
+
+        {% if product.description %}
+          <p class="mt-3 text-muted"><strong><i class="bi bi-file-text"></i> Description:</strong></p>
+          <p class="text-muted">{{ product.description }}</p>
+        {% endif %}
 
         {% if product.unit %}
           <p><strong><i class="bi bi-info-circle"></i> Unit:</strong> {{ product.unit }}</p>
@@ -270,36 +331,6 @@
       </div>
     </div>
 
-    <!-- Price Comparison -->
-    {% if product.stores and product.stores|length > 0 %}
-      <div class="row mt-5">
-        <div class="col-12">
-          <h2 class="mb-4"><i class="bi bi-graph-up-arrow"></i> Prices at Other Stores</h2>
-          {% for store in product.stores %}
-            <div class="store-comparison-card">
-              <div class="store-comparison-header">
-                <div>
-                  <h5 class="mb-0">
-                    <i class="bi bi-shop-window"></i> {{ store.store or store.name }}
-                  </h5>
-                  {% if store.url %}
-                    <a href="{{ store.url }}" target="_blank" class="text-muted text-decoration-none small">
-                      <i class="bi bi-box-arrow-up-right"></i> Visit Store
-                    </a>
-                  {% endif %}
-                </div>
-                <div class="text-end">
-                  <div class="store-comparison-price">{{ store.price }}</div>
-                  {% if store.discount %}
-                    <span class="badge bg-danger">{{ store.discount }}</span>
-                  {% endif %}
-                </div>
-              </div>
-            </div>
-          {% endfor %}
-        </div>
-      </div>
-    {% endif %}
   </section>
 
   <!-- Footer -->
@@ -311,13 +342,29 @@
   <script src="{{ url_for('static', filename='js/script.js') }}"></script>
   <script>
     // Store selector functionality
+    let selectedStoreData = {};
+    
     document.addEventListener('DOMContentLoaded', function() {
       const storeCards = document.querySelectorAll('.store-card');
       const selectedPriceEl = document.getElementById('selected-price');
       const selectedStoreEl = document.getElementById('selected-store');
       const addToListBtn = document.getElementById('add-to-list-btn');
-      const productName = addToListBtn.dataset.name;
-      const productId = addToListBtn.dataset.id;
+      const productName = addToListBtn ? addToListBtn.dataset.name : '';
+      const productId = addToListBtn ? addToListBtn.dataset.id : '';
+      const mainImg = document.getElementById('product-main-img');
+      const defaultImgSrc = mainImg ? mainImg.getAttribute('data-default-src') : '';
+
+      // Initialize with first store's data
+      if (storeCards.length > 0) {
+        const firstCard = storeCards[0];
+        selectedStoreData.store = firstCard.dataset.store;
+        selectedStoreData.price = firstCard.dataset.price;
+        selectedStoreData.image = firstCard.dataset.image || defaultImgSrc;
+      } else {
+        selectedStoreData.store = '{{ (product.stores and product.stores[0] and (product.stores[0].store or product.stores[0].name)) or (product.store or product.source) or "Store" }}';
+        selectedStoreData.price = '{{ (product.stores and product.stores[0] and product.stores[0].price) or product.price or "N/A" }}';
+        selectedStoreData.image = defaultImgSrc;
+      }
 
       // Handle store card clicks
       storeCards.forEach(card => {
@@ -330,6 +377,12 @@
           
           const store = this.dataset.store;
           const price = this.dataset.price;
+          const imgSrc = this.dataset.image || defaultImgSrc;
+          
+          // Store selection in global object so it persists
+          selectedStoreData.store = store;
+          selectedStoreData.price = price;
+          selectedStoreData.image = imgSrc;
           
           // Update selected price and store (if elements exist)
           if (selectedPriceEl) selectedPriceEl.textContent = price;
@@ -340,14 +393,19 @@
             addToListBtn.dataset.price = price;
             addToListBtn.dataset.store = store;
           }
+
+          // Swap hero image to the store-specific image when available
+          if (mainImg && imgSrc) {
+            mainImg.src = imgSrc;
+          }
         });
       });
 
       // Add to shopping list functionality
       if (addToListBtn) {
         addToListBtn.addEventListener('click', async function() {
-          const price = this.dataset.price || '{{ (product.stores[0] and product.stores[0].price) or product.price }}';
-          const store = this.dataset.store || '{{ (product.stores[0] and product.stores[0].store) or product.stores[0].name }}';
+          const price = selectedStoreData.price || '{{ (product.stores and product.stores[0] and product.stores[0].price) or product.price }}';
+          const store = selectedStoreData.store || '{{ (product.stores and product.stores[0] and (product.stores[0].store or product.stores[0].name)) or (product.store or product.source) }}';
           
           try {
             const response = await fetch('/shopping-list/add', {
@@ -365,7 +423,7 @@
             
             const data = await response.json();
             if (data.success || response.ok) {
-              // Show success message
+              // Show success feedback on button
               const originalHTML = this.innerHTML;
               this.innerHTML = '<i class="bi bi-check-circle"></i> Added to List!';
               this.style.background = 'linear-gradient(135deg, #28a745 0%, #20c997 100%)';
@@ -373,6 +431,7 @@
               setTimeout(() => {
                 this.innerHTML = originalHTML;
                 this.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+                // Keep the selected store and don't reset anything
               }, 2000);
             } else {
               showNotification('Error adding to list', 'danger');
@@ -422,13 +481,21 @@
         if (response.ok) {
           const data = await response.json();
           const icon = document.getElementById('favorite-icon');
+          const text = document.getElementById('favorite-text');
+          const btn = document.getElementById('favorite-btn');
           
           if (data.is_favorite) {
             icon.classList.remove('bi-heart');
             icon.classList.add('bi-heart-fill');
+            text.textContent = 'Added to Favorites';
+            btn.classList.remove('btn-outline-danger');
+            btn.classList.add('btn-danger');
           } else {
             icon.classList.remove('bi-heart-fill');
             icon.classList.add('bi-heart');
+            text.textContent = 'Add to Favorites';
+            btn.classList.remove('btn-danger');
+            btn.classList.add('btn-outline-danger');
           }
         } else {
           const error = await response.json();
@@ -441,6 +508,34 @@
         console.error('Error toggling favorite:', error);
       }
     }
+
+    // Check initial favorite state on page load
+    async function checkFavoriteState() {
+      const productId = document.getElementById('favorite-btn').dataset.productId;
+      
+      try {
+        const response = await fetch(`/api/check-favorite/${productId}`);
+        if (response.ok) {
+          const data = await response.json();
+          const icon = document.getElementById('favorite-icon');
+          const text = document.getElementById('favorite-text');
+          const btn = document.getElementById('favorite-btn');
+          
+          if (data.is_favorite) {
+            icon.classList.remove('bi-heart');
+            icon.classList.add('bi-heart-fill');
+            text.textContent = 'Added to Favorites';
+            btn.classList.remove('btn-outline-danger');
+            btn.classList.add('btn-danger');
+          }
+        }
+      } catch (error) {
+        console.error('Error checking favorite state:', error);
+      }
+    }
+
+    // Load favorite state when page loads
+    document.addEventListener('DOMContentLoaded', checkFavoriteState);
 
     function showNotification(message, type = 'info') {
       const el = document.createElement('div');

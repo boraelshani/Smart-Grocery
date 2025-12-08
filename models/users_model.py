@@ -1,6 +1,8 @@
 from pymongo import MongoClient
 from bson import ObjectId
+from bson.decimal128 import Decimal128
 import os
+import re
 from dotenv import load_dotenv
 from typing import List, Optional
 import certifi
@@ -423,6 +425,53 @@ def add_item_to_list(email: str, list_id: str, item) -> bool:
     """Add an item to a specific shopping list. Merges duplicates by incrementing quantity."""
     if not email or not list_id or not item:
         return False
+
+    def _normalize_name_store(entry):
+        if isinstance(entry, dict):
+            name_val = entry.get('name') if entry.get('name') is not None else entry.get('title')
+            store_val = entry.get('store') or entry.get('store_name') or ''
+        else:
+            name_val = str(entry)
+            store_val = ''
+        return (str(name_val or '').strip().lower(), str(store_val or '').strip().lower())
+
+    def _coerce_qty(entry):
+        try:
+            if isinstance(entry, dict):
+                q = entry.get('qty', entry.get('quantity', 1))
+            else:
+                q = 1
+            q_int = int(q)
+            return q_int if q_int > 0 else 1
+        except Exception:
+            return 1
+
+    def _normalize_price_val(entry):
+        if not isinstance(entry, dict):
+            return None
+        raw = entry.get('price_val', entry.get('price'))
+        try:
+            if isinstance(raw, Decimal128):
+                return float(raw.to_decimal())
+            if isinstance(raw, (int, float)):
+                return float(raw)
+            if isinstance(raw, str):
+                cleaned = re.sub(r"[^0-9.]+", "", raw)
+                return float(cleaned) if cleaned else None
+        except Exception:
+            return None
+        return None
+
+    # Ensure item is a dict so we keep metadata like store and price
+    item_obj = dict(item) if isinstance(item, dict) else {'name': str(item)}
+    if 'qty' not in item_obj and 'quantity' not in item_obj:
+        item_obj['qty'] = 1
+    price_val = _normalize_price_val(item_obj)
+    if price_val is not None:
+        item_obj.setdefault('price_val', price_val)
+        # keep a plain price field for legacy consumers
+        item_obj.setdefault('price', price_val)
+    target_key = _normalize_name_store(item_obj)
     
     if flask_mongo is not None and getattr(flask_mongo, 'db', None) is not None:
         try:
@@ -443,45 +492,33 @@ def add_item_to_list(email: str, list_id: str, item) -> bool:
             if target_list is None:
                 return False
             
-            # Extract item name for matching
-            item_name = item.get('name') if isinstance(item, dict) else str(item)
-            item_name_lower = item_name.lower().strip()
-            
-            # Check if item already exists
+            # Check if item already exists (name + store match)
             items = target_list.get('items', [])
-            existing_item = None
             existing_idx = None
-            
+
             for idx, existing in enumerate(items):
-                existing_name = existing.get('name') if isinstance(existing, dict) else str(existing)
-                existing_name_lower = existing_name.lower().strip()
-                
-                if existing_name_lower == item_name_lower:
-                    existing_item = existing
+                if _normalize_name_store(existing) == target_key:
                     existing_idx = idx
                     break
-            
-            if existing_item is not None and existing_idx is not None:
-                # Item exists - merge by incrementing quantity
-                if isinstance(existing_item, dict):
-                    existing_qty = existing_item.get('qty', 1)
-                    add_qty = item.get('qty', 1) if isinstance(item, dict) else 1
-                    merged_item = existing_item.copy()
-                    merged_item['qty'] = existing_qty + add_qty
-                    
-                    # Update the item in the array
-                    items[existing_idx] = merged_item
-                    
-                    result = flask_mongo.db.users.update_one(
-                        {'email': email, 'shopping_lists.id': list_id},
-                        {'$set': {'shopping_lists.$.items': items}}
-                    )
-                    return result.modified_count > 0
-            
-            # Item doesn't exist - add it normally
+
+            if existing_idx is not None:
+                existing_item = items[existing_idx]
+                merged_item = existing_item.copy() if isinstance(existing_item, dict) else {'name': str(existing_item)}
+                merged_item['qty'] = _coerce_qty(existing_item) + _coerce_qty(item_obj)
+                if not merged_item.get('store') and item_obj.get('store'):
+                    merged_item['store'] = item_obj.get('store')
+                if price_val is not None:
+                    if merged_item.get('price_val') in (None, '', 0):
+                        merged_item['price_val'] = price_val
+                    if merged_item.get('price') in (None, '', 0):
+                        merged_item['price'] = price_val
+                items[existing_idx] = merged_item
+            else:
+                items.append(item_obj)
+
             result = flask_mongo.db.users.update_one(
                 {'email': email, 'shopping_lists.id': list_id},
-                {'$push': {'shopping_lists.$.items': item}}
+                {'$set': {'shopping_lists.$.items': items}}
             )
             return result.modified_count > 0
         except Exception as e:
@@ -494,24 +531,29 @@ def add_item_to_list(email: str, list_id: str, item) -> bool:
         for lst in u.get('shopping_lists', []):
             if lst.get('id') == list_id:
                 items = lst.setdefault('items', [])
-                item_name = item.get('name') if isinstance(item, dict) else str(item)
-                item_name_lower = item_name.lower().strip()
-                
-                # Check for existing item
+                existing_idx = None
+
                 for idx, existing in enumerate(items):
-                    existing_name = existing.get('name') if isinstance(existing, dict) else str(existing)
-                    existing_name_lower = existing_name.lower().strip()
-                    
-                    if existing_name_lower == item_name_lower:
-                        # Merge quantities
-                        if isinstance(existing, dict):
-                            existing_qty = existing.get('qty', 1)
-                            add_qty = item.get('qty', 1) if isinstance(item, dict) else 1
-                            existing['qty'] = existing_qty + add_qty
-                        return True
-                
+                    if _normalize_name_store(existing) == target_key:
+                        existing_idx = idx
+                        break
+
+                if existing_idx is not None:
+                    existing_item = items[existing_idx]
+                    merged_item = existing_item.copy() if isinstance(existing_item, dict) else {'name': str(existing_item)}
+                    merged_item['qty'] = _coerce_qty(existing_item) + _coerce_qty(item_obj)
+                    if not merged_item.get('store') and item_obj.get('store'):
+                        merged_item['store'] = item_obj.get('store')
+                    if price_val is not None:
+                        if merged_item.get('price_val') in (None, '', 0):
+                            merged_item['price_val'] = price_val
+                        if merged_item.get('price') in (None, '', 0):
+                            merged_item['price'] = price_val
+                    items[existing_idx] = merged_item
+                    return True
+
                 # Item doesn't exist - add it
-                items.append(item)
+                items.append(item_obj)
                 return True
     return False
 

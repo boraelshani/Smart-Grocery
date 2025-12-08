@@ -1,4 +1,4 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, session
 import os
 import certifi
 from dotenv import load_dotenv, find_dotenv
@@ -114,6 +114,26 @@ except Exception:
 app.register_blueprint(main_bp)
 app.register_blueprint(auth_bp)
 app.register_blueprint(admin_bp)
+
+
+@app.context_processor
+def inject_shopping_list_count():
+    """Expose a shopping list count for nav badges; hides badge when zero."""
+    count = 0
+    try:
+        email = session.get('user')
+        if email:
+            from models.users_model import get_user_lists
+            data = get_user_lists(email) or {}
+            lists = data.get('lists', []) or []
+            total = 0
+            for lst in lists:
+                items = lst.get('items', []) or []
+                total += sum(1 for it in items if not (isinstance(it, dict) and it.get('purchased')))
+            count = total
+    except Exception:
+        count = 0
+    return {'shopping_list_count': count}
 
 
 # Template helper: prefer a processed local image if available (static/processed/<sha1>.webp)
