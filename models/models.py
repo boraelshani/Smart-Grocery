@@ -1,10 +1,26 @@
-# Fallback data for when MongoDB is unavailable
-stores = []
-products = []
-users = {}
-featured_deals = []
+"""
+═══════════════════════════════════════════════════════════════════════════
+FALLBACK DATA MODELS & HELPER FUNCTIONS
+═══════════════════════════════════════════════════════════════════════════
+In-memory data storage for development/testing when MongoDB is unavailable.
+Also provides helper functions that work with both MongoDB and fallback data.
+"""
 
-# MongoDB integration for user helpers
+# ═══════════════════════════════════════════════════════════════════════════
+# FALLBACK DATA STRUCTURES (In-Memory Storage)
+# ═══════════════════════════════════════════════════════════════════════════
+# These are used when MongoDB connection is unavailable or during development
+
+stores = []  # List of store documents
+products = []  # List of product documents
+users = {}  # Dictionary mapping email -> user document
+featured_deals = []  # List of featured deal documents
+
+# ═══════════════════════════════════════════════════════════════════════════
+# DATABASE CONNECTION SETUP
+# ═══════════════════════════════════════════════════════════════════════════
+# Try to import MongoDB instance, fallback to in-memory mode if unavailable
+
 try:
     from utils.db import mongo
     HAS_DB = True
@@ -12,39 +28,74 @@ except Exception:
     mongo = None
     HAS_DB = False
 
+# ═══════════════════════════════════════════════════════════════════════════
+# USER HELPER FUNCTIONS
+# ═══════════════════════════════════════════════════════════════════════════
+
 def get_user_by_email(email):
-    """Return user document by email. Uses MongoDB when available, otherwise falls back to in-memory `users` dict."""
+    """
+    Retrieve user account by email address.
+    
+    Dual-mode: Uses MongoDB when available, falls back to in-memory dict.
+    
+    Args:
+        email: User email address
+    
+    Returns:
+        User document dictionary or None
+    """
     if not email:
         return None
     if HAS_DB and mongo is not None and getattr(mongo, 'db', None) is not None:
         doc = mongo.db.users.find_one({'email': email})
         if not doc:
             return None
-        # convert ObjectId to string for templates/logic
+        # Convert ObjectId to string for templates/logic
         doc = dict(doc)
         if '_id' in doc:
             doc['id'] = str(doc['_id'])
         return doc
+    # Fallback: use in-memory dictionary
     return users.get(email)
 
+
 def create_user(user_doc):
-    """Insert a new user. Returns inserted id (str) for DB or email for in-memory fallback."""
+    """
+    Create a new user account.
+    
+    Dual-mode: Inserts into MongoDB when available, otherwise stores in-memory.
+    
+    Args:
+        user_doc: Dictionary with user data (email, name, password_hash, etc.)
+    
+    Returns:
+        User ID (string) - ObjectId from MongoDB or email from fallback storage
+    """
     if HAS_DB and mongo is not None and getattr(mongo, 'db', None) is not None:
         res = mongo.db.users.insert_one(user_doc)
         return str(res.inserted_id)
-    # fallback: add to in-memory dict
+    # Fallback: add to in-memory dictionary
     users[user_doc['email']] = user_doc
     return user_doc['email']
 
 
 def add_deal_to_user_shopping_list(email, deal):
-    """Add a deal (dict or title string) to the user's shopping list. Returns True on success."""
+    """
+    Add a deal/product to the user's shopping list.
+    
+    Args:
+        email: User email address
+        deal: Deal dictionary or product name string
+    
+    Returns:
+        Boolean indicating success of the operation
+    """
     if not email or not deal:
         return False
-    # prepare a simple representation to store in the shopping_list
+    # Prepare a simple representation to store in the shopping_list
     item = None
     if isinstance(deal, dict):
-        # keep useful fields
+        # Keep useful fields from the deal object
         item = {
             'name': deal.get('title') or deal.get('name'),
             'price': deal.get('price'),

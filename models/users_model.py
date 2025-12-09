@@ -1,3 +1,14 @@
+"""
+═══════════════════════════════════════════════════════════════════════════
+USER MODEL & AUTHENTICATION
+═══════════════════════════════════════════════════════════════════════════
+Handles all user-related database operations including:
+- User authentication with hashed passwords
+- User account creation and retrieval
+- Shopping list management (CRUD operations)
+- Supports both MongoDB and in-memory fallback for development
+"""
+
 from pymongo import MongoClient
 from bson import ObjectId
 from bson.decimal128 import Decimal128
@@ -9,12 +20,17 @@ import certifi
 
 load_dotenv()
 
-# Backwards-compatible user helpers expected by routes/auth_routes.py
+# ═══════════════════════════════════════════════════════════════════════════
+# IMPORT DATABASE & MOCK DATA SOURCES
+# ═══════════════════════════════════════════════════════════════════════════
+
+# Try to import Flask-PyMongo instance for database access
 try:
     from utils.db import mongo as flask_mongo
 except Exception:
     flask_mongo = None
 
+# Try to import mock/fallback data for development mode
 try:
     from models import models as mock_models
 except Exception:
@@ -22,6 +38,19 @@ except Exception:
 
 
 def get_user_by_email(email: str):
+    """
+    Retrieve a user account by email address.
+    
+    Strategy:
+    1. Try MongoDB first (production)
+    2. Fallback to in-memory mock data (development)
+    
+    Args:
+        email: User email address to search for
+    
+    Returns:
+        Dictionary with user data (includes hashed password, name, etc.) or None if not found
+    """
     if not email:
         return None
     if flask_mongo is not None and getattr(flask_mongo, 'db', None) is not None:
@@ -30,15 +59,24 @@ def get_user_by_email(email: str):
             return None
         doc = dict(doc)
         if '_id' in doc:
-            doc['id'] = str(doc['_id'])
+            doc['id'] = str(doc['_id'])  # Convert MongoDB ObjectId to string
         return doc
-    # fallback to in-memory mock data
+    # Fallback to in-memory mock data
     if getattr(mock_models, 'users', None) is None:
         return None
     return mock_models.users.get(email)
 
 
 def create_user(user_doc: dict):
+    """
+    Create a new user account.
+    
+    Args:
+        user_doc: Dictionary containing user data (email, name, password_hash, etc.)
+    
+    Returns:
+        User ID (MongoDB ObjectId as string) or email (if using mock data)
+    """
     if flask_mongo is not None and getattr(flask_mongo, 'db', None) is not None:
         res = flask_mongo.db.users.insert_one(user_doc)
         return str(res.inserted_id)

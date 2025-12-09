@@ -12,12 +12,20 @@ except Exception:
     HAS_DB = False
 import re
 
+# ═══════════════════════════════════════════════════════════════════════════
+# DATABASE CONNECTION & HELPER FUNCTIONS
+# ═══════════════════════════════════════════════════════════════════════════
+
 # Cached fallback client to avoid creating a new MongoClient on every request
 _FALLBACK_CLIENT = None
 
 
 def load_featured_deals_fallback():
-    """Load featured deals from the static JSON fallback file."""
+    """
+    Load featured deals from the static JSON fallback file.
+    Used when MongoDB is unavailable during development/testing.
+    Returns: List of featured deal dictionaries
+    """
     try:
         path = os.path.join(current_app.root_path, 'data', 'featured_deals.json')
         with open(path, 'r', encoding='utf-8') as f:
@@ -28,7 +36,11 @@ def load_featured_deals_fallback():
 
 
 def _get_user_email():
-    """Get user email from session or fallback to mock user for development."""
+    """
+    Helper function to get the current user's email from session.
+    Fallback to mock user for development mode.
+    Returns: User email string or None
+    """
     email = session.get('user')
     if not email and getattr(m, 'users', None):
         email = 'user1@example.com' if 'user1@example.com' in m.users else next(iter(m.users.keys()), None)
@@ -36,12 +48,24 @@ def _get_user_email():
 
 
 def _has_db():
-    """Check if MongoDB is available."""
+    """
+    Check if MongoDB connection is available and ready to use.
+    Returns: Boolean indicating database availability
+    """
     return HAS_DB and mongo is not None and getattr(mongo, 'db', None) is not None
 
 
 def get_db():
-    """Return a working pymongo Database instance."""
+    """
+    Get a working PyMongo database instance.
+    
+    Strategy:
+    1. Try to use Flask-PyMongo's mongo instance (production)
+    2. Fallback to creating direct MongoClient connection (development/testing)
+    3. Return None if all connections fail
+    
+    Returns: PyMongo database instance or None
+    """
     if _has_db():
         return mongo.db
     

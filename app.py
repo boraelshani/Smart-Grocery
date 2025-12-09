@@ -1,9 +1,19 @@
+"""
+╔══════════════════════════════════════════════════════════════════════════╗
+║                    SMART GROCERY - MAIN APPLICATION                       ║
+║  A Flask-based price comparison web app for grocery shopping              ║
+║  Compares product prices across multiple stores and tracks shopping lists ║
+╚══════════════════════════════════════════════════════════════════════════╝
+"""
+
 from flask import Flask, jsonify, session, request
 import os
 import certifi
 from dotenv import load_dotenv, find_dotenv
 
-# 1. LOAD CONFIG: Read environment variables from .env file
+# ═══════════════════════════════════════════════════════════════════════════
+# 1. ENVIRONMENT SETUP: Load configuration from .env file
+# ═══════════════════════════════════════════════════════════════════════════
 dotenv_path = find_dotenv('.env', usecwd=True)
 if dotenv_path:
     load_dotenv(dotenv_path, override=True)
@@ -17,12 +27,18 @@ if not os.environ.get('SSL_CERT_FILE'):
 
 from utils.db import mongo
 
+# ═══════════════════════════════════════════════════════════════════════════
+# 2. FLASK APP INITIALIZATION
+# ═══════════════════════════════════════════════════════════════════════════
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key')
 
-# MongoDB configuration
+# ═══════════════════════════════════════════════════════════════════════════
+# 3. MONGODB CONFIGURATION
+# ═══════════════════════════════════════════════════════════════════════════
+# Parse MongoDB connection URI from environment
 raw_uri = os.environ.get('MONGO_URI', 'mongodb://localhost:27017/smart_grocery')
-# Sanitize URI if it contains angle brackets
+# Sanitize URI if it contains angle brackets (cleanup from copy-paste errors)
 if '<' in raw_uri or '>' in raw_uri:
     raw_uri = raw_uri.replace('<', '').replace('>', '')
 

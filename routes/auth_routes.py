@@ -1,3 +1,11 @@
+"""
+═══════════════════════════════════════════════════════════════════════════
+AUTHENTICATION ROUTES
+═══════════════════════════════════════════════════════════════════════════
+Handles user login, signup, logout, and session management.
+Also includes shopping list API endpoints for adding/removing items.
+"""
+
 from flask import render_template, request, redirect, url_for, session, jsonify
 from . import auth_bp
 import re
@@ -6,8 +14,16 @@ from models import users_model as users_model
 from utils.db import mongo
 
 
+# ═══════════════════════════════════════════════════════════════════════════
+# HELPER FUNCTIONS
+# ═══════════════════════════════════════════════════════════════════════════
+
 def _get_user_email():
-    """Get user email from session or fallback to mock user for development."""
+    """
+    Get the current user's email from Flask session.
+    Fallback to mock user data for development/testing.
+    Returns: User email string or None
+    """
     email = session.get('user')
     if not email and getattr(m, 'users', None):
         email = 'user1@example.com' if 'user1@example.com' in m.users else next(iter(m.users.keys()), None)
@@ -15,30 +31,52 @@ def _get_user_email():
 
 
 def _has_db():
-    """Check if MongoDB is available."""
+    """
+    Check if MongoDB is available and connected.
+    Returns: Boolean indicating database availability
+    """
     return mongo is not None and getattr(mongo, 'db', None) is not None
 
 
+# ═══════════════════════════════════════════════════════════════════════════
+# LOGIN & SIGNUP ROUTES
+# ═══════════════════════════════════════════════════════════════════════════
+
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
+    """
+    Handle user login with email and password.
+    
+    POST: Authenticate user credentials against stored hashed passwords
+    GET: Display login form
+    """
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
-        # use users_model.authenticate which checks hashed passwords
+        # Use users_model.authenticate which verifies hashed passwords
         print(f'[LOGIN] email={email}, password_entered={repr(password)}')
         ok = users_model.authenticate(email, password)
         print(f'[LOGIN] auth result={ok}')
         if ok:
-            session['user'] = email
+            session['user'] = email  # Store user in session
             return redirect(url_for('main.home'))
         else:
-            # return the entered email back so the user doesn't need to retype it
+            # Return email back so user doesn't need to retype it
             return render_template('login.html', error="Invalid credentials", email=email)
     return render_template('login.html')
 
 
 @auth_bp.route('/signup', methods=['GET', 'POST'])
 def signup():
+    """
+    Handle new user registration.
+    
+    Validates:
+    - Email and password are provided
+    - Email is in valid format
+    - Account doesn't already exist
+    - Password meets minimum requirements
+    """
     if request.method == 'POST':
         name = request.form.get('name')
         email = request.form.get('email')
@@ -47,7 +85,7 @@ def signup():
         if not email or not password:
             return render_template('signup.html', error='Please provide email and password', name=name, email=email)
 
-        # check whether an account already exists
+        # Check whether an account already exists
         existing = None
         try:
             existing = users_model.get_user_by_email(email)
