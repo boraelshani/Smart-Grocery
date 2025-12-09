@@ -8,11 +8,22 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
-    .product-card { border: 1px solid #e9ecef; border-radius: 14px; overflow: hidden; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(0,0,0,0.06); height: 100%; display: flex; flex-direction: column; }
-    .product-card:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(0,0,0,0.15); }
-    .product-image { width: 100%; height: 250px; object-fit: contain; background: #fff; padding: 10px; }
-    .store-header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 3rem 0; }
-    .product-card .p-3 { flex: 1; display: flex; flex-direction: column; }
+    body { background-color: #f8f9fa; }
+    .product-card { border: none; border-radius: 16px; overflow: hidden; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0,0,0,0.08); height: 100%; display: flex; flex-direction: column; cursor: pointer; }
+    .product-card:hover { transform: translateY(-6px); box-shadow: 0 12px 30px rgba(102,126,234,0.25); }
+    .product-card-inner { height: 100%; background: white; }
+    .product-image { width: 100%; height: 280px; object-fit: contain; background: white; padding: 15px; }
+    .store-header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 3rem 0; border-bottom-left-radius: 24px; border-bottom-right-radius: 24px; }
+    .price-badge { position: absolute; top: 12px; right: 12px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 6px 12px; border-radius: 20px; font-weight: 600; font-size: 0.95rem; box-shadow: 0 4px 12px rgba(102,126,234,0.3); }
+    .btn-favorite { position: absolute; top: 12px; left: 12px; width: 38px; height: 38px; border-radius: 50%; background: white; border: none; box-shadow: 0 2px 8px rgba(0,0,0,0.15); color: #ccc; font-size: 1.2rem; transition: all 0.2s ease; z-index: 10; display: flex; align-items: center; justify-content: center; }
+    .btn-favorite:hover { color: #ff6b6b; transform: scale(1.1); }
+    .btn-favorite.active { color: #ff6b6b; }
+    .card-title { font-size: 1.1rem; line-height: 1.4; }
+    .category-badge { background-color: #e9ecef; color: #667eea; font-weight: 600; padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; }
+    .btn-add-cart { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; font-weight: 600; transition: all 0.3s ease; }
+    .btn-add-cart:hover { transform: translateY(-2px); box-shadow: 0 8px 16px rgba(102,126,234,0.3); color: white; }
+    .add-to-list-btn { background: #f8f9fa; color: #667eea; border: 2px solid #667eea; font-weight: 600; transition: all 0.3s ease; }
+    .add-to-list-btn:hover { background: #667eea; color: white; }
   </style>
 </head>
 <body>
@@ -28,13 +39,13 @@
       <div class="collapse navbar-collapse" id="navbarNav">
         {% set cart_count = shopping_list_count or 0 %}
         <ul class="navbar-nav ms-auto">
-          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.home') }}">Home</a></li>
-          <li class="nav-item"><a class="nav-link active fw-semibold" href="{{ url_for('main.stores_page') }}">Stores</a></li>
-          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.featured_deals_page') }}">Deals</a></li>
-          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.compare_prices') }}">Compare</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.home') }}"><i class="bi bi-house-door"></i> Home</a></li>
+          <li class="nav-item"><a class="nav-link active fw-semibold" href="{{ url_for('main.stores_page') }}"><i class="bi bi-shop"></i> Stores</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.featured_deals_page') }}"><i class="bi bi-tags"></i> Deals</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.compare_prices') }}"><i class="bi bi-bar-chart"></i> Compare</a></li>
           <li class="nav-item">
             <a class="nav-link position-relative" href="{{ url_for('main.shopping_list') }}">
-              <i class="bi bi-cart3"></i> Cart
+              <i class="bi bi-list-check"></i> Lists
               <span id="shopping-list-count" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger {{ 'd-none' if not cart_count else '' }}" style="font-size: 0.65rem;">
                 {{ cart_count if cart_count else '' }}
               </span>
@@ -51,13 +62,17 @@
   </nav>
 
   <!-- Store Header -->
-  <section class="store-header text-center">
+  <section class="store-header">
     <div class="container">
-      <a href="{{ url_for('main.stores_page') }}" class="btn btn-light btn-sm mb-3">
-        ← Back to Stores
-      </a>
-      <h1 class="fw-bold mb-2">{{ store_name }}</h1>
-      <p class="lead mb-0">{{ product_count }} product{{ 's' if product_count != 1 else '' }} available</p>
+      <div class="d-flex justify-content-start mb-3">
+        <a href="{{ url_for('main.stores_page') }}" class="btn btn-light btn-sm shadow-sm">
+          ← Back to Stores
+        </a>
+      </div>
+      <div class="text-center">
+        <h1 class="fw-bold mb-2">{{ store_name }}</h1>
+        <p class="lead mb-0">{{ product_count }} product{{ 's' if product_count != 1 else '' }} available</p>
+      </div>
     </div>
   </section>
 
@@ -66,43 +81,57 @@
     {% if products %}
       <div class="row g-4">
         {% for product in products %}
-          <div class="col-md-4 col-lg-3">
-            <div class="product-card">
-              <img src="{{ product.store_image or product.image or 'https://via.placeholder.com/400x300' }}" 
-                   alt="{{ product.name }}" 
-                   class="product-image">
-              <div class="p-3">
-                <h6 class="fw-bold mb-2">{{ product.name }}</h6>
-                
-                {% if product.store_price %}
-                  <div class="text-success fw-semibold mb-2 fs-5">€{{ product.store_price }}</div>
-                {% endif %}
-                
-                {% if product.category %}
-                  <span class="badge bg-light text-dark border small">{{ product.category }}</span>
-                {% endif %}
-                
-                {% if product.unit %}
-                  <div class="text-muted small mt-2">{{ product.unit }}</div>
-                {% endif %}
-                
-                {% if product.description %}
-                  <p class="text-muted small mt-2 mb-3">{{ product.description[:80] }}{% if product.description|length > 80 %}...{% endif %}</p>
-                {% endif %}
-
-                <div class="d-flex flex-column gap-2 mt-auto">
-                  <button type="button"
-                          class="btn btn-primary w-100 add-to-cart-btn"
-                          data-name="{{ product.name }}"
-                          data-price="{{ product.store_price or product.price or '' }}"
-                          data-image="{{ product.store_image or product.image or '' }}"
-                          data-store="{{ store_name }}">
-                    <i class="bi bi-cart-plus me-1"></i>Add to Shopping List
+          <div class="col-md-6 col-lg-4 col-xl-3">
+            {% set detail_url = url_for('main.product_info', product_id=product.get('_id') or product.get('id'), store_name=store_name, store_price=product.store_price or product.price or '', store_image=product.store_image or product.image or '') %}
+            <div class="product-card" role="button" tabindex="0" data-detail-url="{{ detail_url }}">
+              <div class="product-card-inner">
+                <!-- Price Badge & Favorite Button -->
+                <div class="position-relative">
+                  <span class="price-badge">
+                    <i class="bi bi-tag me-1"></i>€{{ product.store_price or product.price or 'N/A' }}
+                  </span>
+                  <button class="btn-favorite" data-product-id="{{ product.get('_id') or product.get('id') }}" onclick="event.stopPropagation(); toggleFavorite('{{ product.get('_id') or product.get('id') }}', this)">
+                    <i class="bi bi-heart"></i>
                   </button>
-                  <a href="{{ url_for('main.product_info', product_id=product.get('_id') or product.get('id'), store_name=store_name, store_price=product.store_price or product.price or '') }}" 
-                     class="btn btn-outline-secondary w-100">
-                    <i class="bi bi-info-circle me-1"></i>Product Details
-                  </a>
+                  <img src="{{ product.store_image or product.image or 'https://via.placeholder.com/400x300' }}" 
+                       alt="{{ product.name }}" 
+                       class="product-image"
+                       onerror="this.src='https://via.placeholder.com/400x300'">
+                </div>
+                <!-- Card Body -->
+                <div class="p-3 d-flex flex-column h-100">
+                  <h5 class="card-title text-dark mb-2">{{ product.name }}</h5>
+                  
+                  {% if product.category %}
+                    <p class="text-muted small mb-3">
+                      <span class="category-badge">{{ product.category }}</span>
+                    </p>
+                  {% endif %}
+                  
+                  {% if product.unit %}
+                    <div class="text-muted small mb-2">{{ product.unit }}</div>
+                  {% endif %}
+                  
+                  {% if product.description %}
+                    <p class="text-muted small mb-3">{{ product.description[:80] }}{% if product.description|length > 80 %}...{% endif %}</p>
+                  {% endif %}
+
+                  <!-- Buttons Section -->
+                  <div class="mt-auto d-flex flex-column gap-2">
+                    <button type="button"
+                            class="btn btn-add-cart btn-sm w-100"
+                            data-name="{{ product.name }}"
+                            data-price="{{ product.store_price or product.price or '' }}"
+                            data-image="{{ product.store_image or product.image or '' }}"
+                            data-store="{{ store_name }}"
+                            onclick="event.stopPropagation();">
+                      <i class="bi bi-cart-plus me-1"></i>Add to List
+                    </button>
+                    <a href="{{ detail_url }}" 
+                       class="btn add-to-list-btn btn-sm w-100" onclick="event.stopPropagation();">
+                      <i class="bi bi-info-circle me-1"></i>Details
+                    </a>
+                  </div>
                 </div>
               </div>
             </div>
@@ -125,5 +154,49 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+  <script>
+    // Toggle favorite
+    async function toggleFavorite(productId, button) {
+      try {
+        const isCurrentlyFavorite = button.classList.contains('active');
+        const response = await fetch('/api/toggle-favorite', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ product_id: productId })
+        });
+        if (response.ok) {
+          button.classList.toggle('active');
+        }
+      } catch (error) {
+        console.error('Error toggling favorite:', error);
+      }
+    }
+
+    // Make the entire product card open the details page, except when clicking buttons/links inside it.
+    document.addEventListener('DOMContentLoaded', function() {
+      function shouldIgnoreClick(event) {
+        return event.target.closest('.add-to-cart-btn') || 
+               event.target.closest('a') || 
+               event.target.closest('.btn-favorite');
+      }
+
+      document.querySelectorAll('.product-card').forEach(card => {
+        const detailUrl = card.dataset.detailUrl;
+        if (!detailUrl) return;
+
+        card.addEventListener('click', (event) => {
+          if (shouldIgnoreClick(event)) return;
+          window.location.href = detailUrl;
+        });
+
+        card.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            window.location.href = detailUrl;
+          }
+        });
+      });
+    });
+  </script>
 </body>
 </html>

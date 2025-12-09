@@ -516,6 +516,8 @@ function refreshShoppingListUI() { window.location.reload(); }
 function showNotification(message, type = 'info') {
   if (!message) return;
 
+  const TOAST_DURATION_MS = 3600;
+
   // Toast container (top-right stack)
   let container = document.getElementById('sg-toast-container');
   if (!container) {
@@ -590,7 +592,7 @@ function showNotification(message, type = 'info') {
     setTimeout(() => toast.remove(), 160);
   };
 
-  setTimeout(removeToast, 3600);
+  setTimeout(removeToast, TOAST_DURATION_MS);
 }
 
 function formatPrice(price) { if (typeof price === 'string') price = price.replace(/[^0-9.]/g,''); return Number(price)||0; }
@@ -644,9 +646,38 @@ function setupClaimButtons() {
     const id = btn.getAttribute('data-id') || btn.getAttribute('data-title');
     const title = btn.getAttribute('data-title') || '';
     const price = btn.getAttribute('data-price') || '';
+    const originalPrice = btn.getAttribute('data-original-price') || '';
+    const offerStr = btn.getAttribute('data-offer') || '';
+    const offerJson = btn.getAttribute('data-offer-json') || '';
+    const offerType = btn.getAttribute('data-offer-type') || '';
+    const offerX = btn.getAttribute('data-offer-x') || '';
+    const offerY = btn.getAttribute('data-offer-y') || '';
     if (!id) return showNotification('Missing deal id', 'danger');
+
+    // Send both price (discounted) and original_price; backend will choose based on offer type
+    const discounted_price_val = Number(String(price).replace(/[^0-9.]/g, '')) || 0;
+    const original_price_val = Number(String(originalPrice).replace(/[^0-9.]/g, '')) || discounted_price_val;
+
+    let offerPayload = null;
+    try { if (offerJson) offerPayload = JSON.parse(offerJson); } catch (err) { offerPayload = null; }
+    if (!offerPayload && offerType === 'buyXgetY' && offerX && offerY) {
+      const xNum = parseInt(offerX, 10) || 0;
+      const yNum = parseInt(offerY, 10) || 0;
+      if (xNum && yNum) offerPayload = { type: 'buyXgetY', x: xNum, y: yNum };
+    }
+    if (!offerPayload && offerStr) {
+      const m = offerStr.match(/(\d+)\s*\+\s*(\d+)/);
+      if (m) offerPayload = { type: 'buyXgetY', x: parseInt(m[1], 10) || 0, y: parseInt(m[2], 10) || 0 };
+    }
+
     try {
-      const res = await apiPostJson('/api/claim-deal', { deal_id: id, title, price });
+      const res = await apiPostJson('/api/claim-deal', { 
+        deal_id: id, 
+        title, 
+        price: discounted_price_val, 
+        original_price: original_price_val, 
+        offer: offerPayload || offerStr || null
+      });
       if (res && (res.success || res.added)) {
         showNotification('Deal claimed and added to your list', 'success');
         // refresh the shopping list view if present
@@ -995,10 +1026,12 @@ function setupShoppingListInteractions() {
       if (qty < 1) qty = 1;
       row.setAttribute('data-qty', String(qty));
       if (badge) badge.textContent = String(qty);
-      // update per-row displayed price (unit * qty)
+      // update per-row displayed price using effective unit price
       const unit = formatPrice(row.getAttribute('data-price') || (row.querySelector('.item-price')?.textContent||'0'));
+      const offerObj = parseOfferFromRow(row);
+      const effectiveUnit = effectiveUnitPrice(unit, offerObj);
       const priceEl = row.querySelector('.item-price');
-      if (priceEl) priceEl.textContent = `$${(unit * qty).toFixed(2)}`;
+      if (priceEl) priceEl.textContent = `€${(effectiveUnit * qty).toFixed(2)}`;
       debounceSaveOrder();
       computeTotals();
     }
@@ -1021,20 +1054,48 @@ async function postCurrentListOrder() {
 
 let _saveTimer = null; function debounceSaveOrder(delay=700){ if(_saveTimer) clearTimeout(_saveTimer); _saveTimer = setTimeout(()=>postCurrentListOrder(), delay); }
 
-// computeTotals: sum unit_price * qty for each row
+const parseOfferFromRow = (row) => {
+  const offerJson = row.getAttribute('data-offer-json');
+  if (offerJson) {
+    try { const obj = JSON.parse(offerJson); if (obj && obj.type) return obj; } catch (e) {}
+  }
+  const offerType = row.getAttribute('data-offer-type') || '';
+  const ox = parseInt(row.getAttribute('data-offer-x') || '0', 10) || 0;
+  const oy = parseInt(row.getAttribute('data-offer-y') || '0', 10) || 0;
+  if (offerType === 'buyXgetY' && ox && oy) return { type: 'buyXgetY', x: ox, y: oy };
+
+  const offerStr = row.getAttribute('data-offer') || '';
+  const m = offerStr.match(/(\d+)\s*\+\s*(\d+)/);
+  if (m) return { type: 'buyXgetY', x: parseInt(m[1], 10) || 0, y: parseInt(m[2], 10) || 0 };
+  return null;
+};
+
+function effectiveUnitPrice(basePrice, offerObj) {
+  if (!offerObj || offerObj.type !== 'buyXgetY') return basePrice;
+  const x = parseInt(offerObj.x || 0, 10) || 0;
+  const y = parseInt(offerObj.y || 0, 10) || 0;
+  if (!x || !y) return basePrice;
+  return (x * basePrice) / (x + y);
+}
+
+// computeTotals: sum effective unit price * qty
 function computeTotals(){
   const rows = Array.from(document.querySelectorAll('.item-row'));
   let total = 0;
-  rows.forEach(r => {
-    const unit = formatPrice(r.getAttribute('data-price') || (r.querySelector('.item-price')?.textContent||'0'));
-    const qty = Number(r.getAttribute('data-qty') || 1);
-    total += unit * (isNaN(qty) ? 1 : qty);
+
+  rows.forEach((row) => {
+    const baseUnit = formatPrice(row.getAttribute('data-price') || (row.querySelector('.item-price')?.textContent || '0'));
+    const qty = Number(row.getAttribute('data-qty') || 1);
+    const offerObj = parseOfferFromRow(row);
+    const effective = effectiveUnitPrice(baseUnit, offerObj);
+    total += effective * qty;
   });
-  const el = document.getElementById('total-value'); if(el) el.textContent = `$${total.toFixed(2)}`;
+
+  const el = document.getElementById('total-value'); if (el) el.textContent = `€${total.toFixed(2)}`;
 }
 
 // minimal cart counter kept for compatibility
-class CartCounter{ constructor(){ this.cartItems=[]; this.loadFromStorage(); this.updateDisplay(); } addItem(name, price){ const it={name,price,id:Date.now()}; this.cartItems.push(it); this.saveToStorage(); this.updateDisplay(); return it.id;} removeItem(id){ this.cartItems=this.cartItems.filter(i=>i.id!==id); this.saveToStorage(); this.updateDisplay(); } getCount(){ return this.cartItems.length;} getTotal(){ return this.cartItems.reduce((s,i)=>s+Number(i.price||0),0);} clearCart(){ this.cartItems=[]; this.saveToStorage(); this.updateDisplay(); } updateDisplay(){ const b=document.getElementById('cart-counter'); if(b){ b.textContent=this.getCount(); b.style.display=this.getCount()>0?'inline-block':'none'; } const t=document.getElementById('cart-total'); if(t) t.textContent=`$${this.getTotal().toFixed(2)}`; } saveToStorage(){ localStorage.setItem('smartGroceryCart', JSON.stringify(this.cartItems)); } loadFromStorage(){ try{ this.cartItems=JSON.parse(localStorage.getItem('smartGroceryCart'))||[] }catch(e){ this.cartItems=[] } }
+class CartCounter{ constructor(){ this.cartItems=[]; this.loadFromStorage(); this.updateDisplay(); } addItem(name, price){ const it={name,price,id:Date.now()}; this.cartItems.push(it); this.saveToStorage(); this.updateDisplay(); return it.id;} removeItem(id){ this.cartItems=this.cartItems.filter(i=>i.id!==id); this.saveToStorage(); this.updateDisplay(); } getCount(){ return this.cartItems.length;} getTotal(){ return this.cartItems.reduce((s,i)=>s+Number(i.price||0),0);} clearCart(){ this.cartItems=[]; this.saveToStorage(); this.updateDisplay(); } updateDisplay(){ const b=document.getElementById('cart-counter'); if(b){ b.textContent=this.getCount(); b.style.display=this.getCount()>0?'inline-block':'none'; } const t=document.getElementById('cart-total'); if(t) t.textContent=`€${this.getTotal().toFixed(2)}`; } saveToStorage(){ localStorage.setItem('smartGroceryCart', JSON.stringify(this.cartItems)); } loadFromStorage(){ try{ this.cartItems=JSON.parse(localStorage.getItem('smartGroceryCart'))||[] }catch(e){ this.cartItems=[] } }
 }
 const cart = new CartCounter();
 

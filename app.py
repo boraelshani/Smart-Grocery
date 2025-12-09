@@ -117,7 +117,7 @@ app.register_blueprint(admin_bp)
 
 @app.context_processor
 def inject_shopping_list_count():
-    """Expose a shopping list count for nav badges; hides badge when zero."""
+    """Expose a shopping list count for nav badges; only shows count for new items since last viewing."""
     count = 0
     try:
         email = session.get('user')
@@ -129,7 +129,13 @@ def inject_shopping_list_count():
             for lst in lists:
                 items = lst.get('items', []) or []
                 total += sum(1 for it in items if not (isinstance(it, dict) and it.get('purchased')))
-            count = total
+            
+            # Only show badge if count has increased since last viewing
+            last_viewed = session.get('last_viewed_list_count', 0)
+            if total > last_viewed:
+                count = total - last_viewed
+            else:
+                count = 0
     except Exception:
         count = 0
     return {'shopping_list_count': count}

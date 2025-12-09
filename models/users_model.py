@@ -251,12 +251,13 @@ def get_user_lists(email: str) -> dict:
             # Migrate old shopping_list to new format if needed
             if not lists and user.get('shopping_list'):
                 from bson import ObjectId
+                from datetime import datetime
                 default_id = str(ObjectId())
                 lists = [{
                     'id': default_id,
                     'name': 'My List',
                     'items': user.get('shopping_list', []),
-                    'created_at': None
+                    'created_at': datetime.utcnow().isoformat()
                 }]
                 flask_mongo.db.users.update_one(
                     {'email': email},
@@ -493,13 +494,18 @@ def add_item_to_list(email: str, list_id: str, item) -> bool:
                 return False
             
             # Check if item already exists (name + store match)
+            # BUT: if item has a multi-buy offer, don't merge - add as separate entry
             items = target_list.get('items', [])
             existing_idx = None
+            
+            has_multibuy_offer = False  # buyXgetY handled via effective pricing; allow merge
 
-            for idx, existing in enumerate(items):
-                if _normalize_name_store(existing) == target_key:
-                    existing_idx = idx
-                    break
+            if not has_multibuy_offer:
+                # Only merge if no multi-buy offer (currently always merge)
+                for idx, existing in enumerate(items):
+                    if _normalize_name_store(existing) == target_key:
+                        existing_idx = idx
+                        break
 
             if existing_idx is not None:
                 existing_item = items[existing_idx]
@@ -533,10 +539,13 @@ def add_item_to_list(email: str, list_id: str, item) -> bool:
                 items = lst.setdefault('items', [])
                 existing_idx = None
 
-                for idx, existing in enumerate(items):
-                    if _normalize_name_store(existing) == target_key:
-                        existing_idx = idx
-                        break
+                has_multibuy_offer = False  # buyXgetY handled via effective pricing; allow merge
+
+                if not has_multibuy_offer:
+                    for idx, existing in enumerate(items):
+                        if _normalize_name_store(existing) == target_key:
+                            existing_idx = idx
+                            break
 
                 if existing_idx is not None:
                     existing_item = items[existing_idx]
@@ -552,7 +561,7 @@ def add_item_to_list(email: str, list_id: str, item) -> bool:
                     items[existing_idx] = merged_item
                     return True
 
-                # Item doesn't exist - add it
+                # Item doesn't exist - add it or multibuy should stay separate
                 items.append(item_obj)
                 return True
     return False
