@@ -1,3 +1,4 @@
+# AUTH ROUTES - User login, signup, logout
 from flask import render_template, request, redirect, url_for, session, jsonify, current_app
 from . import auth_bp
 import re
@@ -10,6 +11,7 @@ from utils.db import mongo
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
+    # HANDLE LOGIN: Check email/password and set session
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
@@ -18,7 +20,7 @@ def login():
         ok = users_model.authenticate(email, password)
         print(f'[LOGIN] auth result={ok}')
         if ok:
-            session['user'] = email
+            session['user'] = email  # Store user email in session cookie
             return redirect(url_for('main.home'))
         else:
             # return the entered email back so the user doesn't need to retype it
@@ -28,6 +30,7 @@ def login():
 
 @auth_bp.route('/signup', methods=['GET', 'POST'])
 def signup():
+    # HANDLE SIGNUP: Create new user account
     if request.method == 'POST':
         name = request.form.get('name')
         email = request.form.get('email')
@@ -36,7 +39,7 @@ def signup():
         if not email or not password:
             return render_template('signup.html', error='Please provide email and password', name=name, email=email)
 
-        # check whether an account already exists
+        # CHECK: Does this email already have an account?
         existing = None
         try:
             existing = users_model.get_user_by_email(email)
@@ -45,7 +48,7 @@ def signup():
         if existing:
             return render_template('signup.html', error='Email already registered', name=name, email=email)
 
-        # create user record
+        # CREATE NEW USER: Store email, hashed password, empty shopping list
         user_doc = {
             'email': email,
             'password': password,

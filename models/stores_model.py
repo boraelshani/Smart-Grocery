@@ -1,4 +1,6 @@
-"""Stores model — class-based MongoDB helper with fallback to Flask-PyMongo when available.
+"""
+STORES MODEL - Handles store information and locations
+Queries MongoDB collection 'stores' for store names, hours, addresses, distance
 """
 from pymongo import MongoClient
 from bson import ObjectId
@@ -11,6 +13,7 @@ load_dotenv()
 
 
 class StoresModel:
+    # CONNECT TO MONGODB: Use Flask connection or create new one
     def __init__(self):
         mongo_uri = os.getenv('MONGO_URI') or 'mongodb://localhost:27017/smart_grocery'
         # guard against empty/whitespace values which trigger pymongo ConfigurationError
@@ -51,13 +54,15 @@ class StoresModel:
                     self.db = self._client['smart_grocery']
 
     def list_stores(self) -> List[dict]:
+        # GET ALL STORES: Return all stores (for /stores page)
         docs = list(self.db.stores.find({}))
         for d in docs:
             if '_id' in d:
-                d['id'] = str(d['_id'])
+                d['id'] = str(d['_id'])  # Convert MongoDB ID to string
         return docs
 
     def get_store_by_name(self, name: str) -> Optional[dict]:
+        # LOOKUP STORE by name (used when viewing store products)
         if not name:
             return None
         doc = self.db.stores.find_one({'name': name})
@@ -68,6 +73,7 @@ class StoresModel:
         return doc
 
     def get_store_by_id(self, id_str: str) -> Optional[dict]:
+        # GET SINGLE STORE by MongoDB ID
         try:
             doc = self.db.stores.find_one({'_id': ObjectId(id_str)})
             if not doc:

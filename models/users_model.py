@@ -1,3 +1,7 @@
+"""
+USERS MODEL - Handles user accounts, authentication, shopping lists
+Queries MongoDB collection 'users' for account info, passwords, shopping lists
+"""
 from pymongo import MongoClient
 from bson import ObjectId
 from bson.decimal128 import Decimal128
@@ -10,6 +14,7 @@ import certifi
 load_dotenv()
 
 class CountryModel:
+    # DEPRECATED: This class handles country data (not currently used)
     def __init__(self):
         mongo_uri = os.getenv('MONGO_URI') or 'mongodb://localhost:27017/smart_grocery'
         # sanitize common mistake: remove angle-brackets if user pasted URI with <...>
@@ -118,6 +123,7 @@ except Exception:
 
 
 def get_user_by_email(email: str):
+    # LOOKUP USER: Search database for account by email
     if not email:
         return None
     if flask_mongo is not None and getattr(flask_mongo, 'db', None) is not None:
@@ -126,15 +132,16 @@ def get_user_by_email(email: str):
             return None
         doc = dict(doc)
         if '_id' in doc:
-            doc['id'] = str(doc['_id'])
+            doc['id'] = str(doc['_id'])  # Convert MongoDB ID to string
         return doc
-    # fallback to in-memory mock data
+    # fallback to in-memory mock data (if MongoDB unavailable)
     if getattr(mock_models, 'users', None) is None:
         return None
     return mock_models.users.get(email)
 
 
 def create_user(user_doc: dict):
+    # CREATE ACCOUNT: Insert new user into database
     if flask_mongo is not None and getattr(flask_mongo, 'db', None) is not None:
         res = flask_mongo.db.users.insert_one(user_doc)
         return str(res.inserted_id)
@@ -145,6 +152,7 @@ def create_user(user_doc: dict):
 
 
 def authenticate(email: str, password: str) -> bool:
+    # VERIFY CREDENTIALS: Check email + password match
     user = get_user_by_email(email)
     if not user:
         print(f'[AUTH] user {email} not found')
@@ -153,7 +161,7 @@ def authenticate(email: str, password: str) -> bool:
     if stored is None:
         print(f'[AUTH] user {email} has no password field')
         return False
-    # Basic check — if you store hashed passwords, replace with hashing check
+    # Compare: stored password vs entered password
     print(f'[AUTH] comparing: stored={repr(stored)} (type={type(stored).__name__}) vs entered={repr(password)} (type={type(password).__name__})')
     match = str(stored).strip() == str(password).strip()
     print(f'[AUTH] result={match}')
@@ -161,6 +169,7 @@ def authenticate(email: str, password: str) -> bool:
 
 
 def update_shopping_list(email: str, new_list: list) -> bool:
+    # REPLACE SHOPPING LIST: Set entire list for user
     if not email:
         return False
     if flask_mongo is not None and getattr(flask_mongo, 'db', None) is not None:
@@ -180,6 +189,7 @@ def update_shopping_list(email: str, new_list: list) -> bool:
 
 
 def add_to_shopping_list(email: str, item) -> bool:
+    # ADD ITEM: Push single item to user's shopping list
     if not email or not item:
         return False
     if flask_mongo is not None and getattr(flask_mongo, 'db', None) is not None:

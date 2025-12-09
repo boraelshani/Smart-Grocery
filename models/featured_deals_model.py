@@ -1,4 +1,7 @@
-"""Featured deals model — class-based helper, consistent with other models."""
+"""
+FEATURED DEALS MODEL - Handles sales and special offers (2+1, discounts, etc.)
+Queries MongoDB collection 'featured_deals' for promotional items with multi-buy logic
+"""
 from pymongo import MongoClient
 from bson import ObjectId
 import os
@@ -10,6 +13,7 @@ load_dotenv()
 
 
 class FeaturedDealsModel:
+    # CONNECT TO MONGODB: Use Flask connection or create new one
     def __init__(self):
         mongo_uri = os.getenv('MONGO_URI') or 'mongodb://localhost:27017/smart_grocery'
         # sanitize common mistake: remove angle-brackets if user pasted URI with <...>
@@ -45,13 +49,15 @@ class FeaturedDealsModel:
                     self.db = self._client['smart_grocery']
 
     def list_featured_deals(self) -> List[dict]:
+        # GET ALL DEALS: Return all featured sales
         docs = list(self.db.featured_deals.find({}))
         for d in docs:
             if '_id' in d:
-                d['id'] = str(d['_id'])
+                d['id'] = str(d['_id'])  # Convert MongoDB ID to string
         return docs
 
     def get_deal_by_title(self, title: str) -> Optional[dict]:
+        # SEARCH DEAL by title
         if not title:
             return None
         doc = self.db.featured_deals.find_one({'title': title})
@@ -62,6 +68,7 @@ class FeaturedDealsModel:
         return doc
 
     def get_deal_by_id(self, id_str: str) -> Optional[dict]:
+        # GET SINGLE DEAL by MongoDB ID (used for deal detail page)
         try:
             doc = self.db.featured_deals.find_one({'_id': ObjectId(id_str)})
             if not doc:
@@ -72,18 +79,21 @@ class FeaturedDealsModel:
             return None
 
     def insert_deal(self, doc: dict) -> str:
+        # ADD NEW DEAL to database (admin only)
         res = self.db.featured_deals.insert_one(doc)
         return str(res.inserted_id)
 
     def update_deal(self, id_str: str, update_doc: dict) -> bool:
+        # MODIFY DEAL in database (admin only)
         try:
-            update_doc.pop('_id', None)
+            update_doc.pop('_id', None)  # Never modify _id
             res = self.db.featured_deals.update_one({'_id': ObjectId(id_str)}, {'$set': update_doc})
             return getattr(res, 'modified_count', 0) > 0
         except Exception:
             return False
 
     def delete_deal(self, id_str: str) -> bool:
+        # REMOVE DEAL from database (admin only)
         try:
             res = self.db.featured_deals.delete_one({'_id': ObjectId(id_str)})
             return getattr(res, 'deleted_count', 0) > 0

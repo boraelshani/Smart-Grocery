@@ -1,3 +1,4 @@
+# MAIN ROUTES - All URL handlers for the app (home, stores, products, compare, deals, etc.)
 from flask import render_template, jsonify, session, request, current_app, url_for
 from . import main_bp
 from models import models as m
@@ -12,10 +13,11 @@ except Exception:
     HAS_DB = False
 import re
 
-# Cached fallback client to avoid creating a new MongoClient on every request
+# CACHE: Reuse MongoDB connection instead of creating new one per request
 _FALLBACK_CLIENT = None
 
 def _db_available():
+    # CHECK: Is MongoDB connection working?
     return HAS_DB and mongo is not None and getattr(mongo, 'db', None) is not None
 
 

@@ -21,7 +21,7 @@ This is the **entry point** of your entire Flask application. It sets up the dat
 from flask import Flask, jsonify, session, url_for, request
 import os
 import certifi
-from dotenv import load_dotenv, find_dotenv
+frofilem dotenv import load_dotenv, find_dotenv
 ```
 
 **What's happening:**
@@ -31,7 +31,7 @@ from dotenv import load_dotenv, find_dotenv
 - `url_for` = Generate URLs for routes dynamically
 - `request` = Access HTTP request data
 - `certifi` = SSL certificate for secure MongoDB connections
-- `dotenv` = Load environment variables from `.env` file
+- `dotenv` = Load environment variables from `.env` 
 
 **Why dotenv?**
 Sensitive data (MongoDB password, secret keys) shouldn't be in code. Instead:

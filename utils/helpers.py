@@ -1,13 +1,15 @@
-# Helper utility functions
+# ===============================================
+# HELPER FUNCTIONS - Shared utilities used by routes/models
+# ===============================================
 
 def format_price(price):
-    """Format price string to float"""
+    # CONVERT: Price string to float (remove € or $ symbols)
     if isinstance(price, str):
         return float(price.replace('$', ''))
     return price
 
 def find_cheapest_product(product):
-    """Find cheapest store for a product"""
+    # FIND BEST DEAL: Get store with lowest price for this product
     min_price = float('inf')
     cheapest = None
     
@@ -20,7 +22,7 @@ def find_cheapest_product(product):
     return cheapest
 
 def calculate_total_cost(shopping_list, products):
-    """Calculate total cost of shopping list"""
+    # CALCULATE TOTAL: Sum up costs of all items in shopping list
     total = 0.0
     for item in shopping_list:
         for product in products:
@@ -30,5 +32,5 @@ def calculate_total_cost(shopping_list, products):
     return round(total, 2)
 
 def search_products(query, products):
-    """Search products by name"""
+    # SEARCH: Filter products by name (case-insensitive)
     return [p for p in products if query.lower() in p['name'].lower()]

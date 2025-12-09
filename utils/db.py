@@ -1,4 +1,5 @@
 from flask_pymongo import PyMongo
 
-# PyMongo instance; call mongo.init_app(app) in application factory / app.py
+# DATABASE CONNECTOR: Wraps PyMongo to talk to MongoDB
+# Usage: mongo.db.products.find(), mongo.db.users.insert_one(), etc.
 mongo = PyMongo()

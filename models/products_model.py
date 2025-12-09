@@ -1,5 +1,6 @@
-"""Products model — class-based MongoDB helper with in-memory fallback.
-Matches the structure used in `users_model.py` and prefers the Flask `utils.db.mongo` when available.
+"""
+PRODUCTS MODEL - Handles all product database operations
+Queries MongoDB collection 'products' for grocery items (names, prices, images, stores)
 """
 from pymongo import MongoClient
 from bson import ObjectId
@@ -11,6 +12,7 @@ load_dotenv()
 
 
 class ProductsModel:
+    # CONNECT TO MONGODB: Either use app's connection or create new one
     def __init__(self):
         mongo_uri = os.getenv('MONGO_URI') or 'mongodb://localhost:27017/smart_grocery'
         # guard against empty/whitespace values which trigger pymongo ConfigurationError
@@ -48,23 +50,26 @@ class ProductsModel:
                     self.db = self._client['smart_grocery']
 
     def list_products(self) -> List[dict]:
+        # GET ALL PRODUCTS from database
         docs = list(self.db.products.find({}))
         for d in docs:
             if '_id' in d:
-                d['id'] = str(d['_id'])
+                d['id'] = str(d['_id'])  # Convert MongoDB ID to string for frontend
         return docs
 
     def get_product_by_name(self, name: str) -> Optional[dict]:
+        # SEARCH FOR PRODUCT by name (used for compare prices feature)
         if not name:
             return None
         doc = self.db.products.find_one({'name': name})
         if not doc:
             return None
         if '_id' in doc:
-            doc['id'] = str(doc['_id'])
+            doc['id'] = str(d['_id'])
         return doc
 
     def get_product_by_id(self, id_str: str) -> Optional[dict]:
+        # GET SINGLE PRODUCT by MongoDB ID (used for product detail pages)
         try:
             doc = self.db.products.find_one({'_id': ObjectId(id_str)})
             if not doc:
@@ -75,18 +80,21 @@ class ProductsModel:
             return None
 
     def insert_product(self, doc: dict) -> str:
+        # ADD NEW PRODUCT to database (admin only)
         res = self.db.products.insert_one(doc)
         return str(res.inserted_id)
 
     def update_product(self, id_str: str, update_doc: dict) -> bool:
+        # MODIFY PRODUCT in database (admin only)
         try:
-            update_doc.pop('_id', None)
+            update_doc.pop('_id', None)  # Never modify _id
             res = self.db.products.update_one({'_id': ObjectId(id_str)}, {'$set': update_doc})
             return getattr(res, 'modified_count', 0) > 0
         except Exception:
             return False
 
     def delete_product(self, id_str: str) -> bool:
+        # REMOVE PRODUCT from database (admin only)
         try:
             res = self.db.products.delete_one({'_id': ObjectId(id_str)})
             return getattr(res, 'deleted_count', 0) > 0

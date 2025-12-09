@@ -3,7 +3,7 @@ import os
 import certifi
 from dotenv import load_dotenv, find_dotenv
 
-# Load .env as early as possible so any modules imported afterwards see the variables
+# 1. LOAD CONFIG: Read environment variables from .env file
 dotenv_path = find_dotenv('.env', usecwd=True)
 if dotenv_path:
     load_dotenv(dotenv_path, override=True)
