@@ -279,7 +279,7 @@
         <!-- Best Price Banner -->
         <div class="best-price-banner">
           <h3><i class="bi bi-lightning-fill"></i> Best Price</h3>
-          <div class="price">{{ (product.cheapest and product.cheapest.price) or product.price or 'N/A' }}</div>
+          <div class="price">€{{ (product.cheapest and product.cheapest.price) or product.price or 'N/A' }}</div>
           {% if product.cheapest and product.cheapest.store %}
             <div class="store-name">at <strong>{{ product.cheapest.store }}</strong></div>
           {% endif %}
@@ -298,7 +298,7 @@
                 </a>
                 {% endif %}
                 <div class="store-name">{{ store.store or store.name }}</div>
-                <div class="store-price">{{ store.price }}</div>
+                <div class="store-price">€{{ store.price }}</div>
                 {% if store.discount %}
                   <div class="store-discount"><span class="badge bg-danger">{{ store.discount }}</span></div>
                 {% endif %}

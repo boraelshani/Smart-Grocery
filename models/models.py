@@ -1,45 +1,10 @@
-# Mock Data — Replace with real DB later
-
-stores = [
-    {"id": 1, "name": "Supermart", "location": "123 Main St", "distance": "2.5 miles", "opening_hours": "9 AM - 9 PM", "url": "https://supermart.com", "deals": []},
-    {"id": 2, "name": "Grocery Hub", "location": "456 Oak Ave", "distance": "1.2 miles", "opening_hours": "8 AM - 8 PM", "url": "https://groceryhub.com", "deals": []},
-]
-
-# Mock Product Comparison Data
-products = [
-    {
-        "name": "Milk",
-        "unit": "gal",
-        "stores": [
-            {"store": "Supermart", "price": "€3.99", "discount": "10% off", "deal": None},
-            {"store": "Grocery Hub", "price": "€4.49", "discount": "None", "deal": None},
-            {"store": "Fresh & Co", "price": "€3.79", "discount": "20% off", "deal": None}
-        ],
-        "cheapest": {"store": "Fresh & Co", "price": "€3.79", "discount": "20% off", "deal": None}
-    },
-    {
-        "name": "Bread",
-        "unit": "loaf",
-        "stores": [
-            {"store": "Supermart", "price": "€2.99", "discount": "None", "deal": None},
-            {"store": "Grocery Hub", "price": "€3.49", "discount": "Buy 1 get 1", "deal": None},
-            {"store": "Fresh & Co", "price": "€3.29", "discount": "None", "deal": None}
-        ],
-        "cheapest": {"store": "Supermart", "price": "€2.99", "discount": "None", "deal": None}
-    }
-]
-
-# Mock User Data (Login)
-users = {
-    "user1@example.com": {"email": "user1@example.com", "password": "password123", "name": "John Doe", "shopping_list": ["milk", "bread"], "total_cost": 6.98},
-    "user2@example.com": {"email": "user2@example.com", "password": "password456", "name": "Jane Smith", "shopping_list": ["bottled water"], "total_cost": 3.99}
-}
-
-# Mock Featured Deals (empty — load from DB when available)
+# Fallback data for when MongoDB is unavailable
+stores = []
+products = []
+users = {}
 featured_deals = []
 
-
-# Optional MongoDB integration for user helpers
+# MongoDB integration for user helpers
 try:
     from utils.db import mongo
     HAS_DB = True

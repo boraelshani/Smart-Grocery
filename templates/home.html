@@ -709,7 +709,7 @@
               {% if fav.get('category') %}
               <div class="product-store"><i class="bi bi-tag me-1"></i>{{ fav.get('category') }}</div>
               {% endif %}
-              <div class="product-price">{{ fav.get('best_price') or 'N/A' }}</div>
+              <div class="product-price">€{{ fav.get('best_price') or 'N/A' }}</div>
               <a href="{{ url_for('main.product_detail', product_id=fav.get('id')) }}" class="add-to-cart-btn-modern">
                 <i class="bi bi-info-circle"></i> View Details
               </a>

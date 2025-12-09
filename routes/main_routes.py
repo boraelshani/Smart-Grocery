@@ -15,9 +15,6 @@ import re
 # Cached fallback client to avoid creating a new MongoClient on every request
 _FALLBACK_CLIENT = None
 
-def _db_available():
-    return HAS_DB and mongo is not None and getattr(mongo, 'db', None) is not None
-
 
 def load_featured_deals_fallback():
     """Load featured deals from the static JSON fallback file."""
@@ -30,53 +27,41 @@ def load_featured_deals_fallback():
         return []
 
 
+def _get_user_email():
+    """Get user email from session or fallback to mock user for development."""
+    email = session.get('user')
+    if not email and getattr(m, 'users', None):
+        email = 'user1@example.com' if 'user1@example.com' in m.users else next(iter(m.users.keys()), None)
+    return email
+
+
+def _has_db():
+    """Check if MongoDB is available."""
+    return HAS_DB and mongo is not None and getattr(mongo, 'db', None) is not None
+
+
 def get_db():
-    """Return a working pymongo Database instance. Prefer the Flask-PyMongo `mongo.db` when available;
-    otherwise open a fresh MongoClient using the configured URI in the app config or environment.
-    """
-    try:
-        if _db_available():
-            return mongo.db
-    except Exception:
-        pass
-    # fallback: try direct MongoClient using configured URI
+    """Return a working pymongo Database instance."""
+    if _has_db():
+        return mongo.db
+    
+    # Fallback: create direct MongoClient
     try:
         from pymongo import MongoClient
-        import os
-        # ensure .env is loaded here too (override any process env) so we consistently prefer it
-        try:
-            from dotenv import load_dotenv, find_dotenv
-            dotenv_path = find_dotenv('.env', usecwd=True)
-            if dotenv_path:
-                load_dotenv(dotenv_path, override=True)
-        except Exception:
-            pass
-        # prefer the Flask app config, otherwise read from .env (now loaded) or process env
-        uri = current_app.config.get('MONGO_URI') or os.environ.get('MONGO_URI')
-        # If this is an Atlas SRV URI, ensure TLS and CA file are provided to avoid SSL issues
-        try:
-            import certifi
-            # Reuse a cached fallback client when possible to avoid repeated server-selection handshakes
-            global _FALLBACK_CLIENT
-            if _FALLBACK_CLIENT is None:
-                if isinstance(uri, str) and uri.startswith('mongodb+srv://'):
-                    _FALLBACK_CLIENT = MongoClient(uri, tls=True, tlsCAFile=certifi.where(), serverSelectionTimeoutMS=2000)
-                else:
-                    _FALLBACK_CLIENT = MongoClient(uri, serverSelectionTimeoutMS=2000)
-            client = _FALLBACK_CLIENT
-        except Exception:
-            # last-resort: create a simple client with a small timeout
-            client = MongoClient(uri, serverSelectionTimeoutMS=2000)
-        dbname = current_app.config.get('MONGO_DBNAME')
-        if not dbname:
-            try:
-                default = client.get_default_database()
-                dbname = getattr(default, 'name', None) or 'smart_grocery'
-            except Exception:
-                dbname = 'smart_grocery'
-        return client[dbname]
+        import certifi
+        
+        global _FALLBACK_CLIENT
+        if _FALLBACK_CLIENT is None:
+            uri = current_app.config.get('MONGO_URI') or os.environ.get('MONGO_URI')
+            if uri and uri.startswith('mongodb+srv://'):
+                _FALLBACK_CLIENT = MongoClient(uri, tls=True, tlsCAFile=certifi.where(), serverSelectionTimeoutMS=2000)
+            else:
+                _FALLBACK_CLIENT = MongoClient(uri, serverSelectionTimeoutMS=2000)
+        
+        dbname = current_app.config.get('MONGO_DBNAME') or 'smart_grocery'
+        return _FALLBACK_CLIENT[dbname]
     except Exception as e:
-        print('ERROR: get_db() failed to create MongoClient:', e)
+        print(f'ERROR: get_db() failed: {e}')
         return None
 
 
@@ -312,7 +297,7 @@ def featured_deals_page():
 
 @main_bp.route('/compare-prices')
 def compare_prices():
-    """Render compare page with server-side pagination (30 per page) and category filter across all pages."""
+    """Render compare page with server-side pagination (30 per page) and category filter."""
     using_fallback = False
     per_page = 30
     try:
@@ -328,12 +313,6 @@ def compare_prices():
     products = []
     db = get_db()
     category_options = []
-
-    def apply_category_filter(items):
-        if not category_filter:
-            return items
-        cf = category_filter.lower()
-        return [p for p in items if isinstance(p, dict) and str(p.get('category','')).strip().lower() == cf]
 
     if db is not None:
         try:
@@ -353,42 +332,26 @@ def compare_prices():
                     p['id'] = str(p['_id'])
             try:
                 from collections import Counter
-                # Count categories across ALL products, not just distinct list
                 all_prods = list(db.products.find({}, {'category': 1}))
                 cat_counts = Counter(p.get('category') for p in all_prods if p.get('category'))
-                # Sort by count (desc), then alphabetically
                 category_options = sorted(cat_counts.keys(), key=lambda c: (-cat_counts[c], c.lower()))
             except Exception:
                 category_options = []
         except Exception:
             using_fallback = True
-            print('WARNING: Using in-memory fallback data for compare prices (DB query failed)')
-            products_all = apply_category_filter(getattr(m, 'products', []))
-            total_products = len(products_all)
+            products = getattr(m, 'products', [])
+            total_products = len(products)
             total_pages = (total_products + per_page - 1) // per_page if total_products else 1
-            page = min(page, total_pages) if total_products else 1
-            skip_amount = (page - 1) * per_page
-            products = products_all[skip_amount:skip_amount + per_page]
-            from collections import Counter
-            cat_counts = Counter(p.get('category') for p in getattr(m, 'products', []) if p.get('category'))
-            category_options = sorted(cat_counts.keys(), key=lambda c: (-cat_counts[c], c.lower()))
     else:
         using_fallback = True
-        print('WARNING: Using in-memory fallback data for compare prices (DB unavailable)')
-        products_all = apply_category_filter(getattr(m, 'products', []))
-        total_products = len(products_all)
+        products = getattr(m, 'products', [])
+        total_products = len(products)
         total_pages = (total_products + per_page - 1) // per_page if total_products else 1
-        page = min(page, total_pages) if total_products else 1
-        skip_amount = (page - 1) * per_page
-        products = products_all[skip_amount:skip_amount + per_page]
-        from collections import Counter
-        cat_counts = Counter(p.get('category') for p in getattr(m, 'products', []) if p.get('category'))
-        category_options = sorted(cat_counts.keys(), key=lambda c: (-cat_counts[c], c.lower()))
 
     has_prev = page > 1
     has_next = page < total_pages
-    showing_start = skip_amount + 1 if total_products else 0
-    showing_end = skip_amount + len(products)
+    showing_start = ((page - 1) * per_page) + 1 if total_products else 0
+    showing_end = min(page * per_page, total_products)
 
     return render_template(
         'compare_prices.html',
@@ -793,7 +756,7 @@ def profile():
     stores_options = []
     category_options = []
 
-    if _db_available() and user_email:
+    if _has_db() and user_email:
         user = mongo.db.users.find_one({'email': user_email})
         if user and '_id' in user:
             user['id'] = str(user['_id'])
@@ -825,10 +788,6 @@ def profile():
         category_options = sorted(cat_counts.keys(), key=lambda c: (-cat_counts[c], c.lower()))
 
     return render_template('profile.html', user_data=user_data, stores_options=stores_options, category_options=category_options)
-
-@main_bp.route('/about')
-def about():
-    return render_template('about.html')
 
 
 @main_bp.route('/admin/status')
@@ -872,7 +831,7 @@ def api_search_products():
 
     results = []
     try:
-        if _db_available():
+        if _has_db():
             # case-insensitive regex search on 'name' field
             regex = {'$regex': q, '$options': 'i'}
             cursor = mongo.db.products.find({'name': regex}).limit(50)
@@ -1118,14 +1077,13 @@ def api_claim_deal():
     if not deal_id:
         return jsonify({'error': 'no_deal_id_provided'}), 400
 
-    # determine user (fallback to in-memory default)
-    fallback = 'user1@example.com' if getattr(m, 'users', None) and 'user1@example.com' in m.users else (next(iter(m.users.keys())) if getattr(m, 'users', None) else None)
-    email = session.get('user') or fallback
+    # Get user email
+    email = _get_user_email()
 
     try:
         # attempt to find deal document (DB or fallback)
         deal_doc = None
-        if HAS_DB and mongo is not None and getattr(mongo, 'db', None) is not None:
+        if _has_db():
             from bson import ObjectId
             query = None
             try:

@@ -1,11 +1,22 @@
-from flask import render_template, request, redirect, url_for, session, jsonify, current_app
+from flask import render_template, request, redirect, url_for, session, jsonify
 from . import auth_bp
 import re
-from bson.decimal128 import Decimal128
-from models.models import get_user_by_email
 from models import models as m
 from models import users_model as users_model
 from utils.db import mongo
+
+
+def _get_user_email():
+    """Get user email from session or fallback to mock user for development."""
+    email = session.get('user')
+    if not email and getattr(m, 'users', None):
+        email = 'user1@example.com' if 'user1@example.com' in m.users else next(iter(m.users.keys()), None)
+    return email
+
+
+def _has_db():
+    """Check if MongoDB is available."""
+    return mongo is not None and getattr(mongo, 'db', None) is not None
 
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
@@ -76,7 +87,7 @@ def update_profile():
     new_list = request.form.getlist('shopping_list')
     # update shopping list in DB if available, otherwise the fallback in models will handle it
     try:
-        if mongo is not None and getattr(mongo, 'db', None) is not None:
+        if _has_db():
             mongo.db.users.update_one({'email': email}, {'$set': {'shopping_list': new_list}})
         else:
             # fallback: update via users_model helper
@@ -89,10 +100,7 @@ def update_profile():
 
 @auth_bp.route('/shopping-list/add', methods=['POST'])
 def add_shopping_item():
-    # allow fallback to in-memory default user when not authenticated
-    # use the same fallback user as the main routes ('user1@example.com') when present
-    fallback = 'user1@example.com' if getattr(m, 'users', None) and 'user1@example.com' in m.users else (next(iter(m.users.keys())) if getattr(m, 'users', None) else None)
-    email = session.get('user') or fallback
+    email = _get_user_email()
     if not email:
         return jsonify({'error': 'no_user_available'}), 400
     data = request.get_json() or request.form
@@ -220,10 +228,7 @@ def add_shopping_item():
 
 @auth_bp.route('/shopping-list/remove', methods=['POST'])
 def remove_shopping_item():
-    # allow fallback to in-memory default user when not authenticated
-    # use the same fallback user as the main routes ('user1@example.com') when present
-    fallback = 'user1@example.com' if getattr(m, 'users', None) and 'user1@example.com' in m.users else (next(iter(m.users.keys())) if getattr(m, 'users', None) else None)
-    email = session.get('user') or fallback
+    email = _get_user_email()
     if not email:
         return jsonify({'error': 'no_user_available'}), 400
     data = request.get_json() or request.form
@@ -231,7 +236,7 @@ def remove_shopping_item():
     if not item:
         return jsonify({'error': 'no_item_provided'}), 400
     try:
-        if mongo is not None and getattr(mongo, 'db', None) is not None:
+        if _has_db():
             # Try removing plain string entries first, then objects with a `name` field
             res = mongo.db.users.update_one({'email': email}, {'$pull': {'shopping_list': item}})
             if getattr(res, 'modified_count', 0) > 0:
@@ -253,10 +258,7 @@ def update_shopping_list_api():
     Persists the ordered list of full item objects (keeps price/image/qty/purchased).
     Backwards-compatible with older string-only lists.
     """
-    # allow fallback to in-memory default user when not authenticated
-    # use the same fallback user as the main routes ('user1@example.com') when present
-    fallback = 'user1@example.com' if getattr(m, 'users', None) and 'user1@example.com' in m.users else (next(iter(m.users.keys())) if getattr(m, 'users', None) else None)
-    email = session.get('user') or fallback
+    email = _get_user_email()
     if not email:
         return jsonify({'error': 'no_user_available'}), 400
     data = request.get_json() or {}
@@ -276,7 +278,7 @@ def update_shopping_list_api():
             to_store.append(str(it))
 
     try:
-        if mongo is not None and getattr(mongo, 'db', None) is not None:
+        if _has_db():
             mongo.db.users.update_one({'email': email}, {'$set': {'shopping_list': to_store}}, upsert=True)
         else:
             users_model.update_shopping_list(email, to_store)
@@ -287,13 +289,11 @@ def update_shopping_list_api():
 
 @auth_bp.route('/shopping-list/clear', methods=['POST'])
 def clear_shopping_list():
-    # Clear entire shopping list for current user (or fallback)
-    fallback = 'user1@example.com' if getattr(m, 'users', None) and 'user1@example.com' in m.users else (next(iter(m.users.keys())) if getattr(m, 'users', None) else None)
-    email = session.get('user') or fallback
+    email = _get_user_email()
     if not email:
         return jsonify({'error': 'no_user_available'}), 400
     try:
-        if mongo is not None and getattr(mongo, 'db', None) is not None:
+        if _has_db():
             mongo.db.users.update_one({'email': email}, {'$set': {'shopping_list': []}}, upsert=True)
         else:
             users_model.update_shopping_list(email, [])
@@ -317,7 +317,7 @@ def api_update_profile():
     phone = data.get('phone')
     address = data.get('address')
     try:
-        if mongo is not None and getattr(mongo, 'db', None) is not None:
+        if _has_db():
             mongo.db.users.update_one({'email': email}, {'$set': {'phone': phone, 'address': address}}, upsert=True)
         else:
             # fallback to in-memory models.users if available

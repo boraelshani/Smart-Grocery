@@ -301,8 +301,7 @@
 							</span>
 							<span class="header-chip">
 								<i class="bi bi-cash-stack"></i>
-								<span>{{ shopping_list.estimated_total|replace('€','')|default('0.00', true) }}</span>
-								<span class="muted">Total</span>
+								<span>€{{ shopping_list.estimated_total|replace('€','')|default('0.00', true) }}</span>
 							</span>
 						</div>
 					</div>
@@ -350,8 +349,7 @@
 						</span>
 						<span class="header-chip">
 							<i class="bi bi-cash-stack"></i>
-							<span id="total-price">0.00</span>
-						<span class="muted">Total</span>
+							<span>€<span id="total-price">0.00</span></span>
 						</span>
 					</div>
 				</div>
@@ -800,14 +798,12 @@ function switchList(listId) {
 						let total = 0;
 						items.forEach(item => {
 							const price = parseFloat(item.price_val !== undefined ? item.price_val : item.price || 0);
-							const qty = parseInt(item.qty || 1);
-							total += price * qty;
-						});
-						headerChips[2].innerHTML = `<i class="bi bi-currency-euro"></i><span>€${total.toFixed(2)}</span><span class="muted">Total</span>`;
+						const qty = parseInt(item.qty || 1);
+						total += price * qty;
+					});
+						headerChips[2].innerHTML = `<i class="bi bi-cash-stack"></i><span>€${total.toFixed(2)}</span>`;
 					}
-				}
-				
-				if (activeWrapper) activeWrapper.classList.remove('d-none');
+				}				if (activeWrapper) activeWrapper.classList.remove('d-none');
 				if (placeholder) placeholder.classList.add('d-none');
 				
 				// Set as active list on server
@@ -932,7 +928,7 @@ function displayListItems(data) {
 			itemCountSpans[1].innerHTML = `<i class="bi bi-check-circle"></i><span>${completedCount}</span><span class="muted">Completed</span>`;
 		}
 		if (itemCountSpans.length > 2) {
-			itemCountSpans[2].innerHTML = `<i class="bi bi-currency-euro"></i><span>€${total.toFixed(2)}</span><span class="muted">Total</span>`;
+			itemCountSpans[2].innerHTML = `<i class="bi bi-cash-stack"></i><span>€${total.toFixed(2)}</span>`;
 		}
 	}
 

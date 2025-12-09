@@ -386,7 +386,7 @@
                 <div class="position-relative">
                   <img src="{{ prefer_processed(p.get('image') or (p.get('images') and p.get('images')[0]) or url_for('static', filename='placeholder.svg')) }}" class="card-img-top product-image" alt="{{ p.get('name') or p.get('title','Product') }}">
                   <span class="price-badge">
-                    <i class="bi bi-tag-fill"></i> {{ (p.get('cheapest') and p.get('cheapest').get('price')) or p.get('price','N/A') }}
+                    <i class="bi bi-tag-fill"></i> €{{ (p.get('cheapest') and p.get('cheapest').get('price')) or p.get('price','N/A') }}
                   </span>
                     <button class="btn btn-sm position-absolute top-0 start-0 m-2 bg-white border-0 shadow-sm rounded-circle" 
                       style="width: 35px; height: 35px; z-index: 10;"
@@ -419,7 +419,7 @@
                           </div>
                           <div class="text-end" style="min-width: 68px;">
                             <span class="text-success fw-bold fs-5">
-                              {% if p.get('cheapest') and (s.get('price')|string) == (p.get('cheapest').get('price')|string) %}<i class="bi bi-star-fill" style="color: #ffc107; margin-right: 4px;"></i>{% endif %}{{ s.get('price') }}
+                              {% if p.get('cheapest') and (s.get('price')|string) == (p.get('cheapest').get('price')|string) %}<i class="bi bi-star-fill" style="color: #ffc107; margin-right: 4px;"></i>{% endif %}€{{ s.get('price') }}
                             </span>
                             {% if s.get('discount') %}
                               <span class="badge bg-danger ms-1">{{ s.get('discount') }}</span>
