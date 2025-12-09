@@ -200,13 +200,13 @@
       <div class="collapse navbar-collapse" id="navbarNav">
         {% set cart_count = shopping_list_count or 0 %}
         <ul class="navbar-nav ms-auto">
-          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.home') }}">Home</a></li>
-          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.stores_page') }}">Stores</a></li>
-          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.featured_deals_page') }}">Deals</a></li>
-          <li class="nav-item"><a class="nav-link active fw-semibold" href="{{ url_for('main.compare_prices') }}">Compare</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.home') }}"><i class="bi bi-house-door"></i> Home</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.stores_page') }}"><i class="bi bi-shop"></i> Stores</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.featured_deals_page') }}"><i class="bi bi-tags"></i> Deals</a></li>
+          <li class="nav-item"><a class="nav-link active fw-semibold" href="{{ url_for('main.compare_prices') }}"><i class="bi bi-bar-chart"></i> Compare</a></li>
           <li class="nav-item">
             <a class="nav-link position-relative" href="{{ url_for('main.shopping_list') }}">
-              <i class="bi bi-cart3"></i> Cart
+              <i class="bi bi-list-check"></i> Lists
               <span id="shopping-list-count" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger {{ 'd-none' if not cart_count else '' }}" style="font-size: 0.65rem;">
                 {{ cart_count if cart_count else '' }}
               </span>
@@ -250,6 +250,11 @@
           {% endif %}
         </ol>
       </nav>
+      <div class="d-flex justify-content-start mb-3">
+        <a href="{{ url_for('main.compare_prices') }}" class="btn btn-light btn-sm shadow-sm">
+          <i class="bi bi-arrow-left"></i> Back to Products
+        </a>
+      </div>
       <h1 class="display-5 fw-bold">{{ product.name }}</h1>
       {% if product.category or (product.category_path and product.category_path|length) %}
         <span class="category-badge mt-2">{{ (product.category_path and product.category_path[-1]) or product.category }}</span>
@@ -315,9 +320,6 @@
                   onclick="toggleProductFavorite()" style="padding: 0.75rem; font-weight: 700;">
             <i class="bi bi-heart" id="favorite-icon"></i> <span id="favorite-text">Add to Favorites</span>
           </button>
-          <a href="{{ url_for('main.compare_prices') }}" class="btn btn-outline-secondary" style="padding: 0.75rem; font-weight: 700;">
-            <i class="bi bi-arrow-left"></i> Back to Products
-          </a>
         </div>
 
         {% if product.description %}
@@ -360,10 +362,22 @@
         selectedStoreData.store = firstCard.dataset.store;
         selectedStoreData.price = firstCard.dataset.price;
         selectedStoreData.image = firstCard.dataset.image || defaultImgSrc;
+        
+        // Update button's dataset immediately
+        if (addToListBtn) {
+          addToListBtn.dataset.price = selectedStoreData.price;
+          addToListBtn.dataset.store = selectedStoreData.store;
+        }
       } else {
         selectedStoreData.store = '{{ (product.stores and product.stores[0] and (product.stores[0].store or product.stores[0].name)) or (product.store or product.source) or "Store" }}';
         selectedStoreData.price = '{{ (product.stores and product.stores[0] and product.stores[0].price) or product.price or "N/A" }}';
         selectedStoreData.image = defaultImgSrc;
+        
+        // Update button's dataset immediately
+        if (addToListBtn) {
+          addToListBtn.dataset.price = selectedStoreData.price;
+          addToListBtn.dataset.store = selectedStoreData.store;
+        }
       }
 
       // Handle store card clicks
@@ -403,42 +417,57 @@
 
       // Add to shopping list functionality
       if (addToListBtn) {
-        addToListBtn.addEventListener('click', async function() {
+        addToListBtn.addEventListener('click', async function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          
           const price = selectedStoreData.price || '{{ (product.stores and product.stores[0] and product.stores[0].price) or product.price }}';
           const store = selectedStoreData.store || '{{ (product.stores and product.stores[0] and (product.stores[0].store or product.stores[0].name)) or (product.store or product.source) }}';
           
+          console.log('Adding to list:', { productName, productId, price, store });
+          console.log('Selected store data:', selectedStoreData);
+          
+          // Ensure price is not empty or 0
+          if (!price || price === '0' || price === '0.00') {
+            console.error('Invalid price:', price);
+            showNotification('Please select a store first', 'warning');
+            return;
+          }
+          
+          const itemData = {
+            item: {
+              name: productName,
+              price: price,
+              store: store,
+              qty: 1,
+              id: productId
+            }
+          };
+          
+          console.log('Sending data:', JSON.stringify(itemData, null, 2));
+          
           try {
-            const response = await fetch('/shopping-list/add', {
+            const response = await fetch('/api/list/add-item', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
               },
-              body: JSON.stringify({
-                name: productName,
-                price: price,
-                store: store,
-                qty: 1
-              })
+              body: JSON.stringify(itemData)
             });
             
+            console.log('Response status:', response.status);
             const data = await response.json();
+            console.log('Response:', data);
+            
             if (data.success || response.ok) {
-              // Show success feedback on button
-              const originalHTML = this.innerHTML;
-              this.innerHTML = '<i class="bi bi-check-circle"></i> Added to List!';
-              this.style.background = 'linear-gradient(135deg, #28a745 0%, #20c997 100%)';
-              
-              setTimeout(() => {
-                this.innerHTML = originalHTML;
-                this.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
-                // Keep the selected store and don't reset anything
-              }, 2000);
+              // Show standard notification
+              showNotification(`${productName} added to your shopping list`, 'success');
             } else {
-              showNotification('Error adding to list', 'danger');
+              showNotification(data.message || data.error || 'Failed to add item', 'danger');
             }
           } catch (error) {
             console.error('Error adding to list:', error);
-            showNotification('Error adding to list', 'danger');
+            showNotification('Error adding item to list', 'danger');
           }
         });
       }
@@ -536,24 +565,6 @@
 
     // Load favorite state when page loads
     document.addEventListener('DOMContentLoaded', checkFavoriteState);
-
-    function showNotification(message, type = 'info') {
-      const el = document.createElement('div');
-      el.className = `alert alert-${type} alert-dismissible fade show`;
-      el.style.position = 'fixed';
-      el.style.top = '20px';
-      el.style.right = '20px';
-      el.style.zIndex = 9999;
-      el.style.minWidth = '260px';
-      el.innerHTML = `${message}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>`;
-      document.body.appendChild(el);
-      
-      setTimeout(() => {
-        try {
-          new bootstrap.Alert(el).close();
-        } catch(e) {}
-      }, 3500);
-    }
   </script>
 </body>
 </html>

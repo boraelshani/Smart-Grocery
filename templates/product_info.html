@@ -8,44 +8,74 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
-    .product-header { 
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-      color: white; 
-      padding: 3rem 0; 
+    body { background: #f3f4f6; }
+    .product-hero {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 3rem 0 3.5rem;
+      position: relative;
+      overflow: hidden;
+      border-bottom-left-radius: 24px;
+      border-bottom-right-radius: 24px;
+    }
+    .product-hero::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 20% 20%, rgba(255,255,255,0.08), transparent 45%),
+                  radial-gradient(circle at 80% 0%, rgba(255,255,255,0.07), transparent 40%);
+      pointer-events: none;
+    }
+    .glass-card {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.25);
+      border-radius: 18px;
+      box-shadow: 0 14px 36px rgba(0,0,0,0.18);
+      backdrop-filter: blur(6px);
     }
     .product-image-container {
       background: #ffffff;
-      border-radius: 15px;
-      padding: 2rem;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      border-radius: 16px;
+      padding: 1.5rem;
+      box-shadow: 0 12px 26px rgba(0,0,0,0.12);
     }
     .product-image {
       width: 100%;
-      max-width: 400px;
-      height: 400px;
+      height: 420px;
       object-fit: contain;
       background: #ffffff;
+      border-radius: 12px;
+      padding: 12px;
     }
-    .info-card {
-      background: #f8f9fa;
-      border-radius: 15px;
+    .meta-chips .badge { font-weight: 700; }
+    .price { font-size: 2.2rem; font-weight: 900; }
+    .desc-card {
+      background: #ffffff;
+      border-radius: 16px;
       padding: 1.5rem;
-      margin-bottom: 1rem;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.08);
     }
-    .info-label {
-      font-weight: 600;
-      color: #667eea;
-      margin-bottom: 0.5rem;
-      font-size: 0.9rem;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
+    .pill-btn {
+      border: none;
+      border-radius: 999px;
+      padding: 0.85rem 1.4rem;
+      font-weight: 700;
+      box-shadow: 0 10px 24px rgba(124,58,237,0.25);
+      background: linear-gradient(135deg, #a78bfa, #7c3aed);
+      color: #ffffff;
+      letter-spacing: 0.2px;
+      transition: all 0.2s ease;
     }
-    .info-content {
-      color: #333;
-      font-size: 1rem;
-      line-height: 1.6;
+    .pill-btn:hover {
+      background: linear-gradient(135deg, #7c3aed, #5b21b6);
+      box-shadow: 0 12px 28px rgba(91,33,182,0.32);
+      transform: translateY(-1px);
     }
+    .text-soft-white { color: rgba(255,255,255,0.92); }
+    .text-soft-white-muted { color: rgba(255,255,255,0.7); }
+    .btn-favorite { background: none; border: none; color: rgba(255,255,255,0.7); font-size: 1.8rem; transition: all 0.2s ease; padding: 0.25rem; }
+    .btn-favorite:hover { color: #ff6b6b; transform: scale(1.15); }
+    .btn-favorite.active { color: #ff6b6b; }
   </style>
 </head>
 <body>
@@ -61,10 +91,10 @@
       <div class="collapse navbar-collapse" id="navbarNav">
         {% set cart_count = shopping_list_count or 0 %}
         <ul class="navbar-nav ms-auto">
-          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.home') }}">Home</a></li>
-          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.stores_page') }}">Stores</a></li>
-          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.featured_deals_page') }}">Deals</a></li>
-          <li class="nav-item"><a class="nav-link active fw-semibold" href="{{ url_for('main.compare_prices') }}">Compare</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.home') }}"><i class="bi bi-house-door"></i> Home</a></li>
+          <li class="nav-item"><a class="nav-link active fw-semibold" href="{{ url_for('main.stores_page') }}"><i class="bi bi-shop"></i> Stores</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.featured_deals_page') }}"><i class="bi bi-tags"></i> Deals</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.compare_prices') }}"><i class="bi bi-bar-chart"></i> Compare</a></li>
           <li class="nav-item">
             <a class="nav-link position-relative" href="{{ url_for('main.shopping_list') }}">
               <i class="bi bi-cart3"></i> Cart
@@ -84,83 +114,92 @@
   </nav>
 
   <!-- Product Header -->
-  <section class="product-header text-center">
-    <div class="container">
-      <button onclick="history.back()" class="btn btn-light btn-sm mb-3">
-        <i class="bi bi-arrow-left"></i> Back
-      </button>
-      <h1 class="fw-bold mb-2">{{ product.get('name') or product.get('title', 'Product') }}</h1>
-      {% if product.get('category') %}
-        <p class="lead mb-0 opacity-90">{{ product.get('category') }}</p>
-      {% endif %}
-    </div>
-  </section>
-
-  <!-- Product Details -->
-  <section class="container py-5">
-    <div class="row">
-      <!-- Product Image -->
-      <div class="col-md-5 mb-4">
-        <div class="product-image-container text-center">
-          <img src="{{ product.get('image') or product.get('store_image') or 'https://via.placeholder.com/400' }}" 
-               alt="{{ product.get('name') or product.get('title', 'Product') }}" 
-               class="product-image">
-        </div>
+  <section class="product-hero py-5">
+    <div class="container position-relative" style="z-index: 1;">
+      <div class="d-flex justify-content-start mb-3">
+        <button onclick="history.back()" class="btn btn-light btn-sm shadow-sm">
+          <i class="bi bi-arrow-left"></i> Back
+        </button>
       </div>
-
-      <!-- Product Information -->
-      <div class="col-md-7">
-        <div class="info-card">
-          <div class="info-label">
-            <i class="bi bi-file-text"></i> Description
+      <div class="row align-items-center g-4">
+        <div class="col-lg-7">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <div>
+              <h1 class="display-5 fw-bold text-white mb-2">{{ product.get('name') or product.get('title', 'Product') }}</h1>
+              {% if product.get('category') %}
+                <span class="badge bg-white text-primary fw-semibold"><i class="bi bi-tag"></i> {{ product.get('category') }}</span>
+              {% endif %}
+            </div>
+            <button class="btn btn-favorite btn-lg" onclick="toggleFavorite('{{ product.get('_id') or product.get('id') }}', this)"><i class="bi bi-heart"></i></button>
           </div>
-          <div class="info-content">
-            {% if product.get('description') %}
-              {{ product.get('description') }}
-            {% else %}
-              <em class="text-muted">No description available</em>
+          <div class="glass-card mt-3 p-4">
+            <div class="d-flex justify-content-between flex-wrap gap-3 align-items-start">
+              <div>
+                <div class="text-uppercase small fw-semibold text-white-75 mb-1"><i class="bi bi-currency-euro"></i> Price{% if store_name %} at {{ store_name }}{% endif %}</div>
+                <div class="price">€{{ store_price or product.get('price') or 'N/A' }}</div>
+              </div>
+            </div>
+            <div class="d-flex flex-wrap gap-2 mt-3 meta-chips">
+              {% if product.get('unit') %}
+                <span class="badge bg-white text-primary fw-semibold"><i class="bi bi-box"></i> {{ product.get('unit') }}</span>
+              {% endif %}
+              {% if product.get('category') %}
+                <span class="badge bg-white text-primary fw-semibold"><i class="bi bi-tag"></i> {{ product.get('category') }}</span>
+              {% endif %}
+            </div>
+          </div>
+          <div class="mt-3 text-soft-white">
+            <div class="fw-semibold text-white mb-1"><i class="bi bi-file-text"></i> Description</div>
+            <div class="text-soft-white">
+              {% if product.get('description') %}
+                {{ product.get('description') }}
+              {% else %}
+                <span class="text-soft-white-muted">No description available.</span>
+              {% endif %}
+            </div>
+          </div>
+          <div class="mt-3 text-soft-white">
+            <div class="fw-semibold text-white mb-1"><i class="bi bi-box"></i> Unit / Size</div>
+            <div class="text-soft-white">
+              {% if product.get('unit') %}
+                {{ product.get('unit') }}
+              {% else %}
+                <span class="text-soft-white-muted">No unit information available.</span>
+              {% endif %}
+            </div>
+          </div>
+          <div class="mt-4 d-flex flex-wrap gap-2 align-items-center">
+            {% set btn_img = request.args.get('store_image') or product.get('store_image') or product.get('image') or '' %}
+            <button type="button"
+                    class="pill-btn add-to-cart-btn"
+                    data-name="{{ product.get('name') or product.get('title', 'Product') }}"
+                    data-price="{{ store_price or product.get('price') or '' }}"
+                    data-image="{{ btn_img }}"
+                    data-store="{{ store_name }}">
+              <i class="bi bi-cart-plus me-2"></i>Add to List
+            </button>
+            {% if product.get('url') %}
+              <a href="{{ product.get('url') }}" target="_blank" rel="noopener noreferrer" class="btn btn-light text-primary fw-semibold shadow-sm">
+                <i class="bi bi-box-arrow-up-right me-1"></i> Go to Store
+              </a>
             {% endif %}
           </div>
         </div>
-
-        <div class="info-card">
-          <div class="info-label">
-            <i class="bi bi-box"></i> Unit / Size
+        <div class="col-lg-5">
+          <div class="product-image-container">
+            {% set img_url = request.args.get('store_image') or product.get('store_image') or product.get('image') or 'https://via.placeholder.com/420?text=No+Image' %}
+            <img src="{{ img_url }}" 
+                 alt="{{ product.get('name') or product.get('title', 'Product') }}" 
+                 class="product-image"
+                 onerror="this.src='https://via.placeholder.com/420?text=No+Image'">
           </div>
-          <div class="info-content">
-            {% if product.get('unit') %}
-              {{ product.get('unit') }}
-            {% else %}
-              <em class="text-muted">No unit information available</em>
-            {% endif %}
-          </div>
-        </div>
-
-        {% if store_price %}
-          <div class="info-card">
-            <div class="info-label">
-              <i class="bi bi-tag"></i> Price{% if store_name %} at {{ store_name }}{% endif %}
-            </div>
-            <div class="info-content">
-              <span class="text-success fw-bold fs-4">€{{ store_price }}</span>
-            </div>
-          </div>
-        {% endif %}
-
-        <!-- Add to Shopping List Button -->
-        <div class="mt-4">
-          <button type="button"
-                  class="btn btn-primary btn-lg w-100 add-to-cart-btn"
-                  data-name="{{ product.get('name') or product.get('title', 'Product') }}"
-                  data-price="{{ store_price }}"
-                  data-image="{{ product.get('image') or product.get('store_image') or '' }}"
-                  data-store="{{ store_name }}">
-            <i class="bi bi-cart-plus me-2"></i>Add to Shopping List
-          </button>
         </div>
       </div>
     </div>
   </section>
+
+  <!-- Spacer for balance -->
+  <section class="py-4"></section>
 
   <!-- Footer -->
   <footer class="text-center py-4 bg-light border-top mt-5">
@@ -169,5 +208,23 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+  <script>
+    // Toggle favorite
+    async function toggleFavorite(productId, button) {
+      try {
+        const isCurrentlyFavorite = button.classList.contains('active');
+        const response = await fetch('/api/toggle-favorite', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ product_id: productId })
+        });
+        if (response.ok) {
+          button.classList.toggle('active');
+        }
+      } catch (error) {
+        console.error('Error toggling favorite:', error);
+      }
+    }
+  </script>
 </body>
 </html>

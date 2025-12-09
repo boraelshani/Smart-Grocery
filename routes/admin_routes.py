@@ -23,12 +23,12 @@ def add_or_update_product():
     Expected JSON body (example):
     {
       "name": "Organic Bananas",
-      "price": "$1.29",
+    "price": "€1.29",
       "price_val": 1.29,
       "image": "https://cdn.example/42e9as7nataai4a6jcufwg.jpg",
       "images": ["https://.../1.jpg"],
       "category": "Produce",
-      "stores": [{"store":"FreshMart","price":"$1.29"}],
+    "stores": [{"store":"FreshMart","price":"€1.29"}],
       "description": "...",
       "qty": 1
     }

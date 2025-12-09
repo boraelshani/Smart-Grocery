@@ -135,14 +135,14 @@
       <div class="collapse navbar-collapse" id="navbarNav">
         {% set cart_count = shopping_list_count or 0 %}
         <ul class="navbar-nav ms-auto">
-          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.home') }}">Home</a></li>
-          <li class="nav-item"><a class="nav-link active fw-semibold" href="{{ url_for('main.stores_page') }}">Stores</a></li>
-          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.featured_deals_page') }}">Deals</a></li>
-          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.compare_prices') }}">Compare</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.home') }}"><i class="bi bi-house-door"></i> Home</a></li>
+          <li class="nav-item"><a class="nav-link active fw-semibold" href="{{ url_for('main.stores_page') }}"><i class="bi bi-shop"></i> Stores</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.featured_deals_page') }}"><i class="bi bi-tags"></i> Deals</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.compare_prices') }}"><i class="bi bi-bar-chart"></i> Compare</a></li>
           <li class="nav-item">
             <a class="nav-link position-relative" href="{{ url_for('main.shopping_list') }}">
-              <i class="bi bi-cart3"></i> Cart
-              <span id="shopping-list-count" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.65rem; {% if not cart_count %}display: none;{% endif %}">
+              <i class="bi bi-list-check"></i> Lists
+              <span id="shopping-list-count" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger {{ 'd-none' if not cart_count else '' }}" style="font-size: 0.65rem;">
                 {{ cart_count if cart_count else '' }}
               </span>
             </a>
@@ -157,8 +157,6 @@
     </div>
   </nav>
 
-  <!-- Page Header -->
-  <section class="text-center py-5 bg-light">
   <!-- Hero Header -->
   <section class="hero-gradient text-center py-5">
     <div class="container">

@@ -22,20 +22,20 @@
         {% set cart_count = shopping_list_count or 0 %}
         <ul class="navbar-nav ms-auto">
           <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('main.home') }}">Home</a>
+            <a class="nav-link" href="{{ url_for('main.home') }}"><i class="bi bi-house-door"></i> Home</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('main.stores_page') }}">Stores</a>
+            <a class="nav-link" href="{{ url_for('main.stores_page') }}"><i class="bi bi-shop"></i> Stores</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link active fw-semibold" href="{{ url_for('main.featured_deals_page') }}">Deals</a>
+            <a class="nav-link active fw-semibold" href="{{ url_for('main.featured_deals_page') }}"><i class="bi bi-tags"></i> Deals</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('main.compare_prices') }}">Compare</a>
+            <a class="nav-link" href="{{ url_for('main.compare_prices') }}"><i class="bi bi-bar-chart"></i> Compare</a>
           </li>
           <li class="nav-item">
             <a class="nav-link position-relative" href="{{ url_for('main.shopping_list') }}">
-              <i class="bi bi-cart3"></i> Cart
+              <i class="bi bi-list-check"></i> Lists
               <span id="shopping-list-count" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger {{ 'd-none' if not cart_count else '' }}" style="font-size: 0.65rem;">
                 {{ cart_count if cart_count else '' }}
               </span>
@@ -144,7 +144,8 @@
       {% if deals %}
         {% for p in deals %}
           <div class="col-md-6 col-lg-4 product-card" data-stores='{{ p.get("stores")|tojson }}' data-price="{{ p.get('price','') }}" data-name="{{ p.get('title','')|lower }}" data-category="{{ p.get('category','')|lower }}">
-            <div class="card product-card-inner h-100 shadow-sm border-0" style="transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 8px 24px rgba(102, 126, 234, 0.25)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 .125rem .25rem rgba(0,0,0,.075)'">
+            {% set detail_url = url_for('main.featured_deal_detail', deal_id=p.get('id') or p.get('_id')) %}
+            <div class="card product-card-inner h-100 shadow-sm border-0" data-detail-url="{{ detail_url }}" onclick="goToDealDetail(event, this)" style="transition: transform 0.2s, box-shadow 0.2s; cursor: pointer;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 8px 24px rgba(102, 126, 234, 0.25)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 .125rem .25rem rgba(0,0,0,.075)'">
               <div class="position-relative">
                 {% set pid = p.get('_id') or p.get('id') %}
                 <img src="{{ prefer_processed(p.get('image') or url_for('static', filename='placeholder.svg')) }}" class="card-img-top product-image" alt="{{ p.get('title') or p.get('name','Product') }}">
@@ -162,8 +163,12 @@
               <div class="card-body d-flex flex-column" style="background-color: #f8f9fa;">
                   {% set original_price = p.get('original_price') %}
                   {% set discount_label = p.get('discount_label') or (p.get('discount_percent') ~ '% off' if p.get('discount_percent') is not none else '') %}
+                  {% set offer_obj = p.get('offer') if p.get('offer') is mapping else None %}
                   {% set offer = p.get('offer', '') %}
-                  {% set is_buy_get_deal = 'buy' in offer.lower() and ('get' in offer.lower() or 'free' in offer.lower() or '+' in offer) %}
+                  {% set offer_x = offer_obj.x if offer_obj is not none else (p.get('multibuy_buy') or '') %}
+                  {% set offer_y = offer_obj.y if offer_obj is not none else (p.get('multibuy_free') or '') %}
+                  {% set offer_type = offer_obj.type if offer_obj is not none else ('buyXgetY' if offer_x and offer_y else '') %}
+                  {% set is_buy_get_deal = (offer_type == 'buyXgetY') or ('buy' in offer|lower and ('get' in offer|lower or 'free' in offer|lower or '+' in offer)) %}
                 <div class="d-flex justify-content-between align-items-start mb-3">
                   <h5 class="card-title mb-0 fw-bold">{{ p.get('title') or p.get('name','') }}</h5>
                     {% if discount_label %}
@@ -173,18 +178,20 @@
                 <p class="text-muted small mb-2">{{ p.get('store') or p.get('source','') }}</p>
                   <div class="mb-3">
                     {% if is_buy_get_deal %}
-                      <div class="fw-bold fs-5" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">${{ '%.2f' % (p.get('price') or 0) }} each</div>
+                      <div class="fw-bold fs-5" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">€{{ '%.2f' % (p.get('price') or 0) }} each</div>
                       <div class="text-muted small">{{ offer }}</div>
                     {% else %}
                       {% if original_price %}
-                        <div class="text-muted small text-decoration-line-through">Before: ${{ '%.2f' % original_price }}</div>
+                        <div class="text-muted small text-decoration-line-through">Before: €{{ '%.2f' % (original_price|float) }}</div>
                       {% endif %}
-                      <div class="fw-bold fs-5" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Now: ${{ '%.2f' % (p.get('price') or 0) }}</div>
+                      <div class="fw-bold fs-5" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Now: €{{ '%.2f' % ((p.get('price') or 0)|float) }}</div>
                     {% endif %}
                   </div>
                 <div class="mt-auto d-flex gap-2">
-                  <a href="{{ url_for('main.product_detail', product_id=p.get('id') or p.get('_id')) }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-info-circle me-1"></i>Details</a>
-                  <button type="button" class="btn btn-sm claim-deal-btn" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none;" data-id="{{ p.get('id') or p.get('title','') }}" data-title="{{ p.get('title') or p.get('name','') }}" data-price="{{ p.get('price','') }}"><i class="bi bi-cart-plus me-1"></i>Add to List</button>
+                  <button type="button" class="btn btn-sm claim-deal-btn" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none;" data-id="{{ p.get('id') or p.get('title','') }}" data-title="{{ p.get('title') or p.get('name','') }}" data-price="{{ p.get('price','') }}" data-original-price="{{ p.get('original_price','') }}" data-offer-json='{{ offer_obj|tojson|forceescape if offer_obj is not none else "" }}' data-offer-type="{{ offer_type }}" data-offer-x="{{ offer_x }}" data-offer-y="{{ offer_y }}" onclick="event.stopPropagation();"><i class="bi bi-cart-plus me-1"></i>Add to List</button>
+                  <a href="{{ detail_url }}" class="btn btn-sm btn-outline-primary" onclick="event.stopPropagation();">
+                    <i class="bi bi-info-circle me-1"></i>Details
+                  </a>
                 </div>
               </div>
             </div>
@@ -196,30 +203,6 @@
     </div>
   </section>
 
-  <!-- Modal for Deal Details -->
-  <div class="modal fade" id="dealModal" tabindex="-1" aria-labelledby="dealModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="dealModalLabel">Featured Deal Details</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-          <img src="{{ prefer_processed('https://via.placeholder.com/300x200') or 'https://via.placeholder.com/300x200' }}" class="img-fluid mb-3" alt="Deal">
-          <h6>Product Name</h6>
-          <p><strong>Original Price:</strong> <strike>$5.99</strike></p>
-          <p><strong>Deal Price:</strong> $4.49</p>
-          <p><strong>You Save:</strong> $1.50 (25%)</p>
-          <p><strong>Store:</strong> FreshMart</p>
-          <p><strong>Expires:</strong> 2 days</p>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-          <button type="button" class="btn btn-success">Add to List</button>
-        </div>
-      </div>
-    </div>
-  </div>
 
   <!-- Footer -->
   <footer class="text-center py-4 bg-light border-top">
@@ -230,6 +213,17 @@
   <script src="{{ url_for('static', filename='js/script.js') }}"></script>
   
   <script>
+    function goToDealDetail(event, cardEl) {
+      const target = event.target;
+      if (target.closest('.claim-deal-btn') || target.closest('a.btn')) {
+        return;
+      }
+      const url = cardEl.dataset.detailUrl;
+      if (url) {
+        window.location.href = url;
+      }
+    }
+
     // Quick favorite function
     async function quickFavorite(event, productId, button) {
       event.preventDefault();

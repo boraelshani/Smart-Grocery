@@ -250,6 +250,35 @@ def store_products_page(store_name):
                 products.append(deal)
         except Exception as e:
             print(f'ERROR loading products for {store_name}: {e}')
+
+    # Fallback to in-memory data and JSON deals when DB is unavailable or returned nothing
+    try:
+        if not products:
+            store_lc = store_name.lower()
+
+            # In-memory products
+            for prod in getattr(m, 'products', []):
+                matched_stores = [s for s in (prod.get('stores') or [])
+                                  if (s.get('store') or s.get('name') or '').lower() == store_lc]
+                top_level_match = isinstance(prod.get('store'), str) and prod.get('store', '').lower() == store_lc
+                if matched_stores or top_level_match:
+                    shaped = dict(prod)
+                    if '_id' in shaped:
+                        shaped['id'] = str(shaped['_id'])
+                    shaped['store_price'] = matched_stores[0].get('price') if matched_stores else prod.get('price')
+                    shaped['store_image'] = matched_stores[0].get('image') if matched_stores else prod.get('image')
+                    products.append(shaped)
+
+            # Featured deals fallback JSON
+            for deal in load_featured_deals_fallback():
+                deal_store = (deal.get('store') or deal.get('source') or '').lower()
+                if deal_store == store_lc:
+                    shaped = dict(deal)
+                    if '_id' in shaped:
+                        shaped['id'] = str(shaped['_id'])
+                    products.append(shaped)
+    except Exception as e:
+        print(f'ERROR loading fallback products for {store_name}: {e}')
     
     return render_template('store_products.html', 
                          store_name=store_name, 
@@ -485,7 +514,40 @@ def product_info(product_id):
                 product['id'] = str(product['_id'])
         except Exception as e:
             print(f'Error fetching product from MongoDB: {e}')
+
+    # Also allow featured deals when hitting /product-info directly
+    if db is not None and not product:
+        try:
+            from bson import ObjectId
+            try:
+                product = db.featured_deals.find_one({'_id': ObjectId(product_id)})
+            except Exception:
+                product = db.featured_deals.find_one({'id': product_id})
+            if product and '_id' in product:
+                product['id'] = str(product['_id'])
+        except Exception as e:
+            print(f'Error fetching featured deal for product-info: {e}')
     
+    # Fallback to in-memory data and JSON deals
+    if not product:
+        try:
+            for p in getattr(m, 'products', []):
+                pid = str(p.get('id') or p.get('_id', ''))
+                if pid and str(product_id) == pid:
+                    product = p
+                    break
+        except Exception:
+            pass
+    if not product:
+        try:
+            for d in load_featured_deals_fallback():
+                did = str(d.get('id') or d.get('_id', ''))
+                if did and str(product_id) == did:
+                    product = d
+                    break
+        except Exception:
+            pass
+
     if not product:
         return render_template('404.html'), 404
     
@@ -495,6 +557,17 @@ def product_info(product_id):
 def shopping_list():
     user_email = session.get('user')
     db = get_db()
+    
+    # Mark shopping list as viewed - store current count in session
+    if user_email:
+        from models.users_model import get_user_lists
+        data = get_user_lists(user_email) or {}
+        lists = data.get('lists', []) or []
+        total = 0
+        for lst in lists:
+            items = lst.get('items', []) or []
+            total += sum(1 for it in items if not (isinstance(it, dict) and it.get('purchased')))
+        session['last_viewed_list_count'] = total
     
     # Get user data
     if db is not None and user_email:
@@ -516,6 +589,25 @@ def shopping_list():
     for lst in all_lists:
         if 'items' in lst:
             lst['list_items'] = lst.pop('items')
+        # Calculate estimated total for each list
+        total = 0.0
+        items = lst.get('list_items', [])
+        # Calculate completed count
+        completed_count = 0
+        for item in items:
+            if isinstance(item, dict):
+                # Count completed items
+                if item.get('purchased') or item.get('completed'):
+                    completed_count += 1
+                # Calculate total price
+                price = item.get('price', 0)
+                qty = item.get('qty', 1)
+                # Convert price string to float if needed
+                if isinstance(price, str):
+                    price = float(price.replace('$', '').replace('€', '').replace(',', '').strip() or 0)
+                total += float(price) * int(qty)
+        lst['estimated_total'] = f'€{total:.2f}'
+        lst['completed'] = [item for item in items if isinstance(item, dict) and (item.get('purchased') or item.get('completed'))]
     active_list_id = lists_data.get('active_list_id')
     
     # Get the active list or create a default one if none exist
@@ -686,7 +778,7 @@ def shopping_list():
         unit = float(v.get('price_val') or 0.0)
         qty = int(v.get('qty') or 1)
         total = unit * qty
-        v['price'] = f"${total:.2f}"
+        v['price'] = f"€{total:.2f}"
         items.append(v)
 
     return render_template('shopping_list.html', 
@@ -1058,13 +1150,97 @@ def api_claim_deal():
             # still try to increment using helper (it will fail gracefully)
             claimed = m.claim_featured_deal_by_id(deal_id, email=email)
 
-        # add to user's shopping list if we have an email
+        # add to user's shopping list(s) if we have an email
         added = False
+        active_added = False
         if email:
-            # prefer storing a deal representation if available
+            # Prefer the multi-list structure: add to active list (create one if missing)
+            try:
+                from models.users_model import (
+                    get_user_lists,
+                    add_item_to_list,
+                    create_shopping_list,
+                    set_active_list,
+                )
+
+                # derive price/qty and offer (buy X get Y)
+                raw_price = data.get('price') or (deal_doc or {}).get('price')
+                raw_original = data.get('original_price') or (deal_doc or {}).get('original_price')
+                raw_offer = data.get('offer') or (deal_doc or {}).get('offer') or ''
+                qty = int(data.get('qty') or 1)
+                price_val = data.get('price_val') or raw_original or raw_price
+
+                def _to_float(val):
+                    try:
+                        return float(str(val).replace('€', '').replace('$', '').replace(',', '').strip()) if val is not None else 0.0
+                    except Exception:
+                        return 0.0
+
+                def _parse_offer(val):
+                    # prefer object form {type:'buyXgetY', x, y}
+                    if isinstance(val, dict) and val.get('type'):
+                        return {
+                            'type': val.get('type'),
+                            'x': val.get('x'),
+                            'y': val.get('y'),
+                        }
+                    if isinstance(val, str):
+                        m = re.match(r"(\d+)\s*\+\s*(\d+)", val)
+                        if m:
+                            return {'type': 'buyXgetY', 'x': int(m.group(1)), 'y': int(m.group(2))}
+                    return None
+
+                offer_obj = _parse_offer(raw_offer)
+                # fallback: if old multibuy fields exist, translate them
+                if not offer_obj:
+                    mb_buy = (deal_doc or {}).get('multibuy_buy') or data.get('multibuy_buy')
+                    mb_free = (deal_doc or {}).get('multibuy_free') or data.get('multibuy_free')
+                    if mb_buy and mb_free:
+                        offer_obj = {'type': 'buyXgetY', 'x': mb_buy, 'y': mb_free}
+
+                price_val_num = _to_float(price_val)
+                discounted_price_num = _to_float(raw_price)  # shown price (may be effective deal price)
+                original_price_num = _to_float(raw_original)  # normal price per unit
+
+                # For multibuy offers: use original_price as the unit price to charge
+                # For regular deals: use the shown price or original price
+                if offer_obj and offer_obj.get('type') == 'buyXgetY':
+                    # For multibuy: original_price IS the unit price (what they pay per item)
+                    # The discount is applied by the offer (2+1 means pay for 2, get 1 free)
+                    charge_price = original_price_num if original_price_num > 0 else discounted_price_num
+                else:
+                    # Regular discount: use discounted price or original
+                    charge_price = discounted_price_num or original_price_num or price_val_num
+
+                # single payload: always add qty=1 (one unit) with the offer metadata
+                payload = {
+                    'name': (deal_doc or {}).get('title') or (deal_doc or {}).get('name') or str(deal_id),
+                    'price': charge_price,
+                    'price_val': charge_price,
+                    'store': (deal_doc or {}).get('store') or (deal_doc or {}).get('source', ''),
+                    'image': (deal_doc or {}).get('image') or ((deal_doc or {}).get('images') or [None])[0],
+                    'qty': 1,  # always add 1 unit at a time
+                    'offer': offer_obj or raw_offer,  # store offer object when available
+                }
+
+                lists_data = get_user_lists(email) or {}
+                active_list_id = lists_data.get('active_list_id')
+
+                if not active_list_id:
+                    new_id = create_shopping_list(email, 'My List')
+                    if new_id:
+                        set_active_list(email, new_id)
+                        active_list_id = new_id
+
+                if active_list_id:
+                    active_added = add_item_to_list(email, active_list_id, payload)
+            except Exception:
+                active_added = False
+
+            # Legacy single-list storage for backwards compatibility
             added = m.add_deal_to_user_shopping_list(email, deal_doc or str(deal_id))
 
-        return jsonify({'success': bool(claimed or added), 'claimed': bool(claimed), 'added': bool(added)})
+        return jsonify({'success': bool(claimed or added or active_added), 'claimed': bool(claimed), 'added': bool(added or active_added)})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

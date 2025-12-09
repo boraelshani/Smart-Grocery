@@ -11,21 +11,21 @@ products = [
         "name": "Milk",
         "unit": "gal",
         "stores": [
-            {"store": "Supermart", "price": "$3.99", "discount": "10% off", "deal": None},
-            {"store": "Grocery Hub", "price": "$4.49", "discount": "None", "deal": None},
-            {"store": "Fresh & Co", "price": "$3.79", "discount": "20% off", "deal": None}
+            {"store": "Supermart", "price": "€3.99", "discount": "10% off", "deal": None},
+            {"store": "Grocery Hub", "price": "€4.49", "discount": "None", "deal": None},
+            {"store": "Fresh & Co", "price": "€3.79", "discount": "20% off", "deal": None}
         ],
-        "cheapest": {"store": "Fresh & Co", "price": "$3.79", "discount": "20% off", "deal": None}
+        "cheapest": {"store": "Fresh & Co", "price": "€3.79", "discount": "20% off", "deal": None}
     },
     {
         "name": "Bread",
         "unit": "loaf",
         "stores": [
-            {"store": "Supermart", "price": "$2.99", "discount": "None", "deal": None},
-            {"store": "Grocery Hub", "price": "$3.49", "discount": "Buy 1 get 1", "deal": None},
-            {"store": "Fresh & Co", "price": "$3.29", "discount": "None", "deal": None}
+            {"store": "Supermart", "price": "€2.99", "discount": "None", "deal": None},
+            {"store": "Grocery Hub", "price": "€3.49", "discount": "Buy 1 get 1", "deal": None},
+            {"store": "Fresh & Co", "price": "€3.29", "discount": "None", "deal": None}
         ],
-        "cheapest": {"store": "Supermart", "price": "$2.99", "discount": "None", "deal": None}
+        "cheapest": {"store": "Supermart", "price": "€2.99", "discount": "None", "deal": None}
     }
 ]
 

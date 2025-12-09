@@ -20,14 +20,47 @@
       height: 110px;
       border-radius: 50%;
       background: white;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 2.8rem;
-      color: #4b63c9;
       border: 4px solid rgba(255,255,255,0.8);
       box-shadow: 0 10px 25px rgba(0,0,0,0.2);
       margin: 0 auto 1rem;
+    }
+    .avatar-chooser {
+      padding: 12px 0 4px;
+      width: 100%;
+      max-width: 320px;
+      margin: 0 auto;
+    }
+    .avatar-choices {
+      display: grid;
+      width: 100%;
+      grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+      gap: 10px;
+      justify-items: center;
+    }
+    .avatar-option {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      border: 2px solid transparent;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+    .avatar-option:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 18px rgba(0,0,0,0.15);
+    }
+    .avatar-option.active {
+      border-color: #667eea;
+      box-shadow: 0 0 0 4px rgba(102,126,234,0.15);
     }
     .profile-shell {
       display: grid;
@@ -67,6 +100,11 @@
       border-radius: 999px;
       font-weight: 600;
       font-size: 0.9rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      word-break: break-word;
+      max-width: 100%;
     }
     .favorite-card {
       border: 1px solid #eef1f8;
@@ -86,7 +124,7 @@
       height: 56px;
       object-fit: contain;
       border-radius: 12px;
-      background: #f8f6ff;
+      background: #ffffff !important;
       padding: 8px;
     }
     .favorites-grid {
@@ -210,23 +248,20 @@
         {% set cart_count = shopping_list_count or 0 %}
         <ul class="navbar-nav ms-auto">
           <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('main.home') }}">Home</a>
+            <a class="nav-link" href="{{ url_for('main.home') }}"><i class="bi bi-house-door"></i> Home</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('main.stores_page') }}">Stores</a>
+            <a class="nav-link" href="{{ url_for('main.stores_page') }}"><i class="bi bi-shop"></i> Stores</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('main.featured_deals_page') }}">Deals</a>
+            <a class="nav-link" href="{{ url_for('main.featured_deals_page') }}"><i class="bi bi-tags"></i> Deals</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('main.compare_prices') }}">Compare</a>
+            <a class="nav-link" href="{{ url_for('main.compare_prices') }}"><i class="bi bi-bar-chart"></i> Compare</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link position-relative" href="{{ url_for('main.shopping_list') }}">
-              <i class="bi bi-cart3"></i> Shopping List
-              <span id="shopping-list-count" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.65rem;" {% if not cart_count %}style="display: none;"{% endif %}>
-                {{ cart_count if cart_count else '' }}
-              </span>
+            <a class="nav-link" href="{{ url_for('main.shopping_list') }}">
+              <i class="bi bi-list-check"></i> Lists
             </a>
           </li>
           <li class="nav-item">
@@ -242,9 +277,7 @@
   <!-- Profile Header -->
   <section class="profile-header">
     <div class="container text-center">
-      <div class="profile-avatar">
-        <i class="bi bi-person-fill"></i>
-      </div>
+      <div class="profile-avatar"></div>
       <h1 class="display-5 fw-bold mb-2">{{ user_data.name if user_data and user_data.get('name') else 'Guest User' }}</h1>
       <p class="lead opacity-75">
         <i class="bi bi-envelope"></i> {{ user_data.email if user_data and user_data.get('email') else 'Not logged in' }}
@@ -273,14 +306,32 @@
         <!-- Left column: identity + stats + preferences -->
         <div class="column-stack">
           <div class="card-neo p-4">
-            <div class="d-flex align-items-center gap-3 mb-3">
-              <div class="profile-avatar"><i class="bi bi-person-fill"></i></div>
-              <div>
+            <div class="d-flex flex-column align-items-center gap-2 mb-3 text-center">
+              <div class="profile-avatar"></div>
+              <div class="avatar-chooser text-center">
+                <button id="avatar-chooser-toggle" class="btn btn-outline-primary btn-sm">Choose avatar</button>
+                <div id="avatar-chooser-panel" class="avatar-choices d-none mt-2">
+                  {% set avatars = [
+                    'https://api.dicebear.com/7.x/fun-emoji/svg?seed=groovy-1&backgroundColor=ffffff&scale=90',
+                    'https://api.dicebear.com/7.x/fun-emoji/svg?seed=groovy-2&backgroundColor=ffffff&scale=90',
+                    'https://api.dicebear.com/7.x/fun-emoji/svg?seed=groovy-3&backgroundColor=ffffff&scale=90',
+                    'https://api.dicebear.com/7.x/fun-emoji/svg?seed=groovy-4&backgroundColor=ffffff&scale=90',
+                    'https://api.dicebear.com/7.x/fun-emoji/svg?seed=groovy-5&backgroundColor=ffffff&scale=90',
+                    'https://api.dicebear.com/7.x/identicon/svg?seed=blocks-1&backgroundColor=ffffff&scale=90',
+                    'https://api.dicebear.com/7.x/identicon/svg?seed=blocks-2&backgroundColor=ffffff&scale=90',
+                    'https://api.dicebear.com/7.x/identicon/svg?seed=blocks-3&backgroundColor=ffffff&scale=90'
+                  ] %}
+                  {% for avatar in avatars %}
+                    <div class="avatar-option" data-avatar-url="{{ avatar }}" style="background-image: url('{{ avatar }}');"></div>
+                  {% endfor %}
+                </div>
+              </div>
+              <div class="text-center w-100">
                 <h4 class="mb-1 fw-bold">{{ user_data.name if user_data and user_data.get('name') else 'Guest User' }}</h4>
-                <span class="pill-badge"><i class="bi bi-envelope"></i> {{ user_data.email if user_data and user_data.get('email') else 'Not logged in' }}</span>
               </div>
             </div>
             <div class="d-grid gap-3">
+                            <div class="stat-chip"><i class="bi bi-envelope"></i><span id="profile-email">{{ user_data.email if user_data and user_data.get('email') else 'Not logged in' }}</span></div>
               <div class="stat-chip"><i class="bi bi-geo-alt"></i><span id="profile-address">{{ user_data.address if user_data and user_data.get('address') else 'Address not provided' }}</span></div>
               <div class="stat-chip"><i class="bi bi-telephone"></i><span id="profile-phone">{{ user_data.phone if user_data and user_data.get('phone') else 'Phone not provided' }}</span></div>
               <div class="d-flex gap-2 flex-wrap">
@@ -290,13 +341,7 @@
             </div>
           </div>
 
-          <div class="card-neo p-4">
-            <h6 class="text-muted text-uppercase fw-semibold mb-3">At a glance</h6>
-            <div class="d-flex flex-wrap gap-2">
-              <div class="stat-chip"><i class="bi bi-heart-fill"></i> Favorites: {{ user_data.favorites|length if user_data and user_data.get('favorites') else 0 }}</div>
-              <div class="stat-chip"><i class="bi bi-cart-fill"></i> In Shopping List: {{ user_data.shopping_list|length if user_data and user_data.get('shopping_list') else 0 }}</div>
-            </div>
-          </div>
+          <!-- At a glance card removed per request -->
         </div>
 
         <!-- Right column: Favorites only -->
@@ -305,7 +350,7 @@
             <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
               <div>
                 <h5 class="fw-bold mb-1"><i class="bi bi-heart-fill text-danger"></i> Favorites</h5>
-                <small class="text-muted">Your saved products at a glance</small>
+                <small class="text-muted">Your saved products</small>
               </div>
               <a href="{{ url_for('main.compare_prices') }}" class="btn btn-outline-primary btn-sm"><i class="bi bi-search"></i> Browse Products</a>
             </div>
@@ -343,7 +388,7 @@
             </div>
           </div>
 
-          <div class="card-neo p-4">
+          <div class="card-neo p-4" id="preferences-card">
             <h6 class="text-muted text-uppercase fw-semibold mb-3">Preferences</h6>
             {% set selected_stores = (user_data.preferences.preferred_stores if user_data and user_data.get('preferences') else user_data.get('preferred_stores', [])) or [] %}
             {% set selected_cats = (user_data.preferences.favorite_categories if user_data and user_data.get('preferences') else user_data.get('favorite_categories', [])) or [] %}
@@ -353,7 +398,7 @@
                 <div class="stores-grid">
                   {% for store in stores_options %}
                     <div class="store-box">
-                      <input type="checkbox" id="store-{{ loop.index }}" name="preferred_store" value="{{ store }}" {% if store in selected_stores %}checked{% endif %} class="store-checkbox">
+                      <input type="checkbox" id="store-{{ loop.index }}" name="preferred_store" value="{{ store }}" {% if store in selected_stores %}checked{% endif %} class="store-checkbox" disabled>
                       <label for="store-{{ loop.index }}" class="store-label">{{ store }}</label>
                     </div>
                   {% endfor %}
@@ -367,7 +412,7 @@
               <div class="d-flex flex-wrap gap-2">
                 {% for cat in category_options %}
                   {% set slug = cat|replace(' ', '-')|lower %}
-                  <input type="checkbox" class="btn-check" id="cat-{{ slug }}" value="{{ cat }}" autocomplete="off" {% if cat in selected_cats %}checked{% endif %}>
+                  <input type="checkbox" class="btn-check" id="cat-{{ slug }}" value="{{ cat }}" autocomplete="off" {% if cat in selected_cats %}checked{% endif %} disabled>
                   <label class="btn btn-outline-primary" for="cat-{{ slug }}">{{ cat }}</label>
                 {% endfor %}
                 {% if not category_options %}
@@ -375,7 +420,10 @@
                 {% endif %}
               </div>
             </div>
-            <button class="btn btn-primary" id="savePreferencesBtn" onclick="savePreferences()"><i class="bi bi-check-circle"></i> Save Preferences</button>
+            <div class="d-flex flex-wrap gap-2">
+              <button class="btn btn-outline-primary" type="button" id="editPreferencesBtn" onclick="togglePreferencesEdit()"><i class="bi bi-pencil-square"></i> Edit Preferences</button>
+              <button class="btn btn-primary d-none" id="savePreferencesBtn" onclick="savePreferences()"><i class="bi bi-check-circle"></i> Save Preferences</button>
+            </div>
           </div>
         </div>
       </div>
@@ -417,6 +465,36 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="{{ url_for('static', filename='js/script.js') }}"></script>
   <script>
+    // Avatar picker (client-side, per browser)
+    (function() {
+      const avatarEls = document.querySelectorAll('.profile-avatar');
+      const options = document.querySelectorAll('.avatar-option');
+      const toggleBtn = document.getElementById('avatar-chooser-toggle');
+      const panel = document.getElementById('avatar-chooser-panel');
+      const storageKey = 'sg.avatar.url';
+      const defaultAvatar = options.length ? options[0].dataset.avatarUrl : '';
+      const saved = localStorage.getItem(storageKey) || defaultAvatar;
+      if (saved) {
+        avatarEls.forEach(el => el.style.backgroundImage = `url('${saved}')`);
+      }
+      options.forEach(opt => {
+        const url = opt.dataset.avatarUrl;
+        if (url === saved) opt.classList.add('active');
+        opt.addEventListener('click', () => {
+          options.forEach(o => o.classList.remove('active'));
+          opt.classList.add('active');
+          avatarEls.forEach(el => el.style.backgroundImage = `url('${url}')`);
+          localStorage.setItem(storageKey, url);
+        });
+      });
+
+      if (toggleBtn && panel) {
+        toggleBtn.addEventListener('click', () => {
+          panel.classList.toggle('d-none');
+        });
+      }
+    })();
+
     // Toggle favorite
     async function toggleFavorite(productId, button) {
       try {
@@ -447,6 +525,61 @@
         }
       } catch (error) {
         console.error('Error toggling favorite:', error);
+      }
+    }
+
+    // Preferences edit flow
+    let preferencesEditing = false;
+
+    function setPreferencesEditable(isEditable) {
+      const card = document.getElementById('preferences-card');
+      if (!card) return;
+      const storeChecks = card.querySelectorAll('.store-checkbox');
+      const catChecks = card.querySelectorAll('.btn-check');
+      storeChecks.forEach(cb => cb.disabled = !isEditable);
+      catChecks.forEach(cb => {
+        cb.disabled = !isEditable;
+        const label = card.querySelector(`label[for="${cb.id}"]`);
+        if (label) {
+          label.classList.toggle('disabled', !isEditable);
+          label.classList.toggle('opacity-50', !isEditable);
+        }
+      });
+      const saveBtn = document.getElementById('savePreferencesBtn');
+      if (saveBtn) {
+        saveBtn.classList.toggle('d-none', !isEditable);
+        saveBtn.disabled = !isEditable;
+      }
+    }
+
+    function togglePreferencesEdit() {
+      preferencesEditing = !preferencesEditing;
+      setPreferencesEditable(preferencesEditing);
+      const editBtn = document.getElementById('editPreferencesBtn');
+      if (editBtn) {
+        editBtn.innerHTML = preferencesEditing
+          ? '<i class="bi bi-x-circle"></i> Cancel Edit'
+          : '<i class="bi bi-pencil-square"></i> Edit Preferences';
+        editBtn.classList.toggle('btn-outline-primary', !preferencesEditing);
+        editBtn.classList.toggle('btn-outline-secondary', preferencesEditing);
+      }
+    }
+
+    function resetPreferencesEditState(saveBtn, originalContent) {
+      preferencesEditing = false;
+      setPreferencesEditable(false);
+      const editBtn = document.getElementById('editPreferencesBtn');
+      if (editBtn) {
+        editBtn.innerHTML = '<i class="bi bi-pencil-square"></i> Edit Preferences';
+        editBtn.classList.add('btn-outline-primary');
+        editBtn.classList.remove('btn-outline-secondary');
+      }
+      if (saveBtn) {
+        saveBtn.classList.add('d-none');
+        saveBtn.classList.remove('btn-success', 'btn-danger');
+        saveBtn.classList.add('btn-primary');
+        saveBtn.innerHTML = originalContent;
+        saveBtn.disabled = false;
       }
     }
 
@@ -493,8 +626,8 @@
             btn.innerHTML = '<i class="bi bi-check-circle me-1"></i> Saved!';
             showNotification('Your preferences have been saved!', 'success');
             
-            // Revert button after 2 seconds
-            setTimeout(revertButton, 2000);
+            // Revert and exit edit mode after 1.5 seconds
+            setTimeout(() => resetPreferencesEditState(btn, originalContent), 1500);
           } else {
             // Show error state
             btn.classList.remove('btn-primary');
@@ -518,6 +651,10 @@
           setTimeout(revertButton, 2000);
         });
     }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      setPreferencesEditable(false);
+    });
 
   </script>
 </body>

@@ -462,24 +462,33 @@
         <span class="navbar-toggler-icon"></span>
       </button>
       <div class="collapse navbar-collapse" id="navbarNav">
+        {% set cart_count = shopping_list_count or 0 %}
         <ul class="navbar-nav ms-auto">
           <li class="nav-item">
-            <a class="nav-link active fw-semibold" href="{{ url_for('main.home') }}">Home</a>
+            <a class="nav-link active fw-semibold" href="{{ url_for('main.home') }}">
+              <i class="bi bi-house-door"></i> Home
+            </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('main.stores_page') }}">Stores</a>
+            <a class="nav-link" href="{{ url_for('main.stores_page') }}">
+              <i class="bi bi-shop"></i> Stores
+            </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('main.featured_deals_page') }}">Deals</a>
+            <a class="nav-link" href="{{ url_for('main.featured_deals_page') }}">
+              <i class="bi bi-tags"></i> Deals
+            </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('main.compare_prices') }}">Compare</a>
+            <a class="nav-link" href="{{ url_for('main.compare_prices') }}">
+              <i class="bi bi-bar-chart"></i> Compare
+            </a>
           </li>
           <li class="nav-item">
             <a class="nav-link position-relative" href="{{ url_for('main.shopping_list') }}">
-              <i class="bi bi-cart3"></i> Cart
-              <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.65rem;">
-                0
+              <i class="bi bi-list-check"></i> Lists
+              <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger {{ 'd-none' if not cart_count else '' }}" style="font-size: 0.65rem;">
+                {{ cart_count if cart_count else '' }}
               </span>
             </a>
           </li>
@@ -640,10 +649,19 @@
               <div class="product-store"><i class="bi bi-shop me-1"></i>{{ deal.get('store') or deal.get('source', 'Store') }}</div>
               <div class="product-price">€{{ deal.get('price', '0.00') }}</div>
               <div class="d-flex gap-2 flex-wrap">
+                {% set offer_obj = deal.get('offer') if deal.get('offer') is mapping else None %}
+                {% set offer_x = offer_obj.x if offer_obj is not none else (deal.get('multibuy_buy') or '') %}
+                {% set offer_y = offer_obj.y if offer_obj is not none else (deal.get('multibuy_free') or '') %}
+                {% set offer_type = offer_obj.type if offer_obj is not none else ('buyXgetY' if offer_x and offer_y else '') %}
                 <button class="add-to-cart-btn-modern claim-deal-btn" 
                         data-id="{{ deal.get('id') or deal.get('_id') }}" 
-                        data-title="{{ deal.get('title') or deal.get('name') }}" 
-                        data-price="{{ deal.get('price') }}">
+                  data-title="{{ deal.get('title') or deal.get('name') }}" 
+                  data-price="{{ deal.get('price') }}"
+                  data-original-price="{{ deal.get('original_price','') }}"
+                  data-offer-json='{{ offer_obj|tojson|forceescape if offer_obj is not none else "" }}'
+                  data-offer-type="{{ offer_type }}"
+                  data-offer-x="{{ offer_x }}"
+                  data-offer-y="{{ offer_y }}">
                   <i class="bi bi-cart-plus"></i> Add to Cart
                 </button>
                 <a href="{{ url_for('main.featured_deal_detail', deal_id=deal.get('id') or deal.get('_id')) }}" class="btn btn-outline-secondary btn-sm">
