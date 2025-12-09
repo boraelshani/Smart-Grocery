@@ -65,7 +65,7 @@ class ProductsModel:
         if not doc:
             return None
         if '_id' in doc:
-            doc['id'] = str(d['_id'])
+            doc['id'] = str(doc['_id'])
         return doc
 
     def get_product_by_id(self, id_str: str) -> Optional[dict]:

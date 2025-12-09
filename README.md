@@ -19,11 +19,64 @@ It also provides useful features like featured deals, store information, a perso
 - HTML & CSS
 - Bootstrap
 - JavaScript
+- MongoDB Atlas (Database)
 
-## Project Authors
+## Team Members and Roles
 
-- **Bora Elshani**  
-- **Dren Buqa**
+### **Bora Elshani** - Backend & Full-Stack Developer
+**Responsibilities:**
+- **Backend Development:**
+  - Flask application setup and configuration (`app.py`)
+  - Main routing logic and navigation (`routes/main_routes.py`)
+  - User authentication and session management (`models/users_model.py`)
+  - Database models and fallback data (`models/models.py`)
+  - Featured deals import script and data processing
+  
+- **Frontend Development:**
+  - Shopping List page - complete UI and functionality (`templates/shopping_list.html`)
+  - Profile page and user account management (`templates/profile.html`)
+  - Featured Deals pages (`templates/featured_deals.html`, `templates/featured_deal_detail.html`)
+  - Compare Prices page layout and features (`templates/compare_prices.html`)
+  - Product information view (`templates/product_info.html`)
+  - Entry/landing page (`templates/entry.html`)
+  
+- **JavaScript Development:**
+  - Shopping list interactive features (add/remove items, list management)
+  - Dynamic UI updates and real-time calculations
+  - API endpoint integrations
+  - Favorite products functionality
+
+### **Dren Buqa** - Frontend & Full-Stack Developer
+**Responsibilities:**
+- **Frontend Development:**
+  - Homepage design and layout (`templates/home.html`)
+  - Product detail pages (`templates/product_detail.html`)
+  - Compare prices interface (`templates/compare_prices.html`)
+  - Authentication pages (Login & Signup) (`templates/login.html`, `templates/signup.html`)
+  - Error handling pages (`templates/404.html`, `templates/500.html`)
+  
+- **Styling & Design:**
+  - Complete CSS styling and theme (`static/style.css`)
+  - Responsive design implementation
+  - Bootstrap integration and customization
+  - Component styling and animations
+  
+- **Backend Development:**
+  - Authentication routes and user management (`routes/auth_routes.py`)
+  - Main application routes (`routes/main_routes.py`)
+  - Admin functionality (`routes/admin_routes.py`)
+  - Flask app configuration (`app.py`)
+  
+- **Database Models:**
+  - Products data model (`models/products_model.py`)
+  - Stores data model (`models/stores_model.py`)
+  - Featured deals model (`models/featured_deals_model.py`)
+  - User model operations (`models/users_model.py`)
+  
+- **JavaScript Development:**
+  - Form validation and user input handling
+  - UI enhancements and interactions
+  - Product search and filtering
 
 ---
 
