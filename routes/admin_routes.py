@@ -1,3 +1,18 @@
+"""
+═══════════════════════════════════════════════════════════════════════════
+ADMIN ROUTES - Administrative Functions
+═══════════════════════════════════════════════════════════════════════════
+Purpose: Handle admin-only operations and data management
+Routes:
+- Add/edit/delete products
+- Manage featured deals
+- Upload product images
+- View analytics/statistics
+Prefix: /admin
+Security: Should be restricted to admin users only
+═══════════════════════════════════════════════════════════════════════════
+"""
+
 from flask import Blueprint, request, jsonify, current_app
 from utils.db import mongo
 

@@ -1,6 +1,16 @@
 """
-STORES MODEL - Handles store information and locations
-Queries MongoDB collection 'stores' for store names, hours, addresses, distance
+═══════════════════════════════════════════════════════════════════════════
+STORES MODEL - Database Operations for Store Information
+═══════════════════════════════════════════════════════════════════════════
+Purpose: Handle all store database queries and operations
+Database Collection: 'stores' in MongoDB
+Functions:
+- Get all stores
+- Get store by name/ID
+- Get products by store
+- Store details (hours, location, distance)
+Used by: stores page, main routes, store-specific product listings
+═══════════════════════════════════════════════════════════════════════════
 """
 from pymongo import MongoClient
 from bson import ObjectId

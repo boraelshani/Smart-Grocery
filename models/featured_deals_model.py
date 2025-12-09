@@ -1,6 +1,20 @@
 """
-FEATURED DEALS MODEL - Handles sales and special offers (2+1, discounts, etc.)
-Queries MongoDB collection 'featured_deals' for promotional items with multi-buy logic
+═══════════════════════════════════════════════════════════════════════════
+FEATURED DEALS MODEL - Promotional Offers & Special Sales
+═══════════════════════════════════════════════════════════════════════════
+Purpose: Handle all featured deals and promotional offers
+Database Collection: 'featured_deals' in MongoDB
+Deal Types:
+- Multi-buy promotions (e.g., 2+1 free, buy 3 get 50% off)
+- Percentage discounts
+- Limited-time offers
+Functions:
+- Get all active deals
+- Get deals by store
+- Get deals by product
+- Claim deals to add to shopping list
+Used by: featured deals page, main dashboard, shopping list
+═══════════════════════════════════════════════════════════════════════════
 """
 from pymongo import MongoClient
 from bson import ObjectId

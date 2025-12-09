@@ -1,6 +1,17 @@
 """
-PRODUCTS MODEL - Handles all product database operations
-Queries MongoDB collection 'products' for grocery items (names, prices, images, stores)
+═══════════════════════════════════════════════════════════════════════════
+PRODUCTS MODEL - Database Operations for Products
+═══════════════════════════════════════════════════════════════════════════
+Purpose: Handle all product database queries and operations
+Database Collection: 'products' in MongoDB
+Functions:
+- Get all products
+- Get product by ID or name
+- Search products
+- Filter by store/category
+- Update product information
+Used by: main_routes, home page, compare page, product detail pages
+═══════════════════════════════════════════════════════════════════════════
 """
 from pymongo import MongoClient
 from bson import ObjectId
