@@ -1,6 +1,10 @@
-// Smart Grocery JavaScript (TSX-like shopping list interactions)
+// ===============================================
+// SMART GROCERY FRONTEND JAVASCRIPT
+// Handles user interactions: shopping lists, favorites, filtering, search
+// ===============================================
 
 document.addEventListener('DOMContentLoaded', () => {
+  // INITIALIZE: Run all setup functions when page loads
   initializeBootstrapComponents();
   setupSearchFunctionality();
   setupShoppingListHandlers();
@@ -15,7 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupPaginationSmoothTransition();
 });
 
-// Bootstrap helpers
+// BOOTSTRAP: Activate tooltip popovers
 function initializeBootstrapComponents() {
   const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
   tooltipTriggerList.map(function (tooltipTriggerEl) { return new bootstrap.Tooltip(tooltipTriggerEl); });
