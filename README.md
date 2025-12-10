@@ -23,8 +23,7 @@ It also provides useful features like featured deals, store information, a perso
 
 ## Team Members and Roles
 
-### **Bora Elshani** - Backend & Full-Stack Developer
-**Responsibilities:**
+### **Bora Elshani** - Leader**
 - **Backend Development:**
   - Flask application setup and configuration (`app.py`)
   - Main routing logic and navigation (`routes/main_routes.py`)
@@ -46,8 +45,13 @@ It also provides useful features like featured deals, store information, a perso
   - API endpoint integrations
   - Favorite products functionality
 
-### **Dren Buqa** - Frontend & Full-Stack Developer
-**Responsibilities:**
+### **Dren Buqa** 
+- **Backend Development:**
+  - Authentication routes and user management (`routes/auth_routes.py`)
+  - Main application routes (`routes/main_routes.py`)
+  - Admin functionality (`routes/admin_routes.py`)
+  - Flask app configuration (`app.py`)
+
 - **Frontend Development:**
   - Homepage design and layout (`templates/home.html`)
   - Product detail pages (`templates/product_detail.html`)
@@ -60,12 +64,6 @@ It also provides useful features like featured deals, store information, a perso
   - Responsive design implementation
   - Bootstrap integration and customization
   - Component styling and animations
-  
-- **Backend Development:**
-  - Authentication routes and user management (`routes/auth_routes.py`)
-  - Main application routes (`routes/main_routes.py`)
-  - Admin functionality (`routes/admin_routes.py`)
-  - Flask app configuration (`app.py`)
   
 - **Database Models:**
   - Products data model (`models/products_model.py`)
