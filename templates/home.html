@@ -600,7 +600,7 @@ Shown at route: /
             <div class="category-name">Fresh Produce</div>
           </a>
           <a href="{{ url_for('main.compare_prices') }}?category=meat" class="category-card">
-            <div class="category-icon"><i class="bi bi-basket2"></i></div>
+            <div class="category-icon"><i class="bi bi-egg-fill"></i></div>
             <div class="category-name">Meat & Seafood</div>
           </a>
           <a href="{{ url_for('main.compare_prices') }}?category=bakery" class="category-card">
@@ -608,11 +608,11 @@ Shown at route: /
             <div class="category-name">Bakery</div>
           </a>
           <a href="{{ url_for('main.compare_prices') }}?category=snacks" class="category-card">
-            <div class="category-icon"><i class="bi bi-cup-straw"></i></div>
+            <div class="category-icon"><i class="bi bi-bag-fill"></i></div>
             <div class="category-name">Snacks</div>
           </a>
           <a href="{{ url_for('main.compare_prices') }}?category=beverages" class="category-card">
-            <div class="category-icon"><i class="bi bi-droplet-fill"></i></div>
+            <div class="category-icon"><i class="bi bi-cup-straw"></i></div>
             <div class="category-name">Beverages</div>
           </a>
           <a href="{{ url_for('main.compare_prices') }}?category=frozen" class="category-card">
@@ -665,8 +665,8 @@ Shown at route: /
               <div class="product-price">€{{ deal.get('price', '0.00') }}</div>
               <div class="d-flex gap-2 flex-wrap">
                 {% set offer_obj = deal.get('offer') if deal.get('offer') is mapping else None %}
-                {% set offer_x = offer_obj.x if offer_obj is not none else (deal.get('multibuy_buy') or '') %}
-                {% set offer_y = offer_obj.y if offer_obj is not none else (deal.get('multibuy_free') or '') %}
+                {% set offer_x = offer_obj.x if offer_obj is not none else (deal.get('buy_quantity') or deal.get('multibuy_buy') or '') %}
+                {% set offer_y = offer_obj.y if offer_obj is not none else (deal.get('free_quantity') or deal.get('multibuy_free') or '') %}
                 {% set offer_type = offer_obj.type if offer_obj is not none else ('buyXgetY' if offer_x and offer_y else '') %}
                 <button class="add-to-cart-btn-modern claim-deal-btn" 
                         data-id="{{ deal.get('id') or deal.get('_id') }}" 
@@ -724,10 +724,19 @@ Shown at route: /
               {% if fav.get('category') %}
               <div class="product-store"><i class="bi bi-tag me-1"></i>{{ fav.get('category') }}</div>
               {% endif %}
-              <div class="product-price">€{{ fav.get('best_price') or 'N/A' }}</div>
-              <a href="{{ url_for('main.product_detail', product_id=fav.get('id')) }}" class="add-to-cart-btn-modern">
-                <i class="bi bi-info-circle"></i> View Details
-              </a>
+              <div class="product-price">€{{ fav.get('best_price') or fav.get('price') or 'N/A' }}</div>
+              <div class="d-flex flex-wrap gap-2">
+                <button class="add-to-cart-btn-modern add-to-cart-btn"
+                        data-name="{{ fav.get('name', 'Product') }}"
+                        data-price="{{ fav.get('best_price') or fav.get('price') or '0.00' }}"
+                        data-image="{{ fav.get('image') or url_for('static', filename='placeholder.svg') }}"
+                        data-store="{{ fav.get('store') or fav.get('store_name') or fav.get('brand') or 'Favorite' }}">
+                  <i class="bi bi-cart-plus"></i> Add to Cart
+                </button>
+                <a href="{{ url_for('main.product_detail', product_id=fav.get('id')) }}" class="add-to-cart-btn-modern" style="text-decoration: none;">
+                  <i class="bi bi-info-circle"></i> View Details
+                </a>
+              </div>
             </div>
           </div>
           {% endfor %}

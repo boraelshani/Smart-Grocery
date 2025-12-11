@@ -381,7 +381,7 @@ Requires: User must be logged in
                           <h6 class="mb-1 fw-bold text-truncate">{{ product.name }}</h6>
                           <div class="d-flex gap-2 flex-wrap align-items-center">
                             <span class="pill-badge">{{ product.category or 'Category' }}</span>
-                            <span class="badge bg-success">{{ product.best_price or 'N/A' }}</span>
+                            <span class="badge bg-success">€{{ product.best_price or 'N/A' }}</span>
                           </div>
                         </div>
                         <div class="d-flex gap-1">

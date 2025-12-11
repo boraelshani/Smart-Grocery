@@ -163,8 +163,8 @@
               </div>
 
               {% set offer_obj = deal.get('offer') if deal.get('offer') is mapping else None %}
-              {% set offer_x = offer_obj.x if offer_obj is not none else (deal.get('multibuy_buy') or '') %}
-              {% set offer_y = offer_obj.y if offer_obj is not none else (deal.get('multibuy_free') or '') %}
+              {% set offer_x = offer_obj.x if offer_obj is not none else (deal.get('buy_quantity') or deal.get('multibuy_buy') or '') %}
+              {% set offer_y = offer_obj.y if offer_obj is not none else (deal.get('free_quantity') or deal.get('multibuy_free') or '') %}
               {% set offer_type = offer_obj.type if offer_obj is not none else ('buyXgetY' if offer_x and offer_y else '') %}
               <div class="d-flex flex-wrap gap-2 mt-4">
                 <button type="button" class="btn btn-light text-primary fw-bold claim-deal-btn" data-id="{{ deal.get('id') or deal.get('title','') }}" data-title="{{ deal.get('title') or deal.get('name','') }}" data-price="{{ deal.get('price','') }}" data-original-price="{{ deal.get('original_price','') }}" data-offer-json='{{ offer_obj|tojson|forceescape if offer_obj is not none else "" }}' data-offer-type="{{ offer_type }}" data-offer-x="{{ offer_x }}" data-offer-y="{{ offer_y }}">

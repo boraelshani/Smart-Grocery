@@ -103,7 +103,12 @@ def home():
         try:
             stores = list(db.stores.find({}))
             products = list(db.products.find({}))
-            featured_deals = list(db.featured_deals.find({}))
+            
+            # Fetch both featured deals and multibuy offers
+            featured_deals_list = list(db.featured_deals.find({}))
+            multibuy_offers_list = list(db.multibuy_offers.find({}))
+            featured_deals = featured_deals_list + multibuy_offers_list
+            
             # If no featured deals in DB, use JSON fallback
             if not featured_deals:
                 using_fallback = True
@@ -298,25 +303,64 @@ def store_products_page(store_name):
 @main_bp.route('/featured-deals')
 def featured_deals_page():
     using_fallback = False
+    deals = []
     db = get_db()
     if db is not None:
         try:
-            deals = list(db.featured_deals.find({}))
-            for d in deals:
+            # Fetch featured deals from database
+            featured_deals_list = list(db.featured_deals.find({}))
+            for d in featured_deals_list:
                 if '_id' in d:
                     d['id'] = str(d['_id'])
-            # If no featured deals in MongoDB, use JSON fallback
+            
+            # Fetch multibuy offers from database
+            multibuy_offers_list = list(db.multibuy_offers.find({}))
+            for m in multibuy_offers_list:
+                if '_id' in m:
+                    m['id'] = str(m['_id'])
+            
+            # Combine both lists
+            deals = featured_deals_list + multibuy_offers_list
+            
+            # If no deals found, use JSON fallback
             if not deals:
                 using_fallback = True
                 deals = load_featured_deals_fallback()
-        except Exception:
+        except Exception as e:
+            print(f'WARNING: MongoDB query failed for deals: {e}, using JSON fallback')
             using_fallback = True
-            print('WARNING: MongoDB query failed for featured deals, using JSON fallback')
             deals = load_featured_deals_fallback()
     else:
         using_fallback = True
         print('WARNING: DB unavailable for featured deals, using JSON fallback')
         deals = load_featured_deals_fallback()
+    
+    # Sort deals by discount percentage (highest first) or date (newest first)
+    def get_sort_key(deal):
+        # Try to extract discount percentage
+        discount = 0
+        if deal.get('discount_percent'):
+            try:
+                discount = float(deal.get('discount_percent'))
+            except:
+                pass
+        else:
+            # Calculate discount from prices if available
+            original = deal.get('original_price')
+            current = deal.get('price')
+            if original and current:
+                try:
+                    original_val = float(original)
+                    current_val = float(current)
+                    if original_val > 0:
+                        discount = ((original_val - current_val) / original_val) * 100
+                except:
+                    pass
+        
+        return -discount  # Negative to sort descending (highest discount first)
+    
+    deals.sort(key=get_sort_key)
+    
     return render_template('featured_deals.html', deals=deals, using_fallback=using_fallback)
 
 @main_bp.route('/compare-prices')
@@ -331,10 +375,13 @@ def compare_prices():
     page = max(page, 1)
 
     category_filter = (request.args.get('category') or '').strip()
+    search_query = (request.args.get('search') or '').strip()
 
     total_products = 0
     total_pages = 1
     products = []
+    deals = []
+    stores = []
     db = get_db()
     category_options = []
 
@@ -344,12 +391,60 @@ def compare_prices():
             if category_filter:
                 import re as _re
                 query['category'] = {'$regex': f"^{_re.escape(category_filter)}$", '$options': 'i'}
+            
+            if search_query:
+                import re as _re
+                # Search in product name, title, category, or store
+                search_regex = {'$regex': _re.escape(search_query), '$options': 'i'}
+                
+                # Search products
+                product_query = dict(query)
+                product_query['$or'] = [
+                    {'name': search_regex},
+                    {'title': search_regex},
+                    {'category': search_regex},
+                    {'store': search_regex}
+                ]
+                
+                # Search deals (featured_deals and multibuy_offers)
+                deal_query = {
+                    '$or': [
+                        {'title': search_regex},
+                        {'name': search_regex},
+                        {'store': search_regex},
+                        {'category': search_regex}
+                    ]
+                }
+                
+                # Search stores
+                store_query = {
+                    '$or': [
+                        {'name': search_regex},
+                        {'description': search_regex}
+                    ]
+                }
+                
+                # Fetch deals
+                featured_deals_list = list(db.featured_deals.find(deal_query))
+                multibuy_offers_list = list(db.multibuy_offers.find(deal_query))
+                deals = featured_deals_list + multibuy_offers_list
+                for d in deals:
+                    if '_id' in d:
+                        d['id'] = str(d['_id'])
+                
+                # Fetch stores
+                stores = list(db.stores.find(store_query))
+                for s in stores:
+                    if '_id' in s:
+                        s['id'] = str(s['_id'])
+            else:
+                product_query = query
 
-            total_products = int(db.products.count_documents(query))
+            total_products = int(db.products.count_documents(product_query if search_query else query))
             total_pages = (total_products + per_page - 1) // per_page if total_products else 1
             page = min(page, total_pages) if total_products else 1
             skip_amount = (page - 1) * per_page
-            cursor = db.products.find(query).skip(skip_amount).limit(per_page)
+            cursor = db.products.find(product_query if search_query else query).skip(skip_amount).limit(per_page)
             products = list(cursor)
             for p in products:
                 if '_id' in p:
@@ -364,11 +459,27 @@ def compare_prices():
         except Exception:
             using_fallback = True
             products = getattr(m, 'products', [])
+            # Apply search filter on fallback data
+            if search_query:
+                search_lower = search_query.lower()
+                products = [p for p in products if 
+                    search_lower in (p.get('name') or '').lower() or
+                    search_lower in (p.get('title') or '').lower() or
+                    search_lower in (p.get('category') or '').lower() or
+                    search_lower in (p.get('store') or '').lower()]
             total_products = len(products)
             total_pages = (total_products + per_page - 1) // per_page if total_products else 1
     else:
         using_fallback = True
         products = getattr(m, 'products', [])
+        # Apply search filter on fallback data
+        if search_query:
+            search_lower = search_query.lower()
+            products = [p for p in products if 
+                search_lower in (p.get('name') or '').lower() or
+                search_lower in (p.get('title') or '').lower() or
+                search_lower in (p.get('category') or '').lower() or
+                search_lower in (p.get('store') or '').lower()]
         total_products = len(products)
         total_pages = (total_products + per_page - 1) // per_page if total_products else 1
 
@@ -380,6 +491,8 @@ def compare_prices():
     return render_template(
         'compare_prices.html',
         products=products,
+        deals=deals,
+        stores=stores,
         using_fallback=using_fallback,
         page=page,
         per_page=per_page,
@@ -390,6 +503,7 @@ def compare_prices():
         showing_start=showing_start,
         showing_end=showing_end,
         category_filter=category_filter,
+        search_query=search_query,
         category_options=category_options,
     )
 
@@ -455,9 +569,18 @@ def featured_deal_detail(deal_id):
         try:
             from bson import ObjectId
             try:
+                # Try to find in featured_deals first
                 deal = db.featured_deals.find_one({'_id': ObjectId(deal_id)})
+                
+                # If not found, search in multibuy_offers
+                if not deal:
+                    deal = db.multibuy_offers.find_one({'_id': ObjectId(deal_id)})
             except Exception:
+                # Try with string ID
                 deal = db.featured_deals.find_one({'id': deal_id})
+                if not deal:
+                    deal = db.multibuy_offers.find_one({'id': deal_id})
+            
             if deal and '_id' in deal:
                 deal['id'] = str(deal['_id'])
         except Exception as e:
@@ -817,7 +940,7 @@ def profile():
 @main_bp.route('/admin/status')
 def admin_status():
     """Return JSON with collection counts so you can verify DB connectivity."""
-    collections = ['products', 'stores', 'featured_deals', 'users']
+    collections = ['products', 'stores', 'featured_deals', 'multibuy_offers', 'users']
     counts = {}
     # Prefer directly opening a MongoClient with the app-configured URI so we reliably
     # query the intended Atlas cluster (avoids any Flask-PyMongo initialization quirks).
@@ -1114,7 +1237,14 @@ def api_claim_deal():
                 query = {'_id': ObjectId(str(deal_id))}
             except Exception:
                 query = {'title': str(deal_id)}
+            
+            # Search in featured_deals first
             deal_doc = mongo.db.featured_deals.find_one(query)
+            
+            # If not found in featured_deals, search in multibuy_offers
+            if not deal_doc:
+                deal_doc = mongo.db.multibuy_offers.find_one(query)
+            
             if deal_doc and '_id' in deal_doc:
                 deal_doc['id'] = str(deal_doc['_id'])
         else:
@@ -1175,10 +1305,11 @@ def api_claim_deal():
                 offer_obj = _parse_offer(raw_offer)
                 # fallback: if old multibuy fields exist, translate them
                 if not offer_obj:
-                    mb_buy = (deal_doc or {}).get('multibuy_buy') or data.get('multibuy_buy')
-                    mb_free = (deal_doc or {}).get('multibuy_free') or data.get('multibuy_free')
+                    # Check for buy_quantity/free_quantity (from multibuy_offers collection)
+                    mb_buy = (deal_doc or {}).get('buy_quantity') or (deal_doc or {}).get('multibuy_buy') or data.get('multibuy_buy')
+                    mb_free = (deal_doc or {}).get('free_quantity') or (deal_doc or {}).get('multibuy_free') or data.get('multibuy_free')
                     if mb_buy and mb_free:
-                        offer_obj = {'type': 'buyXgetY', 'x': mb_buy, 'y': mb_free}
+                        offer_obj = {'type': 'buyXgetY', 'x': int(mb_buy), 'y': int(mb_free)}
 
                 price_val_num = _to_float(price_val)
                 discounted_price_num = _to_float(raw_price)  # shown price (may be effective deal price)

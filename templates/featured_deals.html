@@ -180,8 +180,8 @@ Data: Fetches featured deals from database
                   {% set discount_label = p.get('discount_label') or (p.get('discount_percent') ~ '% off' if p.get('discount_percent') is not none else '') %}
                   {% set offer_obj = p.get('offer') if p.get('offer') is mapping else None %}
                   {% set offer = p.get('offer', '') %}
-                  {% set offer_x = offer_obj.x if offer_obj is not none else (p.get('multibuy_buy') or '') %}
-                  {% set offer_y = offer_obj.y if offer_obj is not none else (p.get('multibuy_free') or '') %}
+                  {% set offer_x = offer_obj.x if offer_obj is not none else (p.get('buy_quantity') or p.get('multibuy_buy') or '') %}
+                  {% set offer_y = offer_obj.y if offer_obj is not none else (p.get('free_quantity') or p.get('multibuy_free') or '') %}
                   {% set offer_type = offer_obj.type if offer_obj is not none else ('buyXgetY' if offer_x and offer_y else '') %}
                   {% set is_buy_get_deal = (offer_type == 'buyXgetY') or ('buy' in offer|lower and ('get' in offer|lower or 'free' in offer|lower or '+' in offer)) %}
                 <div class="d-flex justify-content-between align-items-start mb-3">

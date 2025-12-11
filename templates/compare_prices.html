@@ -250,6 +250,15 @@ Data: Fetches all products and their store prices from database
       opacity: 0.15;
     }
 
+    .hover-lift {
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .hover-lift:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.15) !important;
+    }
+
   </style>
   </head>
 <body>
@@ -303,9 +312,9 @@ Data: Fetches all products and their store prices from database
       <div class="col-md-12">
         <label class="form-label d-block"><i class="bi bi-search"></i> Search Products</label>
         <div class="input-group">
-          <input id="product-search-input" type="text" class="form-control" placeholder="Search by product name..." autocomplete="off" />
+          <input id="product-search-input" type="text" class="form-control" placeholder="Search by product name..." autocomplete="off" value="{{ search_query or '' }}" />
           <div class="btn-group" role="group">
-            <button id="product-search-btn" class="btn btn-primary">
+            <button id="product-search-btn" class="btn btn-primary" onclick="handleCompareSearch()">
               <i class="bi bi-search"></i>
             </button>
             <div class="dropdown">
@@ -475,6 +484,77 @@ Data: Fetches all products and their store prices from database
       {% endif %}
     </div>
 
+    <!-- Stores Section (shown when search query exists) -->
+    {% if search_query and stores and stores|length > 0 %}
+    <div class="mt-5">
+      <h4 class="mb-3 fw-bold">
+        <i class="bi bi-shop"></i> Stores matching "{{ search_query }}"
+        <span class="badge bg-primary ms-2">{{ stores|length }}</span>
+      </h4>
+      <div class="row g-4">
+        {% for store in stores %}
+        <div class="col-md-6 col-lg-4">
+          <a href="{{ url_for('main.store_products_page', store_name=store.get('name')) }}" class="text-decoration-none">
+            <div class="card h-100 shadow-sm hover-lift">
+              <img src="{{ store.get('image') or 'https://via.placeholder.com/250x150' }}" class="card-img-top" alt="{{ store.get('name') }}" style="height: 150px; object-fit: cover;">
+              <div class="card-body">
+                <h5 class="card-title text-dark">{{ store.get('name') }}</h5>
+                {% if store.get('description') %}
+                <p class="text-muted small">{{ store.get('description')[:100] }}...</p>
+                {% endif %}
+                <div class="text-muted small">
+                  <i class="bi bi-box-seam"></i> {{ store.get('product_count', 0) }} products
+                </div>
+              </div>
+            </div>
+          </a>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Deals Section (shown when search query exists) -->
+    {% if search_query and deals and deals|length > 0 %}
+    <div class="mt-5">
+      <h4 class="mb-3 fw-bold">
+        <i class="bi bi-lightning-fill text-warning"></i> Deals matching "{{ search_query }}"
+        <span class="badge bg-primary ms-2">{{ deals|length }}</span>
+      </h4>
+      <div class="row g-4">
+        {% for deal in deals %}
+        <div class="col-md-6 col-lg-4">
+          <div class="card h-100 shadow-sm">
+            {% if deal.get('discount_label') or deal.get('discount_percent') %}
+            <div class="position-absolute top-0 end-0 m-2">
+              <span class="badge" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                {{ deal.get('discount_label') or (deal.get('discount_percent') ~ '% OFF') }}
+              </span>
+            </div>
+            {% endif %}
+            <img src="{{ deal.get('image') or url_for('static', filename='placeholder.svg') }}" class="card-img-top" alt="{{ deal.get('title') or deal.get('name') }}" style="height: 200px; object-fit: contain; padding: 1rem;">
+            <div class="card-body">
+              <h5 class="card-title">{{ deal.get('title') or deal.get('name') }}</h5>
+              <p class="text-muted mb-2">
+                <i class="bi bi-shop"></i> {{ deal.get('store') or deal.get('source', 'Store') }}
+              </p>
+              <div class="d-flex justify-content-between align-items-center">
+                <span class="h4 mb-0 text-primary">€{{ deal.get('price', 'N/A') }}</span>
+                {% if deal.get('original_price') %}
+                <span class="text-muted text-decoration-line-through">€{{ deal.get('original_price') }}</span>
+                {% endif %}
+              </div>
+              <a href="{{ url_for('main.featured_deal_detail', deal_id=deal.get('id') or deal.get('_id')) }}" class="btn btn-primary w-100 mt-3">
+                <i class="bi bi-info-circle"></i> View Deal
+              </a>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
     {% if total_pages and total_pages > 1 %}
     <div class="pagination-pane mt-5 d-flex flex-column flex-sm-row align-items-center justify-content-between gap-3">
       <div class="d-flex align-items-center gap-2">
@@ -590,9 +670,42 @@ Data: Fetches all products and their store prices from database
       }
     });
 
+    // Handle search button click
+    function handleCompareSearch() {
+      const searchInput = document.getElementById('product-search-input');
+      const searchTerm = searchInput.value.trim();
+      const categoryFilter = '{{ category_filter or "" }}';
+      
+      // Build URL with search and category params
+      let url = '{{ url_for("main.compare_prices") }}';
+      const params = new URLSearchParams();
+      
+      if (searchTerm) {
+        params.set('search', searchTerm);
+      }
+      if (categoryFilter) {
+        params.set('category', categoryFilter);
+      }
+      
+      if (params.toString()) {
+        url += '?' + params.toString();
+      }
+      
+      window.location.href = url;
+    }
+
     // Product filtering functionality
     document.addEventListener('DOMContentLoaded', function() {
       const searchInput = document.getElementById('product-search-input');
+      
+      // Add enter key support for search
+      if (searchInput) {
+        searchInput.addEventListener('keypress', function(e) {
+          if (e.key === 'Enter') {
+            handleCompareSearch();
+          }
+        });
+      }
       const searchBtn = document.getElementById('product-search-btn');
       const categoryFilter = document.getElementById('category-filter');
       const storeFilter = document.getElementById('store-filter');

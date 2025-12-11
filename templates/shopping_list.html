@@ -460,6 +460,16 @@
 										{% if store %}
 										<span><i class="bi bi-shop me-1"></i>{{ store }}</span>
 										{% endif %}
+										{% if offer_x and offer_y %}
+											{% set ox = offer_x|int %}
+											{% set oy = offer_y|int %}
+											{% set cycle = ox + oy %}
+											{% set rem = qty % cycle %}
+											{% set missing = (cycle - rem) % cycle %}
+											{% if missing > 0 %}
+												<span class="badge rounded-pill text-bg-info"><i class="bi bi-gift me-1"></i>Add {{ missing }} more to unlock +{{ oy }} free</span>
+											{% endif %}
+										{% endif %}
 									</div>
 								</div>
 
@@ -710,27 +720,72 @@ function calculateItemPrice(row) {
 	const qty = parseInt(row.getAttribute('data-qty') || 1, 10) || 1;
 	const offerObj = parseOffer(row);
 	
-	// If no multibuy offer, return simple calculation
-	if (!offerObj || offerObj.type !== 'buyXgetY') {
-		return unitPrice * qty;
+	// Check for multi-buy offer first (Buy X Get Y Free)
+	if (offerObj && offerObj.type === 'buyXgetY') {
+		const x = parseInt(offerObj.x || 0, 10) || 0;
+		const y = parseInt(offerObj.y || 0, 10) || 0;
+		if (x && y) {
+			// For multibuy: charge x items at full price, y items free, repeat pattern
+			// Example: 2+1 with 99 items = 33 cycles of (pay 2, get 1 free) = pay for 66
+			const cycle = x + y;  // e.g., 2+1 = cycle of 3
+			const fullCycles = Math.floor(qty / cycle);
+			const remainder = qty % cycle;
+			
+			// Full cycles: pay for x items, free for y items per cycle
+			let total = fullCycles * x * unitPrice;
+			
+			// Remainder: pay for as many as we need (but not more than x)
+			total += Math.min(remainder, x) * unitPrice;
+			
+			return total;
+		}
 	}
 	
-	const x = parseInt(offerObj.x || 0, 10) || 0;
-	const y = parseInt(offerObj.y || 0, 10) || 0;
-	if (!x || !y) return unitPrice * qty;
+	// Check for quantity tier discount (e.g., Buy 2+ get 15% off)
+	const tierJson = row.getAttribute('data-tier-json');
+	if (tierJson) {
+		try {
+			const tiers = JSON.parse(tierJson);
+			if (Array.isArray(tiers) && tiers.length > 0) {
+				// Find applicable tier
+				let discountPercent = 0;
+				for (let tier of tiers) {
+					const minQty = tier.min_qty || 0;
+					const maxQty = tier.max_qty;  // undefined = no upper limit
+					
+					if (qty >= minQty) {
+						if (maxQty === undefined || qty <= maxQty) {
+							discountPercent = tier.discount_percent || 0;
+						}
+					}
+				}
+				
+				if (discountPercent > 0) {
+					const effectivePrice = unitPrice * (1 - discountPercent / 100);
+					return effectivePrice * qty;
+				}
+			}
+		} catch (e) {
+			// Invalid JSON, skip tier processing
+		}
+	}
 	
-	// For multibuy: charge x items at full price, y items free, repeat pattern
-	const cycle = x + y;  // e.g., 2+1 = cycle of 3
-	const fullCycles = Math.floor(qty / cycle);
-	const remainder = qty % cycle;
+	// Check for special offer (2nd item discount, etc)
+	const specialOffer = row.getAttribute('data-special-offer');
+	if (specialOffer === 'second_half_off') {
+		// Buy 1 at full, 2nd at 50% off, repeat
+		const pairs = Math.floor(qty / 2);
+		const remainder = qty % 2;
+		return pairs * (unitPrice + unitPrice * 0.5) + remainder * unitPrice;
+	} else if (specialOffer === 'second_free') {
+		// Buy 1 get 2nd free, repeat
+		const pairs = Math.floor(qty / 2);
+		const remainder = qty % 2;
+		return pairs * unitPrice + remainder * unitPrice;
+	}
 	
-	// Full cycles: pay for x items, free for y items per cycle
-	let total = fullCycles * x * unitPrice;
-	
-	// Remainder: pay for as many as we need (but not more than x)
-	total += Math.min(remainder, x) * unitPrice;
-	
-	return total;
+	// No special offers - return simple calculation
+	return unitPrice * qty;
 }
 
 function computeTotals() {
@@ -996,6 +1051,21 @@ function displayListItems(data) {
 		const raw_price = (it.price_val !== undefined ? it.price_val : it.price || 0);
 		const unit = parseFloat(raw_price) || 0;
 		const qty = (it.qty || 1);
+		
+		// Extract offer data for multi-buy deals
+		const offerObj = (it.offer && typeof it.offer === 'object') ? it.offer : null;
+		const offerX = offerObj ? (offerObj.x || '') : (it.multibuy_buy || '');
+		const offerY = offerObj ? (offerObj.y || '') : (it.multibuy_free || '');
+		const offerType = offerObj ? (offerObj.type || '') : (offerX && offerY ? 'buyXgetY' : '');
+		const offerJson = offerObj ? JSON.stringify(offerObj).replace(/"/g, '&quot;') : '';
+		
+		// Extract quantity tier data
+		const tierJson = (it.discount_tiers && Array.isArray(it.discount_tiers)) 
+			? JSON.stringify(it.discount_tiers).replace(/"/g, '&quot;') 
+			: '';
+		
+		// Extract special offer data
+		const specialOffer = it.special_offer || '';
 
 		itemsHTML += `
 			<div class="list-group-item item-row ${purchased ? 'completed' : ''}" 
@@ -1004,7 +1074,13 @@ function displayListItems(data) {
 				 data-name="${name}" 
 				 data-price="${unit}" 
 				 data-qty="${qty}"
-				 data-store="${store}">
+				 data-store="${store}"
+				 data-offer-json='${offerJson}'
+				 data-offer-type="${offerType}"
+				 data-offer-x="${offerX}"
+				 data-offer-y="${offerY}"
+				 data-tier-json='${tierJson}'
+				 data-special-offer="${specialOffer}">
 				<div class="d-flex align-items-center gap-3 w-100">
 					<div class="d-flex align-items-center gap-3 flex-grow-1">
 						<div class="form-check mb-0">
