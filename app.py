@@ -32,6 +32,7 @@ from utils.db import mongo
 # ═══════════════════════════════════════════════════════════════════════════
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key')
+app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', app.secret_key)
 
 # ═══════════════════════════════════════════════════════════════════════════
 # 3. MONGODB CONFIGURATION
@@ -180,4 +181,4 @@ def debug_mongo():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=False, use_reloader=False)

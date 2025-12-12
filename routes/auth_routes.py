@@ -6,9 +6,12 @@ Handles user login, signup, logout, and session management.
 Also includes shopping list API endpoints for adding/removing items.
 """
 
-from flask import render_template, request, redirect, url_for, session, jsonify
+from flask import render_template, request, redirect, url_for, session, jsonify, current_app
 from . import auth_bp
 import re
+import os
+import jwt
+from datetime import datetime, timedelta
 from bson import Decimal128
 from models import models as m
 from models import users_model as users_model
@@ -25,6 +28,13 @@ def _get_user_email():
     Fallback to mock user data for development/testing.
     Returns: User email string or None
     """
+    # Prefer JWT if provided (Authorization: Bearer or auth_token cookie)
+    token = _get_token_from_request()
+    if token:
+        decoded = _decode_jwt(token)
+        if decoded and decoded.get('sub'):
+            return decoded.get('sub')
+
     email = session.get('user')
     if not email and getattr(m, 'users', None):
         email = 'user1@example.com' if 'user1@example.com' in m.users else next(iter(m.users.keys()), None)
@@ -37,6 +47,37 @@ def _has_db():
     Returns: Boolean indicating database availability
     """
     return mongo is not None and getattr(mongo, 'db', None) is not None
+
+
+def _jwt_secret():
+    return current_app.config.get('JWT_SECRET_KEY') or os.environ.get('JWT_SECRET_KEY') or current_app.secret_key
+
+
+def _generate_jwt(email: str) -> str:
+    payload = {
+        'sub': email,
+        'iat': datetime.utcnow(),
+        'exp': datetime.utcnow() + timedelta(hours=6)
+    }
+    return jwt.encode(payload, _jwt_secret(), algorithm='HS256')
+
+
+def _decode_jwt(token: str):
+    try:
+        return jwt.decode(token, _jwt_secret(), algorithms=['HS256'])
+    except Exception as e:
+        print(f'[JWT] decode failed: {e}')
+        return None
+
+
+def _get_token_from_request():
+    auth_header = request.headers.get('Authorization', '')
+    if isinstance(auth_header, str) and auth_header.lower().startswith('bearer '):
+        return auth_header.split(' ', 1)[1].strip()
+    cookie_token = request.cookies.get('auth_token')
+    if cookie_token:
+        return cookie_token
+    return None
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -59,10 +100,25 @@ def login():
         ok = users_model.authenticate(email, password)
         print(f'[LOGIN] auth result={ok}')
         if ok:
-            session['user'] = email  # Store user in session
-            return redirect(url_for('main.home'))
+            token = _generate_jwt(email)
+            # JSON clients get the token directly
+            if request.is_json or request.accept_mimetypes.best == 'application/json':
+                return jsonify({'token': token, 'email': email}), 200
+
+            session['user'] = email  # Store user in session for server-rendered pages
+            resp = redirect(url_for('main.home'))
+            resp.set_cookie(
+                'auth_token',
+                token,
+                httponly=True,
+                samesite='Lax',
+                secure=bool(os.environ.get('COOKIE_SECURE'))
+            )
+            return resp
         else:
             # Return email back so user doesn't need to retype it
+            if request.is_json or request.accept_mimetypes.best == 'application/json':
+                return jsonify({'error': 'Invalid credentials'}), 401
             return render_template('login.html', error="Invalid credentials", email=email)
     return render_template('login.html')
 
@@ -366,14 +422,19 @@ def clear_shopping_list():
 @auth_bp.route('/logout')
 def logout():
     session.clear()
-    return redirect(url_for('main.home'))
+    resp = redirect(url_for('main.home'))
+    try:
+        resp.delete_cookie('auth_token')
+    except Exception:
+        pass
+    return resp
 
 
 @auth_bp.route('/profile/update', methods=['POST'])
 def api_update_profile():
-    if 'user' not in session:
+    email = _get_user_email()
+    if not email:
         return jsonify({'error': 'not_authenticated'}), 401
-    email = session['user']
     data = request.get_json() or request.form or {}
     phone = data.get('phone')
     address = data.get('address')

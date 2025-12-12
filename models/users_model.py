@@ -17,6 +17,7 @@ import re
 from dotenv import load_dotenv
 from typing import List, Optional
 import certifi
+import bcrypt
 
 load_dotenv()
 
@@ -67,6 +68,28 @@ def get_user_by_email(email: str):
     return mock_models.users.get(email)
 
 
+def hash_password(password: str) -> str:
+    """Hash a password using bcrypt (includes a per-password salt)."""
+    if password is None:
+        return ''
+    if isinstance(password, bytes):
+        password = password.decode('utf-8', 'ignore')
+    trimmed = str(password).strip()
+    if not trimmed:
+        return ''
+    return bcrypt.hashpw(trimmed.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+
+
+def verify_password(plain: str, hashed: str) -> bool:
+    """Verify a plain password against a stored bcrypt hash."""
+    if not plain or not hashed:
+        return False
+    try:
+        return bcrypt.checkpw(plain.encode('utf-8'), str(hashed).encode('utf-8'))
+    except Exception:
+        return False
+
+
 def create_user(user_doc: dict):
     """
     Create a new user account.
@@ -77,6 +100,14 @@ def create_user(user_doc: dict):
     Returns:
         User ID (MongoDB ObjectId as string) or email (if using mock data)
     """
+    try:
+        pwd = user_doc.get('password')
+        # If the password is not already a bcrypt hash, hash it now
+        if pwd and not (isinstance(pwd, str) and pwd.startswith('$2')):
+            user_doc['password'] = hash_password(pwd)
+    except Exception:
+        pass
+
     if flask_mongo is not None and getattr(flask_mongo, 'db', None) is not None:
         res = flask_mongo.db.users.insert_one(user_doc)
         return str(res.inserted_id)
@@ -95,10 +126,21 @@ def authenticate(email: str, password: str) -> bool:
     if stored is None:
         print(f'[AUTH] user {email} has no password field')
         return False
-    # Basic check — if you store hashed passwords, replace with hashing check
-    print(f'[AUTH] comparing: stored={repr(stored)} (type={type(stored).__name__}) vs entered={repr(password)} (type={type(password).__name__})')
-    match = str(stored).strip() == str(password).strip()
-    print(f'[AUTH] result={match}')
+    stored_str = stored.decode('utf-8', 'ignore') if isinstance(stored, (bytes, bytearray)) else str(stored)
+
+    # Prefer bcrypt verification when stored value is a bcrypt hash
+    if stored_str.startswith('$2'):
+        try:
+            ok = verify_password(password, stored_str)
+            print(f'[AUTH] bcrypt verify result={ok}')
+            return ok
+        except Exception as e:
+            print(f'[AUTH] bcrypt verify failed: {e}')
+
+    # Fallback to legacy plain-text comparison for pre-existing accounts
+    print(f'[AUTH] legacy compare: stored={repr(stored_str)} vs entered={repr(password)}')
+    match = stored_str.strip() == str(password).strip()
+    print(f'[AUTH] legacy result={match}')
     return match
 
 
