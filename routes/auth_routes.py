@@ -101,7 +101,8 @@ def signup():
             'password': password,
             'name': name or email,
             'shopping_list': [],
-            'total_cost': 0.0
+            'total_cost': 0.0,
+            'seen_deals': []
         }
         try:
             users_model.create_user(user_doc)
@@ -172,7 +173,7 @@ def add_shopping_item():
 
     try:
         if mongo is not None and getattr(mongo, 'db', None) is not None:
-            # If item is an object and missing a usable unit price, try to enrich it
+            # If item is an object and missing a usable unit price or image, try to enrich it
             try:
                 if isinstance(item, dict):
                     # prefer product id if provided
@@ -192,9 +193,19 @@ def add_shopping_item():
                         if prod is None:
                             prod = mongo.db.products.find_one({'name': {'$regex': re.escape(item.get('name')), '$options': 'i'}})
 
-                    # determine price from product if available
+                    # enrich from product if found
                     if prod is not None:
-                        # try common fields
+                        # Set image first (always enrich image if available from product)
+                        try:
+                            if not item.get('image'):  # Only set if item doesn't already have an image
+                                if prod.get('image'):
+                                    item['image'] = prod.get('image')
+                                elif prod.get('images') and isinstance(prod.get('images'), list) and len(prod.get('images')):
+                                    item['image'] = prod.get('images')[0]
+                        except Exception:
+                            pass
+                        
+                        # determine price from product if available
                         cheapest = prod.get('cheapest') or {}
                         price_field = cheapest.get('price') if isinstance(cheapest, dict) else prod.get('price')
                         if price_field is None:
@@ -227,33 +238,44 @@ def add_shopping_item():
                                 item['id'] = str(prod.get('id'))
                         except Exception:
                             pass
-                        # include image if product provides one
-                        try:
-                            if prod.get('image'):
-                                item['image'] = prod.get('image')
-                            elif prod.get('images') and isinstance(prod.get('images'), list) and len(prod.get('images')):
-                                item['image'] = prod.get('images')[0]
-                        except Exception:
-                            pass
             except Exception:
                 # enrichment should never block adding; ignore errors
                 pass
 
-            # persist the item by fetching the user doc and setting the list explicitly
-            # IMPORTANT: Store-specific items are treated as separate entries (not merged by name alone)
-            user_doc = mongo.db.users.find_one({'email': email})
-            if not user_doc:
-                # create new user doc with shopping_list
-                mongo.db.users.insert_one({'email': email, 'shopping_list': [item], 'total_cost': 0.0})
-                success = True
-                shopping_count = _unpurchased_count([item])
+            # Use the multi-list structure - add to active list
+            from models.users_model import get_user_lists, add_item_to_list, create_shopping_list, set_active_list
+            
+            # Get user's lists
+            lists_data = get_user_lists(email) or {'lists': [], 'active_list_id': None}
+            active_list_id = lists_data.get('active_list_id')
+            
+            # If no active list, create a default one
+            if not active_list_id:
+                lists = lists_data.get('lists', [])
+                if lists:
+                    active_list_id = lists[0].get('id')
+                    set_active_list(email, active_list_id)
+                else:
+                    # Create a default list
+                    active_list_id = create_shopping_list(email, 'My List')
+                    if active_list_id:
+                        set_active_list(email, active_list_id)
+            
+            # Add item to the active list
+            if active_list_id:
+                success = add_item_to_list(email, active_list_id, item)
+                # Get updated count
+                lists_data = get_user_lists(email) or {'lists': [], 'active_list_id': None}
+                active_list = next((lst for lst in lists_data.get('lists', []) if lst.get('id') == active_list_id), None)
+                if active_list:
+                    shopping_count = _unpurchased_count(active_list.get('items', []))
+                else:
+                    shopping_count = 0
             else:
-                sl = user_doc.get('shopping_list', []) or []
-                sl.append(item)
-                res = mongo.db.users.update_one({'email': email}, {'$set': {'shopping_list': sl}})
-                success = getattr(res, 'modified_count', 0) > 0
-                shopping_count = _unpurchased_count(sl)
+                success = False
+                shopping_count = 0
         else:
+            # Fallback for non-DB mode
             success = users_model.add_to_shopping_list(email, item)
             try:
                 user_doc = users_model.get_user_by_email(email)

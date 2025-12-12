@@ -919,6 +919,8 @@ function setupFeaturedDealsSearch() {
   const minPrice = document.getElementById('min-price');
   const maxPrice = document.getElementById('max-price');
   const sortOrder = document.getElementById('sort-order');
+  const categorySelect = document.getElementById('category-filter');
+  const categoryChipsRow = document.querySelector('.category-chip-row');
   
   if (!input || !btn || !dealsGrid) return;
 
@@ -938,6 +940,10 @@ function setupFeaturedDealsSearch() {
     const minVal = minPrice ? parseFloat(minPrice.value) : NaN;
     const maxVal = maxPrice ? parseFloat(maxPrice.value) : NaN;
     const sortVal = sortOrder ? sortOrder.value : 'price-asc';
+    const activeChip = categoryChipsRow ? categoryChipsRow.querySelector('.category-chip.active') : null;
+    const chipVal = activeChip ? (activeChip.dataset.categoryChip || '').trim() : '';
+    const selectCategoryVal = categorySelect ? (categorySelect.value || '').trim() : '';
+    const categoryVal = chipVal || selectCategoryVal;
 
     const visible = [];
     allDeals.forEach(col => {
@@ -946,6 +952,7 @@ function setupFeaturedDealsSearch() {
       const productName = (col.getAttribute('data-name') || '').toLowerCase();
       const priceText = col.getAttribute('data-price') || '0';
       const price = parsePrice(priceText);
+      const categoryAttr = (col.getAttribute('data-category') || '').toLowerCase();
 
       // search match
       let searchMatch = true;
@@ -953,12 +960,18 @@ function setupFeaturedDealsSearch() {
         searchMatch = productName.includes(q);
       }
 
+      // category match
+      let categoryMatch = true;
+      if (categoryVal) {
+        categoryMatch = categoryAttr === categoryVal.toLowerCase();
+      }
+
       // price match
       let priceMatch = true;
       if (!isNaN(minVal)) priceMatch = priceMatch && (price >= minVal);
       if (!isNaN(maxVal)) priceMatch = priceMatch && (price <= maxVal);
 
-      if (searchMatch && priceMatch) {
+      if (searchMatch && priceMatch && categoryMatch) {
         col.style.display = '';
         visible.push({ col, price, name: productName });
       } else {
@@ -991,6 +1004,20 @@ function setupFeaturedDealsSearch() {
   input && input.addEventListener('input', () => { doSearch(); });
   if (applyFiltersBtn) applyFiltersBtn.addEventListener('click', (e) => { e.preventDefault(); doSearch(); });
   if (clearFiltersBtn) clearFiltersBtn.addEventListener('click', (e) => { e.preventDefault(); clearFeaturedFilters(); });
+  if (categorySelect) categorySelect.addEventListener('change', () => {
+    if (categoryChipsRow) categoryChipsRow.querySelectorAll('.category-chip').forEach(ch => ch.classList.remove('active'));
+    doSearch();
+  });
+  if (categoryChipsRow) {
+    categoryChipsRow.addEventListener('click', (e) => {
+      const btnEl = e.target.closest('.category-chip');
+      if (!btnEl) return;
+      categoryChipsRow.querySelectorAll('.category-chip').forEach(ch => ch.classList.remove('active'));
+      btnEl.classList.add('active');
+      if (categorySelect) categorySelect.value = '';
+      doSearch();
+    });
+  }
 }
 
 function setupShoppingListInteractions() {

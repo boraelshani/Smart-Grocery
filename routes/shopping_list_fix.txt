@@ -1,0 +1,51 @@
+@main_bp.route('/shopping-list')
+def shopping_list():
+    user_email = session.get('user')
+    db = get_db()
+    
+    # Auto-enrich existing items with missing images (one-time backfill)
+    if user_email and db:
+        try:
+            from models.users_model import get_user_lists
+            lists_data = get_user_lists(user_email) or {'lists': [], 'active_list_id': None}
+            all_user_lists = lists_data.get('lists', [])
+            needs_update = False
+            
+            for lst in all_user_lists:
+                list_items = lst.get('items', [])
+                for item in list_items:
+                    if isinstance(item, dict) and not item.get('image'):
+                        # Item is missing image, try to enrich it
+                        item_name = item.get('name')
+                        if item_name:
+                            # Try to find product by name
+                            prod = None
+                            try:
+                                prod = db.products.find_one({'name': {'$regex': '^' + re.escape(item_name) + '$', '$options': 'i'}})
+                                if not prod:
+                                    prod = db.products.find_one({'name': {'$regex': re.escape(item_name), '$options': 'i'}})
+                            except Exception:
+                                pass
+                            
+                            if prod:
+                                # Set image from product
+                                if prod.get('image'):
+                                    item['image'] = prod.get('image')
+                                    needs_update = True
+                                elif prod.get('images') and isinstance(prod.get('images'), list) and len(prod.get('images')) > 0:
+                                    item['image'] = prod.get('images')[0]
+                                    needs_update = True
+            
+            # Save updated lists if any images were added
+            if needs_update:
+                try:
+                    db.users.update_one(
+                        {'email': user_email},
+                        {'$set': {'shopping_lists': all_user_lists}}
+                    )
+                except Exception as e:
+                    print(f'Error updating lists with images: {e}')
+        except Exception as e:
+            print(f'Error enriching images: {e}')
+    
+    # Mark shopping list as viewed - store current count in session

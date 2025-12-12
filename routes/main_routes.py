@@ -1,4 +1,4 @@
-from flask import render_template, jsonify, session, request, current_app, url_for
+from flask import render_template, jsonify, session, request, current_app, url_for, redirect
 from . import main_bp
 from models import models as m
 from bson.decimal128 import Decimal128
@@ -168,13 +168,17 @@ def home():
     favorites = []
     if db is not None:
         try:
-            user = db.users.find_one({'email': user_email})
-            if user:
-                favorites = user.get('favorites', []) or []
-                # Normalize id to string for template usage
-                for fav in favorites:
-                    if isinstance(fav, dict) and fav.get('id'):
-                        fav['id'] = str(fav['id'])
+            from models import favorites_model
+            favorites = favorites_model.get_user_favorites(user_email)
+            # Normalize id to string for template usage
+            for fav in favorites:
+                if isinstance(fav, dict):
+                    if not fav.get('id') and fav.get('product_id'):
+                        fav['id'] = str(fav['product_id'])
+                    if not fav.get('name') and fav.get('product_name'):
+                        fav['name'] = fav.get('product_name')
+                    if not fav.get('image') and fav.get('product_image'):
+                        fav['image'] = fav.get('product_image')
         except Exception as e:
             print(f'WARNING: Failed to load favorites: {e}')
 
@@ -304,6 +308,8 @@ def store_products_page(store_name):
 def featured_deals_page():
     using_fallback = False
     deals = []
+    user_email = session.get('user')
+    
     db = get_db()
     if db is not None:
         try:
@@ -321,6 +327,54 @@ def featured_deals_page():
             
             # Combine both lists
             deals = featured_deals_list + multibuy_offers_list
+            
+            # Generate notifications for new deals (logged-in user only)
+            if user_email:
+                try:
+                    from models.notifications_model import create_notification
+                    
+                    user = db.users.find_one({'email': user_email})
+                    if user:
+                        seen_deals = user.get('seen_deals', [])
+                        # Initialize seen_deals if not present
+                        if 'seen_deals' not in user:
+                            db.users.update_one(
+                                {'email': user_email},
+                                {'$set': {'seen_deals': []}}
+                            )
+                            seen_deals = []
+                        
+                        # Find new deals and create notifications
+                        new_deal_ids = []
+                        for deal in deals:
+                            deal_id = deal.get('id')
+                            if deal_id and deal_id not in seen_deals:
+                                # Create notification for this new deal
+                                deal_title = deal.get('title') or deal.get('name', 'New Deal')
+                                store_name = deal.get('store', '')
+                                
+                                create_notification({
+                                    'user_email': user_email,
+                                    'type': 'new_deal',
+                                    'title': 'New Deal Available!',
+                                    'message': f'{deal_title}{" at " + store_name if store_name else ""}',
+                                    'deal_id': deal_id,
+                                    'store_name': store_name,
+                                    'action_url': '/featured-deals',
+                                    'priority': 'normal'
+                                })
+                                
+                                new_deal_ids.append(deal_id)
+                        
+                        # Mark all current deals as seen
+                        if new_deal_ids:
+                            all_deal_ids = [d.get('id') for d in deals if d.get('id')]
+                            db.users.update_one(
+                                {'email': user_email},
+                                {'$set': {'seen_deals': all_deal_ids}}
+                            )
+                except Exception as e:
+                    print(f'WARNING: Failed to generate notifications for new deals: {e}')
             
             # If no deals found, use JSON fallback
             if not deals:
@@ -667,7 +721,46 @@ def product_info(product_id):
 def shopping_list():
     user_email = session.get('user')
     db = get_db()
-    
+
+    # Auto-enrich existing items with missing images (one-time backfill)
+    if user_email and db is not None:
+        try:
+            from models.users_model import get_user_lists
+            lists_data = get_user_lists(user_email) or {'lists': [], 'active_list_id': None}
+            all_user_lists = lists_data.get('lists', [])
+            needs_update = False
+
+            for lst in all_user_lists:
+                list_items = lst.get('items', [])
+                for item in list_items:
+                    if isinstance(item, dict) and not item.get('image'):
+                        # Item is missing image, try to enrich it
+                        item_name = item.get('name')
+                        if item_name:
+                            prod = None
+                            try:
+                                prod = db.products.find_one({'name': {'$regex': '^' + re.escape(item_name) + '$', '$options': 'i'}})
+                                if not prod:
+                                    prod = db.products.find_one({'name': {'$regex': re.escape(item_name), '$options': 'i'}})
+                            except Exception:
+                                prod = None
+
+                            if prod:
+                                if prod.get('image'):
+                                    item['image'] = prod.get('image')
+                                    needs_update = True
+                                elif prod.get('images') and isinstance(prod.get('images'), list) and len(prod.get('images')) > 0:
+                                    item['image'] = prod.get('images')[0]
+                                    needs_update = True
+
+            if needs_update:
+                try:
+                    db.users.update_one({'email': user_email}, {'$set': {'shopping_lists': all_user_lists}})
+                except Exception as e:
+                    print(f'Error updating lists with images: {e}')
+        except Exception as e:
+            print(f'Error enriching images: {e}')
+
     # Mark shopping list as viewed - store current count in session
     if user_email:
         from models.users_model import get_user_lists
@@ -678,7 +771,7 @@ def shopping_list():
             items = lst.get('items', []) or []
             total += sum(1 for it in items if not (isinstance(it, dict) and it.get('purchased')))
         session['last_viewed_list_count'] = total
-    
+
     # Get user data
     if db is not None and user_email:
         try:
@@ -690,36 +783,30 @@ def shopping_list():
             user_data = getattr(m, 'users', {}).get('user1@example.com', {})
     else:
         user_data = getattr(m, 'users', {}).get('user1@example.com', {})
-    
+
     # Get all lists for this user using new multi-list structure
     from models.users_model import get_user_lists
     lists_data = get_user_lists(user_email) if user_email else {'lists': [], 'active_list_id': None}
     all_lists = lists_data.get('lists', [])
-    # Rename 'items' key to 'list_items' to avoid conflict with Jinja2 dict.items() method
     for lst in all_lists:
         if 'items' in lst:
             lst['list_items'] = lst.pop('items')
-        # Calculate estimated total for each list
         total = 0.0
         items = lst.get('list_items', [])
-        # Calculate completed count
         completed_count = 0
         for item in items:
             if isinstance(item, dict):
-                # Count completed items
                 if item.get('purchased') or item.get('completed'):
                     completed_count += 1
-                # Calculate total price
                 price = item.get('price', 0)
                 qty = item.get('qty', 1)
-                # Convert price string to float if needed
                 if isinstance(price, str):
                     price = float(price.replace('$', '').replace('€', '').replace(',', '').strip() or 0)
                 total += float(price) * int(qty)
         lst['estimated_total'] = f'€{total:.2f}'
         lst['completed'] = [item for item in items if isinstance(item, dict) and (item.get('purchased') or item.get('completed'))]
     active_list_id = lists_data.get('active_list_id')
-    
+
     # Get the active list or create a default one if none exist
     active_list = None
     if all_lists:
@@ -728,7 +815,6 @@ def shopping_list():
         else:
             active_list = all_lists[0]
     else:
-        # Create default list if user has none
         from models.users_model import create_shopping_list, set_active_list
         if user_email:
             new_id = create_shopping_list(user_email, 'My List')
@@ -737,9 +823,9 @@ def shopping_list():
                 lists_data = get_user_lists(user_email)
                 all_lists = lists_data.get('lists', [])
                 active_list = all_lists[0] if all_lists else None
-    
+
     # Build items list with price/store information for the template
-    shopping_entries = active_list.get('items', []) if active_list else []
+    shopping_entries = active_list.get('list_items', active_list.get('items', [])) if active_list else []
 
     # load products to try to find prices
     db = get_db()
@@ -767,10 +853,8 @@ def shopping_list():
         return None
 
     items = []
-    # Aggregate duplicates by name + store so multiple additions stack into a single line with qty
     agg = {}
     for idx, entry in enumerate(shopping_entries):
-        # entry might be a plain string or dict
         if isinstance(entry, dict):
             name = entry.get('name')
             qty = int(entry.get('qty', entry.get('quantity', 1))) if entry.get('qty') or entry.get('quantity') else 1
@@ -783,8 +867,7 @@ def shopping_list():
         product = find_product_by_name(name)
         price_val = 0.0
         store_name = ''
-        
-        # PRIORITY 1: Use price from the entry if it exists (sent from add-to-list)
+
         if isinstance(entry, dict):
             entry_price = entry.get('price') or entry.get('price_val')
             store_name = entry.get('store', '')
@@ -802,14 +885,11 @@ def shopping_list():
                         price_val = float(cleaned) if cleaned else 0.0
                 except Exception:
                     price_val = 0.0
-        
-        # PRIORITY 2: If no price in entry, try to get from product catalog
+
         if (not price_val or price_val == 0) and product:
-            # try common fields for price on product
             cheapest = product.get('cheapest') or {}
             price_field = cheapest.get('price') if isinstance(cheapest, dict) else product.get('price')
             if price_field is None:
-                # fallback to first 'stores' entry
                 try:
                     stores_list = product.get('stores', [])
                     if stores_list and isinstance(stores_list, list):
@@ -819,7 +899,6 @@ def shopping_list():
                 except Exception:
                     price_field = None
             if price_field is not None:
-                # normalize to float, handle Decimal128 specially
                 try:
                     if isinstance(price_field, (int, float)):
                         price_val = float(price_field)
@@ -839,37 +918,42 @@ def shopping_list():
                 except Exception:
                     store_name = ''
 
-        # Prefer to aggregate by product id + store when possible (more reliable), otherwise use normalized name + store
-        # This ensures same product from different stores appear as separate items
         store_from_entry = ''
         if isinstance(entry, dict):
             store_from_entry = entry.get('store', '')
         if not store_from_entry:
             store_from_entry = store_name
-        
+
         if product and product.get('id'):
             item_key = f"{str(product.get('id'))}#{store_from_entry}"
         else:
             item_key = f"{(name or f'item-{idx}').strip().lower()}#{store_from_entry}"
         existing = agg.get(item_key)
         image_val = ''
-        # try to get image from product or entry
         try:
             if isinstance(entry, dict):
-                image_val = entry.get('image') or (entry.get('images')[0] if entry.get('images') else '')
+                image_val = entry.get('image')
+                if not image_val and entry.get('images'):
+                    if isinstance(entry.get('images'), list) and len(entry.get('images')) > 0:
+                        image_val = entry.get('images')[0]
+                    elif isinstance(entry.get('images'), str):
+                        image_val = entry.get('images')
+
             if not image_val and product:
-                image_val = product.get('image') or (product.get('images')[0] if product.get('images') else '')
+                image_val = product.get('image')
+                if not image_val and product.get('images'):
+                    if isinstance(product.get('images'), list) and len(product.get('images')) > 0:
+                        image_val = product.get('images')[0]
+                    elif isinstance(product.get('images'), str):
+                        image_val = product.get('images')
         except Exception:
             image_val = ''
 
         if existing:
-            # increment quantity and update purchased flag
             existing['qty'] += qty
             existing['purchased'] = existing['purchased'] or purchased
-            # if price_val differs and existing is zero, set; otherwise keep existing unit price
             if existing.get('price_val', 0) == 0 and price_val:
                 existing['price_val'] = price_val
-            # prefer to set image if missing
             if not existing.get('image') and image_val:
                 existing['image'] = image_val
         else:
@@ -883,7 +967,6 @@ def shopping_list():
                 'image': image_val or ''
             }
 
-    # build final items list from aggregated values, set formatted price as total (unit * qty)
     for k, v in agg.items():
         unit = float(v.get('price_val') or 0.0)
         qty = int(v.get('qty') or 1)
@@ -891,11 +974,73 @@ def shopping_list():
         v['price'] = f"€{total:.2f}"
         items.append(v)
 
-    return render_template('shopping_list.html', 
-                         user_data=user_data, 
+    return render_template('shopping_list.html',
+                         user_data=user_data,
                          items=items,
                          all_lists=all_lists,
                          active_list=active_list)
+
+@main_bp.route('/notifications')
+def notifications_page():
+    """Display all notifications for the logged-in user"""
+    user_email = session.get('user')
+    if not user_email:
+        return redirect(url_for('auth.login'))
+    
+    from models.notifications_model import get_user_notifications, get_unread_count
+    
+    # Get all notifications
+    notifications = get_user_notifications(user_email, unread_only=False, limit=100)
+    unread_count = get_unread_count(user_email)
+    
+    # Get shopping list count for navbar
+    shopping_list_count = 0
+    try:
+        if _has_db():
+            from models.users_model import get_user_lists
+            lists_data = get_user_lists(user_email)
+            if lists_data and lists_data.get('active_list_id'):
+                active_list = next(
+                    (lst for lst in lists_data.get('lists', []) 
+                     if lst.get('id') == lists_data.get('active_list_id')),
+                    None
+                )
+                if active_list:
+                    shopping_list_count = sum(
+                        1 for item in active_list.get('items', [])
+                        if not (isinstance(item, dict) and item.get('purchased'))
+                    )
+    except Exception as e:
+        print(f'Error getting shopping list count: {e}')
+    
+    return render_template(
+        'notifications.html',
+        notifications=notifications,
+        unread_count=unread_count,
+        shopping_list_count=shopping_list_count
+    )
+
+
+@main_bp.route('/api/notifications/<notification_id>', methods=['DELETE'])
+def delete_notification(notification_id):
+    """Delete a specific notification"""
+    try:
+        user_email = session.get('user')
+        if not user_email:
+            return jsonify({'error': 'Not logged in'}), 401
+        
+        from models.notifications_model import delete_notification as delete_notif
+        
+        success = delete_notif(notification_id, user_email)
+        
+        if success:
+            return jsonify({'success': True})
+        else:
+            return jsonify({'error': 'Failed to delete notification'}), 500
+    
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 
 @main_bp.route('/profile')
 def profile():
@@ -1375,25 +1520,18 @@ def toggle_favorite():
         if db is None:
             return jsonify({'error': 'Database not available'}), 500
         
-        # Get user
-        user = db.users.find_one({'email': user_email})
-        if not user:
-            return jsonify({'error': 'User not found'}), 404
-        
-        # Get favorites list
-        favorites = user.get('favorites', [])
+        from models import favorites_model
         
         # Check if product is already in favorites
-        is_favorited = any(str(fav.get('id')) == str(product_id) for fav in favorites if isinstance(fav, dict))
+        is_favorited = favorites_model.is_favorited(user_email, product_id)
         
         if is_favorited:
             # Remove from favorites
-            favorites = [fav for fav in favorites if str(fav.get('id')) != str(product_id)]
-            db.users.update_one(
-                {'email': user_email},
-                {'$set': {'favorites': favorites}}
-            )
-            return jsonify({'success': True, 'action': 'removed', 'is_favorite': False})
+            success = favorites_model.remove_favorite(user_email, product_id)
+            if success:
+                return jsonify({'success': True, 'action': 'removed', 'is_favorite': False})
+            else:
+                return jsonify({'error': 'Failed to remove favorite'}), 500
         else:
             # Add to favorites
             # Get product details from products or featured_deals
@@ -1417,21 +1555,19 @@ def toggle_favorite():
             if not product:
                 return jsonify({'error': 'Product not found'}), 404
             
-            # Create favorite entry
-            favorite_entry = {
-                'id': str(product.get('_id', product_id)),
+            # Create favorite entry data
+            product_data = {
                 'name': product.get('name') or product.get('title', ''),
                 'image': product.get('image', ''),
                 'category': product.get('category', ''),
                 'best_price': (product.get('cheapest') and product.get('cheapest').get('price')) or product.get('price', 'N/A')
             }
             
-            favorites.append(favorite_entry)
-            db.users.update_one(
-                {'email': user_email},
-                {'$set': {'favorites': favorites}}
-            )
-            return jsonify({'success': True, 'action': 'added', 'is_favorite': True})
+            success = favorites_model.add_favorite(user_email, product_id, product_data)
+            if success:
+                return jsonify({'success': True, 'action': 'added', 'is_favorite': True})
+            else:
+                return jsonify({'error': 'Failed to add favorite'}), 500
     
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -1456,14 +1592,60 @@ def check_favorite(product_id=None):
         if db is None:
             return jsonify({'is_favorite': False})
         
-        user = db.users.find_one({'email': user_email})
-        if not user:
-            return jsonify({'is_favorite': False})
-        
-        favorites = user.get('favorites', [])
-        is_favorited = any(str(fav.get('id')) == str(product_id) for fav in favorites if isinstance(fav, dict))
+        from models import favorites_model
+        is_favorited = favorites_model.is_favorited(user_email, product_id)
         
         return jsonify({'is_favorite': is_favorited})
+    
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@main_bp.route('/api/notifications/unshown', methods=['GET'])
+def get_unshown_notifications():
+    """Get notifications that haven't been shown as toasts yet"""
+    try:
+        user_email = session.get('user')
+        if not user_email:
+            return jsonify({'notifications': []})
+        
+        from models.notifications_model import get_user_notifications
+        
+        # Get unread notifications (we'll mark them as shown after displaying)
+        all_notifications = get_user_notifications(user_email, unread_only=True, limit=10)
+        
+        # Filter to only new_deal type for Featured Deals page
+        new_deal_notifications = [n for n in all_notifications if n.get('type') == 'new_deal']
+        
+        return jsonify({'notifications': new_deal_notifications})
+    
+    except Exception as e:
+        print(f'ERROR fetching unshown notifications: {e}')
+        return jsonify({'error': str(e)}), 500
+
+
+@main_bp.route('/api/notifications/mark-read', methods=['POST'])
+def mark_notifications_read():
+    """Mark notifications as read"""
+    try:
+        user_email = session.get('user')
+        if not user_email:
+            return jsonify({'error': 'Not logged in'}), 401
+        
+        data = request.get_json()
+        notification_ids = data.get('notification_ids', [])
+        
+        if not notification_ids or not isinstance(notification_ids, list):
+            return jsonify({'error': 'Notification IDs required'}), 400
+        
+        from models.notifications_model import mark_as_read
+        
+        # Mark each notification as read
+        success_count = 0
+        for nid in notification_ids:
+            if mark_as_read(nid, user_email):
+                success_count += 1
+        
+        return jsonify({'success': True, 'marked_count': success_count})
     
     except Exception as e:
         return jsonify({'error': str(e)}), 500
