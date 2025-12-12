@@ -357,6 +357,194 @@ a:hover {
   color: #5b21b6;
   margin-bottom: 30px;
 }
+.shopping-list-controls,
+.list-summary,
+.list-header,
+.list-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px; /* adds space between chips/buttons */
+  row-gap: 12px; /* extra vertical breathing room when wrapped */
+}
+
+.shopping-list-controls .btn,
+.shopping-list-controls .badge,
+.shopping-list-controls a,
+.list-summary .btn,
+.list-summary .badge,
+.list-summary a,
+.list-toolbar .btn,
+.list-toolbar .badge,
+.list-toolbar a {
+  margin: 0;            /* reset any conflicting margins */
+  padding: 6px 10px;    /* ensure readable touch targets */
+  line-height: 1.25;    /* reduce vertical stacking */
+  border-radius: 8px;    /* soften pill appearance */
+}
+
+/* compact the small count/label badges to prevent bleeding into text */
+.badge,
+.chip,
+.pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  line-height: 1.2;
+}
+
+/* ensure left-justified layout on summary row */
+.list-summary {
+  justify-content: flex-start;
+}
+
+/* group action buttons as a toolbar with spacing */
+.list-toolbar {
+  margin-top: 6px;
+  margin-bottom: 6px;
+}
+
+/* ensure total price chip doesn’t collide with neighbors */
+.total-chip,
+.price-chip,
+.summary-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 10px;
+}
+
+/* controls inside each list card header */
+.list-card .card-header .controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* search bar spacing within list view */
+.shopping-list .search,
+.shopping-list .search input {
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+
+/* Prevent icon buttons from overlapping text labels */
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+/* Add bottom spacing between separate list sections */
+.shopping-list-section {
+  margin-bottom: 16px;
+}
+
+/* Print styles: hide interactive controls on paper */
+@media print {
+  /* HIDE ALL UI CHROME - only show content */
+  .navbar,
+  .footer,
+  .list-toolbar,
+  .shopping-list-controls,
+  .list-header .controls,
+  .card-header .controls,
+  .shopping-list .search,
+  .search,
+  .search-bar,
+  .search-container,
+  .icon-button,
+  .btn,
+  .badge.action,
+  .chip.action,
+  .pill.action,
+  .btn-print,
+  .btn-export,
+  .btn-add,
+  .btn-clear,
+  .export-button,
+  .print-button,
+  .add-item-button,
+  .clear-all-button,
+  .actions,
+  .controls,
+  .toolbar,
+  button,
+  .form-control,
+  .form-group,
+  .input-group {
+    display: none !important;
+  }
+
+  /* Hide ALL inputs except checkboxes */
+  input,
+  select,
+  textarea {
+    display: none !important;
+  }
+  
+  input[type="checkbox"] {
+    display: inline-block !important;
+    margin-right: 8px;
+  }
+
+  /* SHOW ONLY essentials: app title, date, list header, name, total, items */
+  .app-title,
+  .page-title,
+  .date,
+  .shopping-list-header,
+  .list-title,
+  .list-name,
+  h1, h2, h3,
+  .list-summary,
+  .total,
+  .total-price,
+  .price-chip,
+  .summary-chip,
+  .shopping-list-items,
+  .shopping-list-item,
+  .shopping-item,
+  .item-name,
+  .item-cost,
+  .item-price,
+  .store-name,
+  .market-name {
+    display: block !important;
+  }
+
+  /* Clean layout for print */
+  .shopping-list,
+  .list-card,
+  .list-summary {
+    box-shadow: none !important;
+    border: 1px solid #ddd;
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+
+  /* Readable text for print */
+  body {
+    font-size: 12pt;
+    line-height: 1.4;
+    color: #000;
+    background: #fff;
+  }
+
+  /* Ensure items list cleanly */
+  .shopping-list-item,
+  .shopping-item {
+    page-break-inside: avoid;
+    margin-bottom: 8px;
+  }
+
+  /* Page breaks for multiple lists */
+  .list-card {
+    page-break-after: auto;
+    page-break-inside: avoid;
+  }
+}
 
 .shopping-list .shopping-item {
   display: flex;
