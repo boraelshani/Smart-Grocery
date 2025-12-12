@@ -9,6 +9,7 @@ Also includes shopping list API endpoints for adding/removing items.
 from flask import render_template, request, redirect, url_for, session, jsonify
 from . import auth_bp
 import re
+from bson import Decimal128
 from models import models as m
 from models import users_model as users_model
 from utils.db import mongo
