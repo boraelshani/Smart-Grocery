@@ -235,6 +235,16 @@ Used: When clicking on a product in a specific store's listing
         });
         if (response.ok) {
           button.classList.toggle('active');
+          const icon = button.querySelector('i');
+          if (icon) {
+            if (button.classList.contains('active')) {
+              icon.classList.remove('bi-heart');
+              icon.classList.add('bi-heart-fill');
+            } else {
+              icon.classList.remove('bi-heart-fill');
+              icon.classList.add('bi-heart');
+            }
+          }
         }
       } catch (error) {
         console.error('Error toggling favorite:', error);

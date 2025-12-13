@@ -169,7 +169,7 @@ Shown at route: /
     /* Horizontal Scroll Container */
     .scroll-container {
       position: relative;
-      overflow: hidden;
+      overflow: visible;
       margin: 0 -15px;
       padding: 0 15px;
     }
@@ -195,12 +195,13 @@ Shown at route: /
       height: 50px;
       border-radius: 50%;
       box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-      display: flex;
+      display: none;
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      z-index: 10;
+      z-index: 100;
       transition: all 0.3s ease;
+      pointer-events: auto;
     }
     .scroll-arrow:hover {
       background: #667eea;
@@ -276,39 +277,30 @@ Shown at route: /
       font-weight: 700;
       box-shadow: 0 3px 10px rgba(245, 87, 108, 0.3);
     }
-    .favorite-btn {
+    .btn-favorite {
       position: absolute;
-      top: 15px;
-      left: 15px;
+      top: 12px;
+      left: 12px;
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
       background: white;
       border: none;
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      color: #ccc;
+      font-size: 1.2rem;
+      transition: all 0.2s ease;
+      z-index: 10;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 3px 10px rgba(0,0,0,0.15);
-      cursor: pointer;
-      transition: all 0.3s ease;
-      z-index: 5;
     }
-    .favorite-btn:hover {
+    .btn-favorite:hover {
+      color: #ff6b6b;
       transform: scale(1.1);
-      box-shadow: 0 5px 15px rgba(220, 53, 69, 0.3);
     }
-    .favorite-btn i {
-      color: #dc3545;
-      font-size: 1.2rem;
-      transition: all 0.3s ease;
-    }
-    .favorite-btn.active i {
-      color: #dc3545;
-      text-shadow: 0 0 8px rgba(220, 53, 69, 0.6);
-    }
-    .favorite-btn.active {
-      background: linear-gradient(135deg, #ffe0e6 0%, #fff0f3 100%);
-      box-shadow: 0 5px 15px rgba(220, 53, 69, 0.3);
+    .btn-favorite.active {
+      color: #ff6b6b;
     }
     .add-to-cart-btn-modern {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -462,7 +454,7 @@ Shown at route: /
 
     /* Section Spacing */
     .content-section {
-      padding: 4rem 0;
+      padding: 2rem 0;
     }
   </style>
 </head>
@@ -538,6 +530,7 @@ Shown at route: /
     </div>
   </section>
 
+  
   <!-- Stats Section -->
   <section class="stats-section">
     <div class="container">
@@ -565,7 +558,7 @@ Shown at route: /
             <div class="stat-icon">
               <i class="bi bi-lightning-fill"></i>
             </div>
-            <div class="stat-number">{{ featured_deals|length }}</div>
+            <div class="stat-number">{{ total_deals_count }}</div>
             <div class="stat-label">Hot Deals</div>
           </div>
         </div>
@@ -637,7 +630,7 @@ Shown at route: /
   </section>
 
   <!-- Featured Deals Section -->
-  <section class="content-section" style="background: #f8f9fa;">
+  <section class="content-section">
     <div class="container">
       <div class="section-header">
         <div>
@@ -653,38 +646,60 @@ Shown at route: /
           <i class="bi bi-chevron-left"></i>
         </button>
         <div class="scroll-wrapper" id="deals-scroll">
-          {% for deal in featured_deals[:12] %}
-          <div class="product-card-horizontal">
+          {% for deal in featured_deals[:20] %}
+          <div class="product-card-horizontal" onclick="window.location.href='{{ url_for('main.featured_deal_detail', deal_id=deal.get('id') or deal.get('_id')) }}'" style="cursor: pointer;">
             {% if deal.get('discount_label') or deal.get('discount_percent') %}
             <div class="discount-badge">
               {{ deal.get('discount_label') or (deal.get('discount_percent') ~ '% OFF') }}
             </div>
             {% endif %}
-            <button class="favorite-btn" data-product-id="{{ deal.get('_id') or deal.get('id') }}" onclick="favoriteProduct(event, this.dataset.productId)">
+            <button class="btn-favorite" data-product-id="{{ deal.get('_id') or deal.get('id') }}" onclick="event.stopPropagation(); toggleFavorite('{{ deal.get('_id') or deal.get('id') }}', this)">
               <i class="bi bi-heart"></i>
             </button>
             <img src="{{ deal.get('image') or 'https://via.placeholder.com/280x200' }}" alt="{{ deal.get('title') or deal.get('name') }}">
             <div class="product-card-body">
               <div class="product-name">{{ deal.get('title') or deal.get('name', 'Product') }}</div>
               <div class="product-store"><i class="bi bi-shop me-1"></i>{{ deal.get('store') or deal.get('source', 'Store') }}</div>
-              <div class="product-price">€{{ deal.get('price', '0.00') }}</div>
+              {% set original_price = deal.get('original_price') %}
+              {% set offer_obj = deal.get('offer') if deal.get('offer') is mapping else None %}
+              {% set offer = deal.get('offer', '') %}
+              {% set offer_x = offer_obj.x if offer_obj is not none else (deal.get('buy_quantity') or deal.get('multibuy_buy') or '') %}
+              {% set offer_y = offer_obj.y if offer_obj is not none else (deal.get('free_quantity') or deal.get('multibuy_free') or '') %}
+              {% set offer_type = offer_obj.type if offer_obj is not none else ('buyXgetY' if offer_x and offer_y else '') %}
+              {% if offer_obj is not none %}
+                {% set offer_text = 'Buy ' ~ offer_x ~ ' Get ' ~ offer_y ~ ' Free' if offer_x and offer_y else offer %}
+              {% else %}
+                {% set offer_text = offer if offer is string else '' %}
+              {% endif %}
+              {% set is_buy_get_deal = (offer_type == 'buyXgetY') or (offer_text and ('buy' in offer_text|lower and ('get' in offer_text|lower or 'free' in offer_text|lower or '+' in offer_text))) %}
+              {% if is_buy_get_deal %}
+                <div class="product-price">€{{ deal.get('price', '0.00') }} each</div>
+                <div class="text-muted small mb-2">{{ offer_text }}</div>
+              {% else %}
+                {% if original_price %}
+                  <div class="text-muted small text-decoration-line-through">Was: €{{ '%.2f' % (original_price|float) }}</div>
+                {% endif %}
+                <div class="product-price">€{{ deal.get('price', '0.00') }}</div>
+              {% endif %}
               <div class="d-flex gap-2 flex-wrap">
                 {% set offer_obj = deal.get('offer') if deal.get('offer') is mapping else None %}
                 {% set offer_x = offer_obj.x if offer_obj is not none else (deal.get('buy_quantity') or deal.get('multibuy_buy') or '') %}
                 {% set offer_y = offer_obj.y if offer_obj is not none else (deal.get('free_quantity') or deal.get('multibuy_free') or '') %}
                 {% set offer_type = offer_obj.type if offer_obj is not none else ('buyXgetY' if offer_x and offer_y else '') %}
                 <button class="add-to-cart-btn-modern claim-deal-btn" 
+                        onclick="event.stopPropagation();"
                         data-id="{{ deal.get('id') or deal.get('_id') }}" 
                   data-title="{{ deal.get('title') or deal.get('name') }}" 
                   data-price="{{ deal.get('price') }}"
                   data-original-price="{{ deal.get('original_price','') }}"
+                  data-image="{{ deal.get('image') or url_for('static', filename='placeholder.svg') }}"
                   data-offer-json='{{ offer_obj|tojson|forceescape if offer_obj is not none else "" }}'
                   data-offer-type="{{ offer_type }}"
                   data-offer-x="{{ offer_x }}"
                   data-offer-y="{{ offer_y }}">
                   <i class="bi bi-cart-plus"></i> Add to Cart
                 </button>
-                <a href="{{ url_for('main.featured_deal_detail', deal_id=deal.get('id') or deal.get('_id')) }}" class="btn btn-outline-secondary btn-sm">
+                <a href="{{ url_for('main.featured_deal_detail', deal_id=deal.get('id') or deal.get('_id')) }}" class="btn btn-outline-secondary btn-sm" onclick="event.stopPropagation();">
                   <i class="bi bi-info-circle"></i> View Details
                 </a>
               </div>
@@ -699,66 +714,59 @@ Shown at route: /
     </div>
   </section>
 
-  <!-- Favorites Section -->
+  <!-- Compare Prices Section -->
   <section class="content-section">
     <div class="container">
       <div class="section-header">
         <div>
-          <h2 class="section-title"><i class="bi bi-heart-fill text-danger me-2"></i>Your Favorites</h2>
-          <p class="section-subtitle">Loved items saved for quick access</p>
+          <h2 class="section-title"><i class="bi bi-bar-chart me-2" style="color: #667eea;"></i>Compare Prices</h2>
+          <p class="section-subtitle">Find the best deals across all stores</p>
         </div>
         <a href="{{ url_for('main.compare_prices') }}" class="view-all-btn">
-          Browse More <i class="bi bi-arrow-right"></i>
+          Compare All <i class="bi bi-arrow-right"></i>
         </a>
       </div>
-
-      {% if favorites and favorites|length > 0 %}
       <div class="scroll-container">
-        <button class="scroll-arrow left" onclick="scrollSection('favorites', 'left')">
+        <button class="scroll-arrow left" onclick="scrollSection('compare', 'left')">
           <i class="bi bi-chevron-left"></i>
         </button>
-        <div class="scroll-wrapper" id="favorites-scroll">
-          {% for fav in favorites %}
-          <div class="product-card-horizontal">
-            <button class="favorite-btn active" data-product-id="{{ fav.get('id') }}" onclick="favoriteProduct(event, this.dataset.productId)">
-              <i class="bi bi-heart-fill"></i>
-            </button>
-            <img src="{{ fav.get('image') or url_for('static', filename='placeholder.svg') }}" alt="{{ fav.get('name', 'Product') }}">
+        <div class="scroll-wrapper" id="compare-scroll">
+          {% for product in products[:20] %}
+          {% set pid = product.get('id') or product.get('_id') %}
+          <div class="product-card-horizontal" {% if pid %}onclick="window.location='{{ url_for('main.product_detail', product_id=pid) }}'"{% endif %} style="cursor: {% if pid %}pointer{% else %}default{% endif %};">
+            <img src="{{ product.get('image') or 'https://via.placeholder.com/280x200' }}" alt="{{ product.get('name') }}">
             <div class="product-card-body">
-              <div class="product-name">{{ fav.get('name', 'Product') }}</div>
-              {% if fav.get('category') %}
-              <div class="product-store"><i class="bi bi-tag me-1"></i>{{ fav.get('category') }}</div>
-              {% endif %}
-              <div class="product-price">€{{ fav.get('best_price') or fav.get('price') or 'N/A' }}</div>
-              <div class="d-flex flex-wrap gap-2">
-                <button class="add-to-cart-btn-modern add-to-cart-btn"
-                        data-name="{{ fav.get('name', 'Product') }}"
-                        data-price="{{ fav.get('best_price') or fav.get('price') or '0.00' }}"
-                        data-image="{{ fav.get('image') or url_for('static', filename='placeholder.svg') }}"
-                        data-store="{{ fav.get('store') or fav.get('store_name') or fav.get('brand') or 'Favorite' }}">
-                  <i class="bi bi-cart-plus"></i> Add to Cart
-                </button>
-                <a href="{{ url_for('main.product_detail', product_id=fav.get('id')) }}" class="add-to-cart-btn-modern" style="text-decoration: none;">
-                  <i class="bi bi-info-circle"></i> View Details
-                </a>
+              <div class="product-name">{{ product.get('name', 'Product') }}</div>
+              {% if product.get('stores') and product.get('stores')|length > 0 %}
+              {% set prices = [] %}
+              {% for store in product.get('stores', []) %}
+                {% set price_val = store.get('price') %}
+                {% if price_val %}
+                  {% set _ = prices.append(price_val|float if price_val is string else price_val) %}
+                {% endif %}
+              {% endfor %}
+              {% if prices|length > 0 %}
+              {% set min_price = prices|min %}
+              {% set max_price = prices|max %}
+              <div class="product-store">
+                <i class="bi bi-shop me-1"></i>{{ product.get('stores')|length }} stores
               </div>
+              <div class="product-price">€{{ "%.2f"|format(min_price) }}{% if min_price != max_price %} - €{{ "%.2f"|format(max_price) }}{% endif %}</div>
+              {% endif %}
+              {% endif %}
+              {% if pid %}
+              <a href="{{ url_for('main.product_detail', product_id=pid) }}" class="add-to-cart-btn-modern" style="text-decoration: none;" onclick="event.stopPropagation();">
+                <i class="bi bi-bar-chart"></i> Compare Prices
+              </a>
+              {% endif %}
             </div>
           </div>
           {% endfor %}
         </div>
-        <button class="scroll-arrow right" onclick="scrollSection('favorites', 'right')">
+        <button class="scroll-arrow right" onclick="scrollSection('compare', 'right')">
           <i class="bi bi-chevron-right"></i>
         </button>
       </div>
-      {% else %}
-      <div class="text-center py-5 bg-light rounded-4">
-        <h5 class="fw-bold mb-2">No favorites yet</h5>
-        <p class="text-muted mb-4">Tap the heart on any product to save it here.</p>
-        <a href="{{ url_for('main.compare_prices') }}" class="btn btn-primary">
-          <i class="bi bi-search"></i> Discover products
-        </a>
-      </div>
-      {% endif %}
     </div>
   </section>
 
@@ -798,17 +806,17 @@ Shown at route: /
     </div>
   </section>
 
-  <!-- Products from First Store -->
-  {% if stores and stores|length > 0 %}
-  {% set first_store = stores[0] %}
-  <section class="content-section" style="background: #f8f9fa;">
+  <!-- Products from Preferred/Random Store -->
+  {% if store_products and store_products|length > 0 %}
+  {% set store_name = chosen_store_name or (store_products[0].store if store_products and store_products[0].store else 'Store') %}
+  <section class="content-section">
     <div class="container">
       <div class="section-header">
         <div>
-          <h2 class="section-title">Products from {{ first_store.get('name') }}</h2>
-          <p class="section-subtitle">Fresh picks from one of our top stores</p>
+          <h2 class="section-title"><i class="bi bi-shop me-2" style="color:#667eea;"></i>Products from {{ store_name }}</h2>
+          <p class="section-subtitle"><i class="bi bi-stars me-2" style="color:#a78bfa;"></i>Fresh picks tailored to your preferred store</p>
         </div>
-        <a href="{{ url_for('main.store_products_page', store_name=first_store.get('name')) }}" class="view-all-btn">
+        <a href="{{ url_for('main.store_products_page', store_name=store_name) }}" class="view-all-btn">
           View All <i class="bi bi-arrow-right"></i>
         </a>
       </div>
@@ -817,24 +825,31 @@ Shown at route: /
           <i class="bi bi-chevron-left"></i>
         </button>
         <div class="scroll-wrapper" id="store-products-scroll">
-          {% for product in products[:12] if product.get('stores') and product.get('stores')|length > 0 %}
-          {% set store_data = product.get('stores')[0] %}
-          <div class="product-card-horizontal">
-            <button class="favorite-btn" data-product-id="{{ product.get('_id') or product.get('id') }}">
+          {% for product in store_products %}
+          {% set detail_url = url_for('main.product_info', product_id=product.id, store_name=store_name, store_price=product.price or '', store_image=product.image or '') %}
+          <div class="product-card-horizontal" {% if product.id %}onclick="window.location='{{ detail_url }}'"{% endif %} style="cursor: {% if product.id %}pointer{% else %}default{% endif %};">
+            <button class="btn-favorite" data-product-id="{{ product.id }}" onclick="event.stopPropagation(); toggleFavorite('{{ product.id }}', this)">
               <i class="bi bi-heart"></i>
             </button>
-            <img src="{{ product.get('image') or 'https://via.placeholder.com/280x200' }}" alt="{{ product.get('name') }}">
+            <img src="{{ product.image or url_for('static', filename='placeholder.svg') }}" alt="{{ product.name }}">
             <div class="product-card-body">
-              <div class="product-name">{{ product.get('name', 'Product') }}</div>
-              <div class="product-store"><i class="bi bi-shop me-1"></i>{{ store_data.get('store_name', first_store.get('name')) }}</div>
-              <div class="product-price">€{{ store_data.get('price', '0.00') }}</div>
-              <button class="add-to-cart-btn-modern add-to-cart-btn" 
-                      data-name="{{ product.get('name') }}" 
-                      data-price="{{ store_data.get('price') }}" 
-                      data-image="{{ product.get('image') }}"
-                      data-store="{{ store_data.get('store_name', first_store.get('name')) }}">
-                <i class="bi bi-cart-plus"></i> Add to Cart
-              </button>
+              <div class="product-name">{{ product.name }}</div>
+              <div class="product-store"><i class="bi bi-shop me-1"></i>{{ store_name }}</div>
+              <div class="product-price">€{{ '%.2f'|format((product.price or 0)|float) }}</div>
+              <div class="d-flex gap-2 flex-wrap">
+                <button class="add-to-cart-btn-modern add-to-cart-btn" 
+                        data-name="{{ product.name }}" 
+                        data-price="{{ product.price }}" 
+                        data-image="{{ product.image or url_for('static', filename='placeholder.svg') }}"
+                        data-store="{{ store_name }}" onclick="event.stopPropagation();">
+                  <i class="bi bi-cart-plus"></i> Add to Cart
+                </button>
+                {% if product.id %}
+                <a href="{{ detail_url }}" class="btn btn-outline-secondary btn-sm" onclick="event.stopPropagation();">
+                  <i class="bi bi-info-circle"></i> View Details
+                </a>
+                {% endif %}
+              </div>
             </div>
           </div>
           {% endfor %}
@@ -847,61 +862,66 @@ Shown at route: /
   </section>
   {% endif %}
 
-  <!-- Compare Prices Section -->
+  <!-- Things You Might Like Section (always show) -->
+  {% if recommended_products and recommended_products|length > 0 %}
   <section class="content-section">
     <div class="container">
       <div class="section-header">
         <div>
-          <h2 class="section-title"><i class="bi bi-bar-chart me-2" style="color: #667eea;"></i>Compare Prices</h2>
-          <p class="section-subtitle">Find the best deals across all stores</p>
+          <h2 class="section-title"><i class="bi bi-heart-fill text-danger me-2"></i>Things You Might Like</h2>
+          <p class="section-subtitle">Personalized picks based on your activity</p>
         </div>
         <a href="{{ url_for('main.compare_prices') }}" class="view-all-btn">
-          Compare All <i class="bi bi-arrow-right"></i>
+          Browse More <i class="bi bi-arrow-right"></i>
         </a>
       </div>
       <div class="scroll-container">
-        <button class="scroll-arrow left" onclick="scrollSection('compare', 'left')">
+        <button class="scroll-arrow left" onclick="scrollSection('recommend', 'left')">
           <i class="bi bi-chevron-left"></i>
         </button>
-        <div class="scroll-wrapper" id="compare-scroll">
-          {% for product in products[:12] %}
-          <div class="product-card-horizontal">
-            <button class="favorite-btn" data-product-id="{{ product.get('_id') or product.get('id') }}">
+        <div class="scroll-wrapper" id="recommend-scroll">
+          {% for product in recommended_products %}
+          {% set store_data = (product.get('stores') or [{}])[0] %}
+          {% set pid = product.get('id') or product.get('_id') %}
+          {% set store_name = store_data.get('store') or store_data.get('store_name') or 'Store' %}
+          {% set detail_url = url_for('main.product_info', product_id=pid, store_name=store_name, store_price=store_data.get('price') or product.get('best_price') or product.get('price') or '0.00', store_image=product.get('image') or '') %}
+          <div class="product-card-horizontal" {% if pid %}onclick="window.location='{{ detail_url }}'"{% endif %} style="cursor: {% if pid %}pointer{% else %}default{% endif %};">
+            <button class="btn-favorite" data-product-id="{{ pid }}" onclick="event.stopPropagation(); toggleFavorite('{{ pid }}', this);">
               <i class="bi bi-heart"></i>
             </button>
-            <img src="{{ product.get('image') or 'https://via.placeholder.com/280x200' }}" alt="{{ product.get('name') }}">
+            <img src="{{ product.get('image') or 'https://via.placeholder.com/280x200' }}" alt="{{ product.get('name', 'Product') }}">
             <div class="product-card-body">
               <div class="product-name">{{ product.get('name', 'Product') }}</div>
-              {% if product.get('stores') and product.get('stores')|length > 0 %}
-              {% set prices = [] %}
-              {% for store in product.get('stores', []) %}
-                {% set price_val = store.get('price') %}
-                {% if price_val %}
-                  {% set _ = prices.append(price_val|float if price_val is string else price_val) %}
-                {% endif %}
-              {% endfor %}
-              {% if prices|length > 0 %}
-              {% set min_price = prices|min %}
-              {% set max_price = prices|max %}
-              <div class="product-store">
-                <i class="bi bi-shop me-1"></i>{{ product.get('stores')|length }} stores
+              {% if product.get('category') %}
+              <div class="product-store"><i class="bi bi-tag me-1"></i>{{ product.get('category') }}</div>
+              {% endif %}
+              <div class="product-price">€{{ store_data.get('price') or product.get('best_price') or product.get('price') or 'N/A' }}</div>
+              <div class="d-flex flex-wrap gap-2">
+                <button class="add-to-cart-btn-modern add-to-cart-btn"
+                        data-name="{{ product.get('name') }}"
+                        data-price="{{ store_data.get('price') or product.get('best_price') or product.get('price') or '0.00' }}"
+                        data-image="{{ product.get('image') }}"
+                        data-store="{{ store_name }}"
+                        onclick="event.stopPropagation();">
+                  <i class="bi bi-cart-plus"></i> Add to Cart
+                </button>
+                <a href="{{ detail_url }}" class="btn btn-outline-secondary btn-sm" style="text-decoration: none;" onclick="event.stopPropagation();">
+                  <i class="bi bi-info-circle"></i> View Details
+                </a>
               </div>
-              <div class="product-price">€{{ "%.2f"|format(min_price) }}{% if min_price != max_price %} - €{{ "%.2f"|format(max_price) }}{% endif %}</div>
-              {% endif %}
-              {% endif %}
-              <a href="{{ url_for('main.compare_prices') }}?search={{ product.get('name') }}" class="add-to-cart-btn-modern" style="text-decoration: none;">
-                <i class="bi bi-bar-chart"></i> Compare Prices
-              </a>
             </div>
           </div>
           {% endfor %}
         </div>
-        <button class="scroll-arrow right" onclick="scrollSection('compare', 'right')">
+        <button class="scroll-arrow right" onclick="scrollSection('recommend', 'right')">
           <i class="bi bi-chevron-right"></i>
         </button>
       </div>
     </div>
   </section>
+  {% endif %}
+
+  
 
   <!-- Newsletter Section -->
   <section class="newsletter-section">
@@ -955,36 +975,39 @@ Shown at route: /
       </div>
     </div>
   </footer>
-
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
   <script>
+    // Global functions defined before other scripts load
+
     // Horizontal scroll functionality
-    function scrollSection(sectionId, direction) {
+    window.scrollSection = function(sectionId, direction) {
+      console.log('scrollSection called:', sectionId, direction);
       const container = document.getElementById(sectionId + '-scroll');
+      if (!container) {
+        console.error('Scroll container not found:', sectionId + '-scroll');
+        return;
+      }
+      console.log('Container found, current scrollLeft:', container.scrollLeft);
       const scrollAmount = 300;
       if (direction === 'left') {
-        container.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+        container.scrollLeft -= scrollAmount;
       } else {
-        container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+        container.scrollLeft += scrollAmount;
       }
+      console.log('After scroll, scrollLeft:', container.scrollLeft);
     }
 
     // Hero search functionality
-    function handleHeroSearch() {
+    window.handleHeroSearch = function() {
       const searchInput = document.getElementById('hero-search');
       const searchTerm = searchInput.value.trim();
       if (searchTerm) {
         window.location.href = `{{ url_for('main.compare_prices') }}?search=${encodeURIComponent(searchTerm)}`;
       }
     }
-
-    // Allow enter key in hero search
-    document.getElementById('hero-search').addEventListener('keypress', function(e) {
-      if (e.key === 'Enter') {
-        handleHeroSearch();
-      }
-    });
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+  <script>
 
     // Newsletter form handling
     function handleNewsletterSubmit(e) {
@@ -994,20 +1017,28 @@ Shown at route: /
       e.target.reset();
     }
 
-    // Hide scroll arrows when at start/end
+    // Hide scroll arrows when at start/end or when content fits
     function updateScrollArrows() {
       const scrollWrappers = document.querySelectorAll('.scroll-wrapper');
       scrollWrappers.forEach(wrapper => {
         const container = wrapper.closest('.scroll-container');
+        if (!container) return;
+        
         const leftArrow = container.querySelector('.scroll-arrow.left');
         const rightArrow = container.querySelector('.scroll-arrow.right');
         
-        // Check if scrollable
-        if (wrapper.scrollWidth <= wrapper.clientWidth) {
+        if (!leftArrow || !rightArrow) return;
+        
+        // Check if content is scrollable
+        const isScrollable = wrapper.scrollWidth > wrapper.clientWidth + 5; // 5px tolerance
+        
+        if (!isScrollable) {
+          // Hide both arrows if content fits
           leftArrow.style.display = 'none';
           rightArrow.style.display = 'none';
         } else {
-          leftArrow.style.display = wrapper.scrollLeft > 0 ? 'flex' : 'none';
+          // Show/hide arrows based on scroll position
+          leftArrow.style.display = wrapper.scrollLeft > 5 ? 'flex' : 'none';
           rightArrow.style.display = wrapper.scrollLeft < wrapper.scrollWidth - wrapper.clientWidth - 10 ? 'flex' : 'none';
         }
       });
@@ -1018,7 +1049,9 @@ Shown at route: /
       wrapper.addEventListener('scroll', updateScrollArrows);
     });
 
-    // Initial arrow state
+    // Initial arrow state - call multiple times to ensure it works
+    setTimeout(updateScrollArrows, 100);
+    setTimeout(updateScrollArrows, 500);
     window.addEventListener('load', updateScrollArrows);
     window.addEventListener('resize', updateScrollArrows);
 
@@ -1124,10 +1157,14 @@ Shown at route: /
       }
     }
 
-    // Event delegation for favorite buttons
+    // Event delegation for favorite buttons (only those without onclick handlers)
     document.addEventListener('click', function(e) {
-      const button = e.target.closest('.favorite-btn');
+      const button = e.target.closest('.btn-favorite');
       if (button) {
+        // Skip if button has onclick attribute with favoriteProduct call (handled by onclick)
+        const onclickAttr = button.getAttribute('onclick');
+        if (onclickAttr && onclickAttr.includes('favoriteProduct')) return;
+        
         const productId = button.getAttribute('data-product-id');
         console.log('Favorite button clicked, productId:', productId);
         if (productId) {
@@ -1140,7 +1177,7 @@ Shown at route: /
 
     // Load favorite states for all products on the page
     async function loadFavoriteStates() {
-      const favoriteButtons = document.querySelectorAll('.favorite-btn');
+      const favoriteButtons = document.querySelectorAll('.btn-favorite');
       
       for (const btn of favoriteButtons) {
         const productId = btn.dataset.productId;

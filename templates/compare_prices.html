@@ -417,12 +417,6 @@ Data: Fetches all products and their store prices from database
                   <span class="price-badge">
                     <i class="bi bi-tag-fill"></i> €{{ (p.get('cheapest') and p.get('cheapest').get('price')) or p.get('price','N/A') }}
                   </span>
-                    <button class="btn btn-sm position-absolute top-0 start-0 m-2 bg-white border-0 shadow-sm rounded-circle" 
-                      style="width: 35px; height: 35px; z-index: 10;"
-                      onclick="quickFavorite(event, this.dataset.productId, this)"
-                      data-product-id="{{ p.get('id') }}">
-                    <i class="bi bi-heart text-danger"></i>
-                  </button>
                 </div>
                 <div class="card-body d-flex flex-column" style="background-color: #f8f9fa;">
                   <div class="d-flex justify-content-between align-items-start mb-3">
@@ -933,107 +927,7 @@ Data: Fetches all products and their store prices from database
           window.location.search = params.toString();
         });
       });
-      
-      // Load favorite states
-      loadFavoriteStates();
     });
-
-    // Quick favorite function
-    async function quickFavorite(event, productId, button) {
-      event.preventDefault();
-      event.stopPropagation();
-      
-      try {
-        const response = await fetch('/api/toggle-favorite', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ product_id: productId })
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          const icon = button.querySelector('i');
-          
-          if (data.is_favorite) {
-            icon.classList.remove('bi-heart');
-            icon.classList.add('bi-heart-fill');
-            button.classList.add('text-danger');
-          } else {
-            icon.classList.remove('bi-heart-fill');
-            icon.classList.add('bi-heart');
-            button.classList.remove('text-danger');
-          }
-        } else {
-          const error = await response.json();
-          if (error.error === 'Not logged in') {
-            showNotification('Please log in to add favorites', 'warning');
-            window.location.href = '/login';
-          }
-        }
-      } catch (error) {
-        console.error('Error toggling favorite:', error);
-      }
-    }
-
-    // Load favorite states for all products
-    async function loadFavoriteStates() {
-      const favoriteButtons = document.querySelectorAll('[data-product-id]');
-      
-      for (const button of favoriteButtons) {
-        const productId = button.dataset.productId;
-        try {
-          const response = await fetch(`/api/check-favorite/${productId}`);
-          const data = await response.json();
-          
-          if (data.is_favorite) {
-            const icon = button.querySelector('i');
-            icon.classList.remove('bi-heart');
-            icon.classList.add('bi-heart-fill');
-            button.classList.add('text-danger');
-          }
-        } catch (error) {
-          console.error('Error checking favorite:', error);
-        }
-      }
-    }
-    
-    // Quick favorite function
-    async function quickFavorite(event, productId, button) {
-      event.preventDefault();
-      event.stopPropagation();
-      
-      try {
-        const response = await fetch('/api/toggle-favorite', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ product_id: productId })
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          const icon = button.querySelector('i');
-          
-          if (data.is_favorite) {
-            icon.classList.remove('bi-heart');
-            icon.classList.add('bi-heart-fill');
-          } else {
-            icon.classList.remove('bi-heart-fill');
-            icon.classList.add('bi-heart');
-          }
-        } else {
-          const error = await response.json();
-          if (error.error === 'Not logged in') {
-            showNotification('Please log in to add favorites', 'warning');
-          }
-        }
-      } catch (error) {
-        console.error('Error toggling favorite:', error);
-      }
-    }
 
     // Handle Add to Shopping List button
     let pendingItemToAdd = null;

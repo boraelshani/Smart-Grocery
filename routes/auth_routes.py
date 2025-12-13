@@ -294,6 +294,41 @@ def add_shopping_item():
                                 item['id'] = str(prod.get('id'))
                         except Exception:
                             pass
+                    # If product not found or still missing image, try to enrich from deals collections
+                    try:
+                        if not item.get('image'):
+                            deal_doc = None
+                            # Try featured_deals
+                            try:
+                                # match by product id within deal, or by deal/product name
+                                pid = item.get('id') or item.get('product_id')
+                                if pid:
+                                    deal_doc = mongo.db.featured_deals.find_one({'product_id': str(pid)})
+                                if deal_doc is None and item.get('name'):
+                                    deal_doc = mongo.db.featured_deals.find_one({'title': {'$regex': re.escape(item.get('name')), '$options': 'i'}})
+                            except Exception:
+                                deal_doc = None
+                            # Try multibuy_offers if not found
+                            if deal_doc is None:
+                                try:
+                                    pid = item.get('id') or item.get('product_id')
+                                    if pid:
+                                        deal_doc = mongo.db.multibuy_offers.find_one({'product_id': str(pid)})
+                                    if deal_doc is None and item.get('name'):
+                                        deal_doc = mongo.db.multibuy_offers.find_one({'title': {'$regex': re.escape(item.get('name')), '$options': 'i'}})
+                                except Exception:
+                                    deal_doc = None
+                            # Set image from deal if available
+                            if deal_doc:
+                                try:
+                                    if deal_doc.get('image'):
+                                        item['image'] = deal_doc.get('image')
+                                    elif deal_doc.get('product_image'):
+                                        item['image'] = deal_doc.get('product_image')
+                                except Exception:
+                                    pass
+                    except Exception:
+                        pass
             except Exception:
                 # enrichment should never block adding; ignore errors
                 pass

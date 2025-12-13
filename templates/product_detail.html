@@ -330,11 +330,6 @@ Data: Fetches single product details from database
                   data-name="{{ product.name }}">
             <i class="bi bi-cart-plus"></i> Add to Shopping List
           </button>
-          <button class="btn btn-outline-danger" id="favorite-btn"
-                  data-product-id="{{ product.id }}"
-                  onclick="toggleProductFavorite()" style="padding: 0.75rem; font-weight: 700;">
-            <i class="bi bi-heart" id="favorite-icon"></i> <span id="favorite-text">Add to Favorites</span>
-          </button>
         </div>
 
         {% if product.description %}
@@ -487,67 +482,8 @@ Data: Fetches single product details from database
         });
       }
 
-      // Load favorite state
-      checkFavoriteStatus();
     });
 
-    // Check favorite status
-    async function checkFavoriteStatus() {
-      const productId = document.getElementById('favorite-btn')?.dataset.productId;
-      if (!productId) return;
-
-      try {
-        const response = await fetch(`/api/check-favorite/${productId}`);
-        const data = await response.json();
-        
-        if (data.is_favorite) {
-          document.getElementById('favorite-icon').classList.remove('bi-heart');
-          document.getElementById('favorite-icon').classList.add('bi-heart-fill');
-        }
-      } catch (error) {
-        console.error('Error checking favorite status:', error);
-      }
-    }
-
-    // Toggle favorite
-    async function toggleProductFavorite() {
-      const productId = document.getElementById('favorite-btn').dataset.productId;
-      
-      try {
-        const response = await fetch('/api/toggle-favorite', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ product_id: productId })
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          const icon = document.getElementById('favorite-icon');
-          const text = document.getElementById('favorite-text');
-          const btn = document.getElementById('favorite-btn');
-          
-          if (data.is_favorite) {
-            icon.classList.remove('bi-heart');
-            icon.classList.add('bi-heart-fill');
-            text.textContent = 'Added to Favorites';
-            btn.classList.remove('btn-outline-danger');
-            btn.classList.add('btn-danger');
-          } else {
-            icon.classList.remove('bi-heart-fill');
-            icon.classList.add('bi-heart');
-            text.textContent = 'Add to Favorites';
-            btn.classList.remove('btn-danger');
-            btn.classList.add('btn-outline-danger');
-          }
-        } else {
-          const error = await response.json();
-          if (error.error === 'Not logged in') {
-            showNotification('Please log in to add favorites', 'warning');
-            window.location.href = '/login';
-          }
-        }
       } catch (error) {
         console.error('Error toggling favorite:', error);
       }

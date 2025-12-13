@@ -497,6 +497,8 @@ def add_item_to_list(email: str, list_id: str, item) -> bool:
                 merged_item['qty'] = _coerce_qty(existing_item) + _coerce_qty(item_obj)
                 if not merged_item.get('store') and item_obj.get('store'):
                     merged_item['store'] = item_obj.get('store')
+                if not merged_item.get('image') and item_obj.get('image'):
+                    merged_item['image'] = item_obj.get('image')
                 if price_val is not None:
                     if merged_item.get('price_val') in (None, '', 0):
                         merged_item['price_val'] = price_val
@@ -537,6 +539,8 @@ def add_item_to_list(email: str, list_id: str, item) -> bool:
                     merged_item['qty'] = _coerce_qty(existing_item) + _coerce_qty(item_obj)
                     if not merged_item.get('store') and item_obj.get('store'):
                         merged_item['store'] = item_obj.get('store')
+                    if not merged_item.get('image') and item_obj.get('image'):
+                        merged_item['image'] = item_obj.get('image')
                     if price_val is not None:
                         if merged_item.get('price_val') in (None, '', 0):
                             merged_item['price_val'] = price_val

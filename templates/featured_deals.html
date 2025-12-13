@@ -29,6 +29,11 @@ Data: Fetches featured deals from database
     .category-chip { border: 2px solid #d6d8ff; background: #f6f7ff; color: #4a4e69; border-radius: 999px; padding: 12px 16px; min-width: 120px; max-width: 180px; text-align: center; font-weight: 600; transition: all 0.2s ease; box-shadow: 0 2px 6px rgba(0,0,0,0.06); white-space: normal; line-height: 1.2; display: flex; align-items: center; justify-content: center; }
     .category-chip:hover { background: #e7e9ff; transform: translateY(-1px); }
     .category-chip.active { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-color: transparent; box-shadow: 0 6px 16px rgba(102,126,234,0.3); }
+    
+    /* Favorite button styling (match stores page) */
+    .btn-favorite { position: absolute; top: 12px; left: 12px; width: 38px; height: 38px; border-radius: 50%; background: white; border: none; box-shadow: 0 2px 8px rgba(0,0,0,0.15); color: #ccc; font-size: 1.2rem; transition: all 0.2s ease; z-index: 10; display: flex; align-items: center; justify-content: center; }
+    .btn-favorite:hover { color: #ff6b6b; transform: scale(1.1); }
+    .btn-favorite.active { color: #ff6b6b; }
   </style>
 </head>
 <body>
@@ -196,12 +201,12 @@ Data: Fetches featured deals from database
                 <span class="price-badge">
                   <i class="bi bi-tag-fill"></i> {{ p.get('price','') }}
                 </span>
-                <button class="btn btn-sm position-absolute top-0 start-0 m-2 bg-white border-0 shadow-sm rounded-circle" 
-                        style="width: 36px; height: 36px; z-index: 10;"
-                        onclick="quickFavorite(event, '{{ pid }}', this)"
+                <button class="btn-favorite" 
+                        style="z-index: 10;"
+                        onclick="event.stopPropagation(); toggleFavorite('{{ pid }}', this)"
                         data-product-id="{{ pid }}"
                         title="Add to favorites">
-                  <i class="bi bi-heart text-danger" style="font-size: 1.1rem;"></i>
+                  <i class="bi bi-heart"></i>
                 </button>
               </div>
               <div class="card-body d-flex flex-column" style="background-color: #f8f9fa;">
@@ -232,7 +237,7 @@ Data: Fetches featured deals from database
                     {% endif %}
                   </div>
                 <div class="mt-auto d-flex gap-2">
-                  <button type="button" class="btn btn-sm claim-deal-btn" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none;" data-id="{{ p.get('id') or p.get('title','') }}" data-title="{{ p.get('title') or p.get('name','') }}" data-price="{{ p.get('price','') }}" data-original-price="{{ p.get('original_price','') }}" data-offer-json='{{ offer_obj|tojson|forceescape if offer_obj is not none else "" }}' data-offer-type="{{ offer_type }}" data-offer-x="{{ offer_x }}" data-offer-y="{{ offer_y }}" onclick="event.stopPropagation();"><i class="bi bi-cart-plus me-1"></i>Add to List</button>
+                  <button type="button" class="btn btn-sm claim-deal-btn" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none;" data-id="{{ p.get('id') or p.get('title','') }}" data-title="{{ p.get('title') or p.get('name','') }}" data-price="{{ p.get('price','') }}" data-original-price="{{ p.get('original_price','') }}" data-image="{{ p.get('image') or url_for('static', filename='placeholder.svg') }}" data-offer-json='{{ offer_obj|tojson|forceescape if offer_obj is not none else "" }}' data-offer-type="{{ offer_type }}" data-offer-x="{{ offer_x }}" data-offer-y="{{ offer_y }}" onclick="event.stopPropagation();"><i class="bi bi-cart-plus me-1"></i>Add to List</button>
                   <a href="{{ detail_url }}" class="btn btn-sm btn-outline-primary" onclick="event.stopPropagation();">
                     <i class="bi bi-info-circle me-1"></i>Details
                   </a>

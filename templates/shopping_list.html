@@ -369,7 +369,13 @@
 						</span>
 						<span class="header-chip">
 							<i class="bi bi-cash-stack"></i>
-							<span>€<span id="total-price">0.00</span></span>
+							<span id="planned-total">€0.00</span>
+							<span class="muted">Planned</span>
+						</span>
+						<span class="header-chip">
+							<i class="bi bi-wallet2"></i>
+							<span id="remaining-total">€0.00</span>
+							<span class="muted">Remaining</span>
 						</span>
 					</div>
 				</div>
@@ -435,7 +441,7 @@
 							 data-offer-type="{{ offer_obj.type if offer_obj is not none else ('buyXgetY' if offer_x and offer_y else '') }}"
 							 data-offer-x="{{ offer_x }}"
 							 data-offer-y="{{ offer_y }}">
-							<div class="d-flex align-items-center gap-3">
+							<div class="d-flex align-items-center gap-3 flex-wrap flex-md-nowrap w-100 justify-content-between">
 								<!-- Checkbox -->
 								<div class="form-check">
 									<input class="form-check-input item-checkbox" type="checkbox" 
@@ -491,14 +497,18 @@
 									</div>
 								</div>
 
-							<!-- Price -->
-							<div class="text-end" style="min-width: 90px;">
-								<div class="fw-bold text-success item-price">€0.00</div>
-								<small class="text-muted">€{{ '%.2f'|format(unit|float) }} each</small>
-							</div>								<!-- Actions -->
-								<button class="btn btn-sm text-danger" onclick="removeItem(this)" title="Delete item">
-									<i class="bi bi-trash-fill"></i>
-								</button>
+								<!-- Price & Actions (right aligned) -->
+								<div class="d-flex align-items-center gap-2 flex-wrap flex-md-nowrap ms-auto" style="min-width: 180px; justify-content: flex-end;">
+									<div class="text-end d-flex flex-column align-items-end" style="min-width: 110px;">
+										<div class="fw-bold text-success item-price">€0.00</div>
+										<small class="text-muted">€{{ '%.2f'|format(unit|float) }} each</small>
+									</div>
+									<div>
+										<button class="btn btn-sm text-danger" onclick="removeItem(this)" title="Delete item">
+											<i class="bi bi-trash-fill"></i>
+										</button>
+									</div>
+								</div>
 							</div>
 						</div>
 					{% endfor %}
@@ -775,22 +785,32 @@ function calculateItemPrice(row) {
 }
 
 function computeTotals() {
-	let total = 0;
+	let planned = 0;
+	let remaining = 0;
 	let completed = 0;
+
 	document.querySelectorAll('.item-row').forEach(row => {
 		const itemPrice = calculateItemPrice(row);
 		const isCompleted = row.classList.contains('completed');
-		
-		total += itemPrice;
-		if (isCompleted) completed++;
+
+		planned += itemPrice;
+		if (isCompleted) {
+			completed++;
+		} else {
+			remaining += itemPrice;
+		}
 	});
-	
-	const totalEl = document.getElementById('total-value');
-	const priceEl = document.getElementById('total-price');
+
+	const plannedEl = document.getElementById('planned-total');
+	const remainingEl = document.getElementById('remaining-total');
+	const legacyValueEl = document.getElementById('total-value');
+	const legacyPriceEl = document.getElementById('total-price');
 	const completedEl = document.getElementById('completed-count');
-	
-	if (totalEl) totalEl.textContent = `€${total.toFixed(2)}`;
-	if (priceEl) priceEl.textContent = `€${total.toFixed(2)}`;
+
+	if (plannedEl) plannedEl.textContent = `€${planned.toFixed(2)}`;
+	if (remainingEl) remainingEl.textContent = `€${remaining.toFixed(2)}`;
+	if (legacyValueEl) legacyValueEl.textContent = `€${planned.toFixed(2)}`;
+	if (legacyPriceEl) legacyPriceEl.textContent = planned.toFixed(2);
 	if (completedEl) completedEl.textContent = completed;
 }
 

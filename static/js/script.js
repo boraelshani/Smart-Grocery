@@ -515,7 +515,13 @@ async function apiPostJson(url, body) {
   return res.json().catch(() => ({}));
 }
 
-function refreshShoppingListUI() { window.location.reload(); }
+function refreshShoppingListUI() {
+  const path = window.location.pathname || '';
+  // Only reload on the shopping list page where a full refresh is desired
+  if (path.includes('shopping_list') || path.endsWith('/shopping-list')) {
+    window.location.reload();
+  }
+}
 
 function showNotification(message, type = 'info') {
   if (!message) return;
@@ -656,6 +662,7 @@ function setupClaimButtons() {
     const offerType = btn.getAttribute('data-offer-type') || '';
     const offerX = btn.getAttribute('data-offer-x') || '';
     const offerY = btn.getAttribute('data-offer-y') || '';
+    const image = btn.getAttribute('data-image') || '';
     if (!id) return showNotification('Missing deal id', 'danger');
 
     // Send both price (discounted) and original_price; backend will choose based on offer type
@@ -680,7 +687,8 @@ function setupClaimButtons() {
         title, 
         price: discounted_price_val, 
         original_price: original_price_val, 
-        offer: offerPayload || offerStr || null
+        offer: offerPayload || offerStr || null,
+        image
       });
       if (res && (res.success || res.added)) {
         showNotification('Deal claimed and added to your list', 'success');
@@ -1109,20 +1117,33 @@ function effectiveUnitPrice(basePrice, offerObj) {
   return (x * basePrice) / (x + y);
 }
 
-// computeTotals: sum effective unit price * qty
+// computeTotals: sum effective unit price * qty (planned vs remaining)
 function computeTotals(){
   const rows = Array.from(document.querySelectorAll('.item-row'));
-  let total = 0;
+  let planned = 0;
+  let remaining = 0;
+  let completed = 0;
 
   rows.forEach((row) => {
     const baseUnit = formatPrice(row.getAttribute('data-price') || (row.querySelector('.item-price')?.textContent || '0'));
     const qty = Number(row.getAttribute('data-qty') || 1);
     const offerObj = parseOfferFromRow(row);
     const effective = effectiveUnitPrice(baseUnit, offerObj);
-    total += effective * qty;
+    const itemTotal = effective * qty;
+
+    planned += itemTotal;
+    if (row.classList.contains('completed')) {
+      completed += 1;
+    } else {
+      remaining += itemTotal;
+    }
   });
 
-  const el = document.getElementById('total-value'); if (el) el.textContent = `€${total.toFixed(2)}`;
+  const plannedEl = document.getElementById('planned-total'); if (plannedEl) plannedEl.textContent = `€${planned.toFixed(2)}`;
+  const remainingEl = document.getElementById('remaining-total'); if (remainingEl) remainingEl.textContent = `€${remaining.toFixed(2)}`;
+  const legacyTotalEl = document.getElementById('total-value'); if (legacyTotalEl) legacyTotalEl.textContent = `€${planned.toFixed(2)}`;
+  const legacyPriceEl = document.getElementById('total-price'); if (legacyPriceEl) legacyPriceEl.textContent = planned.toFixed(2);
+  const completedEl = document.getElementById('completed-count'); if (completedEl) completedEl.textContent = completed;
 }
 
 // minimal cart counter kept for compatibility
@@ -1130,4 +1151,90 @@ class CartCounter{ constructor(){ this.cartItems=[]; this.loadFromStorage(); thi
 }
 const cart = new CartCounter();
 
-window.smartGrocery = { showNotification, formatPrice, cart };
+// Toggle favorite product
+async function toggleFavorite(productId, buttonElement) {
+  try {
+    const response = await fetch('/api/toggle-favorite', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ product_id: productId })
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      
+      if (buttonElement) {
+        const btn = typeof buttonElement === 'string' ? document.querySelector(buttonElement) : buttonElement;
+        if (btn) {
+          // Toggle active state
+          btn.classList.toggle('active');
+          
+          // Update icon
+          const icon = btn.querySelector('i');
+          if (icon) {
+            if (btn.classList.contains('active')) {
+              icon.className = 'bi bi-heart-fill';
+            } else {
+              icon.className = 'bi bi-heart';
+            }
+          }
+          
+          // If on profile page and removing favorite, animate removal
+          if (data && data.action === 'removed') {
+            const card = btn.closest('.favorite-card');
+            if (card) {
+              card.style.transition = 'all 0.25s ease';
+              card.style.opacity = '0';
+              card.style.transform = 'translateX(-10px)';
+              setTimeout(() => {
+                card.remove();
+                
+                // Check if there are any favorite cards left
+                const favoritesList = document.getElementById('favorites-list');
+                const remainingCards = document.querySelectorAll('.favorite-card').length;
+                
+                if (remainingCards === 0 && favoritesList) {
+                  // Show empty state message
+                  favoritesList.innerHTML = `
+                    <div class="text-center empty-favorites">
+                      <i class="bi bi-heart display-6 text-muted"></i>
+                      <h6 class="mt-2 mb-1 text-muted">No favorites yet</h6>
+                      <p class="text-muted mb-2">Start adding products to see them here.</p>
+                      <a href="/compare-prices" class="btn btn-primary btn-sm"><i class="bi bi-search"></i> Browse Products</a>
+                    </div>
+                  `;
+                }
+              }, 250);
+            }
+          }
+        }
+      }
+      
+      showNotification(
+        data && data.action === 'added' ? 'Added to favorites!' : 'Removed from favorites',
+        'success'
+      );
+    } else {
+      showNotification('Failed to update favorite', 'danger');
+    }
+  } catch (error) {
+    console.error('Error toggling favorite:', error);
+    showNotification('Error updating favorite', 'danger');
+  }
+}
+
+// Alias for home page compatibility
+const favoriteProduct = (event, productId) => {
+  event.stopPropagation();
+  event.preventDefault();
+  const btn = event.target.closest('.favorite-btn');
+  
+  // If quickFavorite exists (on home page), use that instead
+  if (typeof quickFavorite !== 'undefined') {
+    quickFavorite(event, productId, btn);
+  } else if (btn) {
+    toggleFavorite(productId, btn);
+  }
+};
+
+window.smartGrocery = { showNotification, formatPrice, cart, toggleFavorite };

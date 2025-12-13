@@ -60,7 +60,8 @@ def add_favorite(user_email: str, product_id: str, product_data: dict) -> bool:
             'product_image': product_data.get('image', ''),
             'category': product_data.get('category', ''),
             'added_at': datetime.utcnow(),
-            'best_price': product_data.get('best_price')
+            'best_price': product_data.get('best_price'),
+            'store': product_data.get('store', '')
         }
         
         # Use upsert to avoid duplicates (relies on unique index)
@@ -160,14 +161,19 @@ def get_user_favorites(user_email: str, category: Optional[str] = None, limit: i
         if category:
             query['category'] = category
         
-        cursor = flask_mongo.db.favorites.find(query).sort('added_at', -1).limit(limit)
+        cursor = flask_mongo.db.favorites.find(query).sort('added_at', 1).limit(limit)
         favorites = list(cursor)
         
         # Convert ObjectId to string for JSON serialization
         for fav in favorites:
             if '_id' in fav:
-                fav['id'] = str(fav['_id'])
+                fav['id'] = fav.get('product_id', str(fav['_id']))
                 del fav['_id']
+            # Ensure product data fields are mapped correctly
+            if not fav.get('name') and fav.get('product_name'):
+                fav['name'] = fav.get('product_name')
+            if not fav.get('image') and fav.get('product_image'):
+                fav['image'] = fav.get('product_image')
         
         return favorites
         
