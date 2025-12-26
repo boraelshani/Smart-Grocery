@@ -227,6 +227,11 @@ Data: Fetches single product details from database
               </span>
             </a>
           </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('main.notifications_page') }}">
+                <i class="bi bi-bell"></i> Notifications
+              </a>
+            </li>
           <li class="nav-item">
             <a class="nav-link" href="{{ url_for('main.profile') }}">
               <i class="bi bi-person-circle"></i> Profile
@@ -306,7 +311,7 @@ Data: Fetches single product details from database
           <label style="font-weight: 700; display: block; margin-bottom: 1rem;"><i class="bi bi-shop"></i> Select a Store</label>
           <div class="store-selection-grid">
             {% for store in product.stores %}
-              <div class="store-card {% if loop.first %}selected{% endif %}" data-store-index="{{ loop.index0 }}" data-store="{{ store.store or store.name }}" data-price="{{ store.price }}" data-image="{{ store.image or product.image or (product.images and product.images[0]) }}">
+              <div class="store-card" data-store-index="{{ loop.index0 }}" data-store="{{ store.store or store.name }}" data-price="{{ store.price }}" data-image="{{ store.image or product.image or (product.images and product.images[0]) }}">
                 {% if store.url %}
                 <a href="{{ store.url }}" class="store-visit-arrow" onclick="event.stopPropagation();" target="_blank" rel="noopener noreferrer" title="Visit {{ store.store or store.name }} website">
                   <i class="bi bi-box-arrow-up-right"></i>
@@ -366,28 +371,14 @@ Data: Fetches single product details from database
       const mainImg = document.getElementById('product-main-img');
       const defaultImgSrc = mainImg ? mainImg.getAttribute('data-default-src') : '';
 
-      // Initialize with first store's data
-      if (storeCards.length > 0) {
-        const firstCard = storeCards[0];
-        selectedStoreData.store = firstCard.dataset.store;
-        selectedStoreData.price = firstCard.dataset.price;
-        selectedStoreData.image = firstCard.dataset.image || defaultImgSrc;
-        
-        // Update button's dataset immediately
-        if (addToListBtn) {
-          addToListBtn.dataset.price = selectedStoreData.price;
-          addToListBtn.dataset.store = selectedStoreData.store;
-        }
-      } else {
-        selectedStoreData.store = '{{ (product.stores and product.stores[0] and (product.stores[0].store or product.stores[0].name)) or (product.store or product.source) or "Store" }}';
-        selectedStoreData.price = '{{ (product.stores and product.stores[0] and product.stores[0].price) or product.price or "N/A" }}';
-        selectedStoreData.image = defaultImgSrc;
-        
-        // Update button's dataset immediately
-        if (addToListBtn) {
-          addToListBtn.dataset.price = selectedStoreData.price;
-          addToListBtn.dataset.store = selectedStoreData.store;
-        }
+      // Start with no preselected store; require user to pick
+      selectedStoreData.store = '';
+      selectedStoreData.price = '';
+      selectedStoreData.image = defaultImgSrc;
+      storeCards.forEach(c => c.classList.remove('selected'));
+      if (addToListBtn) {
+        addToListBtn.dataset.price = '';
+        addToListBtn.dataset.store = '';
       }
 
       // Handle store card clicks
@@ -483,39 +474,6 @@ Data: Fetches single product details from database
       }
 
     });
-
-      } catch (error) {
-        console.error('Error toggling favorite:', error);
-      }
-    }
-
-    // Check initial favorite state on page load
-    async function checkFavoriteState() {
-      const productId = document.getElementById('favorite-btn').dataset.productId;
-      
-      try {
-        const response = await fetch(`/api/check-favorite/${productId}`);
-        if (response.ok) {
-          const data = await response.json();
-          const icon = document.getElementById('favorite-icon');
-          const text = document.getElementById('favorite-text');
-          const btn = document.getElementById('favorite-btn');
-          
-          if (data.is_favorite) {
-            icon.classList.remove('bi-heart');
-            icon.classList.add('bi-heart-fill');
-            text.textContent = 'Added to Favorites';
-            btn.classList.remove('btn-outline-danger');
-            btn.classList.add('btn-danger');
-          }
-        }
-      } catch (error) {
-        console.error('Error checking favorite state:', error);
-      }
-    }
-
-    // Load favorite state when page loads
-    document.addEventListener('DOMContentLoaded', checkFavoriteState);
   </script>
 </body>
 </html>

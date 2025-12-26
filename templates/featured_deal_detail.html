@@ -90,6 +90,11 @@
                 </span>
               </a>
             </li>
+              <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('main.notifications_page') }}">
+                  <i class="bi bi-bell"></i> Notifications
+                </a>
+              </li>
             <li class="nav-item">
               <a class="nav-link" href="{{ url_for('main.profile') }}">
                 <i class="bi bi-person-circle"></i> Profile
@@ -194,5 +199,25 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+
+  <!-- Global List Selector Modal -->
+  <div class="modal fade" id="globalListSelectorModal" tabindex="-1" aria-labelledby="globalListSelectorModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="globalListSelectorModalLabel">
+            <i class="bi bi-cart-plus me-2"></i>Select Shopping List
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p class="text-muted mb-3">Choose which list to add this item to:</p>
+          <div id="globalListSelectorBody">
+            <!-- List options will be populated here by JavaScript -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </body>
 </html>

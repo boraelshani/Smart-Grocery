@@ -607,20 +607,131 @@ function showNotification(message, type = 'info') {
 
 function formatPrice(price) { if (typeof price === 'string') price = price.replace(/[^0-9.]/g,''); return Number(price)||0; }
 
-// Central helper to add an item to the shopping list, preferring the multi-list API
+// Global variable to store pending item
+let pendingItemToAdd = null;
+
+// Global list selector function - shows modal for user to select which list to add item to
+window.showListSelector = async function(item) {
+  pendingItemToAdd = item;
+  
+  try {
+    // Fetch user's shopping lists
+    const response = await fetch('/api/get-lists');
+    const data = await response.json();
+    
+    if (!data.success || !data.lists || data.lists.length === 0) {
+      showNotification('No shopping lists available. Please create one first.', 'warning');
+      return;
+    }
+    
+    // Build modal content
+    const modalBody = document.getElementById('globalListSelectorBody');
+    if (!modalBody) {
+      // Fallback to direct add if modal doesn't exist
+      return await apiPostJson('/api/list/add-item', { item });
+    }
+    
+    modalBody.innerHTML = '';
+    
+    data.lists.forEach(list => {
+      const itemCount = list.items ? list.items.length : 0;
+      const card = document.createElement('div');
+      card.className = 'card mb-2 list-selector-option';
+      card.style.cursor = 'pointer';
+      card.style.transition = 'all 0.2s ease';
+      
+      card.innerHTML = `
+        <div class="card-body p-3">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h6 class="mb-1">
+                <i class="bi bi-list-ul me-2"></i>${escapeHtml(list.name)}
+              </h6>
+              <small class="text-muted">${itemCount} item${itemCount !== 1 ? 's' : ''}</small>
+            </div>
+            <button class="btn btn-sm btn-primary">
+              <i class="bi bi-plus-circle me-1"></i>Add Here
+            </button>
+          </div>
+        </div>
+      `;
+      
+      card.addEventListener('click', () => addItemToSelectedList(list.id));
+      card.addEventListener('mouseenter', () => {
+        card.style.backgroundColor = '#f8f9fa';
+        card.style.transform = 'translateX(5px)';
+      });
+      card.addEventListener('mouseleave', () => {
+        card.style.backgroundColor = '';
+        card.style.transform = '';
+      });
+      
+      modalBody.appendChild(card);
+    });
+    
+    // Show modal
+    const modalEl = document.getElementById('globalListSelectorModal');
+    if (modalEl) {
+      const modal = new bootstrap.Modal(modalEl);
+      modal.show();
+    }
+  } catch (err) {
+    console.error('Error showing list selector:', err);
+    showNotification('Error loading shopping lists', 'danger');
+  }
+};
+
+// Add item to the selected list
+async function addItemToSelectedList(listId) {
+  if (!pendingItemToAdd) {
+    showNotification('No item to add', 'danger');
+    return;
+  }
+  
+  try {
+    const response = await apiPostJson('/api/list/add-item', { item: pendingItemToAdd, list_id: listId });
+    
+    if (response && response.success) {
+      showNotification(`${pendingItemToAdd.name || 'Item'} added to shopping list`, 'success');
+      
+      // Hide modal
+      const modalEl = document.getElementById('globalListSelectorModal');
+      if (modalEl) {
+        const modal = bootstrap.Modal.getInstance(modalEl);
+        if (modal) modal.hide();
+      }
+      
+      // Refresh shopping list UI if on that page
+      if (typeof refreshShoppingListUI === 'function') {
+        refreshShoppingListUI();
+      }
+      
+      pendingItemToAdd = null;
+    } else {
+      showNotification(response?.error || 'Could not add item to list', 'danger');
+    }
+  } catch (err) {
+    console.error('Error adding item:', err);
+    showNotification('Error adding item to list', 'danger');
+  }
+}
+
+// Central helper to add an item to the shopping list, always showing list selector
 async function addItemToShoppingList(item) {
   if (!item) return { success: false, error: 'missing_item' };
 
-  // If a list selector is available (shopping list page), use it so the user can pick the destination list
+  // Always show list selector to let user choose which list
   if (typeof window.showListSelector === 'function') {
     try {
-      window.showListSelector(item);
+      await window.showListSelector(item);
       return { success: true, deferred: true };
     } catch (err) {
+      console.error('List selector error:', err);
       // fall through to direct add
     }
   }
 
+  // Fallback: add to active list directly
   try {
     return await apiPostJson('/api/list/add-item', { item });
   } catch (err) {
@@ -681,26 +792,32 @@ function setupClaimButtons() {
       if (m) offerPayload = { type: 'buyXgetY', x: parseInt(m[1], 10) || 0, y: parseInt(m[2], 10) || 0 };
     }
 
+    // Instead of claiming directly, show list selector
+    const item = {
+      name: title,
+      price: discounted_price_val || original_price_val,
+      price_val: discounted_price_val || original_price_val,
+      image: image,
+      offer: offerPayload || offerStr || null,
+      deal_id: id
+    };
+    
     try {
-      const res = await apiPostJson('/api/claim-deal', { 
-        deal_id: id, 
-        title, 
-        price: discounted_price_val, 
-        original_price: original_price_val, 
-        offer: offerPayload || offerStr || null,
-        image
-      });
-      if (res && (res.success || res.added)) {
-        showNotification('Deal claimed and added to your list', 'success');
-        // refresh the shopping list view if present
+      const res = await addItemToShoppingList(item);
+      if (res && res.deferred) {
+        // List selector will be shown
+        return;
+      }
+      if (res && res.success) {
+        showNotification('Deal added to your list', 'success');
         refreshShoppingListUI();
       } else if (res && res.error) {
         showNotification(res.error, 'danger');
       } else {
-        showNotification('Could not claim deal', 'danger');
+        showNotification('Could not add deal', 'danger');
       }
     } catch (err) {
-      showNotification('Error contacting server', 'danger');
+      showNotification('Error adding deal', 'danger');
     }
   }));
 }
@@ -804,25 +921,29 @@ function setupProductModalHandlers() {
       return;
     }
 
-    // Add to Cart button inside modal
-    if (target.classList && target.classList.contains('add-to-cart-btn')) {
-      const modalRoot = target.closest('.modal');
-      const name = target.getAttribute('data-name') || target.getAttribute('data-title') || (modalRoot?.querySelector('h6')?.textContent || 'Item');
-      const price = target.getAttribute('data-price') || '';
-      const store = target.getAttribute('data-store') || '';
-      const image = target.getAttribute('data-image') || modalRoot?.querySelector('img')?.src || '';
+    // Add to Cart button (works both inside and outside modals)
+    if (target.classList && (target.classList.contains('add-to-cart-btn') || target.closest('.add-to-cart-btn'))) {
+      const btn = target.classList.contains('add-to-cart-btn') ? target : target.closest('.add-to-cart-btn');
+      const modalRoot = btn.closest('.modal');
+      const name = btn.getAttribute('data-name') || btn.getAttribute('data-title') || (modalRoot?.querySelector('h6')?.textContent || 'Item');
+      const price = btn.getAttribute('data-price') || '';
+      const store = btn.getAttribute('data-store') || '';
+      const image = btn.getAttribute('data-image') || (modalRoot?.querySelector('img')?.src || '');
       const item = { name, price, store, image };
       const priceVal = formatPrice(price);
       if (!isNaN(priceVal) && priceVal > 0) item.price_val = priceVal;
       try {
         const res = await addItemToShoppingList(item);
         if (res && res.deferred) {
-          showNotification('Select a list to add this item', 'info');
+          // List selector will be shown, don't show additional notification
           return;
         }
         if (res && (res.success || res.success === true)) {
           showNotification('Added to shopping list', 'success');
-          try { const modalEl = bootstrap.Modal.getInstance(modalRoot); if (modalEl) modalEl.hide(); } catch(e){}
+          // Close modal if button was inside one
+          if (modalRoot) {
+            try { const modalEl = bootstrap.Modal.getInstance(modalRoot); if (modalEl) modalEl.hide(); } catch(e){}
+          }
           refreshShoppingListUI();
         } else if (res && res.error) {
           showNotification(res.error, 'danger');
@@ -885,12 +1006,35 @@ function setupProfileEditHandlers() {
 
   editBtn.addEventListener('click', () => {
     // populate inputs with current values
-    if (phoneEl && phoneInput) phoneInput.value = phoneEl.textContent === 'Not provided' ? '' : phoneEl.textContent;
-    if (addressEl && addressInput) addressInput.value = addressEl.textContent === 'Not provided' ? '' : addressEl.textContent;
+    const phoneText = phoneEl ? phoneEl.textContent.trim() : '';
+    const addressText = addressEl ? addressEl.textContent.trim() : '';
+    
+    const currentPhone = phoneText.toLowerCase().includes('not provided') ? '' : phoneText;
+    const currentAddress = addressText.toLowerCase().includes('not provided') ? '' : addressText;
+    
+    // Try to extract country code and phone number
+    const countryCodeSelect = document.getElementById('profile-country-code');
+    if (currentPhone && phoneInput && countryCodeSelect) {
+      // Match common country codes
+      const match = currentPhone.match(/^(\+\d{1,3})(.*)/);
+      if (match) {
+        countryCodeSelect.value = match[1]; // Country code
+        phoneInput.value = match[2]; // Phone number
+      } else {
+        phoneInput.value = currentPhone;
+      }
+    } else if (phoneInput) {
+      phoneInput.value = '';
+    }
+    
+    if (addressInput) addressInput.value = currentAddress;
   });
 
   saveBtn.addEventListener('click', async () => {
-    const phone = phoneInput ? phoneInput.value.trim() : '';
+    const countryCodeSelect = document.getElementById('profile-country-code');
+    const countryCode = countryCodeSelect ? countryCodeSelect.value : '+43';
+    const phoneNumber = phoneInput ? phoneInput.value.trim() : '';
+    const phone = phoneNumber ? countryCode + phoneNumber : '';
     const address = addressInput ? addressInput.value.trim() : '';
     try {
       const res = await fetch('/profile/update', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ phone, address }) });

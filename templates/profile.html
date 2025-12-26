@@ -356,7 +356,7 @@ Requires: User must be logged in
               <div class="stat-chip"><i class="bi bi-telephone"></i><span id="profile-phone">{{ user_data.phone if user_data and user_data.get('phone') else 'Phone not provided' }}</span></div>
               <div class="d-flex gap-2 flex-wrap">
                 <button id="edit-profile-btn" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#profileModal"><i class="bi bi-pencil"></i> Edit Profile</button>
-                <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-danger"><i class="bi bi-box-arrow-right"></i> Log Out</a>
+                <button id="logout-btn" class="btn btn-outline-danger" onclick="confirmLogout()"><i class="bi bi-box-arrow-right"></i> Log Out</button>
               </div>
             </div>
           </div>
@@ -458,27 +458,88 @@ Requires: User must be logged in
 
   <!-- Profile Edit Modal -->
   <div class="modal fade" id="profileModal" tabindex="-1" aria-labelledby="profileModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="profileModalLabel">Edit Profile</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
+      <div class="modal-content" style="border-radius: 16px; border: 3px solid #667eea; overflow: hidden; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+        <div style="padding: 1.25rem; text-align: center;">
+          <div class="mb-2">
+            <i class="bi bi-pencil-square" style="font-size: 2.2rem; color: white;"></i>
+          </div>
+          <h5 class="text-white mb-0 fw-bold">Edit Profile</h5>
         </div>
-        <div class="modal-body">
+        <div class="modal-body" style="padding: 1rem 1.25rem;">
           <form id="profile-edit-form">
             <div class="mb-3">
-              <label for="profile-phone-input" class="form-label">Phone</label>
-              <input type="text" class="form-control" id="profile-phone-input" name="phone">
+              <label for="profile-phone-input" class="form-label" style="color: white; font-size: 0.9rem; font-weight: 600;">Phone</label>
+              <div style="display: flex; gap: 0;">
+                <select id="profile-country-code" style="flex: 0 0 110px; border: none; border-radius: 8px 0 0 8px; padding: 0.6rem 0.3rem; font-size: 14px; background: white; outline: none;">
+                  <option value="+54">🇦🇷 +54</option>
+                  <option value="+61">🇦🇺 +61</option>
+                  <option value="+43" selected>🇦🇹 +43</option>
+                  <option value="+32">🇧🇪 +32</option>
+                  <option value="+55">🇧🇷 +55</option>
+                  <option value="+1">🇨🇦 +1</option>
+                  <option value="+86">🇨🇳 +86</option>
+                  <option value="+420">🇨🇿 +420</option>
+                  <option value="+45">🇩🇰 +45</option>
+                  <option value="+358">🇫🇮 +358</option>
+                  <option value="+33">🇫🇷 +33</option>
+                  <option value="+49">🇩🇪 +49</option>
+                  <option value="+30">🇬🇷 +30</option>
+                  <option value="+36">🇭🇺 +36</option>
+                  <option value="+91">🇮🇳 +91</option>
+                  <option value="+353">🇮🇪 +353</option>
+                  <option value="+39">🇮🇹 +39</option>
+                  <option value="+81">🇯🇵 +81</option>
+                  <option value="+52">🇲🇽 +52</option>
+                  <option value="+31">🇳🇱 +31</option>
+                  <option value="+64">🇳🇿 +64</option>
+                  <option value="+47">🇳🇴 +47</option>
+                  <option value="+48">🇵🇱 +48</option>
+                  <option value="+351">🇵🇹 +351</option>
+                  <option value="+65">🇸🇬 +65</option>
+                  <option value="+27">🇿🇦 +27</option>
+                  <option value="+82">🇰🇷 +82</option>
+                  <option value="+34">🇪🇸 +34</option>
+                  <option value="+46">🇸🇪 +46</option>
+                  <option value="+41">🇨🇭 +41</option>
+                  <option value="+66">🇹🇭 +66</option>
+                  <option value="+971">🇦🇪 +971</option>
+                  <option value="+44">🇬🇧 +44</option>
+                  <option value="+1">🇺🇸 +1</option>
+                </select>
+                <input type="tel" id="profile-phone-input" name="phone" placeholder="123456789" pattern="[0-9]*" inputmode="numeric" style="flex: 1; min-width: 0; border: none; border-radius: 0 8px 8px 0; padding: 0.6rem; background: white; outline: none; font-size: 16px;" onkeypress="return event.charCode >= 48 && event.charCode <= 57" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+              </div>
             </div>
-            <div class="mb-3">
-              <label for="profile-address-input" class="form-label">Address</label>
-              <input type="text" class="form-control" id="profile-address-input" name="address">
+            <div class="mb-2">
+              <label for="profile-address-input" class="form-label" style="color: white; font-size: 0.9rem; font-weight: 600;">Address</label>
+              <input type="text" id="profile-address-input" name="address" placeholder="" style="border: none; border-radius: 8px; padding: 0.6rem; background: white; outline: none; width: 100%;">
             </div>
           </form>
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button type="button" id="save-profile-btn" class="btn btn-primary">Save</button>
+        <div class="modal-footer" style="border: none; padding: 0.75rem 1.25rem; justify-content: center; gap: 0.75rem;">
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="border: none; padding: 0.5rem 1.25rem; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.backgroundColor='#d3d3d3';" onmouseout="this.style.backgroundColor='white';">Cancel</button>
+          <button type="button" id="save-profile-btn" class="btn btn-light" style="background: white; color: #667eea; padding: 0.5rem 1.25rem; font-weight: 600; border: none; transition: all 0.2s ease;" onmouseover="this.style.background='#e8ecff';" onmouseout="this.style.background='white';"><i class="bi bi-check-circle me-1"></i>Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Logout Confirmation Modal -->
+  <div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
+      <div class="modal-content" style="border-radius: 16px; border: 3px solid #dc3545; overflow: hidden; background: linear-gradient(135deg, #dc3545 0%, #bb2d3b 100%);">
+        <div style="padding: 1.25rem; text-align: center;">
+          <div class="mb-2">
+            <i class="bi bi-exclamation-circle" style="font-size: 2.2rem; color: white;"></i>
+          </div>
+          <h5 class="text-white mb-0 fw-bold">Confirm Logout</h5>
+        </div>
+        <div class="modal-body" style="padding: 1.25rem; text-align: center;">
+          <p style="color: white; font-size: 1rem; margin: 0;">Are you sure you want to log out? You'll need to sign in again to access your account.</p>
+        </div>
+        <div class="modal-footer" style="border: none; padding: 0.75rem 1.25rem; justify-content: center; gap: 0.75rem;">
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="border: none; padding: 0.5rem 1.25rem; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.backgroundColor='#d3d3d3';" onmouseout="this.style.backgroundColor='white';">Cancel</button>
+          <a href="{{ url_for('auth.logout') }}" class="btn btn-light" style="background: white; color: #dc3545; padding: 0.5rem 1.25rem; font-weight: 600; border: none; text-decoration: none; transition: all 0.2s ease;" onmouseover="this.style.background='#ffe8e8';" onmouseout="this.style.background='white';"><i class="bi bi-box-arrow-right me-1"></i>Log Out</a>
         </div>
       </div>
     </div>
@@ -677,6 +738,12 @@ Requires: User must be logged in
     document.addEventListener('DOMContentLoaded', () => {
       setPreferencesEditable(false);
     });
+
+    // Logout confirmation
+    function confirmLogout() {
+      const logoutModal = new bootstrap.Modal(document.getElementById('logoutModal'));
+      logoutModal.show();
+    }
 
   </script>
 </body>

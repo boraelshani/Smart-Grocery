@@ -92,22 +92,6 @@ Data: Fetches featured deals from database
     </div>
   </section>
 
-  <!-- Category chips -->
-  <section class="container mb-3">
-    <div class="category-chip-row mb-3">
-      <button type="button" class="category-chip active" data-category-chip="" data-category-label="All">All</button>
-      <button type="button" class="category-chip" data-category-chip="produce" data-category-label="Produce">Produce</button>
-      <button type="button" class="category-chip" data-category-chip="dairy" data-category-label="Dairy">Dairy</button>
-      <button type="button" class="category-chip" data-category-chip="pantry" data-category-label="Pantry">Pantry</button>
-      <button type="button" class="category-chip" data-category-chip="baby food" data-category-label="Baby food">Baby food</button>
-      <button type="button" class="category-chip" data-category-chip="bakery" data-category-label="Bakery">Bakery</button>
-      <button type="button" class="category-chip" data-category-chip="beverages" data-category-label="Beverages">Beverages</button>
-      <button type="button" class="category-chip" data-category-chip="meat" data-category-label="Meat & Seafood">Meat & Seafood</button>
-      <button type="button" class="category-chip" data-category-chip="frozen" data-category-label="Frozen Foods">Frozen Foods</button>
-      <button type="button" class="category-chip" data-category-chip="snacks" data-category-label="Snacks">Snacks</button>
-    </div>
-  </section>
-
   <!-- Search & Filters Section -->
   <section class="container py-4">
     <div class="row align-items-end mb-3 compare-search-row">
@@ -166,8 +150,26 @@ Data: Fetches featured deals from database
                 </div>
 
                 <div class="d-flex gap-2 mt-3">
-                  <button id="apply-filters" class="btn btn-primary flex-grow-1">Apply</button>
-                  <button id="clear-filters" class="btn btn-outline-secondary">Clear</button>
+                  <button id="apply-filters" class="btn flex-grow-1" 
+                          style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                                 color: white; 
+                                 border: none; 
+                                 border-radius: 8px; 
+                                 padding: 10px; 
+                                 font-weight: 500;
+                                 transition: all 0.3s ease;"
+                          onmouseover="this.style.opacity='0.85'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 12px rgba(102, 126, 234, 0.4)';"
+                          onmouseout="this.style.opacity='1'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">Apply</button>
+                  <button id="clear-filters" class="btn" 
+                          style="background: linear-gradient(135deg, #6c757d 0%, #495057 100%); 
+                                 color: white; 
+                                 border: none; 
+                                 border-radius: 8px; 
+                                 padding: 10px; 
+                                 font-weight: 500;
+                                 transition: all 0.3s ease;"
+                          onmouseover="this.style.opacity='0.85'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 12px rgba(108, 117, 125, 0.4)';"
+                          onmouseout="this.style.opacity='1'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">Clear</button>
                 </div>
 
                 <div id="active-filters" class="mt-3 d-flex flex-wrap gap-2" style="display:none;">
@@ -178,6 +180,20 @@ Data: Fetches featured deals from database
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- Category chips -->
+    <div class="category-chip-row mb-3">
+      <button type="button" class="category-chip active" data-category-chip="" data-category-label="All">All</button>
+      <button type="button" class="category-chip" data-category-chip="produce" data-category-label="Produce">Produce</button>
+      <button type="button" class="category-chip" data-category-chip="dairy" data-category-label="Dairy">Dairy</button>
+      <button type="button" class="category-chip" data-category-chip="pantry" data-category-label="Pantry">Pantry</button>
+      <button type="button" class="category-chip" data-category-chip="baby food" data-category-label="Baby food">Baby food</button>
+      <button type="button" class="category-chip" data-category-chip="bakery" data-category-label="Bakery">Bakery</button>
+      <button type="button" class="category-chip" data-category-chip="beverages" data-category-label="Beverages">Beverages</button>
+      <button type="button" class="category-chip" data-category-chip="meat" data-category-label="Meat & Seafood">Meat & Seafood</button>
+      <button type="button" class="category-chip" data-category-chip="frozen" data-category-label="Frozen Foods">Frozen Foods</button>
+      <button type="button" class="category-chip" data-category-chip="snacks" data-category-label="Snacks">Snacks</button>
     </div>
   </section>
 
@@ -341,5 +357,25 @@ Data: Fetches featured deals from database
     // Users can view them in the Notifications page (/notifications)
     // No more annoying toast popups on page load!
   </script>
+
+  <!-- Global List Selector Modal -->
+  <div class="modal fade" id="globalListSelectorModal" tabindex="-1" aria-labelledby="globalListSelectorModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="globalListSelectorModalLabel">
+            <i class="bi bi-cart-plus me-2"></i>Select Shopping List
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p class="text-muted mb-3">Choose which list to add this item to:</p>
+          <div id="globalListSelectorBody">
+            <!-- List options will be populated here by JavaScript -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </body>
 </html>

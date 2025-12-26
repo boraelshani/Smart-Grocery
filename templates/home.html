@@ -1208,5 +1208,25 @@ Shown at route: /
     // Load favorites when page loads
     window.addEventListener('load', loadFavoriteStates);
   </script>
+
+  <!-- Global List Selector Modal -->
+  <div class="modal fade" id="globalListSelectorModal" tabindex="-1" aria-labelledby="globalListSelectorModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="globalListSelectorModalLabel">
+            <i class="bi bi-cart-plus me-2"></i>Select Shopping List
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p class="text-muted mb-3">Choose which list to add this item to:</p>
+          <div id="globalListSelectorBody">
+            <!-- List options will be populated here by JavaScript -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </body>
 </html>

@@ -366,8 +366,26 @@ Data: Fetches all products and their store prices from database
             </div>
 
             <div class="d-flex gap-2 mt-3">
-              <button id="apply-filters" class="btn btn-primary flex-grow-1">Apply</button>
-              <button id="clear-filters" class="btn btn-outline-secondary">Clear</button>
+              <button id="apply-filters" class="btn flex-grow-1" 
+                      style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                             color: white; 
+                             border: none; 
+                             border-radius: 8px; 
+                             padding: 10px; 
+                             font-weight: 500;
+                             transition: all 0.3s ease;"
+                      onmouseover="this.style.opacity='0.85'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 12px rgba(102, 126, 234, 0.4)';"
+                      onmouseout="this.style.opacity='1'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">Apply</button>
+              <button id="clear-filters" class="btn" 
+                      style="background: linear-gradient(135deg, #6c757d 0%, #495057 100%); 
+                             color: white; 
+                             border: none; 
+                             border-radius: 8px; 
+                             padding: 10px; 
+                             font-weight: 500;
+                             transition: all 0.3s ease;"
+                      onmouseover="this.style.opacity='0.85'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 12px rgba(108, 117, 125, 0.4)';"
+                      onmouseout="this.style.opacity='1'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">Clear</button>
             </div>
 
             <div id="active-filters" class="mt-3 d-flex flex-wrap gap-2" style="display:none;">
@@ -461,6 +479,18 @@ Data: Fetches all products and their store prices from database
                     </p>
                   {% endif %}
                   <div class="d-grid gap-2">
+                    <button type="button" class="btn view-product-details-btn" 
+                      data-bs-toggle="modal" 
+                      data-bs-target="#productModal"
+                      data-product-name="{{ p.get('name') or p.get('title','') }}" 
+                      data-product-id="{{ p.get('id') }}"
+                      data-product-image="{{ prefer_processed(p.get('image') or (p.get('images') and p.get('images')[0]) or url_for('static', filename='placeholder.svg')) }}"
+                      data-product-stores="{{ p.get('stores')|tojson if p.get('stores') else '[]' }}"
+                      style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; transition: all 0.3s ease;"
+                      onmouseover="this.style.opacity='0.85'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 12px rgba(102, 126, 234, 0.4)';"
+                      onmouseout="this.style.opacity='1'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+                      <i class="bi bi-info-circle"></i> View Details
+                    </button>
                     <button type="button" class="btn add-to-list-btn" 
                       data-product-name="{{ p.get('name') or p.get('title','') }}" 
                       data-product-id="{{ p.get('id') }}"
@@ -468,9 +498,6 @@ Data: Fetches all products and their store prices from database
                       data-product-image="{{ prefer_processed(p.get('image') or (p.get('images') and p.get('images')[0]) or url_for('static', filename='placeholder.svg')) }}">
                       <i class="bi bi-cart-plus-fill"></i> Add to List
                     </button>
-                    <a href="{{ url_for('main.product_detail', product_id=p.get('id')) }}" class="btn btn-add-cart text-decoration-none">
-                      <i class="bi bi-zoom-in"></i> View Details
-                    </a>
                   </div>
                 </div>
               </div>
@@ -580,23 +607,34 @@ Data: Fetches all products and their store prices from database
 
   <!-- Modal for Product Details -->
   <div class="modal fade" id="productModal" tabindex="-1" aria-labelledby="productModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="productModalLabel">Product Details</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 480px;">
+      <div class="modal-content" style="border-radius: 16px; border: 3px solid #667eea; overflow: hidden; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+        <div style="padding: 1.25rem; text-align: center;">
+          <div class="mb-2">
+            <i class="bi bi-info-circle" style="font-size: 2.2rem; color: white;"></i>
+          </div>
+          <h5 class="text-white mb-0 fw-bold">Product Details</h5>
         </div>
-        <div class="modal-body">
-          <img src="{{ prefer_processed(url_for('static', filename='placeholder.svg')) or url_for('static', filename='placeholder.svg') }}" class="img-fluid mb-3 product-modal-image" alt="Product">
-          <h6 class="product-modal-title">Product Name</h6>
-          <p class="product-modal-price"><strong>Best Price:</strong> <span></span></p>
-          <p class="product-modal-stores"><strong>Available at:</strong> <span></span></p>
-          <p class="product-modal-discount"><strong>Discount:</strong> <span></span></p>
-          <p class="product-modal-expires"><strong>Expires in:</strong> <span></span></p>
+        <div class="modal-body" style="padding: 1rem 1.25rem;">
+          <img src="{{ prefer_processed(url_for('static', filename='placeholder.svg')) or url_for('static', filename='placeholder.svg') }}" class="img-fluid mb-3 product-modal-image" alt="Product" style="border-radius: 12px; background: white; padding: 0.5rem; max-height: 250px; width: 100%; object-fit: contain;">
+          <h6 class="product-modal-title" style="color: white; font-weight: 600; margin-bottom: 1rem;">Product Name</h6>
+          
+          <div class="mb-3">
+            <label style="color: rgba(255, 255, 255, 0.9); font-size: 0.9rem; font-weight: 600; margin-bottom: 0.5rem; display: block;">Select Store</label>
+            <select id="product-modal-store-selector" class="form-select" style="border: none; border-radius: 8px; padding: 0.6rem;">
+              <option value="">Select a store...</option>
+            </select>
+          </div>
+          
+          <div id="product-modal-details">
+            <p class="product-modal-price" style="color: rgba(255, 255, 255, 0.95); margin-bottom: 0.5rem; display: none;"><strong>Price:</strong> <span></span></p>
+            <p class="product-modal-discount" style="color: rgba(255, 255, 255, 0.95); margin-bottom: 0.5rem; display: none;"><strong>Discount:</strong> <span></span></p>
+            <p class="product-modal-expires" style="color: rgba(255, 255, 255, 0.95); margin-bottom: 0; display: none;"><strong>Expires in:</strong> <span></span></p>
+          </div>
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-          <button type="button" class="btn btn-primary add-to-cart-btn">Add to Shopping List</button>
+        <div class="modal-footer" style="border: none; padding: 0.75rem 1.25rem; justify-content: center; gap: 0.75rem;">
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="border: none; padding: 0.5rem 1.25rem; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.backgroundColor='#d3d3d3';" onmouseout="this.style.backgroundColor='white';">Close</button>
+          <button type="button" class="btn btn-light add-to-cart-btn" style="background: white; color: #667eea; padding: 0.5rem 1.25rem; font-weight: 600; border: none; transition: all 0.2s ease; display: none;" onmouseover="this.style.background='#e8ecff';" onmouseout="this.style.background='white';"><i class="bi bi-cart-plus me-1"></i>Add to List</button>
         </div>
       </div>
     </div>
@@ -976,23 +1014,23 @@ Data: Fetches all products and their store prices from database
           qty: 1
         };
         
-        // If store already selected, go directly to list selector
+        // Always require a store choice before showing list selector
         if (selectedStore) {
+          // Store already selected, show list selector
           pendingItemToAdd.price = selectedStore.price;
-          showListSelector(productName, true);
-        }
-        // Require a store choice before adding
-        else if (stores && stores.length > 1) {
+          showListSelectorForCompare(productName, true);
+        } else if (stores && stores.length > 1) {
+          // Multiple stores available, show store selector first
           showStoreSelector(productName, stores);
         } else if (stores && stores.length === 1) {
-          // Auto-select the only store
+          // Only one store, auto-select it
           pendingItemToAdd.selected_store = stores[0].store || stores[0].name;
           pendingItemToAdd.price = stores[0].price;
-          showListSelector(productName, true);
+          showListSelectorForCompare(productName, true);
         } else {
-          // No store info; force user to pick a list but mark store as Unknown
-          pendingItemToAdd.selected_store = 'Unknown';
-          showListSelector(productName, true);
+          // No store info available, show error
+          showNotification('Please select a store first or view product details to choose a store', 'warning');
+          pendingItemToAdd = null;
         }
       }
     });
@@ -1071,7 +1109,7 @@ Data: Fetches all products and their store prices from database
         pendingItemToAdd.price = storePrice;
         const modalInst = bootstrap.Modal.getInstance(document.getElementById('listSelectorModal'));
         if (modalInst) modalInst.hide();
-        showListSelector(pendingItemToAdd.name || productName);
+        showListSelectorForCompare(pendingItemToAdd.name || productName);
       };
 
       // Hover effects remain
@@ -1092,26 +1130,38 @@ Data: Fetches all products and their store prices from database
       modal.show();
     }
 
-    // Show list selector modal (auto-select first list to avoid UI freeze)
-    async function showListSelector(productName, skipStoreCheck=false) {
-      try {
-        const response = await fetch('/api/get-lists');
-        if (!response.ok) {
-          showNotification('Unable to fetch your shopping lists', 'danger');
-          return;
+    // Show list selector - directly shows the global list selector modal
+    async function showListSelectorForCompare(productName, skipStoreCheck=false) {
+      if (!pendingItemToAdd) {
+        return;
+      }
+      if (!skipStoreCheck && (!pendingItemToAdd.selected_store || pendingItemToAdd.selected_store === 'Unknown') && pendingItemToAdd.stores && pendingItemToAdd.stores.length > 1) {
+        showNotification('Please select a store first', 'warning');
+        return;
+      }
+      
+      const priceVal = Number(String(pendingItemToAdd.price || '').replace(/[^0-9.]/g, '')) || 0;
+      const itemToAdd = {
+        name: pendingItemToAdd.name,
+        price: pendingItemToAdd.price,
+        price_val: priceVal,
+        store: pendingItemToAdd.selected_store || 'Unknown',
+        image: pendingItemToAdd.image,
+        qty: 1
+      };
+      
+      // Directly call the global list selector
+      if (typeof window.showListSelector === 'function') {
+        try {
+          await window.showListSelector(itemToAdd);
+          pendingItemToAdd = null; // Clear after showing selector
+        } catch (error) {
+          console.error('Error showing list selector:', error);
+          showNotification('Error showing list selector', 'danger');
         }
-        const data = await response.json();
-        const lists = data.lists || [];
-        if (!lists.length) {
-          showNotification('No shopping lists found. Create one first.', 'warning');
-          return;
-        }
-        // Auto-pick the first list
-        const targetListId = lists[0].id;
-        await addItemToList(targetListId, skipStoreCheck);
-      } catch (error) {
-        console.error('Error fetching lists:', error);
-        showNotification('Error fetching lists', 'danger');
+      } else {
+        console.error('Global showListSelector not found');
+        showNotification('List selector not available', 'danger');
       }
     }
 
@@ -1156,6 +1206,156 @@ Data: Fetches all products and their store prices from database
         console.error('Error:', error);
       }
     }
+
+    // Product modal handling - FIXED VERSION
+    let currentProductStores = [];
+    const modal = document.getElementById('productModal');
+    
+    // Handle modal open
+    modal.addEventListener('show.bs.modal', function(event) {
+      const button = event.relatedTarget;
+      if (button && button.classList.contains('view-product-details-btn')) {
+        const title = button.getAttribute('data-product-name') || '';
+        const image = button.getAttribute('data-product-image') || '';
+        const storesJson = button.getAttribute('data-product-stores') || '[]';
+        
+        // Update modal title and image
+        modal.querySelector('.product-modal-title').textContent = title;
+        modal.querySelector('.product-modal-image').src = image;
+        
+        // Parse stores
+        try {
+          currentProductStores = JSON.parse(storesJson);
+        } catch(e) {
+          currentProductStores = [];
+        }
+        
+        // Clear and rebuild selector
+        const selector = modal.querySelector('#product-modal-store-selector');
+        selector.innerHTML = '<option value="">-- Select a store --</option>';
+        
+        currentProductStores.forEach(store => {
+          const opt = document.createElement('option');
+          opt.value = store.store || store.name || '';
+          opt.text = (store.store || store.name || '') + ' - €' + (store.price || '0');
+          selector.appendChild(opt);
+        });
+        
+        // Reset selection
+        selector.value = '';
+        
+        // Hide all details
+        modal.querySelector('.product-modal-price').style.display = 'none';
+        modal.querySelector('.product-modal-discount').style.display = 'none';
+        modal.querySelector('.product-modal-expires').style.display = 'none';
+        modal.querySelector('.add-to-cart-btn').style.display = 'none';
+        
+        modal.querySelector('.add-to-cart-btn').setAttribute('data-name', title);
+        modal.querySelector('.add-to-cart-btn').setAttribute('data-image', image);
+      }
+    });
+    
+    // Handle store selection - listen on the modal's selector specifically
+    modal.addEventListener('change', function(event) {
+      if (event.target.id === 'product-modal-store-selector') {
+        const selectedValue = event.target.value;
+        
+        // If no selection, hide everything
+        if (!selectedValue || selectedValue === '') {
+          modal.querySelector('.product-modal-price').style.display = 'none';
+          modal.querySelector('.product-modal-discount').style.display = 'none';
+          modal.querySelector('.product-modal-expires').style.display = 'none';
+          modal.querySelector('.add-to-cart-btn').style.display = 'none';
+          return;
+        }
+        
+        // Find matching store
+        const store = currentProductStores.find(s => (s.store || s.name) === selectedValue);
+        
+        if (store) {
+          // Show price
+          const priceEl = modal.querySelector('.product-modal-price');
+          priceEl.style.display = 'block';
+          priceEl.querySelector('span').textContent = '€' + (store.price || 'N/A');
+          
+          // Show/hide discount
+          const discEl = modal.querySelector('.product-modal-discount');
+          if (store.discount) {
+            discEl.style.display = 'block';
+            discEl.querySelector('span').textContent = store.discount;
+          } else {
+            discEl.style.display = 'none';
+          }
+          
+          // Show/hide expires
+          const expEl = modal.querySelector('.product-modal-expires');
+          if (store.expires) {
+            expEl.style.display = 'block';
+            expEl.querySelector('span').textContent = store.expires;
+          } else {
+            expEl.style.display = 'none';
+          }
+          
+          // Show add button with all required data
+          const addBtn = modal.querySelector('.add-to-cart-btn');
+          addBtn.style.display = 'inline-block';
+          addBtn.setAttribute('data-store', selectedValue);
+          addBtn.setAttribute('data-price', store.price || '');
+          
+          // Remove any old click handlers and add new one
+          const newBtn = addBtn.cloneNode(true);
+          addBtn.parentNode.replaceChild(newBtn, addBtn);
+          
+          // Add click handler to show list selector
+          newBtn.addEventListener('click', async function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const itemToAdd = {
+              name: newBtn.getAttribute('data-name') || '',
+              price: newBtn.getAttribute('data-price') || '',
+              price_val: Number(String(newBtn.getAttribute('data-price') || '').replace(/[^0-9.]/g, '')) || 0,
+              store: newBtn.getAttribute('data-store') || '',
+              image: newBtn.getAttribute('data-image') || '',
+              qty: 1
+            };
+            
+            // Call the global list selector
+            if (typeof window.showListSelector === 'function') {
+              try {
+                await window.showListSelector(itemToAdd);
+                // Close the product modal
+                const modalInst = bootstrap.Modal.getInstance(modal);
+                if (modalInst) modalInst.hide();
+              } catch (error) {
+                console.error('Error showing list selector:', error);
+                showNotification('Error showing list selector', 'danger');
+              }
+            }
+          });
+        }
+      }
+    });
   </script>
+
+  <!-- Global List Selector Modal -->
+  <div class="modal fade" id="globalListSelectorModal" tabindex="-1" aria-labelledby="globalListSelectorModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="globalListSelectorModalLabel">
+            <i class="bi bi-cart-plus me-2"></i>Select Shopping List
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p class="text-muted mb-3">Choose which list to add this item to:</p>
+          <div id="globalListSelectorBody">
+            <!-- List options will be populated here by JavaScript -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </body>
 </html>

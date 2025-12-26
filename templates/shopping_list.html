@@ -387,10 +387,10 @@
 					<button class="btn btn-outline-danger" onclick="clearAllItems()" title="Clear all items from this list" style="position: absolute; right: 204px;">
 						<i class="bi bi-trash me-2"></i>Clear All
 					</button>
-					<button class="btn btn-outline-success" onclick="exportList()" style="position: absolute; right: 102px;">
+					<button class="btn btn-outline-success" onclick="showExportListConfirm()" style="position: absolute; right: 102px;">
 						<i class="bi bi-download me-2"></i>Export
 					</button>
-					<button class="btn btn-outline-secondary" onclick="printList()" style="position: absolute; right: 15px;">
+					<button class="btn btn-outline-secondary" onclick="showPrintListConfirm()" style="position: absolute; right: 15px;">
 						<i class="bi bi-printer me-2"></i>Print
 					</button>
 				</div>
@@ -504,7 +504,7 @@
 										<small class="text-muted">€{{ '%.2f'|format(unit|float) }} each</small>
 									</div>
 									<div>
-										<button class="btn btn-sm text-danger" onclick="removeItem(this)" title="Delete item">
+										<button class="btn btn-sm text-danger" onclick="showRemoveItemConfirm(this, '{{ name }}')" title="Delete item">
 											<i class="bi bi-trash-fill"></i>
 										</button>
 									</div>
@@ -527,40 +527,40 @@
 
 <!-- Create List Modal -->
 <div class="modal fade" id="createListModal" tabindex="-1">
-	<div class="modal-dialog">
-		<div class="modal-content">
-			<div class="modal-header">
-				<h5 class="modal-title"><i class="bi bi-plus-circle me-2"></i>Create New List</h5>
-				<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-			</div>
-			<div class="modal-body">
-				<div class="mb-3">
-					<label class="form-label">List Name</label>
-					<input type="text" class="form-control" id="new-list-name" placeholder="e.g., Weekly Groceries, Party Supplies">
+	<div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
+		<div class="modal-content" style="border-radius: 16px; border: 3px solid #667eea; overflow: hidden; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+			<div style="padding: 1.25rem; text-align: center;">
+				<div class="mb-2">
+					<i class="bi bi-plus-circle" style="font-size: 2.2rem; color: white;"></i>
 				</div>
-				<div class="mb-3">
-					<label class="form-label">Quick Start Templates</label>
-					<div class="d-flex gap-2 flex-wrap">
-						<button class="btn btn-sm btn-outline-primary" onclick="document.getElementById('new-list-name').value='Weekly Groceries'">
-							Weekly Groceries
-						</button>
-						<button class="btn btn-sm btn-outline-primary" onclick="document.getElementById('new-list-name').value='Party Supplies'">
-							Party Supplies
-						</button>
-						<button class="btn btn-sm btn-outline-primary" onclick="document.getElementById('new-list-name').value='Meal Prep'">
-							Meal Prep
-						</button>
-						<button class="btn btn-sm btn-outline-primary" onclick="document.getElementById('new-list-name').value='Breakfast Items'">
-							Breakfast Items
-						</button>
+				<h5 class="text-white mb-0 fw-bold">Create New List</h5>
+			</div>
+			<div class="modal-body" style="padding: 1rem 1.25rem;">
+				<div class="mb-2">
+					<label class="form-label fw-600" style="color: white; font-size: 0.9rem; margin-bottom: 0.5rem;">List Name</label>
+					<input type="text" class="form-control" id="new-list-name" placeholder="e.g., Weekly Groceries" style="border: none; border-radius: 8px; padding: 0.6rem;">
+				</div>
+				<div class="mb-2">
+					<label class="form-label fw-600" style="color: rgba(255, 255, 255, 0.9); font-size: 0.85rem; margin-bottom: 0.5rem;">Quick Templates</label>
+				</div>
+				<div class="row g-1">
+					<div class="col-6">
+						<button class="btn w-100" onclick="document.getElementById('new-list-name').value='Weekly Groceries'" style="background: white; color: #667eea; border: none; font-weight: 500; padding: 0.5rem; font-size: 0.85rem; transition: all 0.2s ease;" onmouseover="this.style.background='#e8ecff'; this.style.transform='translateY(-2px)';" onmouseout="this.style.background='white'; this.style.transform='translateY(0)';">Weekly Groceries</button>
+					</div>
+					<div class="col-6">
+						<button class="btn w-100" onclick="document.getElementById('new-list-name').value='Party Supplies'" style="background: white; color: #667eea; border: none; font-weight: 500; padding: 0.5rem; font-size: 0.85rem; transition: all 0.2s ease;" onmouseover="this.style.background='#e8ecff'; this.style.transform='translateY(-2px)';" onmouseout="this.style.background='white'; this.style.transform='translateY(0)';">Party Supplies</button>
+					</div>
+					<div class="col-6">
+						<button class="btn w-100" onclick="document.getElementById('new-list-name').value='Meal Prep'" style="background: white; color: #667eea; border: none; font-weight: 500; padding: 0.5rem; font-size: 0.85rem; transition: all 0.2s ease;" onmouseover="this.style.background='#e8ecff'; this.style.transform='translateY(-2px)';" onmouseout="this.style.background='white'; this.style.transform='translateY(0)';">Meal Prep</button>
+					</div>
+					<div class="col-6">
+						<button class="btn w-100" onclick="document.getElementById('new-list-name').value='Breakfast Items'" style="background: white; color: #667eea; border: none; font-weight: 500; padding: 0.5rem; font-size: 0.85rem; transition: all 0.2s ease;" onmouseover="this.style.background='#e8ecff'; this.style.transform='translateY(-2px)';" onmouseout="this.style.background='white'; this.style.transform='translateY(0)';">Breakfast Items</button>
 					</div>
 				</div>
 			</div>
-			<div class="modal-footer">
-				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-				<button type="button" class="btn btn-primary" onclick="createList()">
-					<i class="bi bi-check-circle me-2"></i>Create List
-				</button>
+			<div class="modal-footer" style="border: none; padding: 0.75rem 1.25rem; justify-content: center; gap: 0.75rem;">
+				<button type="button" class="btn btn-light" data-bs-dismiss="modal" style="border: none; padding: 0.5rem 1.25rem; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.backgroundColor='#d3d3d3';" onmouseout="this.style.backgroundColor='white';">Cancel</button>
+				<button type="button" class="btn btn-light" onclick="createList()" style="background: white; color: #667eea; padding: 0.5rem 1.25rem; font-weight: 600; border: none; transition: all 0.2s ease;" onmouseover="this.style.background='#e8ecff';" onmouseout="this.style.background='white';"><i class="bi bi-plus-circle me-1"></i>Create</button>
 			</div>
 		</div>
 	</div>
@@ -568,24 +568,24 @@
 
 <!-- Rename List Modal -->
 <div class="modal fade" id="renameListModal" tabindex="-1">
-	<div class="modal-dialog">
-		<div class="modal-content">
-			<div class="modal-header">
-				<h5 class="modal-title"><i class="bi bi-pencil me-2"></i>Rename List</h5>
-				<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+	<div class="modal-dialog modal-dialog-centered" style="max-width: 360px;">
+		<div class="modal-content" style="border-radius: 16px; border: 3px solid #667eea; overflow: hidden; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+			<div style="padding: 1.25rem; text-align: center;">
+				<div class="mb-2">
+					<i class="bi bi-pencil" style="font-size: 2.2rem; color: white;"></i>
+				</div>
+				<h5 class="text-white mb-0 fw-bold">Rename List</h5>
 			</div>
-			<div class="modal-body">
+			<div class="modal-body" style="padding: 1rem 1.25rem;">
 				<input type="hidden" id="rename-list-id">
-				<div class="mb-3">
-					<label class="form-label">New Name</label>
-					<input type="text" class="form-control" id="rename-list-name">
+				<div class="mb-2">
+					<label class="form-label fw-600" style="color: white; font-size: 0.9rem; margin-bottom: 0.5rem;">New Name</label>
+					<input type="text" class="form-control" id="rename-list-name" placeholder="Enter new list name" style="border: none; border-radius: 8px; padding: 0.6rem;">
 				</div>
 			</div>
-			<div class="modal-footer">
-				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-				<button type="button" class="btn btn-primary" onclick="confirmRename()">
-					<i class="bi bi-check-circle me-2"></i>Rename
-				</button>
+			<div class="modal-footer" style="border: none; padding: 0.75rem 1.25rem; justify-content: center; gap: 0.75rem;">
+				<button type="button" class="btn btn-light" data-bs-dismiss="modal" style="border: none; padding: 0.5rem 1.25rem; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.backgroundColor='#d3d3d3';" onmouseout="this.style.backgroundColor='white';">Cancel</button>
+				<button type="button" class="btn btn-light" onclick="confirmRename()" style="background: white; color: #667eea; padding: 0.5rem 1.25rem; font-weight: 600; border: none; transition: all 0.2s ease;" onmouseover="this.style.background='#e8ecff';" onmouseout="this.style.background='white';"><i class="bi bi-pencil me-1"></i>Rename</button>
 			</div>
 		</div>
 	</div>
@@ -593,25 +593,24 @@
 
 <!-- Delete List Modal -->
 <div class="modal fade" id="deleteListModal" tabindex="-1">
-	<div class="modal-dialog modal-dialog-centered">
-		<div class="modal-content">
-			<div class="modal-header border-0 pb-0">
-				<h5 class="modal-title d-flex align-items-center gap-2">
-					<i class="bi bi-exclamation-triangle text-danger"></i>
-					Delete List
-				</h5>
-				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+	<div class="modal-dialog modal-dialog-centered" style="max-width: 360px;">
+		<div class="modal-content" style="border-radius: 16px; border: 3px solid #dc3545; overflow: hidden; background: linear-gradient(135deg, #dc3545 0%, #bb2d3b 100%);">
+			<div style="padding: 1.25rem; text-align: center;">
+				<div class="mb-2">
+					<i class="bi bi-trash3-fill" style="font-size: 2.2rem; color: white;"></i>
+				</div>
+				<h5 class="text-white mb-0 fw-bold">Delete List?</h5>
 			</div>
-			<div class="modal-body pt-2">
-				<p class="mb-2">You're about to delete <strong id="delete-list-name">this list</strong>.</p>
-				<p class="text-muted small mb-0">All items in this list will be removed. This action cannot be undone.</p>
+			<div class="modal-body text-center" style="padding: 1rem 1.5rem;">
+				<p class="mb-2 text-white" style="font-size: 0.95rem;">
+					Delete <strong id="delete-list-name">this list</strong> and remove all its items?
+				</p>
+				<p class="mb-0" style="font-size: 0.85rem; color: rgba(255, 255, 255, 0.8);">This action cannot be undone</p>
 				<input type="hidden" id="delete-list-id">
 			</div>
-			<div class="modal-footer border-0 pt-0 d-flex justify-content-end gap-2">
-				<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-				<button type="button" class="btn btn-danger" onclick="confirmDeleteList()">
-					<i class="bi bi-trash-fill me-1"></i>Delete
-				</button>
+			<div class="modal-footer" style="border: none; padding: 0 1.5rem 1.25rem; justify-content: center; gap: 0.75rem;">
+				<button type="button" class="btn btn-light" data-bs-dismiss="modal" style="border: none; padding: 0.5rem 1.25rem; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.backgroundColor='#d3d3d3';" onmouseout="this.style.backgroundColor='white';">Cancel</button>
+				<button type="button" class="btn btn-light" onclick="confirmDeleteList()" style="background: white; color: #dc3545; padding: 0.5rem 1.25rem; font-weight: 600; border: none; transition: all 0.2s ease;" onmouseover="this.style.background='#ffe8e8'; this.style.color='#bb2d3b';" onmouseout="this.style.background='white'; this.style.color='#dc3545';"><i class="bi bi-trash me-1"></i>Delete</button>
 			</div>
 		</div>
 	</div>
@@ -620,7 +619,7 @@
 <!-- Clear All Items Confirmation Modal -->
 <div class="modal fade" id="clearAllModal" tabindex="-1" aria-hidden="true">
 	<div class="modal-dialog modal-dialog-centered" style="max-width: 360px;">
-		<div class="modal-content" style="border-radius: 16px; border: 3px solid #667eea; overflow: hidden; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+		<div class="modal-content" style="border-radius: 16px; border: 3px solid #dc3545; overflow: hidden; background: linear-gradient(135deg, #dc3545 0%, #bb2d3b 100%);">
 			<div style="padding: 1.25rem; text-align: center;">
 				<div class="mb-2">
 					<i class="bi bi-trash3-fill" style="font-size: 2.2rem; color: white;"></i>
@@ -634,12 +633,8 @@
 				<p class="mb-0" style="font-size: 0.85rem; color: rgba(255, 255, 255, 0.8);">This action cannot be undone</p>
 			</div>
 			<div class="modal-footer" style="border: none; padding: 0 1.5rem 1.25rem; justify-content: center; gap: 0.75rem;">
-				<button type="button" class="btn btn-light" data-bs-dismiss="modal" style="border: none; padding: 0.5rem 1.25rem; font-weight: 500;">
-					Cancel
-				</button>
-				<button type="button" class="btn btn-light" onclick="confirmClearAll()" style="background: white; color: #667eea; padding: 0.5rem 1.25rem; font-weight: 600; border: none;">
-					<i class="bi bi-trash me-1"></i>Clear All
-				</button>
+				<button type="button" class="btn btn-light" data-bs-dismiss="modal" style="border: none; padding: 0.5rem 1.25rem; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.backgroundColor='#d3d3d3';" onmouseout="this.style.backgroundColor='white';">Cancel</button>
+				<button type="button" class="btn btn-light" onclick="confirmClearAll()" style="background: white; color: #dc3545; padding: 0.5rem 1.25rem; font-weight: 600; border: none; transition: all 0.2s ease;" onmouseover="this.style.background='#ffe8e8'; this.style.color='#bb2d3b';" onmouseout="this.style.background='white'; this.style.color='#dc3545';"><i class="bi bi-trash me-1"></i>Clear All</button>
 			</div>
 		</div>
 	</div>
@@ -671,6 +666,79 @@
 				<button type="button" class="btn btn-primary" onclick="confirmMoveItem()">
 					<i class="bi bi-check-circle me-2"></i>Move Item
 				</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Remove Item Confirmation Modal -->
+<div class="modal fade" id="removeItemModal" tabindex="-1" aria-hidden="true">
+	<div class="modal-dialog modal-dialog-centered" style="max-width: 360px;">
+		<div class="modal-content" style="border-radius: 16px; border: 3px solid #dc3545; overflow: hidden; background: linear-gradient(135deg, #dc3545 0%, #bb2d3b 100%);">
+			<div style="padding: 1.25rem; text-align: center;">
+				<div class="mb-2">
+					<i class="bi bi-trash3-fill" style="font-size: 2.2rem; color: white;"></i>
+				</div>
+				<h5 class="text-white mb-0 fw-bold">Remove Item?</h5>
+			</div>
+			<div class="modal-body text-center" style="padding: 1rem 1.5rem;">
+				<p class="mb-2 text-white" style="font-size: 0.95rem;">
+					Remove <strong id="removeItemName">this item</strong> from the list?
+				</p>
+				<p class="mb-0" style="font-size: 0.85rem; color: rgba(255, 255, 255, 0.8);">This action cannot be undone</p>
+				<input type="hidden" id="removeItemBtn">
+			</div>
+			<div class="modal-footer" style="border: none; padding: 0 1.5rem 1.25rem; justify-content: center; gap: 0.75rem;">
+				<button type="button" class="btn btn-light" data-bs-dismiss="modal" style="border: none; padding: 0.5rem 1.25rem; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.backgroundColor='#d3d3d3';" onmouseout="this.style.backgroundColor='white';">Cancel</button>
+				<button type="button" class="btn btn-light" onclick="confirmRemoveItem()" style="background: white; color: #dc3545; padding: 0.5rem 1.25rem; font-weight: 600; border: none; transition: all 0.2s ease;" onmouseover="this.style.background='#ffe8e8'; this.style.color='#bb2d3b';" onmouseout="this.style.background='white'; this.style.color='#dc3545';"><i class="bi bi-trash me-1"></i>Remove</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Export List Confirmation Modal -->
+<div class="modal fade" id="exportListModal" tabindex="-1" aria-hidden="true">
+	<div class="modal-dialog modal-dialog-centered" style="max-width: 360px;">
+		<div class="modal-content" style="border-radius: 16px; border: 3px solid #20c997; overflow: hidden; background: linear-gradient(135deg, #20c997 0%, #0ea58e 100%);">
+			<div style="padding: 1.25rem; text-align: center;">
+				<div class="mb-2">
+					<i class="bi bi-download" style="font-size: 2.2rem; color: white;"></i>
+				</div>
+				<h5 class="text-white mb-0 fw-bold">Export List?</h5>
+			</div>
+			<div class="modal-body text-center" style="padding: 1rem 1.5rem;">
+				<p class="mb-2 text-white" style="font-size: 0.95rem;">
+					Export shopping list as CSV file?
+				</p>
+				<p class="mb-0" style="font-size: 0.85rem; color: rgba(255, 255, 255, 0.8);">All items will be included in the download</p>
+			</div>
+			<div class="modal-footer" style="border: none; padding: 0 1.5rem 1.25rem; justify-content: center; gap: 0.75rem;">
+				<button type="button" class="btn btn-light" data-bs-dismiss="modal" style="border: none; padding: 0.5rem 1.25rem; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.backgroundColor='#d3d3d3';" onmouseout="this.style.backgroundColor='white';">Cancel</button>
+				<button type="button" class="btn btn-light" onclick="confirmExportList()" style="background: white; color: #20c997; padding: 0.5rem 1.25rem; font-weight: 600; border: none; transition: all 0.2s ease;" onmouseover="this.style.background='#e8f8f5'; this.style.color='#0ea58e';" onmouseout="this.style.background='white'; this.style.color='#20c997';"><i class="bi bi-download me-1"></i>Export</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Print List Confirmation Modal -->
+<div class="modal fade" id="printListModal" tabindex="-1" aria-hidden="true">
+	<div class="modal-dialog modal-dialog-centered" style="max-width: 360px;">
+		<div class="modal-content" style="border-radius: 16px; border: 3px solid #0dcaf0; overflow: hidden; background: linear-gradient(135deg, #0dcaf0 0%, #0aa8cc 100%);">
+			<div style="padding: 1.25rem; text-align: center;">
+				<div class="mb-2">
+					<i class="bi bi-printer" style="font-size: 2.2rem; color: white;"></i>
+				</div>
+				<h5 class="text-white mb-0 fw-bold">Print List?</h5>
+			</div>
+			<div class="modal-body text-center" style="padding: 1rem 1.5rem;">
+				<p class="mb-2 text-white" style="font-size: 0.95rem;">
+					Open the print dialog for your shopping list?
+				</p>
+				<p class="mb-0" style="font-size: 0.85rem; color: rgba(255, 255, 255, 0.8);">You can customize print settings before printing</p>
+			</div>
+			<div class="modal-footer" style="border: none; padding: 0 1.5rem 1.25rem; justify-content: center; gap: 0.75rem;">
+				<button type="button" class="btn btn-light" data-bs-dismiss="modal" style="border: none; padding: 0.5rem 1.25rem; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.backgroundColor='#d3d3d3';" onmouseout="this.style.backgroundColor='white';">Cancel</button>
+				<button type="button" class="btn btn-light" onclick="confirmPrintList()" style="background: white; color: #0dcaf0; padding: 0.5rem 1.25rem; font-weight: 600; border: none; transition: all 0.2s ease;" onmouseover="this.style.background='#e8f8fb'; this.style.color='#0aa8cc';" onmouseout="this.style.background='white'; this.style.color='#0dcaf0';"><i class="bi bi-printer me-1"></i>Print</button>
 			</div>
 		</div>
 	</div>
@@ -1130,7 +1198,7 @@ function displayListItems(data) {
 							<div class="fw-bold text-success item-price">€${(unit * qty).toFixed(2)}</div>
 							<small class="text-muted">€${unit.toFixed(2)} each</small>
 						</div>
-						<button class="btn btn-sm text-danger" onclick="removeItem(this)" title="Delete item">
+						<button class="btn btn-sm text-danger" onclick="showRemoveItemConfirm(this, '${name}')" title="Delete item">
 							<i class="bi bi-trash-fill"></i>
 						</button>
 					</div>
@@ -1597,6 +1665,63 @@ function addItemToList(listId) {
 			}
 		})
 		.catch(err => showNotification('Error adding item', 'danger'));
+}
+
+// Show remove item confirmation modal
+function showRemoveItemConfirm(btn, itemName) {
+	document.getElementById('removeItemName').textContent = itemName || 'this item';
+	document.getElementById('removeItemBtn').value = btn ? btn.closest('.item-row')?.getAttribute('data-item-id') || '' : '';
+	
+	// Store the button reference for later use
+	window.removeItemButton = btn;
+	
+	const modal = new bootstrap.Modal(document.getElementById('removeItemModal'));
+	modal.show();
+}
+
+// Confirm remove item
+function confirmRemoveItem() {
+	if (window.removeItemButton) {
+		// Hide modal first
+		const modal = bootstrap.Modal.getInstance(document.getElementById('removeItemModal'));
+		modal.hide();
+		
+		// Call the original removeItem function
+		removeItem(window.removeItemButton);
+		window.removeItemButton = null;
+	}
+}
+
+// Show export list confirmation modal
+function showExportListConfirm() {
+	const modal = new bootstrap.Modal(document.getElementById('exportListModal'));
+	modal.show();
+}
+
+// Confirm export list
+function confirmExportList() {
+	// Hide modal first
+	const modal = bootstrap.Modal.getInstance(document.getElementById('exportListModal'));
+	modal.hide();
+	
+	// Call the original exportList function
+	exportList();
+}
+
+// Show print list confirmation modal
+function showPrintListConfirm() {
+	const modal = new bootstrap.Modal(document.getElementById('printListModal'));
+	modal.show();
+}
+
+// Confirm print list
+function confirmPrintList() {
+	// Hide modal first
+	const modal = bootstrap.Modal.getInstance(document.getElementById('printListModal'));
+	modal.hide();
+	
+	// Call the original printList function
+	printList();
 }
 </script>
 
