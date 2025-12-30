@@ -938,21 +938,52 @@ def product_detail(product_id):
             'image': product.get('image')
         }]
     
-    # If a specific store is requested, filter the stores list to that store
-    if requested_store:
-        def _norm(name):
-            return (str(name or '').strip().lower())
-        norm_req = _norm(requested_store)
-        stores_list = product.get('stores') or []
-        filtered = [s for s in stores_list if _norm(s.get('store') or s.get('store_name') or s.get('name')) == norm_req]
-        if filtered:
-            product['stores'] = filtered
-            # Prefer the store-specific image for the product's main image
-            store_img = filtered[0].get('image')
-            if store_img:
-                product['image'] = store_img
-    
-    return render_template('product_detail.html', product=product)
+    # Enrich product stores with real store images/logos from the stores collection
+    stores_list = product.get('stores') or []
+    db_stores = []
+    if db is not None:
+        try:
+            db_stores = list(db.stores.find({}, {'name': 1, 'store': 1, 'logo': 1, 'image': 1, 'store_image': 1}))
+        except Exception:
+            db_stores = []
+    def find_store_logo_and_image(store_name):
+        norm = lambda n: (n or '').strip().lower()
+        for s in db_stores:
+            if norm(s.get('name')) == norm(store_name) or norm(s.get('store')) == norm(store_name):
+                return s.get('logo'), s.get('image') or s.get('store_image')
+        return None, None
+    for s in stores_list:
+        store_name = s.get('store') or s.get('store_name') or s.get('name')
+        logo, image = find_store_logo_and_image(store_name)
+        if logo:
+            s['logo'] = logo
+        if image:
+            s['store_image'] = image
+
+    # Always calculate the best price and its store(s)
+    best_price_value = None
+    best_price_stores = []
+    try:
+        min_price = float('inf')
+        for s in stores_list:
+            try:
+                price = s.get('price')
+                price_val = float(str(price).replace('€','').replace('$','').replace(',','.')) if price is not None else float('inf')
+                if price_val < min_price:
+                    min_price = price_val
+                    best_price_stores = [s.get('store') or s.get('store_name') or s.get('name') or 'Store']
+                elif price_val == min_price:
+                    best_price_stores.append(s.get('store') or s.get('store_name') or s.get('name') or 'Store')
+            except Exception:
+                continue
+        if min_price != float('inf'):
+            best_price_value = f"{min_price:.2f}"
+    except Exception:
+        best_price_value = None
+        best_price_stores = []
+
+    # Do NOT filter stores by requested_store for detail page; always show all stores
+    return render_template('product_detail.html', product=product, best_price_value=best_price_value, best_price_stores=best_price_stores)
 
 
 @main_bp.route('/featured-deal/<deal_id>')

@@ -975,6 +975,7 @@ Data: Fetches all products and their store prices from database
         const btn = e.target.classList.contains('add-to-list-btn') ? e.target : e.target.closest('.add-to-list-btn');
         e.preventDefault();
         e.stopPropagation();
+        e.stopImmediatePropagation(); // Stop other event listeners from firing
         
         const productName = btn.dataset.productName;
         const productId = btn.dataset.productId;
@@ -1018,19 +1019,24 @@ Data: Fetches all products and their store prices from database
         if (selectedStore) {
           // Store already selected, show list selector
           pendingItemToAdd.price = selectedStore.price;
+          pendingItemToAdd.store = selectedStore.name;
           showListSelectorForCompare(productName, true);
         } else if (stores && stores.length > 1) {
-          // Multiple stores available, show store selector first
-          showStoreSelector(productName, stores);
+          // Multiple stores available, require user to select one first
+          pendingItemToAdd = null; // Clear pending item FIRST
+          showNotification('Please select a store by clicking on one of the store options in the product card', 'warning');
+          return; // Exit early
         } else if (stores && stores.length === 1) {
           // Only one store, auto-select it
           pendingItemToAdd.selected_store = stores[0].store || stores[0].name;
+          pendingItemToAdd.store = stores[0].store || stores[0].name;
           pendingItemToAdd.price = stores[0].price;
           showListSelectorForCompare(productName, true);
         } else {
           // No store info available, show error
-          showNotification('Please select a store first or view product details to choose a store', 'warning');
-          pendingItemToAdd = null;
+          pendingItemToAdd = null; // Clear pending item FIRST
+          showNotification('Cannot add product without store information. Please select a store first.', 'danger');
+          return; // Exit early
         }
       }
     });

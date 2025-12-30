@@ -822,6 +822,35 @@ function setupClaimButtons() {
   }));
 }
 
+// Global function to handle add to cart button clicks
+window.handleAddToCart = async function(event, name, price, image, store) {
+  event.stopPropagation();
+  event.preventDefault();
+  
+  const item = { name, price, store, image };
+  const priceVal = formatPrice(price);
+  if (!isNaN(priceVal) && priceVal > 0) item.price_val = priceVal;
+  
+  try {
+    const res = await addItemToShoppingList(item);
+    if (res && res.deferred) {
+      // List selector will be shown, don't show additional notification
+      return;
+    }
+    if (res && (res.success || res.success === true)) {
+      showNotification('Added to shopping list', 'success');
+      refreshShoppingListUI();
+    } else if (res && res.error) {
+      showNotification(res.error, 'danger');
+    } else {
+      showNotification('Could not add to list', 'danger');
+    }
+  } catch (err) {
+    console.error('Error adding to cart:', err);
+    showNotification('Server error adding item', 'danger');
+  }
+};
+
 // Product modal: populate modal with clicked product details and wire Add to Cart
 function setupProductModalHandlers() {
   // Use event delegation for dynamically added elements. Bind the listener only once.
@@ -923,6 +952,7 @@ function setupProductModalHandlers() {
 
     // Add to Cart button (works both inside and outside modals)
     if (target.classList && (target.classList.contains('add-to-cart-btn') || target.closest('.add-to-cart-btn'))) {
+      e.stopPropagation(); // Prevent triggering parent div's click handler
       const btn = target.classList.contains('add-to-cart-btn') ? target : target.closest('.add-to-cart-btn');
       const modalRoot = btn.closest('.modal');
       const name = btn.getAttribute('data-name') || btn.getAttribute('data-title') || (modalRoot?.querySelector('h6')?.textContent || 'Item');

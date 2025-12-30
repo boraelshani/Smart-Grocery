@@ -4,11 +4,11 @@ PRODUCT DETAIL PAGE
 ═══════════════════════════════════════════════════════════════════════════
 Purpose: Show detailed information about a single product
 Features:
-- Product name, image, and description
-- Availability in different stores with prices
-- Add to favorites (heart icon)
-- Add to shopping list button
-- View store locations and opening hours
+- Modern glass-morphism design
+- Product image with favorite button
+- Store selection with animated cards
+- Price comparison across stores
+- Add to shopping list with list selector
 Route: /product/<product_id>
 Data: Fetches single product details from database
 ═══════════════════════════════════════════════════════════════════════════
@@ -23,182 +23,269 @@ Data: Fetches single product details from database
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
+    body { background: #f3f4f6; }
+    
+    /* Hero Section with Gradient */
     .product-detail-hero {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
-      padding: 3rem 0;
+      padding: 3rem 0 3.5rem;
+      border-bottom-left-radius: 24px;
+      border-bottom-right-radius: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+    .product-detail-hero::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 20% 20%, rgba(255,255,255,0.08), transparent 45%),
+                  radial-gradient(circle at 80% 0%, rgba(255,255,255,0.07), transparent 40%);
+      pointer-events: none;
+    }
+    
+    /* Breadcrumb Styling */
+    .breadcrumb { margin-bottom: 0.75rem; }
+    .breadcrumb a { color: white; text-decoration: none; }
+    .breadcrumb-item + .breadcrumb-item::before { color: rgba(255,255,255,0.7); }
+    
+    /* Category Badge */
+    .category-badge {
+      display: inline-block;
+      background: rgba(255,255,255,0.15);
+      color: white;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-weight: 700;
+      border: 1px solid rgba(255,255,255,0.25);
+    }
+    
+    /* Glass Card for Image */
+    .glass-card {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.25);
+      border-radius: 18px;
+      box-shadow: 0 14px 36px rgba(0,0,0,0.18);
+      backdrop-filter: blur(6px);
+    }
+    
+    /* Image Container */
+    .image-card {
+      background: #ffffff;
+      border-radius: 18px;
+      padding: 1.25rem;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.12);
+      position: relative;
     }
     .product-image-large {
       width: 100%;
-      max-height: 500px;
+      height: 420px;
       object-fit: contain;
-      background: white;
-      border-radius: 15px;
-      padding: 20px;
+      background: #fff;
+      border-radius: 16px;
+      padding: 18px;
     }
-    .best-price-banner {
+    
+    /* Favorite Button */
+    .favorite-btn {
+      position: absolute;
+      top: 1.5rem;
+      right: 1.5rem;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: white;
+      border: none;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      color: #667eea;
+      cursor: pointer;
+      transition: all 0.3s;
+      z-index: 10;
+    }
+    .favorite-btn:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 20px rgba(102,126,234,0.3);
+    }
+    .favorite-btn.active {
       background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
       color: white;
-      padding: 1.5rem;
-      border-radius: 15px;
-      text-align: center;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
-      margin-bottom: 2rem;
     }
-    .best-price-banner h3 {
-      font-size: 0.9rem;
+    
+    /* Price Display */
+    .price-display-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 18px;
+      padding: 1.75rem;
+      color: white;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 12px 35px rgba(102,126,234,0.25);
+      position: relative;
+      overflow: hidden;
+    }
+    .price-display-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.15), transparent 60%);
+    }
+    .price-display-content { position: relative; z-index: 1; }
+    .price-label {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
       opacity: 0.9;
+      font-weight: 600;
       margin-bottom: 0.5rem;
     }
-    .best-price-banner .price {
-      font-size: 2.5rem;
-      font-weight: bold;
+    .price { font-size: 2.4rem; font-weight: 900; line-height: 1; margin-bottom: 0.5rem; }
+    .store-name { font-size: 1.05rem; opacity: 0.92; }
+    
+    /* Info Card */
+    .info-card {
+      background: white;
+      border-radius: 18px;
+      padding: 1.75rem;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+      margin-bottom: 1.25rem;
     }
-    .best-price-banner .store-name {
-      font-size: 0.95rem;
-      opacity: 0.9;
+    
+    /* Section Titles */
+    .section-title {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #2d3748;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
     }
-    .store-selection-grid {
+    .section-title i { color: #667eea; }
+    
+    /* Meta Badges */
+    .meta-chips .badge {
+      font-weight: 700;
+      padding: 0.5rem 1rem;
+      border-radius: 12px;
+      margin-right: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    /* Store Selection Grid */
+    .store-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      grid-template-columns: repeat(2, 1fr);
       gap: 1rem;
       margin-bottom: 1.5rem;
     }
+    @media (max-width: 576px) {
+      .store-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    /* Store Cards */
     .store-card {
+      background: white;
       border: 2px solid #e9ecef;
-      border-radius: 12px;
+      border-radius: 14px;
       padding: 1.25rem;
       cursor: pointer;
-      transition: all 0.2s ease;
-      text-align: center;
-      background: white;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       position: relative;
+      overflow: hidden;
     }
     .store-card:hover {
       border-color: #667eea;
-      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
-      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(102,126,234,0.15);
+      transform: translateY(-3px);
     }
     .store-card.selected {
       border-color: #667eea;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
-      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+      box-shadow: 0 12px 35px rgba(102,126,234,0.4);
     }
-    .store-card .store-name {
+    .store-card-content { position: relative; z-index: 1; text-align: center; }
+    .store-card .store-logo {
+      width: 60px;
+      height: 60px;
+      border-radius: 12px;
+      object-fit: contain;
+      background: #f8f9fa;
+      padding: 8px;
+      margin: 0 auto 0.75rem;
+      display: block;
+      border: 2px solid #e9ecef;
+    }
+    .store-card.selected .store-logo {
+      border-color: rgba(255,255,255,0.3);
+      background: rgba(255,255,255,0.15);
+    }
+    .store-card .card-store-name {
       font-weight: 700;
-      font-size: 1rem;
+      font-size: 1.05rem;
       margin-bottom: 0.5rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      padding: 0 0.25rem;
     }
-    .store-card .store-price {
-      font-size: 1.5rem;
-      font-weight: bold;
+    .store-card.selected .card-store-name { color: white; }
+    .store-card .card-price {
+      font-size: 1.6rem;
+      font-weight: 900;
       color: #667eea;
     }
-    .store-card.selected .store-price {
-      color: white;
-    }
-    .store-card .store-discount {
-      font-size: 0.85rem;
-      margin-top: 0.5rem;
-    }
-    .store-visit-arrow {
+    .store-card.selected .card-price { color: white; }
+    .store-card .check-icon {
       position: absolute;
-      top: 8px;
-      right: 8px;
-      width: 28px;
-      height: 28px;
+      top: 0.75rem;
+      right: 0.75rem;
+      width: 30px;
+      height: 30px;
       border-radius: 50%;
-      background: rgba(102, 126, 234, 0.1);
-      display: flex;
+      background: rgba(255,255,255,0.3);
+      display: none;
       align-items: center;
       justify-content: center;
-      transition: all 0.3s ease;
-      text-decoration: none;
-      color: #667eea;
-      font-size: 0.9rem;
-      z-index: 10;
-    }
-    .store-visit-arrow:hover {
-      background: #667eea;
-      color: white;
-      transform: scale(1.15);
-    }
-    .store-card.selected .store-visit-arrow {
-      background: rgba(255, 255, 255, 0.2);
       color: white;
     }
-    .store-card.selected .store-visit-arrow:hover {
-      background: white;
-      color: #667eea;
+    .store-card.selected .check-icon {
+      display: flex;
+      animation: checkPop 0.3s ease;
     }
-    .selected-store-info {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      border-radius: 12px;
-      padding: 1.25rem;
-      margin-bottom: 1.5rem;
-      text-align: center;
+    @keyframes checkPop {
+      0% { transform: scale(0); }
+      50% { transform: scale(1.2); }
+      100% { transform: scale(1); }
     }
-    .selected-store-info .price {
-      font-size: 2rem;
-      font-weight: bold;
-      margin-bottom: 0.5rem;
-    }
-    .selected-store-info .store-name {
-      font-size: 1rem;
-      opacity: 0.95;
-    }
-    .action-buttons {
-      display: grid;
-      gap: 1rem;
-    }
+    
+    /* Add to List Button */
     .add-to-list-btn {
+      width: 100%;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       border: none;
       color: white;
-      padding: 1rem;
-      border-radius: 12px;
+      padding: 1.1rem;
+      border-radius: 14px;
       font-weight: 700;
-      font-size: 1rem;
+      font-size: 1.05rem;
       cursor: pointer;
-      transition: all 0.3s ease;
-      text-decoration: none !important;
+      transition: all 0.3s;
+      box-shadow: 0 8px 25px rgba(102,126,234,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.6rem;
     }
     .add-to-list-btn:hover {
       transform: translateY(-2px);
-      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+      box-shadow: 0 12px 35px rgba(102,126,234,0.4);
       color: white;
-    }
-    .category-badge {
-      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-      color: white;
-      padding: 8px 16px;
-      border-radius: 20px;
-      display: inline-block;
-    }
-    .store-comparison-card {
-      border: 1px solid #e9ecef;
-      border-radius: 12px;
-      overflow: hidden;
-      margin-bottom: 1rem;
-      transition: all 0.2s;
-      background: white;
-    }
-    .store-comparison-card:hover {
-      box-shadow: 0 6px 15px rgba(0,0,0,0.1);
-    }
-    .store-comparison-header {
-      padding: 1rem 1.5rem;
-      border-bottom: 1px solid #e9ecef;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .store-comparison-price {
-      font-size: 1.5rem;
-      font-weight: bold;
-      color: #667eea;
     }
   </style>
 </head>
@@ -227,11 +314,11 @@ Data: Fetches single product details from database
               </span>
             </a>
           </li>
-            <li class="nav-item">
-              <a class="nav-link" href="{{ url_for('main.notifications_page') }}">
-                <i class="bi bi-bell"></i> Notifications
-              </a>
-            </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('main.notifications_page') }}">
+              <i class="bi bi-bell"></i> Notifications
+            </a>
+          </li>
           <li class="nav-item">
             <a class="nav-link" href="{{ url_for('main.profile') }}">
               <i class="bi bi-person-circle"></i> Profile
@@ -242,17 +329,23 @@ Data: Fetches single product details from database
     </div>
   </nav>
 
-  <!-- Product Hero -->
-  <section class="product-detail-hero">
-    <div class="container">
-      <nav aria-label="breadcrumb">
+  <!-- Hero Section -->
+  <section class="product-detail-hero py-5">
+    <div class="container position-relative" style="z-index: 1;">
+      <div class="d-flex justify-content-start mb-3">
+        <a href="{{ url_for('main.compare_prices') }}" class="btn btn-light btn-sm shadow-sm">
+          <i class="bi bi-arrow-left"></i> Back to Products
+        </a>
+      </div>
+
+      <nav aria-label="breadcrumb" class="mb-3">
         <ol class="breadcrumb">
           {% set trail = product.get('category_path') if product.get('category_path') else [] %}
           {% if not trail and product.get('category') %}
             {% set trail = ['Products', product.get('category')] %}
           {% endif %}
-          <li class="breadcrumb-item"><a href="{{ url_for('main.home') }}" class="text-white breadcrumb-link">Home</a></li>
-          <li class="breadcrumb-item"><a href="{{ url_for('main.compare_prices') }}" class="text-white breadcrumb-link">Products</a></li>
+          <li class="breadcrumb-item"><a href="{{ url_for('main.home') }}" class="text-white">Home</a></li>
+          <li class="breadcrumb-item"><a href="{{ url_for('main.compare_prices') }}" class="text-white">Products</a></li>
           {% if trail %}
             {% for crumb in trail %}
               {% if crumb != 'Products' %}
@@ -260,7 +353,7 @@ Data: Fetches single product details from database
                   <li class="breadcrumb-item active text-white" aria-current="page">{{ crumb }}</li>
                 {% else %}
                   <li class="breadcrumb-item">
-                    <a href="{{ url_for('main.compare_prices', category=crumb) }}" class="text-white breadcrumb-link">{{ crumb }}</a>
+                    <a href="{{ url_for('main.compare_prices', category=crumb) }}" class="text-white">{{ crumb }}</a>
                   </li>
                 {% endif %}
               {% endif %}
@@ -270,84 +363,132 @@ Data: Fetches single product details from database
           {% endif %}
         </ol>
       </nav>
-      <div class="d-flex justify-content-start mb-3">
-        <a href="{{ url_for('main.compare_prices') }}" class="btn btn-light btn-sm shadow-sm">
-          <i class="bi bi-arrow-left"></i> Back to Products
-        </a>
-      </div>
-      <h1 class="display-5 fw-bold">{{ product.name }}</h1>
+
+
+      <h1 class="display-5 fw-bold text-white mb-2">{{ product.name }}</h1>
       {% if product.category or (product.category_path and product.category_path|length) %}
-        <span class="category-badge mt-2">{{ (product.category_path and product.category_path[-1]) or product.category }}</span>
+        <span class="category-badge mt-1"><i class="bi bi-tag-fill me-1"></i>{{ (product.category_path and product.category_path[-1]) or product.category }}</span>
       {% endif %}
     </div>
   </section>
 
-  <!-- Product Details -->
+  <!-- Product Content -->
   <section class="container py-5">
-    <div class="row">
-      <!-- Product Image -->
-      <div class="col-lg-6 mb-4">
-           <img id="product-main-img"
-             src="{{ prefer_processed(product.image or (product.images and product.images[0]) or url_for('static', filename='placeholder.svg')) }}" 
-             data-default-src="{{ prefer_processed(product.image or (product.images and product.images[0]) or url_for('static', filename='placeholder.svg')) }}"
-             alt="{{ product.name }}" 
-             class="product-image-large shadow-lg">
-      </div>
-
-      <!-- Product Info -->
-      <div class="col-lg-6">
-        <!-- Best Price Banner -->
-        <div class="best-price-banner">
-          <h3><i class="bi bi-lightning-fill"></i> Best Price</h3>
-          <div class="price">€{{ (product.cheapest and product.cheapest.price) or product.price or 'N/A' }}</div>
-          {% if product.cheapest and product.cheapest.store %}
-            <div class="store-name">at <strong>{{ product.cheapest.store }}</strong></div>
-          {% endif %}
+    <div class="row g-4">
+      <!-- Product Image Column -->
+      <div class="col-lg-5">
+        <div class="image-card position-relative mb-3">
+          <!-- Favorite button removed as requested -->
+          <img id="product-main-img"
+               src="{{ prefer_processed(product.image or (product.images and product.images[0]) or url_for('static', filename='placeholder.svg')) }}" 
+               data-default-src="{{ prefer_processed(product.image or (product.images and product.images[0]) or url_for('static', filename='placeholder.svg')) }}"
+               alt="{{ product.name }}" 
+               class="product-image-large">
         </div>
-
-        <!-- Store Selection Cards -->
-          {% if product.stores and product.stores|length > 0 %}
-        <div class="mb-4">
-          <label style="font-weight: 700; display: block; margin-bottom: 1rem;"><i class="bi bi-shop"></i> Select a Store</label>
-          <div class="store-selection-grid">
-            {% for store in product.stores %}
-              <div class="store-card" data-store-index="{{ loop.index0 }}" data-store="{{ store.store or store.name }}" data-price="{{ store.price }}" data-image="{{ store.image or product.image or (product.images and product.images[0]) }}">
-                {% if store.url %}
-                <a href="{{ store.url }}" class="store-visit-arrow" onclick="event.stopPropagation();" target="_blank" rel="noopener noreferrer" title="Visit {{ store.store or store.name }} website">
-                  <i class="bi bi-box-arrow-up-right"></i>
-                </a>
-                {% endif %}
-                <div class="store-name">{{ store.store or store.name }}</div>
-                <div class="store-price">€{{ store.price }}</div>
-                {% if store.discount %}
-                  <div class="store-discount"><span class="badge bg-danger">{{ store.discount }}</span></div>
-                {% endif %}
-              </div>
-            {% endfor %}
+        <!-- Best Price card OUTSIDE the white image card -->
+        <div class="price-display-card mt-3">
+          <div class="price-display-content">
+            <div class="price-label">
+              <i class="bi bi-lightning-charge-fill"></i> Best Price
+            </div>
+            <div class="price" id="selected-price">
+              {% if best_price_value is not none %}
+                €{{ best_price_value }}
+              {% elif product.price %}
+                €{{ product.price }}
+              {% else %}
+                Select a Store
+              {% endif %}
+            </div>
+            <div class="store-name" id="selected-store">
+              {% if best_price_stores and best_price_stores|length > 0 %}
+                at <strong>{{ best_price_stores | join(', ') }}</strong>
+              {% elif product.store or product.source %}
+                at <strong>{{ product.store or product.source }}</strong>
+              {% else %}
+                Choose a store below
+              {% endif %}
+            </div>
           </div>
         </div>
-        {% endif %}
+      </div>
 
-        <!-- Action Buttons -->
-        <div class="action-buttons mb-4">
-          <button class="btn add-to-list-btn" id="add-to-list-btn"
-                  data-id="{{ product.id }}" 
-                  data-name="{{ product.name }}">
-            <i class="bi bi-cart-plus"></i> Add to Shopping List
+      <!-- Product Info Column -->
+      <div class="col-lg-7">
+
+        <!-- Product Details Card -->
+        <div class="info-card">
+          {% if product.description %}
+          <div class="mb-3">
+            <div class="section-title">
+              <i class="bi bi-file-text-fill"></i>
+              Description
+            </div>
+            <p class="text-muted mb-0">{{ product.description }}</p>
+          </div>
+          {% endif %}
+
+          <!-- Product Meta -->
+          <div class="mb-3">
+            <div class="section-title">
+              <i class="bi bi-info-circle-fill"></i>
+              Product Information
+            </div>
+            <div class="meta-chips">
+              {% if product.category %}
+              <span class="badge bg-light text-primary"><i class="bi bi-tag"></i>&nbsp;{{ product.category }}</span>
+              {% endif %}
+              {% if product.unit %}
+              <span class="badge bg-light text-primary"><i class="bi bi-box"></i>&nbsp;{{ product.unit }}</span>
+              {% endif %}
+              {% if product.stores %}
+              <span class="badge bg-light text-primary"><i class="bi bi-shop"></i>&nbsp;{{ product.stores|length }} Store{{ 's' if product.stores|length != 1 }}</span>
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- Store Selection -->
+          {% if product.stores and product.stores|length > 0 %}
+          <div class="mb-3">
+            <div class="section-title">
+              <i class="bi bi-shop-window"></i>
+              Select Your Store
+            </div>
+            <div class="store-grid">
+              {% for store in product.stores %}
+              <div class="store-card" 
+                   data-store="{{ store.store or store.name }}" 
+                   data-price="{{ store.price }}"
+                   data-image="{{ prefer_processed(store.image or (store.images and store.images[0]) or product.image or (product.images and product.images[0]) or url_for('static', filename='placeholder.svg')) }}">
+                <div class="check-icon">
+                  <i class="bi bi-check-lg"></i>
+                </div>
+                <div class="store-card-content">
+                     <img src="{{ prefer_processed(store.logo or store.store_image or url_for('static', filename='placeholder.svg')) }}" 
+                       alt="{{ store.store or store.name }}" 
+                       class="store-logo"
+                       onerror="this.src={{ "'" }}{{ url_for('static', filename='placeholder.svg') }}{{ "'" }}">
+                  <div class="card-store-name" title="{{ store.store or store.name }}">{{ store.store or store.name }}</div>
+                  <div class="card-price">€{{ store.price }}</div>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+
+          <!-- Add to List Button -->
+          <button id="add-to-list-btn" class="add-to-list-btn"
+                  data-name="{{ product.name }}"
+                  data-id="{{ product._id or product.id }}"
+                  data-price=""
+                  data-store="">
+            <i class="bi bi-cart-plus-fill"></i>
+            Add to Shopping List
           </button>
         </div>
-
-        {% if product.description %}
-          <p class="mt-3 text-muted"><strong><i class="bi bi-file-text"></i> Description:</strong></p>
-          <p class="text-muted">{{ product.description }}</p>
-        {% endif %}
-
-        {% if product.unit %}
-          <p><strong><i class="bi bi-info-circle"></i> Unit:</strong> {{ product.unit }}</p>
-        {% endif %}
       </div>
     </div>
-
   </section>
 
   <!-- Footer -->
@@ -369,9 +510,12 @@ Data: Fetches single product details from database
       const productName = addToListBtn ? addToListBtn.dataset.name : '';
       const productId = addToListBtn ? addToListBtn.dataset.id : '';
       const mainImg = document.getElementById('product-main-img');
-      const defaultImgSrc = mainImg ? mainImg.getAttribute('data-default-src') : '';
+      // Use the product image as the default, but allow switching to store image on selection
+      let defaultImgSrc = mainImg ? mainImg.getAttribute('data-default-src') : '';
+      if (mainImg && defaultImgSrc) mainImg.src = defaultImgSrc;
+      const favoriteBtn = document.getElementById('favorite-btn');
 
-      // Start with no preselected store; require user to pick
+      // Start with no preselected store
       selectedStoreData.store = '';
       selectedStoreData.price = '';
       selectedStoreData.image = defaultImgSrc;
@@ -384,87 +528,86 @@ Data: Fetches single product details from database
       // Handle store card clicks
       storeCards.forEach(card => {
         card.addEventListener('click', function() {
+          const isSelected = this.classList.contains('selected');
+          if (isSelected) {
+            // Deselect only, do not redirect
+            this.classList.remove('selected');
+            selectedStoreData.store = '';
+            selectedStoreData.price = '';
+            selectedStoreData.image = defaultImgSrc;
+            if (addToListBtn) {
+              addToListBtn.dataset.price = '';
+              addToListBtn.dataset.store = '';
+            }
+            if (mainImg && defaultImgSrc) mainImg.src = defaultImgSrc;
+            return;
+          }
           // Remove selected class from all cards
           storeCards.forEach(c => c.classList.remove('selected'));
-          
           // Add selected class to clicked card
           this.classList.add('selected');
-          
           const store = this.dataset.store;
           const price = this.dataset.price;
-          const imgSrc = this.dataset.image || defaultImgSrc;
-          
-          // Store selection in global object so it persists
+          // When a store is selected, show the product image for that store (not the store logo)
+          let imgSrc = defaultImgSrc;
+          // Try to get the product image for this store from the data-image attribute (which should be set to the product image for that store)
+          if (this.dataset.image && !this.dataset.image.includes('placeholder.svg')) {
+            imgSrc = this.dataset.image;
+          } else {
+            imgSrc = defaultImgSrc;
+          }
+          // Store selection
           selectedStoreData.store = store;
           selectedStoreData.price = price;
           selectedStoreData.image = imgSrc;
-          
-          // Update selected price and store (if elements exist)
-          if (selectedPriceEl) selectedPriceEl.textContent = price;
-          if (selectedStoreEl) selectedStoreEl.textContent = store;
-          
-          // Update the add to list button's data
+          // Only update Add to List button and image
           if (addToListBtn) {
             addToListBtn.dataset.price = price;
             addToListBtn.dataset.store = store;
           }
-
-          // Swap hero image to the store-specific image when available
           if (mainImg && imgSrc) {
             mainImg.src = imgSrc;
           }
         });
       });
 
-      // Add to shopping list functionality
+      // Add to shopping list
       if (addToListBtn) {
         addToListBtn.addEventListener('click', async function(e) {
           e.preventDefault();
           e.stopPropagation();
           
-          const price = selectedStoreData.price || '{{ (product.stores and product.stores[0] and product.stores[0].price) or product.price }}';
-          const store = selectedStoreData.store || '{{ (product.stores and product.stores[0] and (product.stores[0].store or product.stores[0].name)) or (product.store or product.source) }}';
-          
-          console.log('Adding to list:', { productName, productId, price, store });
-          console.log('Selected store data:', selectedStoreData);
-          
-          // Ensure price is not empty or 0
-          if (!price || price === '0' || price === '0.00') {
-            console.error('Invalid price:', price);
+          // Check if store is selected
+          if (!selectedStoreData.store || !selectedStoreData.price) {
             showNotification('Please select a store first', 'warning');
             return;
           }
           
-          const itemData = {
-            item: {
-              name: productName,
-              price: price,
-              store: store,
-              qty: 1,
-              id: productId
-            }
+          const price = selectedStoreData.price;
+          const store = selectedStoreData.store;
+          
+          // Validate price
+          if (!price || price === '0' || price === '0.00') {
+            showNotification('Invalid price for selected store', 'danger');
+            return;
+          }
+          
+          // Create item object
+          const item = {
+            name: productName,
+            price: price,
+            price_val: parseFloat(price.replace(/[^0-9.]/g, '')),
+            store: store,
+            qty: 1,
+            id: productId,
+            image: selectedStoreData.image
           };
           
-          console.log('Sending data:', JSON.stringify(itemData, null, 2));
-          
+          // Use list selector
           try {
-            const response = await fetch('/api/list/add-item', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify(itemData)
-            });
-            
-            console.log('Response status:', response.status);
-            const data = await response.json();
-            console.log('Response:', data);
-            
-            if (data.success || response.ok) {
-              // Show standard notification
-              showNotification(`${productName} added to your shopping list`, 'success');
-            } else {
-              showNotification(data.message || data.error || 'Failed to add item', 'danger');
+            const result = await window.addItemToShoppingList(item);
+            if (result && result.error) {
+              showNotification('Error adding item to list', 'danger');
             }
           } catch (error) {
             console.error('Error adding to list:', error);
@@ -473,7 +616,43 @@ Data: Fetches single product details from database
         });
       }
 
+      // Favorite button
+      if (favoriteBtn) {
+        favoriteBtn.addEventListener('click', function() {
+          this.classList.toggle('active');
+          const icon = this.querySelector('i');
+          if (this.classList.contains('active')) {
+            icon.classList.remove('bi-heart');
+            icon.classList.add('bi-heart-fill');
+            showNotification('Added to favorites', 'success');
+          } else {
+            icon.classList.remove('bi-heart-fill');
+            icon.classList.add('bi-heart');
+            showNotification('Removed from favorites', 'info');
+          }
+        });
+      }
     });
   </script>
+
+  <!-- Global List Selector Modal -->
+  <div class="modal fade" id="globalListSelectorModal" tabindex="-1" aria-labelledby="globalListSelectorModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="globalListSelectorModalLabel">
+            <i class="bi bi-cart-plus me-2"></i>Select Shopping List
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p class="text-muted mb-3">Choose which list to add this item to:</p>
+          <div id="globalListSelectorBody">
+            <!-- List options will be populated here by JavaScript -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </body>
 </html>
