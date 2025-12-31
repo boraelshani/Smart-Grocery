@@ -498,142 +498,143 @@ Data: Fetches single product details from database
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="{{ url_for('static', filename='js/script.js') }}"></script>
-  <script>
-    // Store selector functionality
-    let selectedStoreData = {};
+    <script>
+      // Store selector functionality
+      let selectedStoreData = {};
     
-    document.addEventListener('DOMContentLoaded', function() {
-      const storeCards = document.querySelectorAll('.store-card');
-      const selectedPriceEl = document.getElementById('selected-price');
-      const selectedStoreEl = document.getElementById('selected-store');
-      const addToListBtn = document.getElementById('add-to-list-btn');
-      const productName = addToListBtn ? addToListBtn.dataset.name : '';
-      const productId = addToListBtn ? addToListBtn.dataset.id : '';
-      const mainImg = document.getElementById('product-main-img');
-      // Use the product image as the default, but allow switching to store image on selection
-      let defaultImgSrc = mainImg ? mainImg.getAttribute('data-default-src') : '';
-      if (mainImg && defaultImgSrc) mainImg.src = defaultImgSrc;
-      const favoriteBtn = document.getElementById('favorite-btn');
+      document.addEventListener('DOMContentLoaded', function() {
+        const storeCards = document.querySelectorAll('.store-card');
+        const selectedPriceEl = document.getElementById('selected-price');
+        const selectedStoreEl = document.getElementById('selected-store');
+        const addToListBtn = document.getElementById('add-to-list-btn');
+        const productName = addToListBtn ? addToListBtn.dataset.name : '';
+        const productId = addToListBtn ? addToListBtn.dataset.id : '';
+        const mainImg = document.getElementById('product-main-img');
+        // Use the product image as the default, but allow switching to store image on selection
+        let defaultImgSrc = mainImg ? mainImg.getAttribute('data-default-src') : '';
+        if (mainImg && defaultImgSrc) mainImg.src = defaultImgSrc;
+        const favoriteBtn = document.getElementById('favorite-btn');
 
-      // Start with no preselected store
-      selectedStoreData.store = '';
-      selectedStoreData.price = '';
-      selectedStoreData.image = defaultImgSrc;
-      storeCards.forEach(c => c.classList.remove('selected'));
-      if (addToListBtn) {
-        addToListBtn.dataset.price = '';
-        addToListBtn.dataset.store = '';
-      }
+        // Start with no preselected store
+        selectedStoreData.store = '';
+        selectedStoreData.price = '';
+        selectedStoreData.image = defaultImgSrc;
+        storeCards.forEach(c => c.classList.remove('selected'));
+        if (addToListBtn) {
+          addToListBtn.dataset.price = '';
+          addToListBtn.dataset.store = '';
+        }
 
-      // Handle store card clicks
-      storeCards.forEach(card => {
-        card.addEventListener('click', function() {
-          const isSelected = this.classList.contains('selected');
-          if (isSelected) {
-            // Deselect only, do not redirect
-            this.classList.remove('selected');
-            selectedStoreData.store = '';
-            selectedStoreData.price = '';
-            selectedStoreData.image = defaultImgSrc;
-            if (addToListBtn) {
-              addToListBtn.dataset.price = '';
-              addToListBtn.dataset.store = '';
+        // Handle store card clicks
+        storeCards.forEach(card => {
+          card.addEventListener('click', function() {
+            const isSelected = this.classList.contains('selected');
+            if (isSelected) {
+              // Deselect only, do not redirect
+              this.classList.remove('selected');
+              selectedStoreData.store = '';
+              selectedStoreData.price = '';
+              selectedStoreData.image = defaultImgSrc;
+              if (addToListBtn) {
+                addToListBtn.dataset.price = '';
+                addToListBtn.dataset.store = '';
+              }
+              if (mainImg && defaultImgSrc) mainImg.src = defaultImgSrc;
+              return;
             }
-            if (mainImg && defaultImgSrc) mainImg.src = defaultImgSrc;
-            return;
-          }
-          // Remove selected class from all cards
-          storeCards.forEach(c => c.classList.remove('selected'));
-          // Add selected class to clicked card
-          this.classList.add('selected');
-          const store = this.dataset.store;
-          const price = this.dataset.price;
-          // When a store is selected, show the product image for that store (not the store logo)
-          let imgSrc = defaultImgSrc;
-          // Try to get the product image for this store from the data-image attribute (which should be set to the product image for that store)
-          if (this.dataset.image && !this.dataset.image.includes('placeholder.svg')) {
-            imgSrc = this.dataset.image;
-          } else {
-            imgSrc = defaultImgSrc;
-          }
-          // Store selection
-          selectedStoreData.store = store;
-          selectedStoreData.price = price;
-          selectedStoreData.image = imgSrc;
-          // Only update Add to List button and image
-          if (addToListBtn) {
-            addToListBtn.dataset.price = price;
-            addToListBtn.dataset.store = store;
-          }
-          if (mainImg && imgSrc) {
-            mainImg.src = imgSrc;
-          }
+            // Remove selected class from all cards
+            storeCards.forEach(c => c.classList.remove('selected'));
+            // Add selected class to clicked card
+            this.classList.add('selected');
+            const store = this.dataset.store;
+            const price = this.dataset.price;
+            // When a store is selected, show the product image for that store (not the store logo)
+            let imgSrc = defaultImgSrc;
+            // Try to get the product image for this store from the data-image attribute (which should be set to the product image for that store)
+            if (this.dataset.image && !this.dataset.image.includes('placeholder.svg')) {
+              imgSrc = this.dataset.image;
+            } else {
+              imgSrc = defaultImgSrc;
+            }
+            // Store selection
+            selectedStoreData.store = store;
+            selectedStoreData.price = price;
+            selectedStoreData.image = imgSrc;
+            // Only update Add to List button and image
+            if (addToListBtn) {
+              addToListBtn.dataset.price = price;
+              addToListBtn.dataset.store = store;
+            }
+            if (mainImg && imgSrc) {
+              mainImg.src = imgSrc;
+            }
+          });
         });
-      });
 
-      // Add to shopping list
-      if (addToListBtn) {
-        addToListBtn.addEventListener('click', async function(e) {
-          e.preventDefault();
-          e.stopPropagation();
+        // Add to shopping list
+        if (addToListBtn) {
+          addToListBtn.addEventListener('click', async function(e) {
+            e.preventDefault();
+            e.stopPropagation();
           
-          // Check if store is selected
-          if (!selectedStoreData.store || !selectedStoreData.price) {
-            showNotification('Please select a store first', 'warning');
-            return;
-          }
+            // Check if store is selected
+            if (!selectedStoreData.store || !selectedStoreData.price) {
+              showNotification('Please select a store first', 'warning');
+              return;
+            }
           
-          const price = selectedStoreData.price;
-          const store = selectedStoreData.store;
+            const price = selectedStoreData.price;
+            const store = selectedStoreData.store;
           
-          // Validate price
-          if (!price || price === '0' || price === '0.00') {
-            showNotification('Invalid price for selected store', 'danger');
-            return;
-          }
+            // Validate price
+            if (!price || price === '0' || price === '0.00') {
+              showNotification('Invalid price for selected store', 'danger');
+              return;
+            }
           
-          // Create item object
-          const item = {
-            name: productName,
-            price: price,
-            price_val: parseFloat(price.replace(/[^0-9.]/g, '')),
-            store: store,
-            qty: 1,
-            id: productId,
-            image: selectedStoreData.image
-          };
+            // Create item object
+            const item = {
+              name: productName,
+              price: price,
+              price_val: parseFloat(price.replace(/[^0-9.]/g, '')),
+              store: store,
+              qty: 1,
+              id: productId,
+              image: selectedStoreData.image
+            };
           
-          // Use list selector
-          try {
-            const result = await window.addItemToShoppingList(item);
-            if (result && result.error) {
+            // Use list selector
+            try {
+              const result = await window.addItemToShoppingList(item);
+              if (result && result.error) {
+                showNotification('Error adding item to list', 'danger');
+              }
+            } catch (error) {
+              console.error('Error adding to list:', error);
               showNotification('Error adding item to list', 'danger');
             }
-          } catch (error) {
-            console.error('Error adding to list:', error);
-            showNotification('Error adding item to list', 'danger');
-          }
-        });
-      }
+          });
+        }
 
-      // Favorite button
-      if (favoriteBtn) {
-        favoriteBtn.addEventListener('click', function() {
-          this.classList.toggle('active');
-          const icon = this.querySelector('i');
-          if (this.classList.contains('active')) {
-            icon.classList.remove('bi-heart');
-            icon.classList.add('bi-heart-fill');
-            showNotification('Added to favorites', 'success');
-          } else {
-            icon.classList.remove('bi-heart-fill');
-            icon.classList.add('bi-heart');
-            showNotification('Removed from favorites', 'info');
-          }
-        });
-      }
-    });
-  </script>
+        // Favorite button
+        if (favoriteBtn) {
+          favoriteBtn.addEventListener('click', function() {
+            this.classList.toggle('active');
+            const icon = this.querySelector('i');
+            if (this.classList.contains('active')) {
+              icon.classList.remove('bi-heart');
+              icon.classList.add('bi-heart-fill');
+              showNotification('Added to favorites', 'success');
+            } else {
+              icon.classList.remove('bi-heart-fill');
+              icon.classList.add('bi-heart');
+              showNotification('Removed from favorites', 'info');
+            }
+          });
+        }
+      });
+    </script>
+  <!-- No custom Add to List handler: rely on global JS handler from script.js -->
 
   <!-- Global List Selector Modal -->
   <div class="modal fade" id="globalListSelectorModal" tabindex="-1" aria-labelledby="globalListSelectorModalLabel" aria-hidden="true">

@@ -296,6 +296,10 @@ Data: Fetches all products and their store prices from database
         </ul>
       </div>
     </div>
+
+    <!-- ...existing code... -->
+  </div> <!-- end of main container or last div before </body> -->
+
   </nav>
 
   <section class="hero-section text-center">
@@ -423,12 +427,12 @@ Data: Fetches all products and their store prices from database
     <div class="row g-4" id="products-grid">
       {% if products %}
         {% for p in products %}
-          <div class="col-md-6 col-lg-4 product-card" 
-               data-stores='{{ p.get("stores")|tojson }}' 
-               data-price="{{ (p.get('cheapest') and p.get('cheapest').get('price')) or p.get('price','') }}" 
-               data-name="{{ p.get('name','') |lower }}" 
-               data-category="{{ p.get('category','') |lower }}">
-            <a href="{{ url_for('main.product_detail', product_id=p.get('id')) }}" class="text-decoration-none text-dark">
+           <div class="col-md-6 col-lg-4 product-card" 
+              data-stores='{{ p.get("stores")|tojson }}' 
+              data-price="{{ (p.get('cheapest') and p.get('cheapest').get('price')) or p.get('price','') }}" 
+              data-name="{{ p.get('name','') |lower }}" 
+              data-category="{{ p.get('category','') |lower }}">
+            <a href="{{ url_for('main.product_detail', product_id=p.get('id')) }}" class="product-link text-decoration-none text-dark" style="display:block;height:100%">
               <div class="card product-card-inner h-100">
                 <div class="position-relative">
                   <img src="{{ prefer_processed(p.get('image') or (p.get('images') and p.get('images')[0]) or url_for('static', filename='placeholder.svg')) }}" class="card-img-top product-image" alt="{{ p.get('name') or p.get('title','Product') }}">
@@ -479,6 +483,14 @@ Data: Fetches all products and their store prices from database
                     </p>
                   {% endif %}
                   <div class="d-grid gap-2">
+                    <button type="button" class="btn add-to-list-btn"
+                      data-name="{{ p.get('name') or p.get('title','') }}"
+                      data-id="{{ p.get('id') }}"
+                      data-price="{{ (p.get('cheapest') and p.get('cheapest').get('price')) or p.get('price','N/A') }}"
+                      data-image="{{ prefer_processed(p.get('image') or (p.get('images') and p.get('images')[0]) or url_for('static', filename='placeholder.svg')) }}"
+                      data-store="">
+                      <i class="bi bi-cart-plus-fill"></i> Add to List
+                    </button>
                     <button type="button" class="btn view-product-details-btn" 
                       data-bs-toggle="modal" 
                       data-bs-target="#productModal"
@@ -491,17 +503,10 @@ Data: Fetches all products and their store prices from database
                       onmouseout="this.style.opacity='1'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">
                       <i class="bi bi-info-circle"></i> View Details
                     </button>
-                    <button type="button" class="btn add-to-list-btn" 
-                      data-product-name="{{ p.get('name') or p.get('title','') }}" 
-                      data-product-id="{{ p.get('id') }}"
-                      data-product-price="{{ (p.get('cheapest') and p.get('cheapest').get('price')) or p.get('price','N/A') }}"
-                      data-product-image="{{ prefer_processed(p.get('image') or (p.get('images') and p.get('images')[0]) or url_for('static', filename='placeholder.svg')) }}">
-                      <i class="bi bi-cart-plus-fill"></i> Add to List
-                    </button>
                   </div>
                 </div>
               </div>
-            </div>
+              </div>
             </a>
           </div>
         {% endfor %}
@@ -605,40 +610,6 @@ Data: Fetches all products and their store prices from database
     </div>
     {% endif %}
 
-  <!-- Modal for Product Details -->
-  <div class="modal fade" id="productModal" tabindex="-1" aria-labelledby="productModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" style="max-width: 480px;">
-      <div class="modal-content" style="border-radius: 16px; border: 3px solid #667eea; overflow: hidden; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-        <div style="padding: 1.25rem; text-align: center;">
-          <div class="mb-2">
-            <i class="bi bi-info-circle" style="font-size: 2.2rem; color: white;"></i>
-          </div>
-          <h5 class="text-white mb-0 fw-bold">Product Details</h5>
-        </div>
-        <div class="modal-body" style="padding: 1rem 1.25rem;">
-          <img src="{{ prefer_processed(url_for('static', filename='placeholder.svg')) or url_for('static', filename='placeholder.svg') }}" class="img-fluid mb-3 product-modal-image" alt="Product" style="border-radius: 12px; background: white; padding: 0.5rem; max-height: 250px; width: 100%; object-fit: contain;">
-          <h6 class="product-modal-title" style="color: white; font-weight: 600; margin-bottom: 1rem;">Product Name</h6>
-          
-          <div class="mb-3">
-            <label style="color: rgba(255, 255, 255, 0.9); font-size: 0.9rem; font-weight: 600; margin-bottom: 0.5rem; display: block;">Select Store</label>
-            <select id="product-modal-store-selector" class="form-select" style="border: none; border-radius: 8px; padding: 0.6rem;">
-              <option value="">Select a store...</option>
-            </select>
-          </div>
-          
-          <div id="product-modal-details">
-            <p class="product-modal-price" style="color: rgba(255, 255, 255, 0.95); margin-bottom: 0.5rem; display: none;"><strong>Price:</strong> <span></span></p>
-            <p class="product-modal-discount" style="color: rgba(255, 255, 255, 0.95); margin-bottom: 0.5rem; display: none;"><strong>Discount:</strong> <span></span></p>
-            <p class="product-modal-expires" style="color: rgba(255, 255, 255, 0.95); margin-bottom: 0; display: none;"><strong>Expires in:</strong> <span></span></p>
-          </div>
-        </div>
-        <div class="modal-footer" style="border: none; padding: 0.75rem 1.25rem; justify-content: center; gap: 0.75rem;">
-          <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="border: none; padding: 0.5rem 1.25rem; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.backgroundColor='#d3d3d3';" onmouseout="this.style.backgroundColor='white';">Close</button>
-          <button type="button" class="btn btn-light add-to-cart-btn" style="background: white; color: #667eea; padding: 0.5rem 1.25rem; font-weight: 600; border: none; transition: all 0.2s ease; display: none;" onmouseover="this.style.background='#e8ecff';" onmouseout="this.style.background='white';"><i class="bi bi-cart-plus me-1"></i>Add to List</button>
-        </div>
-      </div>
-    </div>
-  </div>
 
   <!-- Modal for Selecting Shopping List -->
   <div class="modal fade" id="listSelectorModal" tabindex="-1" aria-labelledby="listSelectorLabel" aria-hidden="true">

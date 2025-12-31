@@ -17,6 +17,22 @@ document.addEventListener('DOMContentLoaded', () => {
   setupCompareHandlers();
   setupCompareFilters();
   setupPaginationSmoothTransition();
+
+  // Always hide product modal on page load (prevents unwanted popup on back)
+  const productModalEl = document.getElementById('productModal');
+  if (productModalEl) {
+    const modalInstance = bootstrap.Modal.getOrCreateInstance(productModalEl);
+    modalInstance.hide();
+  }
+});
+
+// Hide product modal on browser back navigation (prevents unwanted popup)
+window.addEventListener('pageshow', function(event) {
+  const productModalEl = document.getElementById('productModal');
+  if (productModalEl) {
+    const modalInstance = bootstrap.Modal.getOrCreateInstance(productModalEl);
+    modalInstance.hide();
+  }
 });
 
 // BOOTSTRAP: Activate tooltip popovers
@@ -71,6 +87,25 @@ function setupCompareHandlers() {
 }
 
 // Client-side filters, search and sorting for the Compare page
+// Store selection mechanic for compare page
+document.addEventListener('click', function(e) {
+  const storeItem = e.target.closest('.store-item');
+  if (storeItem) {
+    // Only allow one selected at a time per product card
+    const productCard = storeItem.closest('.card');
+    if (productCard) {
+      const allStoreItems = productCard.querySelectorAll('.store-item');
+      allStoreItems.forEach(item => {
+        if (item !== storeItem) item.classList.remove('selected');
+      });
+    }
+    // Toggle selection on click
+    storeItem.classList.toggle('selected');
+    // Prevent any navigation or detail logic
+    e.preventDefault();
+    e.stopPropagation();
+  }
+});
 function setupCompareFilters() {
   const productsRow = document.getElementById('products-grid') || document.querySelector('section.container .row.g-4');
   if (!productsRow) return;
