@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Hide product modal on browser back navigation (prevents unwanted popup)
-window.addEventListener('pageshow', function(event) {
+window.addEventListener('pageshow', function (event) {
   const productModalEl = document.getElementById('productModal');
   if (productModalEl) {
     const modalInstance = bootstrap.Modal.getOrCreateInstance(productModalEl);
@@ -64,7 +64,7 @@ function setupCompareHandlers() {
       const priceText = li.textContent || li.innerText || '';
       return { node: li, price: parsePriceFromText(priceText) };
     });
-    mapped.sort((a,b) => a.price - b.price);
+    mapped.sort((a, b) => a.price - b.price);
     // clear existing list and append sorted nodes
     list.innerHTML = '';
     mapped.forEach((m, idx) => {
@@ -88,7 +88,7 @@ function setupCompareHandlers() {
 
 // Client-side filters, search and sorting for the Compare page
 // Store selection mechanic for compare page
-document.addEventListener('click', function(e) {
+document.addEventListener('click', function (e) {
   const storeItem = e.target.closest('.store-item');
   if (storeItem) {
     // Only allow one selected at a time per product card
@@ -132,7 +132,7 @@ function setupCompareFilters() {
     productDivs.forEach(div => {
       try {
         const stores = JSON.parse(div.getAttribute('data-stores') || '[]');
-        stores.forEach(s => { if (s && (s.store || s.name)) set.add((s.store||s.name).trim()); });
+        stores.forEach(s => { if (s && (s.store || s.name)) set.add((s.store || s.name).trim()); });
       } catch (e) { }
     });
     if (storeSelect) {
@@ -174,7 +174,7 @@ function setupCompareFilters() {
       if (storeVal) {
         try {
           const stores = JSON.parse(col.getAttribute('data-stores') || '[]');
-          storeMatch = stores.some(s => { const n = (s.store||s.name||'').toString().trim(); return n.toLowerCase() === storeVal.toLowerCase(); });
+          storeMatch = stores.some(s => { const n = (s.store || s.name || '').toString().trim(); return n.toLowerCase() === storeVal.toLowerCase(); });
         } catch (e) { storeMatch = false; }
       }
 
@@ -201,9 +201,9 @@ function setupCompareFilters() {
     // sort visible columns
     if (visible.length) {
       if (sortVal === 'price-asc' || sortVal === 'price-desc') {
-        visible.sort((a,b) => sortVal === 'price-asc' ? a.price - b.price : b.price - a.price);
+        visible.sort((a, b) => sortVal === 'price-asc' ? a.price - b.price : b.price - a.price);
       } else if (sortVal === 'name-asc' || sortVal === 'name-desc') {
-        visible.sort((a,b) => sortVal === 'name-asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name));
+        visible.sort((a, b) => sortVal === 'name-asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name));
       }
       // re-append in sorted order
       visible.forEach(v => productsRow.appendChild(v.col));
@@ -222,12 +222,12 @@ function setupCompareFilters() {
   };
 
   collectStoresAndCategories();
-  
+
   // Add search event listeners to apply filters on search
   searchInput && searchInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); applyFilters(); } });
   searchBtn && searchBtn.addEventListener('click', (e) => { e.preventDefault(); applyFilters(); });
   searchInput && searchInput.addEventListener('input', () => { applyFilters(); });
-  
+
   applyBtn && applyBtn.addEventListener('click', (e) => { e.preventDefault(); applyFilters(); });
   clearBtn && clearBtn.addEventListener('click', (e) => { e.preventDefault(); clearFilters(); });
   categorySelect && categorySelect.addEventListener('change', () => {
@@ -330,7 +330,7 @@ function setupSearchFunctionality() {
       // attach event for view-details and claim buttons
       document.querySelectorAll('.view-details-btn').forEach(el => el.removeEventListener('click', noop));
       // small rebind: call setupProductModalHandlers to rebind handlers to new elements
-      try { setupProductModalHandlers(); } catch(e) {}
+      try { setupProductModalHandlers(); } catch (e) { }
     } catch (err) {
       showNotification('Search failed', 'danger');
     }
@@ -367,9 +367,9 @@ function setupSearchFunctionality() {
     // sort
     if (visible.length) {
       if (sortVal === 'price-asc' || sortVal === 'price-desc') {
-        visible.sort((a,b) => sortVal === 'price-asc' ? a.price - b.price : b.price - a.price);
+        visible.sort((a, b) => sortVal === 'price-asc' ? a.price - b.price : b.price - a.price);
       } else if (sortVal === 'name-asc' || sortVal === 'name-desc') {
-        visible.sort((a,b) => sortVal === 'name-asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name));
+        visible.sort((a, b) => sortVal === 'name-asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name));
       }
       visible.forEach(v => productsGrid.appendChild(v.col));
     }
@@ -393,7 +393,7 @@ function setupSearchFunctionality() {
   if (clearFiltersBtn) clearFiltersBtn.addEventListener('click', (e) => { e.preventDefault(); clearHomeFilters(); });
 }
 
-function noop() {}
+function noop() { }
 
 // Store suggestions for stores page: fetch stores and show dropdown on focus/hover
 function setupStoreSuggestions() {
@@ -532,7 +532,7 @@ function setupStoreSuggestions() {
   };
 
   input?.addEventListener('input', () => filterGrid(input.value.trim()));
-  input?.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); filterGrid(input.value.trim()); }});
+  input?.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); filterGrid(input.value.trim()); } });
 
   if (cards.length) {
     cards[0].click();
@@ -640,74 +640,65 @@ function showNotification(message, type = 'info') {
   setTimeout(removeToast, TOAST_DURATION_MS);
 }
 
-function formatPrice(price) { if (typeof price === 'string') price = price.replace(/[^0-9.]/g,''); return Number(price)||0; }
+function formatPrice(price) { if (typeof price === 'string') price = price.replace(/[^0-9.]/g, ''); return Number(price) || 0; }
 
 // Global variable to store pending item
 let pendingItemToAdd = null;
 
 // Global list selector function - shows modal for user to select which list to add item to
-window.showListSelector = async function(item) {
+window.showListSelector = async function (item) {
   pendingItemToAdd = item;
-  
+
   try {
     // Fetch user's shopping lists
     const response = await fetch('/api/get-lists');
     const data = await response.json();
-    
+
     if (!data.success || !data.lists || data.lists.length === 0) {
       showNotification('No shopping lists available. Please create one first.', 'warning');
       return;
     }
-    
+
     // Build modal content
     const modalBody = document.getElementById('globalListSelectorBody');
     if (!modalBody) {
       // Fallback to direct add if modal doesn't exist
       return await apiPostJson('/api/list/add-item', { item });
     }
-    
+
     modalBody.innerHTML = '';
-    
+
     data.lists.forEach(list => {
       const itemCount = list.items ? list.items.length : 0;
       const card = document.createElement('div');
-      card.className = 'card mb-2 list-selector-option';
-      card.style.cursor = 'pointer';
-      card.style.transition = 'all 0.2s ease';
-      
+      card.className = 'list-selector-option';
+
       card.innerHTML = `
-        <div class="card-body p-3">
-          <div class="d-flex justify-content-between align-items-center">
-            <div>
-              <h6 class="mb-1">
-                <i class="bi bi-list-ul me-2"></i>${escapeHtml(list.name)}
-              </h6>
-              <small class="text-muted">${itemCount} item${itemCount !== 1 ? 's' : ''}</small>
-            </div>
-            <button class="btn btn-sm btn-primary">
-              <i class="bi bi-plus-circle me-1"></i>Add Here
-            </button>
+        <div class="card-body">
+          <div class="list-selector-icon">
+            <i class="bi bi-bag-heart-fill"></i>
+          </div>
+          <div class="list-info">
+            <div class="list-title">${escapeHtml(list.name)}</div>
+            <div class="list-subtitle">${itemCount} item${itemCount !== 1 ? 's' : ''}</div>
+          </div>
+          <div class="list-action-icon">
+            <i class="bi bi-plus-lg"></i>
           </div>
         </div>
       `;
-      
+
       card.addEventListener('click', () => addItemToSelectedList(list.id));
-      card.addEventListener('mouseenter', () => {
-        card.style.backgroundColor = '#f8f9fa';
-        card.style.transform = 'translateX(5px)';
-      });
-      card.addEventListener('mouseleave', () => {
-        card.style.backgroundColor = '';
-        card.style.transform = '';
-      });
-      
       modalBody.appendChild(card);
     });
-    
+
     // Show modal
     const modalEl = document.getElementById('globalListSelectorModal');
     if (modalEl) {
-      const modal = new bootstrap.Modal(modalEl);
+      let modal = bootstrap.Modal.getInstance(modalEl);
+      if (!modal) {
+        modal = new bootstrap.Modal(modalEl);
+      }
       modal.show();
     }
   } catch (err) {
@@ -722,25 +713,25 @@ async function addItemToSelectedList(listId) {
     showNotification('No item to add', 'danger');
     return;
   }
-  
+
   try {
     const response = await apiPostJson('/api/list/add-item', { item: pendingItemToAdd, list_id: listId });
-    
+
     if (response && response.success) {
       showNotification(`${pendingItemToAdd.name || 'Item'} added to shopping list`, 'success');
-      
+
       // Hide modal
       const modalEl = document.getElementById('globalListSelectorModal');
       if (modalEl) {
         const modal = bootstrap.Modal.getInstance(modalEl);
         if (modal) modal.hide();
       }
-      
+
       // Refresh shopping list UI if on that page
       if (typeof refreshShoppingListUI === 'function') {
         refreshShoppingListUI();
       }
-      
+
       pendingItemToAdd = null;
     } else {
       showNotification(response?.error || 'Could not add item to list', 'danger');
@@ -777,7 +768,7 @@ async function addItemToShoppingList(item) {
 // Escape HTML to safely insert into innerHTML
 function escapeHtml(unsafe) {
   if (unsafe === null || unsafe === undefined) return '';
-  return String(unsafe).replace(/[&<>'"]/g, function(m) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]); });
+  return String(unsafe).replace(/[&<>'"]/g, function (m) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]); });
 }
 
 let productModalHandlerBound = false;
@@ -787,7 +778,7 @@ function setupShoppingListHandlers() {
   // remove buttons
   document.querySelectorAll('.remove-item-btn').forEach(btn => btn.addEventListener('click', async (e) => {
     const name = btn.getAttribute('data-name') || btn.getAttribute('data-id'); if (!name) return;
-    const r = await apiPostJson('/shopping-list/remove', { item: name }); if (r && r.success) { showNotification('Item removed','info'); refreshShoppingListUI(); } else showNotification('Could not remove item','danger');
+    const r = await apiPostJson('/shopping-list/remove', { item: name }); if (r && r.success) { showNotification('Item removed', 'info'); refreshShoppingListUI(); } else showNotification('Could not remove item', 'danger');
   }));
 
   // checkbox toggles
@@ -799,6 +790,7 @@ function setupShoppingListHandlers() {
 // Claim buttons: attach handlers to claim featured deals and add to user's shopping list
 function setupClaimButtons() {
   document.querySelectorAll('.claim-deal-btn').forEach(btn => btn.addEventListener('click', async (e) => {
+    e.stopPropagation(); // Prevent card click redirect
     const id = btn.getAttribute('data-id') || btn.getAttribute('data-title');
     const title = btn.getAttribute('data-title') || '';
     const price = btn.getAttribute('data-price') || '';
@@ -836,7 +828,7 @@ function setupClaimButtons() {
       offer: offerPayload || offerStr || null,
       deal_id: id
     };
-    
+
     try {
       const res = await addItemToShoppingList(item);
       if (res && res.deferred) {
@@ -858,14 +850,14 @@ function setupClaimButtons() {
 }
 
 // Global function to handle add to cart button clicks
-window.handleAddToCart = async function(event, name, price, image, store) {
+window.handleAddToCart = async function (event, name, price, image, store) {
   event.stopPropagation();
   event.preventDefault();
-  
+
   const item = { name, price, store, image };
   const priceVal = formatPrice(price);
   if (!isNaN(priceVal) && priceVal > 0) item.price_val = priceVal;
-  
+
   try {
     const res = await addItemToShoppingList(item);
     if (res && res.deferred) {
@@ -897,7 +889,7 @@ function setupProductModalHandlers() {
     if (!target) return;
 
     // View Details button clicked: try to fetch full product details from server by id or name
-    const viewBtn = target.closest('.view-details-btn');
+    const viewBtn = target.closest('.view-details-btn, .btn-premium-view');
     if (viewBtn) {
       const pid = viewBtn.getAttribute('data-id') || viewBtn.getAttribute('data-product-id') || null;
       const titleAttr = viewBtn.getAttribute('data-title') || '';
@@ -916,7 +908,7 @@ function setupProductModalHandlers() {
         }
         modal.querySelector('.modal-title') && (modal.querySelector('.modal-title').textContent = title + ' Details');
         const img = modal.querySelector('.modal-body img'); if (img) img.src = image;
-        if (img) { img.style.width='700px'; img.style.height='700px'; img.style.objectFit='cover'; }
+        if (img) { img.style.width = '700px'; img.style.height = '700px'; img.style.objectFit = 'cover'; }
         const body = modal.querySelector('.modal-body');
         if (body) {
           body.querySelector('h6') && (body.querySelector('h6').textContent = title);
@@ -1007,7 +999,7 @@ function setupProductModalHandlers() {
           showNotification('Added to shopping list', 'success');
           // Close modal if button was inside one
           if (modalRoot) {
-            try { const modalEl = bootstrap.Modal.getInstance(modalRoot); if (modalEl) modalEl.hide(); } catch(e){}
+            try { const modalEl = bootstrap.Modal.getInstance(modalRoot); if (modalEl) modalEl.hide(); } catch (e) { }
           }
           refreshShoppingListUI();
         } else if (res && res.error) {
@@ -1021,18 +1013,65 @@ function setupProductModalHandlers() {
       return;
     }
 
-    // Add to List button in search results or elsewhere
-    if (target.classList && target.classList.contains('add-to-list-btn')) {
-      const name = target.getAttribute('data-name') || target.getAttribute('data-title') || 'Item';
-      const price = target.getAttribute('data-price') || '';
-      const id = target.getAttribute('data-id') || null;
-      const store = target.getAttribute('data-store') || '';
-      const img = target.getAttribute('data-image') || '';
-      
+    // Add to List button in search results or elsewhere (including Compare Page)
+    if (target.classList && (target.classList.contains('add-to-list-btn') || target.closest('.add-to-list-btn') ||
+      target.classList.contains('btn-premium-add') || target.closest('.btn-premium-add'))) {
+      e.stopPropagation(); // Stop redirection
+      e.preventDefault();
+
+      const btn = target.classList.contains('add-to-list-btn') ? target :
+        (target.closest('.add-to-list-btn') || target.closest('.btn-premium-add') || target);
+      const name = btn.getAttribute('data-name') || btn.getAttribute('data-title') || 'Item';
+      const offerJson = btn.getAttribute('data-offer-json') || '';
+      const offerType = btn.getAttribute('data-offer-type') || '';
+      const offerX = btn.getAttribute('data-offer-x') || '';
+      const offerY = btn.getAttribute('data-offer-y') || '';
+      const dealId = btn.getAttribute('data-id') || btn.getAttribute('data-deal-id') || null;
+
+      // Determine effective price and store based on selection state (if in compare page context)
+      // Check if this button is inside a product card with a selected store item
+      let price = btn.getAttribute('data-price') || '';
+      let store = btn.getAttribute('data-store') || '';
+      const productCard = btn.closest('.product-card');
+
+      if (productCard) {
+        // If we are in a compare card context, we MUST check if a store is selected
+        // look for .store-item.selected inside this card
+        const selectedStoreItem = productCard.querySelector('.store-item.selected');
+
+        // If there are store options available but none selected, prompt user
+        const hasStoreOptions = productCard.querySelector('.store-item');
+        if (hasStoreOptions && !selectedStoreItem) {
+          showNotification('Please select a store first', 'warning');
+          return;
+        }
+
+        // If a store is selected, use its specific price and name
+        if (selectedStoreItem) {
+          store = selectedStoreItem.getAttribute('data-store-name');
+          const storePrice = selectedStoreItem.getAttribute('data-store-price');
+          if (storePrice) price = storePrice;
+        }
+      }
+
+      const id = btn.getAttribute('data-id') || null;
+      const img = btn.getAttribute('data-image') || '';
+
+      // Build offer payload if present
+      let offerPayload = null;
+      try { if (offerJson) offerPayload = JSON.parse(offerJson); } catch (err) { offerPayload = null; }
+      if (!offerPayload && offerType === 'buyXgetY' && offerX && offerY) {
+        const xNum = parseInt(offerX, 10) || 0;
+        const yNum = parseInt(offerY, 10) || 0;
+        if (xNum && yNum) offerPayload = { type: 'buyXgetY', x: xNum, y: yNum };
+      }
+
       // Create item object and show list selector
       const item = { name, price, id };
       if (img) item.image = img;
       if (store) item.store = store;
+      if (dealId) item.deal_id = dealId;
+      if (offerPayload) item.offer = offerPayload;
       const priceVal = formatPrice(price);
       if (!isNaN(priceVal) && priceVal > 0) item.price_val = priceVal;
 
@@ -1040,7 +1079,7 @@ function setupProductModalHandlers() {
       try {
         const res = await addItemToShoppingList(item);
         if (res && res.deferred) {
-          showNotification('Select a list to add this item', 'info');
+          // List selector will be shown
           return;
         }
         if (res && (res.success || res.success === true)) {
@@ -1073,10 +1112,10 @@ function setupProfileEditHandlers() {
     // populate inputs with current values
     const phoneText = phoneEl ? phoneEl.textContent.trim() : '';
     const addressText = addressEl ? addressEl.textContent.trim() : '';
-    
+
     const currentPhone = phoneText.toLowerCase().includes('not provided') ? '' : phoneText;
     const currentAddress = addressText.toLowerCase().includes('not provided') ? '' : addressText;
-    
+
     // Try to extract country code and phone number
     const countryCodeSelect = document.getElementById('profile-country-code');
     if (currentPhone && phoneInput && countryCodeSelect) {
@@ -1091,7 +1130,7 @@ function setupProfileEditHandlers() {
     } else if (phoneInput) {
       phoneInput.value = '';
     }
-    
+
     if (addressInput) addressInput.value = currentAddress;
   });
 
@@ -1109,7 +1148,7 @@ function setupProfileEditHandlers() {
         if (phoneEl) phoneEl.textContent = phone || 'Not provided';
         if (addressEl) addressEl.textContent = address || 'Not provided';
         // hide modal
-        try { const modal = bootstrap.Modal.getInstance(document.getElementById('profileModal')); if (modal) modal.hide(); } catch (e) {}
+        try { const modal = bootstrap.Modal.getInstance(document.getElementById('profileModal')); if (modal) modal.hide(); } catch (e) { }
         showNotification('Profile updated', 'success');
       } else {
         showNotification(j.error || 'Could not update profile', 'danger');
@@ -1130,26 +1169,45 @@ function setupFeaturedDealsSearch() {
   if (!dealsGrid) {
     dealsGrid = document.querySelector('section.container .row.g-4');
   }
-  
+
   const applyFiltersBtn = document.getElementById('apply-filters');
   const clearFiltersBtn = document.getElementById('clear-filters');
   const minPrice = document.getElementById('min-price');
   const maxPrice = document.getElementById('max-price');
   const sortOrder = document.getElementById('sort-order');
   const categorySelect = document.getElementById('category-filter');
+  const storeSelect = document.getElementById('store-filter');
   const categoryChipsRow = document.querySelector('.category-chip-row');
-  
-  if (!input || !btn || !dealsGrid) return;
+
+  if (!input || !dealsGrid) return;
 
   let allDeals = [];
 
   const collectAllDeals = () => {
     allDeals = Array.from(dealsGrid.querySelectorAll('[data-name]'));
+
+    // Populate store filter dropdown
+    if (storeSelect) {
+      const stores = new Set();
+      allDeals.forEach(col => {
+        const s = col.getAttribute('data-store');
+        if (s) stores.add(s);
+      });
+
+      // Preserve "All Stores"
+      storeSelect.innerHTML = '<option value="">All Stores</option>';
+      Array.from(stores).sort().forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s.toLowerCase();
+        opt.textContent = s.charAt(0).toUpperCase() + s.slice(1);
+        storeSelect.appendChild(opt);
+      });
+    }
   };
 
-  const parsePrice = (v) => { 
-    const n = Number(String(v || '').replace(/[^0-9.\-]/g, '')); 
-    return isNaN(n) ? 0 : n; 
+  const parsePrice = (v) => {
+    const n = Number(String(v || '').replace(/[^0-9.\-]/g, ''));
+    return isNaN(n) ? 0 : n;
   };
 
   const doSearch = () => {
@@ -1161,15 +1219,17 @@ function setupFeaturedDealsSearch() {
     const chipVal = activeChip ? (activeChip.dataset.categoryChip || '').trim() : '';
     const selectCategoryVal = categorySelect ? (categorySelect.value || '').trim() : '';
     const categoryVal = chipVal || selectCategoryVal;
+    const storeVal = storeSelect ? (storeSelect.value || '').trim().toLowerCase() : '';
 
     const visible = [];
     allDeals.forEach(col => {
       if (!col) return;
-      
+
       const productName = (col.getAttribute('data-name') || '').toLowerCase();
       const priceText = col.getAttribute('data-price') || '0';
       const price = parsePrice(priceText);
       const categoryAttr = (col.getAttribute('data-category') || '').toLowerCase();
+      const storeAttr = (col.getAttribute('data-store') || '').toLowerCase();
 
       // search match
       let searchMatch = true;
@@ -1188,7 +1248,13 @@ function setupFeaturedDealsSearch() {
       if (!isNaN(minVal)) priceMatch = priceMatch && (price >= minVal);
       if (!isNaN(maxVal)) priceMatch = priceMatch && (price <= maxVal);
 
-      if (searchMatch && priceMatch && categoryMatch) {
+      // store match
+      let storeMatch = true;
+      if (storeVal) {
+        storeMatch = storeAttr === storeVal;
+      }
+
+      if (searchMatch && priceMatch && categoryMatch && storeMatch) {
         col.style.display = '';
         visible.push({ col, price, name: productName });
       } else {
@@ -1199,31 +1265,47 @@ function setupFeaturedDealsSearch() {
     // sort
     if (visible.length) {
       if (sortVal === 'price-asc' || sortVal === 'price-desc') {
-        visible.sort((a,b) => sortVal === 'price-asc' ? a.price - b.price : b.price - a.price);
+        visible.sort((a, b) => sortVal === 'price-asc' ? a.price - b.price : b.price - a.price);
       } else if (sortVal === 'name-asc' || sortVal === 'name-desc') {
-        visible.sort((a,b) => sortVal === 'name-asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name));
+        visible.sort((a, b) => sortVal === 'name-asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name));
       }
       visible.forEach(v => dealsGrid.appendChild(v.col));
     }
   };
 
+  // Handle server-side navigation for search/filters
+  const handleServerDealsSearch = () => {
+    const q = input.value.trim();
+    const activeChip = categoryChipsRow ? categoryChipsRow.querySelector('.category-chip.active') : null;
+    const categoryVal = activeChip ? (activeChip.dataset.categoryChip || '').trim() : '';
+
+    const params = new URLSearchParams();
+    if (q) params.set('search', q);
+    if (categoryVal) params.set('category', categoryVal);
+    params.set('page', '1'); // always reset to first page on new search
+
+    window.location.href = window.location.pathname + '?' + params.toString();
+  };
+
   const clearFeaturedFilters = () => {
-    if (input) input.value = '';
-    if (minPrice) minPrice.value = '';
-    if (maxPrice) maxPrice.value = '';
-    if (sortOrder) sortOrder.value = 'price-asc';
-    allDeals.forEach(col => { if (col) col.style.display = ''; });
+    window.location.href = window.location.pathname;
   };
 
   collectAllDeals();
-  btn && btn.addEventListener('click', (e) => { e.preventDefault(); doSearch(); });
-  input && input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); doSearch(); } });
+  input && input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleServerDealsSearch();
+    }
+  });
   input && input.addEventListener('input', () => { doSearch(); });
-  if (applyFiltersBtn) applyFiltersBtn.addEventListener('click', (e) => { e.preventDefault(); doSearch(); });
+  if (applyFiltersBtn) applyFiltersBtn.addEventListener('click', (e) => { e.preventDefault(); handleServerDealsSearch(); });
   if (clearFiltersBtn) clearFiltersBtn.addEventListener('click', (e) => { e.preventDefault(); clearFeaturedFilters(); });
   if (categorySelect) categorySelect.addEventListener('change', () => {
-    if (categoryChipsRow) categoryChipsRow.querySelectorAll('.category-chip').forEach(ch => ch.classList.remove('active'));
-    doSearch();
+    handleServerDealsSearch();
+  });
+  if (storeSelect) storeSelect.addEventListener('change', () => {
+    doSearch(); // Store filtering remains client-side for now as it's not in the route query yet
   });
   if (categoryChipsRow) {
     categoryChipsRow.addEventListener('click', (e) => {
@@ -1231,8 +1313,7 @@ function setupFeaturedDealsSearch() {
       if (!btnEl) return;
       categoryChipsRow.querySelectorAll('.category-chip').forEach(ch => ch.classList.remove('active'));
       btnEl.classList.add('active');
-      if (categorySelect) categorySelect.value = '';
-      doSearch();
+      handleServerDealsSearch();
     });
   }
 }
@@ -1242,9 +1323,9 @@ function setupShoppingListInteractions() {
 
   // drag/drop
   let dragSrc = null;
-  list.addEventListener('dragstart', (e) => { const r = e.target.closest('.item-row'); if (!r) return; dragSrc = r; e.dataTransfer.effectAllowed='move'; });
+  list.addEventListener('dragstart', (e) => { const r = e.target.closest('.item-row'); if (!r) return; dragSrc = r; e.dataTransfer.effectAllowed = 'move'; });
   list.addEventListener('dragover', (e) => e.preventDefault());
-  list.addEventListener('drop', (e) => { e.preventDefault(); const target = e.target.closest('.item-row'); if (!target || !dragSrc || target===dragSrc) return; list.insertBefore(dragSrc, target); postCurrentListOrder(); });
+  list.addEventListener('drop', (e) => { e.preventDefault(); const target = e.target.closest('.item-row'); if (!target || !dragSrc || target === dragSrc) return; list.insertBefore(dragSrc, target); postCurrentListOrder(); });
 
   // clear purchased
   document.getElementById('clear-purchased')?.addEventListener('click', () => {
@@ -1255,11 +1336,11 @@ function setupShoppingListInteractions() {
   // clear all
   document.getElementById('clear-all')?.addEventListener('click', () => {
     if (!confirm('Clear all items from your shopping list?')) return;
-    apiPostJson('/shopping-list/clear', {}).then(res => { if (res && res.success) { showNotification('All items cleared', 'info'); refreshShoppingListUI(); } else showNotification('Could not clear items', 'danger'); }).catch(()=> showNotification('Server error', 'danger'));
+    apiPostJson('/shopping-list/clear', {}).then(res => { if (res && res.success) { showNotification('All items cleared', 'info'); refreshShoppingListUI(); } else showNotification('Could not clear items', 'danger'); }).catch(() => showNotification('Server error', 'danger'));
   });
 
   // save order
-  document.getElementById('save-order')?.addEventListener('click', () => { postCurrentListOrder().then(r => { if (r && r.success) showNotification('Order saved','success'); }); });
+  document.getElementById('save-order')?.addEventListener('click', () => { postCurrentListOrder().then(r => { if (r && r.success) showNotification('Order saved', 'success'); }); });
 
   // quantity increment/decrement handling (delegated)
   list.addEventListener('click', (e) => {
@@ -1275,7 +1356,7 @@ function setupShoppingListInteractions() {
       row.setAttribute('data-qty', String(qty));
       if (badge) badge.textContent = String(qty);
       // update per-row displayed price using effective unit price
-      const unit = formatPrice(row.getAttribute('data-price') || (row.querySelector('.item-price')?.textContent||'0'));
+      const unit = formatPrice(row.getAttribute('data-price') || (row.querySelector('.item-price')?.textContent || '0'));
       const offerObj = parseOfferFromRow(row);
       const effectiveUnit = effectiveUnitPrice(unit, offerObj);
       const priceEl = row.querySelector('.item-price');
@@ -1295,17 +1376,17 @@ async function postCurrentListOrder() {
     purchased: r.classList.contains('purchased'),
     qty: Number(r.getAttribute('data-qty') || 1),
     // price here is the unit price (not total); server will persist this value
-    price: formatPrice(r.getAttribute('data-price') || (r.querySelector('.item-price')?.textContent||'0'))
+    price: formatPrice(r.getAttribute('data-price') || (r.querySelector('.item-price')?.textContent || '0'))
   }));
   return apiPostJson('/shopping-list/update', { items });
 }
 
-let _saveTimer = null; function debounceSaveOrder(delay=700){ if(_saveTimer) clearTimeout(_saveTimer); _saveTimer = setTimeout(()=>postCurrentListOrder(), delay); }
+let _saveTimer = null; function debounceSaveOrder(delay = 700) { if (_saveTimer) clearTimeout(_saveTimer); _saveTimer = setTimeout(() => postCurrentListOrder(), delay); }
 
 const parseOfferFromRow = (row) => {
   const offerJson = row.getAttribute('data-offer-json');
   if (offerJson) {
-    try { const obj = JSON.parse(offerJson); if (obj && obj.type) return obj; } catch (e) {}
+    try { const obj = JSON.parse(offerJson); if (obj && obj.type) return obj; } catch (e) { }
   }
   const offerType = row.getAttribute('data-offer-type') || '';
   const ox = parseInt(row.getAttribute('data-offer-x') || '0', 10) || 0;
@@ -1327,7 +1408,7 @@ function effectiveUnitPrice(basePrice, offerObj) {
 }
 
 // computeTotals: sum effective unit price * qty (planned vs remaining)
-function computeTotals(){
+function computeTotals() {
   const rows = Array.from(document.querySelectorAll('.item-row'));
   let planned = 0;
   let remaining = 0;
@@ -1356,7 +1437,8 @@ function computeTotals(){
 }
 
 // minimal cart counter kept for compatibility
-class CartCounter{ constructor(){ this.cartItems=[]; this.loadFromStorage(); this.updateDisplay(); } addItem(name, price){ const it={name,price,id:Date.now()}; this.cartItems.push(it); this.saveToStorage(); this.updateDisplay(); return it.id;} removeItem(id){ this.cartItems=this.cartItems.filter(i=>i.id!==id); this.saveToStorage(); this.updateDisplay(); } getCount(){ return this.cartItems.length;} getTotal(){ return this.cartItems.reduce((s,i)=>s+Number(i.price||0),0);} clearCart(){ this.cartItems=[]; this.saveToStorage(); this.updateDisplay(); } updateDisplay(){ const b=document.getElementById('cart-counter'); if(b){ b.textContent=this.getCount(); b.style.display=this.getCount()>0?'inline-block':'none'; } const t=document.getElementById('cart-total'); if(t) t.textContent=`€${this.getTotal().toFixed(2)}`; } saveToStorage(){ localStorage.setItem('smartGroceryCart', JSON.stringify(this.cartItems)); } loadFromStorage(){ try{ this.cartItems=JSON.parse(localStorage.getItem('smartGroceryCart'))||[] }catch(e){ this.cartItems=[] } }
+class CartCounter {
+  constructor() { this.cartItems = []; this.loadFromStorage(); this.updateDisplay(); } addItem(name, price) { const it = { name, price, id: Date.now() }; this.cartItems.push(it); this.saveToStorage(); this.updateDisplay(); return it.id; } removeItem(id) { this.cartItems = this.cartItems.filter(i => i.id !== id); this.saveToStorage(); this.updateDisplay(); } getCount() { return this.cartItems.length; } getTotal() { return this.cartItems.reduce((s, i) => s + Number(i.price || 0), 0); } clearCart() { this.cartItems = []; this.saveToStorage(); this.updateDisplay(); } updateDisplay() { const b = document.getElementById('cart-counter'); if (b) { b.textContent = this.getCount(); b.style.display = this.getCount() > 0 ? 'inline-block' : 'none'; } const t = document.getElementById('cart-total'); if (t) t.textContent = `€${this.getTotal().toFixed(2)}`; } saveToStorage() { localStorage.setItem('smartGroceryCart', JSON.stringify(this.cartItems)); } loadFromStorage() { try { this.cartItems = JSON.parse(localStorage.getItem('smartGroceryCart')) || [] } catch (e) { this.cartItems = [] } }
 }
 const cart = new CartCounter();
 
@@ -1371,13 +1453,13 @@ async function toggleFavorite(productId, buttonElement) {
 
     if (response.ok) {
       const data = await response.json();
-      
+
       if (buttonElement) {
         const btn = typeof buttonElement === 'string' ? document.querySelector(buttonElement) : buttonElement;
         if (btn) {
           // Toggle active state
           btn.classList.toggle('active');
-          
+
           // Update icon
           const icon = btn.querySelector('i');
           if (icon) {
@@ -1387,7 +1469,7 @@ async function toggleFavorite(productId, buttonElement) {
               icon.className = 'bi bi-heart';
             }
           }
-          
+
           // If on profile page and removing favorite, animate removal
           if (data && data.action === 'removed') {
             const card = btn.closest('.favorite-card');
@@ -1397,11 +1479,11 @@ async function toggleFavorite(productId, buttonElement) {
               card.style.transform = 'translateX(-10px)';
               setTimeout(() => {
                 card.remove();
-                
+
                 // Check if there are any favorite cards left
                 const favoritesList = document.getElementById('favorites-list');
                 const remainingCards = document.querySelectorAll('.favorite-card').length;
-                
+
                 if (remainingCards === 0 && favoritesList) {
                   // Show empty state message
                   favoritesList.innerHTML = `
@@ -1418,7 +1500,7 @@ async function toggleFavorite(productId, buttonElement) {
           }
         }
       }
-      
+
       showNotification(
         data && data.action === 'added' ? 'Added to favorites!' : 'Removed from favorites',
         'success'
@@ -1437,7 +1519,7 @@ const favoriteProduct = (event, productId) => {
   event.stopPropagation();
   event.preventDefault();
   const btn = event.target.closest('.favorite-btn');
-  
+
   // If quickFavorite exists (on home page), use that instead
   if (typeof quickFavorite !== 'undefined') {
     quickFavorite(event, productId, btn);

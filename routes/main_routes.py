@@ -90,6 +90,33 @@ def get_db():
         return None
 
 
+def sanitize_mongo_doc(doc):
+    """
+    Recursively convert MongoDB types (ObjectId, Decimal128) to JSON-serializable types.
+    """
+    if doc is None:
+        return None
+    from bson import ObjectId
+    from bson.decimal128 import Decimal128
+    
+    if isinstance(doc, list):
+        return [sanitize_mongo_doc(item) for item in doc]
+    if isinstance(doc, dict):
+        new_doc = {}
+        for k, v in doc.items():
+            if k == '_id' and isinstance(v, ObjectId):
+                new_doc['id'] = str(v)
+            else:
+                new_doc[k] = sanitize_mongo_doc(v)
+        return new_doc
+    if isinstance(doc, ObjectId):
+        return str(doc)
+    if isinstance(doc, Decimal128):
+        # Convert to string first to avoid precision issues with float()
+        return float(str(doc))
+    return doc
+
+
 @main_bp.route('/')
 def home():
     # If the user is not signed in, show the entry page prompting Log In / Sign Up
@@ -168,12 +195,10 @@ def home():
             else:
                 total_deals_count = len(featured_deals) if featured_deals else 0
         
-        # convert ObjectId to string id for templates
-        for doc_list in (stores, products, featured_deals):
-            for d in doc_list:
-                if '_id' in d:
-                    d['id'] = str(d['_id'])
-                    del d['_id']
+        # Sanitize all document lists for templates
+        stores = sanitize_mongo_doc(stores)
+        products = sanitize_mongo_doc(products)
+        featured_deals = sanitize_mongo_doc(featured_deals)
     else:
         using_fallback = True
         print('WARNING: Using in-memory fallback data for home page (DB unavailable)')
@@ -629,55 +654,61 @@ def store_products_page(store_name):
 
 @main_bp.route('/featured-deals')
 def featured_deals_page():
+    """Render featured deals page with server-side pagination (30 per page) and filtering."""
     using_fallback = False
-    deals = []
+    per_page = 30
+    try:
+        page = int(request.args.get('page', 1))
+    except Exception:
+        page = 1
+    page = max(page, 1)
+
+    category_filter = (request.args.get('category') or '').strip()
+    search_query = (request.args.get('search') or '').strip()
     user_email = session.get('user')
     
+    deals = []
     db = get_db()
+    
     if db is not None:
         try:
-            # Fetch featured deals from database
-            featured_deals_list = list(db.featured_deals.find({}))
-            for d in featured_deals_list:
-                if '_id' in d:
-                    d['id'] = str(d['_id'])
-                    del d['_id']
+            # Build query
+            query = {}
+            if category_filter:
+                import re as _re
+                query['category'] = {'$regex': f"^{_re.escape(category_filter)}$", '$options': 'i'}
             
-            # Fetch multibuy offers from database
-            multibuy_offers_list = list(db.multibuy_offers.find({}))
-            for m in multibuy_offers_list:
-                if '_id' in m:
-                    m['id'] = str(m['_id'])
-                    del m['_id']
+            if search_query:
+                import re as _re
+                search_regex = {'$regex': _re.escape(search_query), '$options': 'i'}
+                query['$or'] = [
+                    {'title': search_regex},
+                    {'name': search_regex},
+                    {'store': search_regex},
+                    {'category': search_regex},
+                    {'description': search_regex}
+                ]
+
+            # Fetch deals from both collections and sanitize
+            featured_deals_list = [sanitize_mongo_doc(d) for d in db.featured_deals.find(query)]
+            multibuy_offers_list = [sanitize_mongo_doc(m) for m in db.multibuy_offers.find(query)]
             
             # Combine both lists
             deals = featured_deals_list + multibuy_offers_list
             
-            # Generate notifications for new deals (logged-in user only)
-            if user_email:
+            # Notifications logic (kept same)
+            if user_email and deals:
                 try:
                     from models.notifications_model import create_notification
-                    
                     user = db.users.find_one({'email': user_email})
                     if user:
                         seen_deals = user.get('seen_deals', [])
-                        # Initialize seen_deals if not present
-                        if 'seen_deals' not in user:
-                            db.users.update_one(
-                                {'email': user_email},
-                                {'$set': {'seen_deals': []}}
-                            )
-                            seen_deals = []
-                        
-                        # Find new deals and create notifications
                         new_deal_ids = []
                         for deal in deals:
                             deal_id = deal.get('id')
                             if deal_id and deal_id not in seen_deals:
-                                # Create notification for this new deal
                                 deal_title = deal.get('title') or deal.get('name', 'New Deal')
                                 store_name = deal.get('store', '')
-                                
                                 create_notification({
                                     'user_email': user_email,
                                     'type': 'new_deal',
@@ -688,43 +719,31 @@ def featured_deals_page():
                                     'action_url': '/featured-deals',
                                     'priority': 'normal'
                                 })
-                                
                                 new_deal_ids.append(deal_id)
-                        
-                        # Mark all current deals as seen
                         if new_deal_ids:
                             all_deal_ids = [d.get('id') for d in deals if d.get('id')]
-                            db.users.update_one(
-                                {'email': user_email},
-                                {'$set': {'seen_deals': all_deal_ids}}
-                            )
+                            db.users.update_one({'email': user_email}, {'$set': {'seen_deals': all_deal_ids}})
                 except Exception as e:
-                    print(f'WARNING: Failed to generate notifications for new deals: {e}')
+                    print(f'WARNING: Failed notifications: {e}')
             
-            # If no deals found, use JSON fallback
-            if not deals:
+            if not deals and not query:
                 using_fallback = True
                 deals = load_featured_deals_fallback()
         except Exception as e:
-            print(f'WARNING: MongoDB query failed for deals: {e}, using JSON fallback')
+            print(f'WARNING: MongoDB query failed for deals: {e}')
             using_fallback = True
             deals = load_featured_deals_fallback()
     else:
         using_fallback = True
-        print('WARNING: DB unavailable for featured deals, using JSON fallback')
         deals = load_featured_deals_fallback()
     
-    # Sort deals by discount percentage (highest first) or date (newest first)
+    # Sort deals by discount percentage (highest first)
     def get_sort_key(deal):
-        # Try to extract discount percentage
         discount = 0
         if deal.get('discount_percent'):
-            try:
-                discount = float(deal.get('discount_percent'))
-            except:
-                pass
+            try: discount = float(deal.get('discount_percent'))
+            except: pass
         else:
-            # Calculate discount from prices if available
             original = deal.get('original_price')
             current = deal.get('price')
             if original and current:
@@ -733,14 +752,32 @@ def featured_deals_page():
                     current_val = float(current)
                     if original_val > 0:
                         discount = ((original_val - current_val) / original_val) * 100
-                except:
-                    pass
-        
-        return -discount  # Negative to sort descending (highest discount first)
+                except: pass
+        return -discount 
     
     deals.sort(key=get_sort_key)
+
+    # Implement Pagination metadata
+    total_products = len(deals)
+    total_pages = (total_products + per_page - 1) // per_page if total_products else 1
+    page = min(page, total_pages) if total_products else 1
     
-    return render_template('featured_deals.html', deals=deals, using_fallback=using_fallback)
+    showing_start = (page - 1) * per_page + 1 if total_products else 0
+    showing_end = min(page * per_page, total_products)
+    
+    # Slice deals for the current page
+    paginated_deals = deals[(page - 1) * per_page: page * per_page]
+    
+    return render_template('featured_deals.html', 
+                          deals=paginated_deals, 
+                          total_products=total_products,
+                          total_pages=total_pages,
+                          current_page=page,
+                          showing_start=showing_start,
+                          showing_end=showing_end,
+                          category_filter=category_filter,
+                          search_query=search_query,
+                          using_fallback=using_fallback)
 
 @main_bp.route('/compare-prices')
 def compare_prices():
@@ -826,10 +863,12 @@ def compare_prices():
             page = min(page, total_pages) if total_products else 1
             skip_amount = (page - 1) * per_page
             cursor = db.products.find(product_query if search_query else query).skip(skip_amount).limit(per_page)
-            products = list(cursor)
-            for p in products:
-                if '_id' in p:
-                    p['id'] = str(p['_id'])
+            products = [sanitize_mongo_doc(p) for p in cursor]
+            # Since sanitize_mongo_doc converts _id to id, we don't need additional loop
+            # products = list(cursor)
+            # for p in products:
+            #     if '_id' in p:
+            #         p['id'] = str(p['_id'])
             try:
                 from collections import Counter
                 all_prods = list(db.products.find({}, {'category': 1}))
@@ -1158,200 +1197,221 @@ def shopping_list():
         user_data = getattr(m, 'users', {}).get('user1@example.com', {})
 
     # Get all lists for this user using new multi-list structure
-    from models.users_model import get_user_lists
-    lists_data = get_user_lists(user_email) if user_email else {'lists': [], 'active_list_id': None}
-    all_lists = lists_data.get('lists', [])
-    for lst in all_lists:
-        if 'items' in lst:
-            lst['list_items'] = lst.pop('items')
-        total = 0.0
-        items = lst.get('list_items', [])
-        completed_count = 0
-        for item in items:
-            if isinstance(item, dict):
-                if item.get('purchased') or item.get('completed'):
-                    completed_count += 1
-                price = item.get('price', 0)
-                qty = item.get('qty', 1)
-                if isinstance(price, str):
-                    price = float(price.replace('$', '').replace('€', '').replace(',', '').strip() or 0)
-                total += float(price) * int(qty)
-        lst['estimated_total'] = f'€{total:.2f}'
-        lst['completed'] = [item for item in items if isinstance(item, dict) and (item.get('purchased') or item.get('completed'))]
-    active_list_id = lists_data.get('active_list_id')
+    # Get all lists for this user using new multi-list structure
+    try:
+        from models.users_model import get_user_lists
+        lists_data = get_user_lists(user_email) if user_email else {'lists': [], 'active_list_id': None}
+        all_lists = lists_data.get('lists', [])
 
-    # Get the active list or create a default one if none exist
-    active_list = None
-    if all_lists:
-        if active_list_id:
-            active_list = next((lst for lst in all_lists if lst.get('id') == active_list_id), all_lists[0])
-        else:
-            active_list = all_lists[0]
-    else:
-        from models.users_model import create_shopping_list, set_active_list
-        if user_email:
+        # If no lists exist, create a default one
+        if not all_lists and user_email:
+            from models.users_model import create_shopping_list, set_active_list
             new_id = create_shopping_list(user_email, 'My List')
             if new_id:
                 set_active_list(user_email, new_id)
                 lists_data = get_user_lists(user_email)
                 all_lists = lists_data.get('lists', [])
-                active_list = all_lists[0] if all_lists else None
 
-    # Build items list with price/store information for the template
-    shopping_entries = active_list.get('list_items', active_list.get('items', [])) if active_list else []
+        # Now enrich all lists (including the potentially newly created one)
+        for lst in all_lists:
+            if 'items' in lst:
+                lst['list_items'] = lst.pop('items')
+            total = 0.0
+            items = lst.get('list_items') or []
+            completed_count = 0
+            for item in items:
+                if isinstance(item, dict):
+                    if item.get('purchased') or item.get('completed'):
+                        completed_count += 1
+                    price = item.get('price', 0)
+                    qty = item.get('qty', 1)
+                    if isinstance(price, str):
+                        price = float(price.replace('$', '').replace('€', '').replace(',', '').strip() or 0)
+                    elif isinstance(price, Decimal128):
+                        try:
+                            price = float(price.to_decimal())
+                        except Exception:
+                            price = 0.0
+                    else:
+                         try:
+                             price = float(price)
+                         except Exception:
+                             price = 0.0
+                    total += price * int(qty)
+            lst['estimated_total'] = f'€{total:.2f}'
+            lst['completed'] = [item for item in items if isinstance(item, dict) and (item.get('purchased') or item.get('completed'))]
+        
+        active_list_id = lists_data.get('active_list_id')
 
-    # load products to try to find prices
-    db = get_db()
-    if db is not None:
-        try:
-            products = list(db.products.find({}))
-            for p in products:
-                if '_id' in p:
-                    p['id'] = str(p['_id'])
-        except Exception:
+        # Get the active list
+        active_list = None
+        if all_lists:
+            if active_list_id:
+                active_list = next((lst for lst in all_lists if lst.get('id') == active_list_id), all_lists[0])
+            else:
+                active_list = all_lists[0]
+
+        # Build items list with price/store information for the template
+        shopping_entries = active_list.get('list_items', active_list.get('items', [])) if active_list else []
+
+        # load products to try to find prices
+        db = get_db()
+        if db is not None:
+            try:
+                products = list(db.products.find({}))
+                for p in products:
+                    if '_id' in p:
+                        p['id'] = str(p['_id'])
+            except Exception:
+                products = getattr(m, 'products', [])
+        else:
             products = getattr(m, 'products', [])
-    else:
-        products = getattr(m, 'products', [])
 
-    def find_product_by_name(name):
-        if not name:
+        def find_product_by_name(name):
+            if not name:
+                return None
+            name_l = name.lower()
+            for p in products:
+                if isinstance(p.get('name'), str) and p.get('name').lower() == name_l:
+                    return p
+            for p in products:
+                if isinstance(p.get('name'), str) and name_l in p.get('name').lower():
+                    return p
             return None
-        name_l = name.lower()
-        for p in products:
-            if isinstance(p.get('name'), str) and p.get('name').lower() == name_l:
-                return p
-        for p in products:
-            if isinstance(p.get('name'), str) and name_l in p.get('name').lower():
-                return p
-        return None
 
-    items = []
-    agg = {}
-    for idx, entry in enumerate(shopping_entries):
-        if isinstance(entry, dict):
-            name = entry.get('name')
-            qty = int(entry.get('qty', entry.get('quantity', 1))) if entry.get('qty') or entry.get('quantity') else 1
-            purchased = bool(entry.get('purchased', False))
-        else:
-            name = str(entry)
-            qty = 1
-            purchased = False
-
-        product = find_product_by_name(name)
-        price_val = 0.0
-        store_name = ''
-
-        if isinstance(entry, dict):
-            entry_price = entry.get('price') or entry.get('price_val')
-            store_name = entry.get('store', '')
-            if entry_price is not None:
-                try:
-                    if isinstance(entry_price, (int, float)):
-                        price_val = float(entry_price)
-                    elif isinstance(entry_price, Decimal128):
-                        try:
-                            price_val = float(entry_price.to_decimal())
-                        except Exception:
-                            price_val = 0.0
-                    else:
-                        cleaned = re.sub(r"[^0-9.]", "", str(entry_price))
-                        price_val = float(cleaned) if cleaned else 0.0
-                except Exception:
-                    price_val = 0.0
-
-        if (not price_val or price_val == 0) and product:
-            cheapest = product.get('cheapest') or {}
-            price_field = cheapest.get('price') if isinstance(cheapest, dict) else product.get('price')
-            if price_field is None:
-                try:
-                    stores_list = product.get('stores', [])
-                    if stores_list and isinstance(stores_list, list):
-                        price_field = stores_list[0].get('price')
-                        if not store_name:
-                            store_name = stores_list[0].get('store') or stores_list[0].get('name')
-                except Exception:
-                    price_field = None
-            if price_field is not None:
-                try:
-                    if isinstance(price_field, (int, float)):
-                        price_val = float(price_field)
-                    elif isinstance(price_field, Decimal128):
-                        try:
-                            price_val = float(price_field.to_decimal())
-                        except Exception:
-                            price_val = 0.0
-                    else:
-                        cleaned = re.sub(r"[^0-9.]", "", str(price_field))
-                        price_val = float(cleaned) if cleaned else 0.0
-                except Exception:
-                    price_val = 0.0
-            if not store_name:
-                try:
-                    store_name = (product.get('cheapest') or {}).get('store', '')
-                except Exception:
-                    store_name = ''
-
-        store_from_entry = ''
-        if isinstance(entry, dict):
-            store_from_entry = entry.get('store', '')
-        if not store_from_entry:
-            store_from_entry = store_name
-
-        if product and product.get('id'):
-            item_key = f"{str(product.get('id'))}#{store_from_entry}"
-        else:
-            item_key = f"{(name or f'item-{idx}').strip().lower()}#{store_from_entry}"
-        existing = agg.get(item_key)
-        image_val = ''
-        try:
+        items = []
+        agg = {}
+        for idx, entry in enumerate(shopping_entries):
             if isinstance(entry, dict):
-                image_val = entry.get('image')
-                if not image_val and entry.get('images'):
-                    if isinstance(entry.get('images'), list) and len(entry.get('images')) > 0:
-                        image_val = entry.get('images')[0]
-                    elif isinstance(entry.get('images'), str):
-                        image_val = entry.get('images')
+                name = entry.get('name')
+                qty = int(entry.get('qty', entry.get('quantity', 1))) if entry.get('qty') or entry.get('quantity') else 1
+                purchased = bool(entry.get('purchased', False))
+            else:
+                name = str(entry)
+                qty = 1
+                purchased = False
 
-            if not image_val and product:
-                image_val = product.get('image')
-                if not image_val and product.get('images'):
-                    if isinstance(product.get('images'), list) and len(product.get('images')) > 0:
-                        image_val = product.get('images')[0]
-                    elif isinstance(product.get('images'), str):
-                        image_val = product.get('images')
-        except Exception:
+            product = find_product_by_name(name)
+            price_val = 0.0
+            store_name = ''
+
+            if isinstance(entry, dict):
+                entry_price = entry.get('price') or entry.get('price_val')
+                store_name = entry.get('store', '')
+                if entry_price is not None:
+                    try:
+                        if isinstance(entry_price, (int, float)):
+                            price_val = float(entry_price)
+                        elif isinstance(entry_price, Decimal128):
+                            try:
+                                price_val = float(entry_price.to_decimal())
+                            except Exception:
+                                price_val = 0.0
+                        else:
+                            cleaned = re.sub(r"[^0-9.]", "", str(entry_price))
+                            price_val = float(cleaned) if cleaned else 0.0
+                    except Exception:
+                        price_val = 0.0
+
+            if (not price_val or price_val == 0) and product:
+                cheapest = product.get('cheapest') or {}
+                price_field = cheapest.get('price') if isinstance(cheapest, dict) else product.get('price')
+                if price_field is None:
+                    try:
+                        stores_list = product.get('stores', [])
+                        if stores_list and isinstance(stores_list, list):
+                            price_field = stores_list[0].get('price')
+                            if not store_name:
+                                store_name = stores_list[0].get('store') or stores_list[0].get('name')
+                    except Exception:
+                        price_field = None
+                if price_field is not None:
+                    try:
+                        if isinstance(price_field, (int, float)):
+                            price_val = float(price_field)
+                        elif isinstance(price_field, Decimal128):
+                            try:
+                                price_val = float(price_field.to_decimal())
+                            except Exception:
+                                price_val = 0.0
+                        else:
+                            cleaned = re.sub(r"[^0-9.]", "", str(price_field))
+                            price_val = float(cleaned) if cleaned else 0.0
+                    except Exception:
+                        price_val = 0.0
+                if not store_name:
+                    try:
+                        store_name = (product.get('cheapest') or {}).get('store', '')
+                    except Exception:
+                        store_name = ''
+
+            store_from_entry = ''
+            if isinstance(entry, dict):
+                store_from_entry = entry.get('store', '')
+            if not store_from_entry:
+                store_from_entry = store_name
+
+            if product and product.get('id'):
+                item_key = f"{str(product.get('id'))}#{store_from_entry}"
+            else:
+                item_key = f"{(name or f'item-{idx}').strip().lower()}#{store_from_entry}"
+            existing = agg.get(item_key)
             image_val = ''
+            try:
+                if isinstance(entry, dict):
+                    image_val = entry.get('image')
+                    if not image_val and entry.get('images'):
+                        if isinstance(entry.get('images'), list) and len(entry.get('images')) > 0:
+                            image_val = entry.get('images')[0]
+                        elif isinstance(entry.get('images'), str):
+                            image_val = entry.get('images')
 
-        if existing:
-            existing['qty'] += qty
-            existing['purchased'] = existing['purchased'] or purchased
-            if existing.get('price_val', 0) == 0 and price_val:
-                existing['price_val'] = price_val
-            if not existing.get('image') and image_val:
-                existing['image'] = image_val
-        else:
-            agg[item_key] = {
-                'id': product.get('id') if product and product.get('id') else f'item-{idx}',
-                'name': name,
-                'price_val': price_val,
-                'store': store_from_entry or store_name,
-                'qty': qty,
-                'purchased': purchased,
-                'image': image_val or ''
-            }
+                if not image_val and product:
+                    image_val = product.get('image')
+                    if not image_val and product.get('images'):
+                        if isinstance(product.get('images'), list) and len(product.get('images')) > 0:
+                            image_val = product.get('images')[0]
+                        elif isinstance(product.get('images'), str):
+                            image_val = product.get('images')
+            except Exception:
+                image_val = ''
 
-    for k, v in agg.items():
-        unit = float(v.get('price_val') or 0.0)
-        qty = int(v.get('qty') or 1)
-        total = unit * qty
-        v['price'] = f"€{total:.2f}"
-        items.append(v)
+            if existing:
+                existing['qty'] += qty
+                existing['purchased'] = existing['purchased'] or purchased
+                if existing.get('price_val', 0) == 0 and price_val:
+                    existing['price_val'] = price_val
+                if not existing.get('image') and image_val:
+                    existing['image'] = image_val
+            else:
+                agg[item_key] = {
+                    'id': product.get('id') if product and product.get('id') else f'item-{idx}',
+                    'name': name,
+                    'price_val': price_val,
+                    'store': store_from_entry or store_name,
+                    'qty': qty,
+                    'purchased': purchased,
+                    'image': image_val or ''
+                }
 
-    return render_template('shopping_list.html',
-                         user_data=user_data,
-                         items=items,
-                         all_lists=all_lists,
-                         active_list=active_list)
+        for k, v in agg.items():
+            unit = float(v.get('price_val') or 0.0)
+            qty = int(v.get('qty') or 1)
+            total = unit * qty
+            v['price'] = f"€{total:.2f}"
+            items.append(v)
+            
+        print("DEBUG: Rendering template")
+
+        return render_template('shopping_list.html',
+                            user_data=user_data,
+                            items=items,
+                            all_lists=all_lists,
+                            active_list=active_list)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise e
 
 @main_bp.route('/notifications')
 def notifications_page():
@@ -1538,10 +1598,7 @@ def api_search_products():
                 if not _has_price(d):
                     # skip legacy/broken entries that don't have usable price info
                     continue
-                if '_id' in d:
-                    d['id'] = str(d['_id'])
-                    del d['_id']
-                results.append(d)
+                results.append(sanitize_mongo_doc(d))
         else:
             # fallback to in-memory search (log this so it's visible)
             print('WARNING: api_search_products used fallback in-memory products (DB unavailable)')
@@ -1550,7 +1607,7 @@ def api_search_products():
                 if q.lower() in str(name).lower():
                     # filter out in-memory legacy items without price
                     if p.get('price') not in (None, '') or (p.get('cheapest') and p['cheapest'].get('price')) or (p.get('stores') and len(p.get('stores')) and p.get('stores')[0].get('price')):
-                        results.append(p)
+                        results.append(sanitize_mongo_doc(p))
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -1582,9 +1639,7 @@ def api_get_product():
             doc = mongo.db.products.find_one(query)
             if not doc:
                 return jsonify({'item': None}), 404
-            if '_id' in doc:
-                doc['id'] = str(doc['_id'])
-            return jsonify({'item': doc})
+            return jsonify({'item': sanitize_mongo_doc(doc)})
         else:
             # fallback: search in-memory products
             for p in getattr(m, 'products', []):
@@ -1650,12 +1705,10 @@ def api_get_stores():
         if HAS_DB and mongo is not None and getattr(mongo, 'db', None) is not None:
             cursor = mongo.db.stores.find({}).limit(500)
             for s in cursor:
-                if '_id' in s:
-                    s['id'] = str(s['_id'])
-                out.append(shape_store(s))
+                out.append(shape_store(sanitize_mongo_doc(s)))
         else:
             for s in getattr(m, 'stores', []):
-                out.append(shape_store(s))
+                out.append(shape_store(sanitize_mongo_doc(s)))
         return jsonify({'stores': out})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -2415,7 +2468,9 @@ def add_item_to_active_list_api():
         
         success = add_item_to_list(user_email, target_list_id, item)
         updated_lists = get_user_lists(user_email) if success else lists_data
-        return jsonify({'success': success, 'count': _unpurchased_total(updated_lists)})
+        # Sanitize lists data before returning
+        sanitized_lists = sanitize_mongo_doc(updated_lists)
+        return jsonify({'success': success, 'count': _unpurchased_total(sanitized_lists)})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
@@ -2431,16 +2486,7 @@ def get_lists_api():
         from models.users_model import get_user_lists
         lists_data = get_user_lists(user_email)
         
-        # Return lists with basic info (id, name, item count)
-        lists = []
-        for lst in lists_data.get('lists', []):
-            lists.append({
-                'id': lst.get('id'),
-                'name': lst.get('name'),
-                'items': lst.get('items', [])
-            })
-        
-        return jsonify({'success': True, 'lists': lists})
+        return jsonify({'success': True, 'lists': sanitize_mongo_doc(lists_data.get('lists', []))})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 

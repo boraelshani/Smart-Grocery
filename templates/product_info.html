@@ -15,6 +15,7 @@ Used: When clicking on a product in a specific store's listing
 -->
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -23,7 +24,10 @@ Used: When clicking on a product in a specific store's listing
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
-    body { background: #f3f4f6; }
+    body {
+      background: #f3f4f6;
+    }
+
     .product-hero {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
@@ -33,27 +37,31 @@ Used: When clicking on a product in a specific store's listing
       border-bottom-left-radius: 24px;
       border-bottom-right-radius: 24px;
     }
+
     .product-hero::after {
       content: '';
       position: absolute;
       inset: 0;
-      background: radial-gradient(circle at 20% 20%, rgba(255,255,255,0.08), transparent 45%),
-                  radial-gradient(circle at 80% 0%, rgba(255,255,255,0.07), transparent 40%);
+      background: radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.08), transparent 45%),
+        radial-gradient(circle at 80% 0%, rgba(255, 255, 255, 0.07), transparent 40%);
       pointer-events: none;
     }
+
     .glass-card {
-      background: rgba(255,255,255,0.08);
-      border: 1px solid rgba(255,255,255,0.25);
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.25);
       border-radius: 18px;
-      box-shadow: 0 14px 36px rgba(0,0,0,0.18);
+      box-shadow: 0 14px 36px rgba(0, 0, 0, 0.18);
       backdrop-filter: blur(6px);
     }
+
     .product-image-container {
       background: #ffffff;
       border-radius: 16px;
       padding: 1.5rem;
-      box-shadow: 0 12px 26px rgba(0,0,0,0.12);
+      box-shadow: 0 12px 26px rgba(0, 0, 0, 0.12);
     }
+
     .product-image {
       width: 100%;
       height: 420px;
@@ -62,37 +70,69 @@ Used: When clicking on a product in a specific store's listing
       border-radius: 12px;
       padding: 12px;
     }
-    .meta-chips .badge { font-weight: 700; }
-    .price { font-size: 2.2rem; font-weight: 900; }
+
+    .meta-chips .badge {
+      font-weight: 700;
+    }
+
+    .price {
+      font-size: 2.2rem;
+      font-weight: 900;
+    }
+
     .desc-card {
       background: #ffffff;
       border-radius: 16px;
       padding: 1.5rem;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
     }
+
     .pill-btn {
       border: none;
       border-radius: 999px;
       padding: 0.85rem 1.4rem;
       font-weight: 700;
-      box-shadow: 0 10px 24px rgba(124,58,237,0.25);
+      box-shadow: 0 10px 24px rgba(124, 58, 237, 0.25);
       background: linear-gradient(135deg, #a78bfa, #7c3aed);
       color: #ffffff;
       letter-spacing: 0.2px;
       transition: all 0.2s ease;
     }
+
     .pill-btn:hover {
       background: linear-gradient(135deg, #7c3aed, #5b21b6);
-      box-shadow: 0 12px 28px rgba(91,33,182,0.32);
+      box-shadow: 0 12px 28px rgba(91, 33, 182, 0.32);
       transform: translateY(-1px);
     }
-    .text-soft-white { color: rgba(255,255,255,0.92); }
-    .text-soft-white-muted { color: rgba(255,255,255,0.7); }
-    .btn-favorite { background: none; border: none; color: rgba(255,255,255,0.7); font-size: 1.8rem; transition: all 0.2s ease; padding: 0.25rem; }
-    .btn-favorite:hover { color: #ff6b6b; transform: scale(1.15); }
-    .btn-favorite.active { color: #ff6b6b; }
+
+    .text-soft-white {
+      color: rgba(255, 255, 255, 0.92);
+    }
+
+    .text-soft-white-muted {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .btn-favorite {
+      background: none;
+      border: none;
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 1.8rem;
+      transition: all 0.2s ease;
+      padding: 0.25rem;
+    }
+
+    .btn-favorite:hover {
+      color: #ff6b6b;
+      transform: scale(1.15);
+    }
+
+    .btn-favorite.active {
+      color: #ff6b6b;
+    }
   </style>
 </head>
+
 <body>
   <!-- Navbar -->
   <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
@@ -106,14 +146,20 @@ Used: When clicking on a product in a specific store's listing
       <div class="collapse navbar-collapse" id="navbarNav">
         {% set cart_count = shopping_list_count or 0 %}
         <ul class="navbar-nav ms-auto">
-          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.home') }}"><i class="bi bi-house-door"></i> Home</a></li>
-          <li class="nav-item"><a class="nav-link active fw-semibold" href="{{ url_for('main.stores_page') }}"><i class="bi bi-shop"></i> Stores</a></li>
-          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.featured_deals_page') }}"><i class="bi bi-tags"></i> Deals</a></li>
-          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.compare_prices') }}"><i class="bi bi-bar-chart"></i> Compare</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.home') }}"><i class="bi bi-house-door"></i>
+              Home</a></li>
+          <li class="nav-item"><a class="nav-link active fw-semibold" href="{{ url_for('main.stores_page') }}"><i
+                class="bi bi-shop"></i> Stores</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.featured_deals_page') }}"><i
+                class="bi bi-tags"></i> Deals</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.compare_prices') }}"><i
+                class="bi bi-bar-chart"></i> Compare</a></li>
           <li class="nav-item">
             <a class="nav-link position-relative" href="{{ url_for('main.shopping_list') }}">
               <i class="bi bi-cart3"></i> Cart
-              <span id="shopping-list-count" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger {{ 'd-none' if not cart_count else '' }}" style="font-size: 0.65rem;">
+              <span id="shopping-list-count"
+                class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger {{ 'd-none' if not cart_count else '' }}"
+                style="font-size: 0.65rem;">
                 {{ cart_count if cart_count else '' }}
               </span>
             </a>
@@ -145,26 +191,33 @@ Used: When clicking on a product in a specific store's listing
         <div class="col-lg-7">
           <div class="d-flex justify-content-between align-items-start mb-2">
             <div>
-              <h1 class="display-5 fw-bold text-white mb-2">{{ product.get('name') or product.get('title', 'Product') }}</h1>
+              <h1 class="display-5 fw-bold text-white mb-2">{{ product.get('name') or product.get('title', 'Product') }}
+              </h1>
               {% if product.get('category') %}
-                <span class="badge bg-white text-primary fw-semibold"><i class="bi bi-tag"></i> {{ product.get('category') }}</span>
+              <span class="badge bg-white text-primary fw-semibold"><i class="bi bi-tag"></i> {{ product.get('category')
+                }}</span>
               {% endif %}
             </div>
-            <button class="btn btn-favorite btn-lg" onclick="toggleFavorite('{{ product.get('_id') or product.get('id') }}', this)"><i class="bi bi-heart"></i></button>
+            <button class="btn btn-favorite btn-lg"
+              onclick="toggleFavorite('{{ product.get('_id') or product.get('id') }}', this)"><i
+                class="bi bi-heart"></i></button>
           </div>
           <div class="glass-card mt-3 p-4">
             <div class="d-flex justify-content-between flex-wrap gap-3 align-items-start">
               <div>
-                <div class="text-uppercase small fw-semibold text-white-75 mb-1"><i class="bi bi-currency-euro"></i> Price{% if store_name %} at {{ store_name }}{% endif %}</div>
+                <div class="text-uppercase small fw-semibold text-white-75 mb-1"><i class="bi bi-currency-euro"></i>
+                  Price{% if store_name %} at {{ store_name }}{% endif %}</div>
                 <div class="price">€{{ store_price or product.get('price') or 'N/A' }}</div>
               </div>
             </div>
             <div class="d-flex flex-wrap gap-2 mt-3 meta-chips">
               {% if product.get('unit') %}
-                <span class="badge bg-white text-primary fw-semibold"><i class="bi bi-box"></i> {{ product.get('unit') }}</span>
+              <span class="badge bg-white text-primary fw-semibold"><i class="bi bi-box"></i> {{ product.get('unit')
+                }}</span>
               {% endif %}
               {% if product.get('category') %}
-                <span class="badge bg-white text-primary fw-semibold"><i class="bi bi-tag"></i> {{ product.get('category') }}</span>
+              <span class="badge bg-white text-primary fw-semibold"><i class="bi bi-tag"></i> {{ product.get('category')
+                }}</span>
               {% endif %}
             </div>
           </div>
@@ -172,9 +225,9 @@ Used: When clicking on a product in a specific store's listing
             <div class="fw-semibold text-white mb-1"><i class="bi bi-file-text"></i> Description</div>
             <div class="text-soft-white">
               {% if product.get('description') %}
-                {{ product.get('description') }}
+              {{ product.get('description') }}
               {% else %}
-                <span class="text-soft-white-muted">No description available.</span>
+              <span class="text-soft-white-muted">No description available.</span>
               {% endif %}
             </div>
           </div>
@@ -182,36 +235,35 @@ Used: When clicking on a product in a specific store's listing
             <div class="fw-semibold text-white mb-1"><i class="bi bi-box"></i> Unit / Size</div>
             <div class="text-soft-white">
               {% if product.get('unit') %}
-                {{ product.get('unit') }}
+              {{ product.get('unit') }}
               {% else %}
-                <span class="text-soft-white-muted">No unit information available.</span>
+              <span class="text-soft-white-muted">No unit information available.</span>
               {% endif %}
             </div>
           </div>
-          <div class="mt-4 d-flex flex-wrap gap-2 align-items-center">
-            {% set btn_img = request.args.get('store_image') or product.get('store_image') or product.get('image') or '' %}
-            <button type="button"
-                    class="pill-btn add-to-cart-btn"
-                    data-name="{{ product.get('name') or product.get('title', 'Product') }}"
-                    data-price="{{ store_price or product.get('price') or '' }}"
-                    data-image="{{ btn_img }}"
-                    data-store="{{ store_name }}">
-              <i class="bi bi-cart-plus me-2"></i>Add to List
+          <div class="mt-4 d-grid gap-2">
+            {% set btn_img = request.args.get('store_image') or product.get('store_image') or product.get('image') or ''
+            %}
+            <button type="button" class="btn btn-premium btn-premium-add w-100 py-3"
+              data-name="{{ product.get('name') or product.get('title', 'Product') }}"
+              data-price="{{ store_price or product.get('price') or '' }}" data-image="{{ btn_img }}"
+              data-store="{{ store_name }}">
+              <i class="bi bi-cart-plus-fill me-2"></i>Add to List
             </button>
             {% if product.get('url') %}
-              <a href="{{ product.get('url') }}" target="_blank" rel="noopener noreferrer" class="btn btn-light text-primary fw-semibold shadow-sm">
-                <i class="bi bi-box-arrow-up-right me-1"></i> Go to Store
-              </a>
+            <a href="{{ product.get('url') }}" target="_blank" rel="noopener noreferrer"
+              class="btn btn-premium btn-premium-view w-100 py-3">
+              <i class="bi bi-box-arrow-up-right me-1"></i> Go to Store
+            </a>
             {% endif %}
           </div>
         </div>
         <div class="col-lg-5">
           <div class="product-image-container">
-            {% set img_url = request.args.get('store_image') or product.get('store_image') or product.get('image') or 'https://via.placeholder.com/420?text=No+Image' %}
-            <img src="{{ img_url }}" 
-                 alt="{{ product.get('name') or product.get('title', 'Product') }}" 
-                 class="product-image"
-                 onerror="this.src='https://via.placeholder.com/420?text=No+Image'">
+            {% set img_url = request.args.get('store_image') or product.get('store_image') or product.get('image') or
+            'https://via.placeholder.com/420?text=No+Image' %}
+            <img src="{{ img_url }}" alt="{{ product.get('name') or product.get('title', 'Product') }}"
+              class="product-image" onerror="this.src='https://via.placeholder.com/420?text=No+Image'">
           </div>
         </div>
       </div>
@@ -258,7 +310,8 @@ Used: When clicking on a product in a specific store's listing
   </script>
 
   <!-- Global List Selector Modal -->
-  <div class="modal fade" id="globalListSelectorModal" tabindex="-1" aria-labelledby="globalListSelectorModalLabel" aria-hidden="true">
+  <div class="modal fade" id="globalListSelectorModal" tabindex="-1" aria-labelledby="globalListSelectorModalLabel"
+    aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
         <div class="modal-header">
@@ -277,4 +330,5 @@ Used: When clicking on a product in a specific store's listing
     </div>
   </div>
 </body>
+
 </html>

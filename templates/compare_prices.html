@@ -15,24 +15,29 @@ Data: Fetches all products and their store prices from database
 -->
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Smart Grocery | Compare Prices</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=9">
   <style>
     /* Compare page specific tweaks */
     .compare-search-row {
-      --search-height: 46px; /* adjust to match input height */
-      margin-bottom: 1.5rem; /* slightly more space before product grid */
+      --search-height: 46px;
+      /* adjust to match input height */
+      margin-bottom: 1.5rem;
+      /* slightly more space before product grid */
     }
+
     /* Ensure the input-group and button group align items exactly */
     .compare-search-row .input-group {
       display: flex !important;
       align-items: center !important;
     }
+
     .compare-search-row .input-group .form-control {
       height: var(--search-height) !important;
       box-sizing: border-box;
@@ -41,6 +46,7 @@ Data: Fetches all products and their store prices from database
       padding: 0.45rem 0.75rem !important;
       font-size: 1rem;
     }
+
     .compare-search-row .input-group .btn,
     .compare-search-row .input-group .btn-group .btn {
       height: var(--search-height) !important;
@@ -51,40 +57,47 @@ Data: Fetches all products and their store prices from database
       padding: 0 0.75rem !important;
       font-size: 1rem;
     }
+
     .compare-search-row .input-group .btn i {
       line-height: 1;
       display: inline-block;
       vertical-align: middle;
     }
+
     .hero-section {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
       padding: 4rem 0;
     }
+
     .filter-card {
       border: none;
       border-radius: 15px;
       background: #ffffff;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
     }
+
     .product-card-inner {
       border: none;
       border-radius: 15px;
       overflow: hidden;
       transition: transform 0.3s ease, box-shadow 0.3s ease;
       background: white;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     }
+
     .product-card-inner:hover {
       transform: translateY(-5px);
-      box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
     }
+
     .product-image {
       height: 240px;
       object-fit: contain;
       background: #ffffff !important;
       padding: 15px;
     }
+
     .price-badge {
       position: absolute;
       top: 15px;
@@ -95,8 +108,9 @@ Data: Fetches all products and their store prices from database
       border-radius: 20px;
       font-weight: bold;
       font-size: 1.1rem;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
     }
+
     .category-badge {
       background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
       color: white;
@@ -105,6 +119,7 @@ Data: Fetches all products and their store prices from database
       border-radius: 12px;
       font-size: 0.85rem;
     }
+
     .store-item {
       border: 1px solid #e9ecef;
       border-radius: 10px;
@@ -114,24 +129,30 @@ Data: Fetches all products and their store prices from database
       transition: all 0.2s ease;
       cursor: pointer;
     }
+
     .store-item:hover {
       background: #e9ecef;
       transform: translateX(5px);
     }
+
     .store-item.selected {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       border-color: #667eea;
       color: white;
     }
+
     .store-item.selected i {
       color: white !important;
     }
+
     .store-item.selected .fw-semibold {
       color: white !important;
     }
+
     .store-item.selected .text-success {
       color: white !important;
     }
+
     .btn-add-cart {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       border: none;
@@ -149,15 +170,18 @@ Data: Fetches all products and their store prices from database
       text-decoration: none !important;
       box-shadow: 0 4px 14px rgba(102, 126, 234, 0.3);
     }
+
     .btn-add-cart:hover {
       transform: translateY(-2px);
       color: white;
       box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
       text-decoration: none !important;
     }
+
     .btn-add-cart:active {
       transform: translateY(0);
     }
+
     /* Light purple add-to-list CTA */
     .add-to-list-btn {
       background: linear-gradient(135deg, #d8c4ff 0%, #c0a6ff 100%);
@@ -176,6 +200,7 @@ Data: Fetches all products and their store prices from database
       cursor: pointer;
       width: 100%;
     }
+
     .add-to-list-btn:hover {
       color: #2c1f4f;
       transform: translateY(-2px);
@@ -183,19 +208,24 @@ Data: Fetches all products and their store prices from database
       border-color: #a380ff;
       background: linear-gradient(135deg, #e0d4ff 0%, #cdb5ff 100%);
     }
+
     .add-to-list-btn:active {
       transform: translateY(0);
     }
-    .form-control:focus, .form-select:focus {
+
+    .form-control:focus,
+    .form-select:focus {
       border-color: #667eea;
       box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
     }
+
     .badge-filter {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       padding: 8px 14px;
       border-radius: 20px;
       font-weight: 500;
     }
+
     .category-chip-row {
       display: flex;
       gap: 12px;
@@ -203,7 +233,11 @@ Data: Fetches all products and their store prices from database
       padding: 8px 4px 4px;
       scrollbar-width: none;
     }
-    .category-chip-row::-webkit-scrollbar { display: none; }
+
+    .category-chip-row::-webkit-scrollbar {
+      display: none;
+    }
+
     .category-chip {
       border: 2px solid #d6d8ff;
       background: #f6f7ff;
@@ -215,37 +249,43 @@ Data: Fetches all products and their store prices from database
       text-align: center;
       font-weight: 600;
       transition: all 0.2s ease;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
       white-space: normal;
       line-height: 1.2;
       display: flex;
       align-items: center;
       justify-content: center;
     }
+
     .category-chip:hover {
       background: #e7e9ff;
       transform: translateY(-1px);
     }
+
     .category-chip.active {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
       border-color: transparent;
       box-shadow: 0 6px 16px rgba(102, 126, 234, 0.3);
     }
+
     .pagination-pane {
       background: #ffffff;
       border-radius: 14px;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
       padding: 14px 18px;
     }
+
     .pagination .page-link {
       border-radius: 12px;
       min-width: 44px;
       text-align: center;
     }
+
     #products-grid {
       transition: opacity 0.18s ease-out;
     }
+
     #products-grid.fade-out {
       opacity: 0.15;
     }
@@ -256,11 +296,11 @@ Data: Fetches all products and their store prices from database
 
     .hover-lift:hover {
       transform: translateY(-5px);
-      box-shadow: 0 8px 20px rgba(0,0,0,0.15) !important;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15) !important;
     }
-
   </style>
-  </head>
+</head>
+
 <body>
   <!-- Navbar -->
   <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
@@ -274,10 +314,14 @@ Data: Fetches all products and their store prices from database
       <div class="collapse navbar-collapse" id="navbarNav">
         {% set cart_count = shopping_list_count or 0 %}
         <ul class="navbar-nav ms-auto">
-          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.home') }}"><i class="bi bi-house-door"></i> Home</a></li>
-          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.stores_page') }}"><i class="bi bi-shop"></i> Stores</a></li>
-          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.featured_deals_page') }}"><i class="bi bi-tags"></i> Deals</a></li>
-          <li class="nav-item"><a class="nav-link active fw-semibold" href="{{ url_for('main.compare_prices') }}"><i class="bi bi-bar-chart"></i> Compare</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.home') }}"><i class="bi bi-house-door"></i>
+              Home</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.stores_page') }}"><i class="bi bi-shop"></i>
+              Stores</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.featured_deals_page') }}"><i
+                class="bi bi-tags"></i> Deals</a></li>
+          <li class="nav-item"><a class="nav-link active fw-semibold" href="{{ url_for('main.compare_prices') }}"><i
+                class="bi bi-bar-chart"></i> Compare</a></li>
           <li class="nav-item">
             <a class="nav-link" href="{{ url_for('main.shopping_list') }}">
               <i class="bi bi-list-check"></i> Lists
@@ -298,7 +342,7 @@ Data: Fetches all products and their store prices from database
     </div>
 
     <!-- ...existing code... -->
-  </div> <!-- end of main container or last div before </body> -->
+    </div> <!-- end of main container or last div before </body> -->
 
   </nav>
 
@@ -315,1024 +359,728 @@ Data: Fetches all products and their store prices from database
   <section class="container py-4">
     <!-- Search row with filter button -->
     {% if using_fallback %}
-    <div class="alert alert-warning" role="alert" style="margin-top:1rem">Warning: using local fallback product data — database unavailable.</div>
+    <div class="alert alert-warning" role="alert" style="margin-top:1rem">Warning: using local fallback product data —
+      database unavailable.</div>
     {% endif %}
     <div class="row align-items-end mb-3 compare-search-row">
       <div class="col-md-12">
-        <label class="form-label d-block"><i class="bi bi-search"></i> Search Products</label>
-        <div class="input-group">
-          <input id="product-search-input" type="text" class="form-control" placeholder="Search by product name..." autocomplete="off" value="{{ search_query or '' }}" />
-          <div class="btn-group" role="group">
-            <button id="product-search-btn" class="btn btn-primary" onclick="handleCompareSearch()">
-              <i class="bi bi-search"></i>
+        <!-- Search Container: Enlarged and Search Button Removed to match Deals page -->
+        <div class="d-flex align-items-center bg-white shadow-sm p-1"
+          style="border-radius: 50px; border: 1px solid #e2e8f0; height: 60px;">
+          <span class="ps-4 pe-2 text-muted" style="font-size: 1.2rem;"><i class="bi bi-search"></i></span>
+          <input id="product-search-input" type="text" class="form-control border-0 shadow-none bg-transparent"
+            placeholder="Search by product name..." autocomplete="off" value="{{ search_query or '' }}"
+            style="outline: none !important; box-shadow: none !important; font-size: 1.1rem; height: 100%;">
+
+          <!-- Filters Dropdown: Enlarged and Styled with Color -->
+          <div class="dropdown ms-2 me-1">
+            <button class="btn btn-smooth rounded-pill px-4" type="button" id="filtersDropdownBtn"
+              data-bs-toggle="dropdown" aria-expanded="false"
+              style="height: 50px; display: flex; align-items: center; border: 2px solid #e2e8f0; background: #f5f3ff; color: #7c3aed; font-weight: 600; font-size: 1.05rem; transition: all 0.3s ease;">
+              <i class="bi bi-sliders2 me-2"></i> Filters
             </button>
-            <div class="dropdown">
-              <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="filtersDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false" data-version="v2">
-                <i class="bi bi-funnel"></i> Filters
-              </button>
-              <div class="dropdown-menu dropdown-menu-end p-3" aria-labelledby="filtersDropdownBtn" style="min-width: 320px;">
-            <div class="mb-2">
-              <label class="form-label"><i class="bi bi-grid"></i> Category</label>
-              <select id="category-filter" class="form-select">
-                <option value="">All Categories</option>
-                {% set cats = category_options if category_options is defined else [] %}
-                {% for cat in cats %}
+            <div class="dropdown-menu dropdown-menu-end p-3 shadow-lg border-0 mt-2"
+              aria-labelledby="filtersDropdownBtn" style="min-width: 320px; border-radius: 16px; z-index: 1050;">
+              <div class="mb-2">
+                <label class="form-label"><i class="bi bi-grid"></i> Category</label>
+                <select id="category-filter" class="form-select">
+                  <option value="">All Categories</option>
+                  {% set cats = category_options if category_options is defined else [] %}
+                  {% for cat in cats %}
                   {% set val = cat|lower %}
-                  <option value="{{ val }}" {% if category_filter and val==category_filter|lower %}selected{% endif %}>{{ cat }}</option>
-                {% endfor %}
-              </select>
-            </div>
-
-            <div class="mb-2">
-              <label class="form-label"><i class="bi bi-shop"></i> Store</label>
-              <select id="store-filter" class="form-select">
-                <option value="">All Stores</option>
-              </select>
-            </div>
-
-            <div class="mb-2">
-              <label class="form-label"><i class="bi bi-currency-dollar"></i> Price Range</label>
-              <div class="input-group">
-                <input id="min-price" type="number" step="0.01" class="form-control" placeholder="Min">
-                <span class="input-group-text">to</span>
-                <input id="max-price" type="number" step="0.01" class="form-control" placeholder="Max">
+                  <option value="{{ val }}" {% if category_filter and val==category_filter|lower %}selected{% endif %}>
+                    {{ cat }}</option>
+                  {% endfor %}
+                </select>
               </div>
-            </div>
 
-            <div class="mb-2">
-              <label class="form-label"><i class="bi bi-sort-down"></i> Sort By</label>
-              <select id="sort-order" class="form-select">
-                <option value="price-asc">Price: Low to High</option>
-                <option value="price-desc">Price: High to Low</option>
-                <option value="name-asc">Name: A to Z</option>
-                <option value="name-desc">Name: Z to A</option>
-              </select>
-            </div>
+              <div class="mb-2">
+                <label class="form-label"><i class="bi bi-shop"></i> Store</label>
+                <select id="store-filter" class="form-select">
+                  <option value="">All Stores</option>
+                </select>
+              </div>
 
-            <div class="d-flex gap-2 mt-3">
-              <button id="apply-filters" class="btn flex-grow-1" 
-                      style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+              <div class="mb-2">
+                <label class="form-label"><i class="bi bi-currency-dollar"></i> Price Range</label>
+                <div class="input-group">
+                  <input id="min-price" type="number" step="0.01" class="form-control bg-white" placeholder="Min">
+                  <span class="input-group-text">to</span>
+                  <input id="max-price" type="number" step="0.01" class="form-control bg-white" placeholder="Max">
+                </div>
+              </div>
+
+              <div class="mb-2">
+                <label class="form-label"><i class="bi bi-sort-down"></i> Sort By</label>
+                <select id="sort-order" class="form-select">
+                  <option value="price-asc">Price: Low to High</option>
+                  <option value="price-desc">Price: High to Low</option>
+                  <option value="name-asc">Name: A to Z</option>
+                  <option value="name-desc">Name: Z to A</option>
+                </select>
+              </div>
+
+              <div class="d-flex gap-2 mt-3">
+                <button id="apply-filters" class="btn flex-grow-1" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
                              color: white; 
                              border: none; 
                              border-radius: 8px; 
                              padding: 10px; 
                              font-weight: 500;
                              transition: all 0.3s ease;"
-                      onmouseover="this.style.opacity='0.85'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 12px rgba(102, 126, 234, 0.4)';"
-                      onmouseout="this.style.opacity='1'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">Apply</button>
-              <button id="clear-filters" class="btn" 
-                      style="background: linear-gradient(135deg, #6c757d 0%, #495057 100%); 
+                  onmouseover="this.style.opacity='0.85'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 12px rgba(102, 126, 234, 0.4)';"
+                  onmouseout="this.style.opacity='1'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">Apply</button>
+                <button id="clear-filters" class="btn" style="background: linear-gradient(135deg, #6c757d 0%, #495057 100%); 
                              color: white; 
                              border: none; 
                              border-radius: 8px; 
                              padding: 10px; 
                              font-weight: 500;
                              transition: all 0.3s ease;"
-                      onmouseover="this.style.opacity='0.85'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 12px rgba(108, 117, 125, 0.4)';"
-                      onmouseout="this.style.opacity='1'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">Clear</button>
-            </div>
+                  onmouseover="this.style.opacity='0.85'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 12px rgba(108, 117, 125, 0.4)';"
+                  onmouseout="this.style.opacity='1'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">Clear</button>
+              </div>
 
-            <div id="active-filters" class="mt-3 d-flex flex-wrap gap-2" style="display:none;">
-              <!-- Filter badges will appear here -->
+              <div id="active-filters" class="mt-3 d-flex flex-wrap gap-2" style="display:none;">
+                <!-- Filter badges will appear here -->
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Category chips -->
-    <div class="category-chip-row mb-3">
-      {% set cats = category_options if category_options is defined else [] %}
-      <button type="button" class="category-chip {% if not category_filter %}active{% endif %}" data-category-chip="" data-category-label="All">All</button>
-      {% for cat in cats %}
+      <!-- Category chips: with more margin -->
+      <div class="category-chip-row mt-4 mb-3">
+        {% set cats = category_options if category_options is defined else [] %}
+        <button type="button" class="category-chip {% if not category_filter %}active{% endif %}" data-category-chip=""
+          data-category-label="All">All</button>
+        {% for cat in cats %}
         {% set slug = cat|lower %}
-        <button type="button" class="category-chip {% if category_filter and slug==category_filter|lower %}active{% endif %}" data-category-chip="{{ slug }}" data-category-label="{{ cat }}">{{ cat }}</button>
-      {% endfor %}
-    </div>
-    
-    <!-- Results Count -->
-    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-      <h4 class="mb-0 fw-bold">
-        <i class="bi bi-grid-3x3-gap"></i> Products
-      </h4>
-      <span id="products-count" class="badge badge-filter fs-6">
-        {% if total_products %}
-          Showing {{ showing_start }}-{{ showing_end }} of {{ total_products }} products
-        {% else %}
-          0 products
-        {% endif %}
-      </span>
-    </div>
+        <button type="button"
+          class="category-chip {% if category_filter and slug==category_filter|lower %}active{% endif %}"
+          data-category-chip="{{ slug }}" data-category-label="{{ cat }}">{{ cat }}</button>
+        {% endfor %}
+      </div>
 
-    <div class="row g-4" id="products-grid">
-      {% if products %}
+      <!-- Results Count: reduced margin -->
+      <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <h4 class="mb-0 fw-bold" style="color: #4b5563;">
+          <i class="bi bi-box-seam me-2 text-primary"></i>Product Results
+        </h4>
+        <div class="results-status-bar">
+          <span class="results-status-text">
+            <i class="bi bi-info-circle me-1"></i>
+            {% if total_products %}
+            Showing {{ showing_start }}-{{ showing_end }}
+            {% else %}
+            No products found
+            {% endif %}
+          </span>
+          {% if total_products %}
+          <span class="results-status-count">
+            {{ total_products }} Total
+          </span>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="row g-4" id="products-grid">
+        {% if products %}
         {% for p in products %}
-           <div class="col-md-6 col-lg-4 product-card" 
-              data-stores='{{ p.get("stores")|tojson }}' 
-              data-price="{{ (p.get('cheapest') and p.get('cheapest').get('price')) or p.get('price','') }}" 
-              data-name="{{ p.get('name','') |lower }}" 
-              data-category="{{ p.get('category','') |lower }}">
-            <a href="{{ url_for('main.product_detail', product_id=p.get('id')) }}" class="product-link text-decoration-none text-dark" style="display:block;height:100%">
-              <div class="card product-card-inner h-100">
-                <div class="position-relative">
-                  <img src="{{ prefer_processed(p.get('image') or (p.get('images') and p.get('images')[0]) or url_for('static', filename='placeholder.svg')) }}" class="card-img-top product-image" alt="{{ p.get('name') or p.get('title','Product') }}">
-                  <span class="price-badge">
-                    <i class="bi bi-tag-fill"></i> €{{ (p.get('cheapest') and p.get('cheapest').get('price')) or p.get('price','N/A') }}
-                  </span>
+        <div class="col-md-6 col-lg-4 product-card" data-stores='{{ p.get("stores")|tojson }}'
+          data-price="{{ (p.get('cheapest') and p.get('cheapest').get('price')) or p.get('price','') }}"
+          data-name="{{ p.get('name','') |lower }}" data-category="{{ p.get('category','') |lower }}">
+          <div class="card product-card-inner h-100">
+            <a href="{{ url_for('main.product_detail', product_id=p.get('id')) }}"
+              class="product-link text-decoration-none text-dark d-block">
+              <div class="position-relative">
+                <img
+                  src="{{ prefer_processed(p.get('image') or (p.get('images') and p.get('images')[0]) or url_for('static', filename='placeholder.svg')) }}"
+                  class="card-img-top product-image" alt="{{ p.get('name') or p.get('title','Product') }}">
+                <span class="price-badge">
+                  <i class="bi bi-tag-fill"></i> €{{ (p.get('cheapest') and p.get('cheapest').get('price')) or
+                  p.get('price','N/A') }}
+                </span>
+              </div>
+              <div class="card-body pb-0" style="background-color: #f8f9fa;">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                  <h5 class="card-title mb-0 fw-bold">{{ p.get('name') or p.get('title','') }}</h5>
+                  {% if p.get('category') %}
+                  <span class="badge category-badge ms-2">{{ p.get('category') }}</span>
+                  {% endif %}
                 </div>
-                <div class="card-body d-flex flex-column" style="background-color: #f8f9fa;">
-                  <div class="d-flex justify-content-between align-items-start mb-3">
-                    <h5 class="card-title mb-0 fw-bold">{{ p.get('name') or p.get('title','') }}</h5>
-                    {% if p.get('category') %}
-                      <span class="badge category-badge ms-2">{{ p.get('category') }}</span>
-                    {% endif %}
-                  </div>
-                
+
                 {% if p.get('stores') %}
-                  <div class="mb-3">
-                    <h6 class="text-muted mb-2 fw-semibold">
-                      <i class="bi bi-shop"></i> Available at {{ p.get('stores')|length }} store{{ 's' if p.get('stores')|length != 1 else '' }}
-                    </h6>
-                    {% for s in p.get('stores')[:3] %}
-                      <div class="store-item" data-store-name="{{ s.get('store') or s.get('name') }}" data-store-price="{{ s.get('price') }}" data-product-id="{{ p.get('id') }}">
-                        <div class="d-flex justify-content-between align-items-start gap-1">
-                          <div class="d-flex align-items-start gap-1 flex-grow-1" style="min-width:0;">
-                            <i class="bi bi-shop-window" style="margin-top:2px; color: #667eea;"></i>
-                            <div class="lh-sm">
-                              <span class="fw-semibold" style="color: #667eea;">{{ s.get('store') or s.get('name') }}</span>
-                            </div>
-                          </div>
-                          <div class="text-end" style="min-width: 68px;">
-                            <span class="text-success fw-bold fs-5">
-                              {% if p.get('cheapest') and (s.get('price')|string) == (p.get('cheapest').get('price')|string) %}<i class="bi bi-star-fill" style="color: #ffc107; margin-right: 4px;"></i>{% endif %}€{{ s.get('price') }}
-                            </span>
-                            {% if s.get('discount') %}
-                              <span class="badge bg-danger ms-1">{{ s.get('discount') }}</span>
-                            {% endif %}
-                          </div>
+                <div class="mb-3">
+                  <h6 class="text-muted mb-2 fw-semibold">
+                    <i class="bi bi-shop"></i> Available at {{ p.get('stores')|length }} store{{ 's' if
+                    p.get('stores')|length != 1 else '' }}
+                  </h6>
+                  {% for s in p.get('stores')[:3] %}
+                  <div class="store-item" data-store-name="{{ s.get('store') or s.get('name') }}"
+                    data-store-price="{{ s.get('price') }}" data-product-id="{{ p.get('id') }}">
+                    <div class="d-flex justify-content-between align-items-start gap-1">
+                      <div class="d-flex align-items-start gap-1 flex-grow-1" style="min-width:0;">
+                        <i class="bi bi-shop-window" style="margin-top:2px; color: #667eea;"></i>
+                        <div class="lh-sm">
+                          <span class="fw-semibold" style="color: #667eea;">{{ s.get('store') or s.get('name')
+                            }}</span>
                         </div>
                       </div>
-                    {% endfor %}
+                      <div class="text-end" style="min-width: 68px;">
+                        <span class="text-success fw-bold fs-5">
+                          {% if p.get('cheapest') and (s.get('price')|string) ==
+                          (p.get('cheapest').get('price')|string) %}<i class="bi bi-star-fill"
+                            style="color: #ffc107; margin-right: 4px;"></i>{% endif %}€{{ s.get('price') }}
+                        </span>
+                      </div>
+                    </div>
                   </div>
+                  {% endfor %}
+                </div>
                 {% endif %}
-                
-                <div class="mt-auto">
-                  {% if p.get('expires') %}
-                    <p class="text-muted small mb-3">
-                      <i class="bi bi-clock-history"></i> Expires in {{ p.get('expires') }}
-                    </p>
-                  {% endif %}
-                  <div class="d-grid gap-2">
-                    <button type="button" class="btn add-to-list-btn"
-                      data-name="{{ p.get('name') or p.get('title','') }}"
-                      data-id="{{ p.get('id') }}"
-                      data-price="{{ (p.get('cheapest') and p.get('cheapest').get('price')) or p.get('price','N/A') }}"
-                      data-image="{{ prefer_processed(p.get('image') or (p.get('images') and p.get('images')[0]) or url_for('static', filename='placeholder.svg')) }}"
-                      data-store="">
-                      <i class="bi bi-cart-plus-fill"></i> Add to List
-                    </button>
-                    <button type="button" class="btn view-product-details-btn" 
-                      data-bs-toggle="modal" 
-                      data-bs-target="#productModal"
-                      data-product-name="{{ p.get('name') or p.get('title','') }}" 
-                      data-product-id="{{ p.get('id') }}"
-                      data-product-image="{{ prefer_processed(p.get('image') or (p.get('images') and p.get('images')[0]) or url_for('static', filename='placeholder.svg')) }}"
-                      data-product-stores="{{ p.get('stores')|tojson if p.get('stores') else '[]' }}"
-                      style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; transition: all 0.3s ease;"
-                      onmouseover="this.style.opacity='0.85'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 12px rgba(102, 126, 234, 0.4)';"
-                      onmouseout="this.style.opacity='1'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">
-                      <i class="bi bi-info-circle"></i> View Details
-                    </button>
-                  </div>
+              </div>
+            </a>
+
+            <div class="card-body pt-2 mt-auto" style="background-color: #f8f9fa;">
+              <div class="mt-auto">
+                {% if p.get('expires') %}
+                <p class="text-muted small mb-3">
+                  <i class="bi bi-clock-history"></i> Expires in {{ p.get('expires') }}
+                </p>
+                {% endif %}
+                <div class="d-grid gap-2">
+                  <button type="button" class="btn btn-premium btn-premium-add w-100"
+                    data-name="{{ p.get('name') or p.get('title','') }}" data-id="{{ p.get('id') }}"
+                    data-price="{{ (p.get('cheapest') and p.get('cheapest').get('price')) or p.get('price','N/A') }}"
+                    data-image="{{ prefer_processed(p.get('image') or (p.get('images') and p.get('images')[0]) or url_for('static', filename='placeholder.svg')) }}"
+                    data-store="">
+                    <i class="bi bi-cart-plus-fill"></i> Add to List
+                  </button>
+                  <button type="button" class="btn btn-premium btn-premium-view w-100" data-bs-toggle="modal"
+                    data-bs-target="#productModal" data-product-name="{{ p.get('name') or p.get('title','') }}"
+                    data-product-id="{{ p.get('id') }}"
+                    data-product-image="{{ prefer_processed(p.get('image') or (p.get('images') and p.get('images')[0]) or url_for('static', filename='placeholder.svg')) }}"
+                    data-product-stores="{{ p.get('stores')|tojson if p.get('stores') else '[]' }}">
+                    <i class="bi bi-info-circle-fill"></i> View Details
+                  </button>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="col-12">
+          <p class="text-muted">No products available.</p>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Stores Section (shown when search query exists) -->
+      {% if search_query and stores and stores|length > 0 %}
+      <div class="mt-5">
+        <h4 class="mb-3 fw-bold">
+          <i class="bi bi-shop"></i> Stores matching "{{ search_query }}"
+          <span class="badge bg-primary ms-2">{{ stores|length }}</span>
+        </h4>
+        <div class="row g-4">
+          {% for store in stores %}
+          <div class="col-md-6 col-lg-4">
+            <a href="{{ url_for('main.store_products_page', store_name=store.get('name')) }}"
+              class="text-decoration-none">
+              <div class="card h-100 shadow-sm hover-lift">
+                <img src="{{ store.get('image') or 'https://via.placeholder.com/250x150' }}" class="card-img-top"
+                  alt="{{ store.get('name') }}" style="height: 150px; object-fit: cover;">
+                <div class="card-body">
+                  <h5 class="card-title text-dark">{{ store.get('name') }}</h5>
+                  {% if store.get('description') %}
+                  <p class="text-muted small">{{ store.get('description')[:100] }}...</p>
+                  {% endif %}
+                  <div class="text-muted small">
+                    <i class="bi bi-box-seam"></i> {{ store.get('product_count', 0) }} products
+                  </div>
+                </div>
               </div>
             </a>
           </div>
-        {% endfor %}
-      {% else %}
-        <div class="col-12"><p class="text-muted">No products available.</p></div>
-      {% endif %}
-    </div>
-
-    <!-- Stores Section (shown when search query exists) -->
-    {% if search_query and stores and stores|length > 0 %}
-    <div class="mt-5">
-      <h4 class="mb-3 fw-bold">
-        <i class="bi bi-shop"></i> Stores matching "{{ search_query }}"
-        <span class="badge bg-primary ms-2">{{ stores|length }}</span>
-      </h4>
-      <div class="row g-4">
-        {% for store in stores %}
-        <div class="col-md-6 col-lg-4">
-          <a href="{{ url_for('main.store_products_page', store_name=store.get('name')) }}" class="text-decoration-none">
-            <div class="card h-100 shadow-sm hover-lift">
-              <img src="{{ store.get('image') or 'https://via.placeholder.com/250x150' }}" class="card-img-top" alt="{{ store.get('name') }}" style="height: 150px; object-fit: cover;">
-              <div class="card-body">
-                <h5 class="card-title text-dark">{{ store.get('name') }}</h5>
-                {% if store.get('description') %}
-                <p class="text-muted small">{{ store.get('description')[:100] }}...</p>
-                {% endif %}
-                <div class="text-muted small">
-                  <i class="bi bi-box-seam"></i> {{ store.get('product_count', 0) }} products
-                </div>
-              </div>
-            </div>
-          </a>
+          {% endfor %}
         </div>
-        {% endfor %}
       </div>
-    </div>
-    {% endif %}
+      {% endif %}
 
-    <!-- Deals Section (shown when search query exists) -->
-    {% if search_query and deals and deals|length > 0 %}
-    <div class="mt-5">
-      <h4 class="mb-3 fw-bold">
-        <i class="bi bi-lightning-fill text-warning"></i> Deals matching "{{ search_query }}"
-        <span class="badge bg-primary ms-2">{{ deals|length }}</span>
-      </h4>
-      <div class="row g-4">
-        {% for deal in deals %}
-        <div class="col-md-6 col-lg-4">
-          <div class="card h-100 shadow-sm">
-            {% if deal.get('discount_label') or deal.get('discount_percent') %}
-            <div class="position-absolute top-0 end-0 m-2">
-              <span class="badge" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
-                {{ deal.get('discount_label') or (deal.get('discount_percent') ~ '% OFF') }}
-              </span>
-            </div>
-            {% endif %}
-            <img src="{{ deal.get('image') or url_for('static', filename='placeholder.svg') }}" class="card-img-top" alt="{{ deal.get('title') or deal.get('name') }}" style="height: 200px; object-fit: contain; padding: 1rem;">
-            <div class="card-body">
-              <h5 class="card-title">{{ deal.get('title') or deal.get('name') }}</h5>
-              <p class="text-muted mb-2">
-                <i class="bi bi-shop"></i> {{ deal.get('store') or deal.get('source', 'Store') }}
-              </p>
-              <div class="d-flex justify-content-between align-items-center">
-                <span class="h4 mb-0 text-primary">€{{ deal.get('price', 'N/A') }}</span>
-                {% if deal.get('original_price') %}
-                <span class="text-muted text-decoration-line-through">€{{ deal.get('original_price') }}</span>
-                {% endif %}
+      <!-- Deals Section (shown when search query exists) -->
+      {% if search_query and deals and deals|length > 0 %}
+      <div class="mt-5">
+        <h4 class="mb-3 fw-bold">
+          <i class="bi bi-lightning-fill text-warning"></i> Deals matching "{{ search_query }}"
+          <span class="badge bg-primary ms-2">{{ deals|length }}</span>
+        </h4>
+        <div class="row g-4">
+          {% for deal in deals %}
+          <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-sm">
+              {% if deal.get('discount_label') or deal.get('discount_percent') %}
+              <div class="position-absolute top-0 end-0 m-2">
+                <span class="badge" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                  {{ deal.get('discount_label') or (deal.get('discount_percent') ~ '% OFF') }}
+                </span>
               </div>
-              <a href="{{ url_for('main.featured_deal_detail', deal_id=deal.get('id') or deal.get('_id')) }}" class="btn btn-primary w-100 mt-3">
-                <i class="bi bi-info-circle"></i> View Deal
-              </a>
+              {% endif %}
+              <img src="{{ deal.get('image') or url_for('static', filename='placeholder.svg') }}" class="card-img-top"
+                alt="{{ deal.get('title') or deal.get('name') }}"
+                style="height: 200px; object-fit: contain; padding: 1rem;">
+              <div class="card-body">
+                <h5 class="card-title">{{ deal.get('title') or deal.get('name') }}</h5>
+                <p class="text-muted mb-2">
+                  <i class="bi bi-shop"></i> {{ deal.get('store') or deal.get('source', 'Store') }}
+                </p>
+                <div class="d-flex justify-content-between align-items-center">
+                  <span class="h4 mb-0 text-primary">€{{ deal.get('price', 'N/A') }}</span>
+                  {% if deal.get('original_price') %}
+                  <span class="text-muted text-decoration-line-through">€{{ deal.get('original_price') }}</span>
+                  {% endif %}
+                </div>
+                <a href="{{ url_for('main.featured_deal_detail', deal_id=deal.get('id') or deal.get('_id')) }}"
+                  class="btn btn-premium btn-premium-view w-100 mt-3">
+                  <i class="bi bi-info-circle-fill"></i> View Deal
+                </a>
+              </div>
             </div>
           </div>
+          {% endfor %}
         </div>
-        {% endfor %}
       </div>
-    </div>
-    {% endif %}
+      {% endif %}
 
-    {% if total_pages and total_pages > 1 %}
-    <div class="pagination-pane mt-5 d-flex flex-column flex-sm-row align-items-center justify-content-between gap-3">
-      <div class="d-flex align-items-center gap-2">
-        <span class="badge bg-light text-dark border"><i class="bi bi-layers"></i> Page {{ page }} of {{ total_pages }}</span>
-        <span class="text-muted small">Showing {{ showing_start }}-{{ showing_end }} of {{ total_products }}</span>
-      </div>
-      <nav aria-label="Compare prices pagination" class="w-100 w-sm-auto">
-        <ul class="pagination justify-content-center mb-0 flex-wrap gap-1">
-          <li class="page-item {% if not has_prev %}disabled{% endif %}">
-            <a class="page-link" data-pagination-link="true" href="{% if has_prev %}{{ url_for('main.compare_prices', page=page-1, category=category_filter) }}{% else %}#{% endif %}" tabindex="{% if not has_prev %}-1{% endif %}"><i class="bi bi-chevron-left"></i></a>
+      <!-- Pagination -->
+      {% if total_pages and total_pages > 1 %}
+      <div class="custom-pagination-container">
+        <ul class="pagination-pills">
+          <li class="page-item {{ 'disabled' if not has_prev }}">
+            <a class="page-link nav-link"
+              href="{% if has_prev %}{{ url_for('main.compare_prices', page=page-1, category=category_filter, search=search_query) }}{% else %}#{% endif %}">
+              <i class="bi bi-arrow-left"></i> <span>Prev</span>
+            </a>
           </li>
-          {% for pnum in range(1, total_pages + 1) %}
-          <li class="page-item {% if pnum == page %}active{% endif %}">
-            <a class="page-link" data-pagination-link="true" href="{{ url_for('main.compare_prices', page=pnum, category=category_filter) }}">{{ pnum }}</a>
+
+          {% set start_page = [1, page - 2]|max %}
+          {% set end_page = [total_pages, start_page + 4]|min %}
+          {% set start_page = [1, end_page - 4]|max %}
+
+          {% for pnum in range(start_page, end_page + 1) %}
+          <li class="page-item {{ 'active' if pnum == page }}">
+            <a class="page-link"
+              href="{{ url_for('main.compare_prices', page=pnum, category=category_filter, search=search_query) }}">{{
+              pnum }}</a>
           </li>
           {% endfor %}
-          <li class="page-item {% if not has_next %}disabled{% endif %}">
-            <a class="page-link" data-pagination-link="true" href="{% if has_next %}{{ url_for('main.compare_prices', page=page+1, category=category_filter) }}{% else %}#{% endif %}"><i class="bi bi-chevron-right"></i></a>
+
+          <li class="page-item {{ 'disabled' if not has_next }}">
+            <a class="page-link nav-link"
+              href="{% if has_next %}{{ url_for('main.compare_prices', page=page+1, category=category_filter, search=search_query) }}{% else %}#{% endif %}">
+              <span>Next</span> <i class="bi bi-arrow-right"></i>
+            </a>
           </li>
         </ul>
-      </nav>
-    </div>
-    {% endif %}
+      </div>
+      {% endif %}
 
 
-  <!-- Modal for Selecting Shopping List -->
-  <div class="modal fade" id="listSelectorModal" tabindex="-1" aria-labelledby="listSelectorLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-md">
-      <div class="modal-content" style="border-radius: 14px; border: none; box-shadow: 0 12px 40px rgba(0,0,0,0.15);">
-        <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 14px 14px 0 0; padding: 1.1rem 1.4rem;">
-          <h6 class="modal-title mb-0" id="listSelectorLabel">
-            <i class="bi bi-cart-plus me-2"></i>Add to Shopping List
-          </h6>
-          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body" style="padding: 1.1rem 1.4rem;">
-          <div class="d-flex align-items-center gap-3 mb-3 p-3" style="background:#f6f7fb; border:1px solid #e6e8f0; border-radius:12px;">
-            <img id="itemThumb" src="{{ url_for('static', filename='placeholder.svg') }}" alt="product" style="width:64px; height:64px; object-fit:contain; background:white; border-radius:10px; border:1px solid #e9ecef;">
-            <div class="flex-grow-1">
-              <div class="fw-bold" id="itemNameDisplay" style="color:#2d2f3a; font-size:1rem; line-height:1.2;"></div>
-              <div class="small text-muted" id="itemStoreHint"></div>
+      <!-- Modal for Selecting Shopping List -->
+      <div class="modal fade" id="listSelectorModal" tabindex="-1" aria-labelledby="listSelectorLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-md">
+          <div class="modal-content"
+            style="border-radius: 14px; border: none; box-shadow: 0 12px 40px rgba(0,0,0,0.15);">
+            <div class="modal-header"
+              style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 14px 14px 0 0; padding: 1.1rem 1.4rem;">
+              <h6 class="modal-title mb-0" id="listSelectorLabel">
+                <i class="bi bi-cart-plus me-2"></i>Add to Shopping List
+              </h6>
+              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                aria-label="Close"></button>
             </div>
-            <span id="itemCheapestBadge" class="badge bg-success d-none"><i class="bi bi-star-fill me-1"></i>Best price</span>
+            <div class="modal-body" style="padding: 1.1rem 1.4rem;">
+              <div class="d-flex align-items-center gap-3 mb-3 p-3"
+                style="background:#f6f7fb; border:1px solid #e6e8f0; border-radius:12px;">
+                <img id="itemThumb" src="{{ url_for('static', filename='placeholder.svg') }}" alt="product"
+                  style="width:64px; height:64px; object-fit:contain; background:white; border-radius:10px; border:1px solid #e9ecef;">
+                <div class="flex-grow-1">
+                  <div class="fw-bold" id="itemNameDisplay" style="color:#2d2f3a; font-size:1rem; line-height:1.2;">
+                  </div>
+                  <div class="small text-muted" id="itemStoreHint"></div>
+                </div>
+                <span id="itemCheapestBadge" class="badge bg-success d-none"><i class="bi bi-star-fill me-1"></i>Best
+                  price</span>
+              </div>
+              <div id="listSelectorContainer" class="d-flex flex-column gap-2">
+                <!-- Lists will be populated here -->
+              </div>
+            </div>
+            <div class="modal-footer" style="border-top: 1px solid #e9ecef; padding: 0.75rem 1.4rem;">
+              <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                <i class="bi bi-x-circle me-1"></i>Cancel
+              </button>
+            </div>
           </div>
-          <div id="listSelectorContainer" class="d-flex flex-column gap-2">
-            <!-- Lists will be populated here -->
-          </div>
-        </div>
-        <div class="modal-footer" style="border-top: 1px solid #e9ecef; padding: 0.75rem 1.4rem;">
-          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
-            <i class="bi bi-x-circle me-1"></i>Cancel
-          </button>
         </div>
       </div>
-    </div>
-  </div>
 
-  <footer class="text-center py-4 bg-light border-top">
-    <p class="mb-0 text-muted">&copy; 2025 Smart Grocery Team</p>
-  </footer>
+      <footer class="text-center py-4 bg-light border-top">
+        <p class="mb-0 text-muted">&copy; 2025 Smart Grocery Team</p>
+      </footer>
 
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
-  <script>
-    // Handle store item selection
-    document.addEventListener('click', function(e) {
-      const storeItem = e.target.closest('.store-item');
-      if (storeItem && !e.target.closest('.add-to-list-btn')) {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        const productId = storeItem.dataset.productId;
-        
-        // Toggle selection
-        if (storeItem.classList.contains('selected')) {
-          // Deselect if already selected
-          storeItem.classList.remove('selected');
-        } else {
-          // Deselect all stores for this product
-          const productCard = storeItem.closest('.product-card');
-          if (productCard) {
-            productCard.querySelectorAll('.store-item').forEach(item => {
-              item.classList.remove('selected');
+      <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+      <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+      <script>
+        // Handle store item selection
+        document.addEventListener('click', function (e) {
+          const storeItem = e.target.closest('.store-item');
+          if (storeItem && !e.target.closest('.add-to-list-btn')) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const productId = storeItem.dataset.productId;
+
+            // Toggle selection
+            if (storeItem.classList.contains('selected')) {
+              // Deselect if already selected
+              storeItem.classList.remove('selected');
+            } else {
+              // Deselect all stores for this product
+              const productCard = storeItem.closest('.product-card');
+              if (productCard) {
+                productCard.querySelectorAll('.store-item').forEach(item => {
+                  item.classList.remove('selected');
+                });
+              }
+
+              // Select this store
+              storeItem.classList.add('selected');
+            }
+          }
+        });
+
+        // Handle search button click
+        function handleCompareSearch() {
+          const searchInput = document.getElementById('product-search-input');
+          const searchTerm = searchInput.value.trim();
+          const categoryFilter = '{{ category_filter or "" }}';
+
+          // Build URL with search and category params
+          let url = '{{ url_for("main.compare_prices") }}';
+          const params = new URLSearchParams();
+
+          if (searchTerm) {
+            params.set('search', searchTerm);
+          }
+          if (categoryFilter) {
+            params.set('category', categoryFilter);
+          }
+
+          if (params.toString()) {
+            url += '?' + params.toString();
+          }
+
+          window.location.href = url;
+        }
+
+        // Product filtering functionality
+        document.addEventListener('DOMContentLoaded', function () {
+          const searchInput = document.getElementById('product-search-input');
+
+          // Add enter key support for search
+          if (searchInput) {
+            searchInput.addEventListener('keypress', function (e) {
+              if (e.key === 'Enter') {
+                handleCompareSearch();
+              }
             });
           }
-          
-          // Select this store
-          storeItem.classList.add('selected');
-        }
-      }
-    });
+          const searchBtn = document.getElementById('product-search-btn');
+          const categoryFilter = document.getElementById('category-filter');
+          const storeFilter = document.getElementById('store-filter');
+          const minPriceInput = document.getElementById('min-price');
+          const maxPriceInput = document.getElementById('max-price');
+          const sortOrder = document.getElementById('sort-order');
+          const clearFiltersBtn = document.getElementById('clear-filters');
+          const productsGrid = document.getElementById('products-grid');
+          const productsCount = document.getElementById('products-count');
+          const activeFiltersDiv = document.getElementById('active-filters');
+          const categoryChips = Array.from(document.querySelectorAll('[data-category-chip]'));
+          let activeCategorySlug = '';
+          let activeCategoryLabel = '';
 
-    // Handle search button click
-    function handleCompareSearch() {
-      const searchInput = document.getElementById('product-search-input');
-      const searchTerm = searchInput.value.trim();
-      const categoryFilter = '{{ category_filter or "" }}';
-      
-      // Build URL with search and category params
-      let url = '{{ url_for("main.compare_prices") }}';
-      const params = new URLSearchParams();
-      
-      if (searchTerm) {
-        params.set('search', searchTerm);
-      }
-      if (categoryFilter) {
-        params.set('category', categoryFilter);
-      }
-      
-      if (params.toString()) {
-        url += '?' + params.toString();
-      }
-      
-      window.location.href = url;
-    }
-
-    // Product filtering functionality
-    document.addEventListener('DOMContentLoaded', function() {
-      const searchInput = document.getElementById('product-search-input');
-      
-      // Add enter key support for search
-      if (searchInput) {
-        searchInput.addEventListener('keypress', function(e) {
-          if (e.key === 'Enter') {
-            handleCompareSearch();
-          }
-        });
-      }
-      const searchBtn = document.getElementById('product-search-btn');
-      const categoryFilter = document.getElementById('category-filter');
-      const storeFilter = document.getElementById('store-filter');
-      const minPriceInput = document.getElementById('min-price');
-      const maxPriceInput = document.getElementById('max-price');
-      const sortOrder = document.getElementById('sort-order');
-      const clearFiltersBtn = document.getElementById('clear-filters');
-      const productsGrid = document.getElementById('products-grid');
-      const productsCount = document.getElementById('products-count');
-      const activeFiltersDiv = document.getElementById('active-filters');
-      const categoryChips = Array.from(document.querySelectorAll('[data-category-chip]'));
-      let activeCategorySlug = '';
-      let activeCategoryLabel = '';
-      
-      // Populate store filter from products
-      const allProducts = document.querySelectorAll('.product-card');
-      const storesSet = new Set();
-      allProducts.forEach(card => {
-        try {
-          const stores = JSON.parse(card.dataset.stores || '[]');
-          stores.forEach(s => storesSet.add(s.store || s.name));
-        } catch(e) {}
-      });
-      storesSet.forEach(store => {
-        const opt = document.createElement('option');
-        opt.value = store;
-        opt.textContent = store;
-        storeFilter.appendChild(opt);
-      });
-      
-      function slugifyCategory(str) {
-        return (str || '').toString().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-      }
-
-      function setActiveChip(slug, label) {
-        activeCategorySlug = slug;
-        activeCategoryLabel = label;
-        categoryChips.forEach(chip => {
-          chip.classList.toggle('active', chip.dataset.categoryChip === slug);
-        });
-        // keep dropdown in sync but not required for matching values
-        categoryFilter.value = '';
-      }
-
-      function filterAndSortProducts() {
-        const searchTerm = searchInput.value.toLowerCase().trim();
-        const selectedCategory = ''; // category filtering now handled server-side via page reload
-        const selectedStore = storeFilter.value;
-        const minPrice = parseFloat(minPriceInput.value) || 0;
-        const maxPrice = parseFloat(maxPriceInput.value) || Infinity;
-        
-        let visibleProducts = [];
-        
-        allProducts.forEach(card => {
-          const productName = card.dataset.name || '';
-          const productCategory = card.dataset.category || '';
-          const productCategorySlug = slugifyCategory(productCategory);
-          const productPrice = parseFloat(card.dataset.price) || 0;
-          
-          // Check store availability
-          let hasStore = !selectedStore;
-          if (selectedStore) {
+          // Populate store filter from products
+          const allProducts = document.querySelectorAll('.product-card');
+          const storesSet = new Set();
+          allProducts.forEach(card => {
             try {
               const stores = JSON.parse(card.dataset.stores || '[]');
-              hasStore = stores.some(s => (s.store || s.name) === selectedStore);
-            } catch(e) {}
-          }
-          
-          // Check all conditions
-          const matchesSearch = !searchTerm || productName.includes(searchTerm);
-          const matchesCategory = !selectedCategory || productCategorySlug === selectedCategory;
-          const matchesPrice = productPrice >= minPrice && productPrice <= maxPrice;
+              stores.forEach(s => storesSet.add(s.store || s.name));
+            } catch (e) { }
+          });
+          storesSet.forEach(store => {
+            const opt = document.createElement('option');
+            opt.value = store;
+            opt.textContent = store;
+            storeFilter.appendChild(opt);
+          });
 
-          const matchesStore = hasStore;
-          if (matchesSearch && matchesCategory && matchesStore && hasStore) {
-            card.style.display = '';
-            visibleProducts.push({
-              element: card,
-              name: productName,
-              price: productPrice
-            });
-          } else {
-            card.style.display = 'none';
+          function slugifyCategory(str) {
+            return (str || '').toString().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
           }
-        });
-        
-        // Apply sorting
-        const sortValue = sortOrder.value;
-        if (sortValue === 'price-asc') {
-          visibleProducts.sort((a, b) => a.price - b.price);
-        } else if (sortValue === 'price-desc') {
-          visibleProducts.sort((a, b) => b.price - a.price);
-        } else if (sortValue === 'name-asc') {
-          visibleProducts.sort((a, b) => a.name.localeCompare(b.name));
-        } else if (sortValue === 'name-desc') {
-          visibleProducts.sort((a, b) => b.name.localeCompare(a.name));
-        }
-        
-        // Reorder DOM
-        visibleProducts.forEach(item => {
-          productsGrid.appendChild(item.element);
-        });
-        
-        // Update count
-        productsCount.textContent = `${visibleProducts.length} product${visibleProducts.length !== 1 ? 's' : ''}`;
-        
-        // Update active filters
-        updateActiveFilters(searchTerm, selectedCategory, selectedStore, minPrice, maxPrice);
-      }
-      
-      function updateActiveFilters(searchTerm, categorySlug, store, minPrice, maxPrice) {
-        activeFiltersDiv.innerHTML = '';
-        let hasFilters = false;
-        
-        if (searchTerm) {
-          hasFilters = true;
-          activeFiltersDiv.appendChild(createFilterBadge('Search: ' + searchTerm, () => {
-            searchInput.value = '';
-            filterAndSortProducts();
-          }));
-        }
-        
-        if (categorySlug) {
-          hasFilters = true;
-          const label = activeCategoryLabel || categoryFilter.options[categoryFilter.selectedIndex || 0]?.textContent || 'Category';
-          activeFiltersDiv.appendChild(createFilterBadge('Category: ' + label, () => {
-            setActiveChip('', '');
+
+          function setActiveChip(slug, label) {
+            activeCategorySlug = slug;
+            activeCategoryLabel = label;
+            categoryChips.forEach(chip => {
+              chip.classList.toggle('active', chip.dataset.categoryChip === slug);
+            });
+            // keep dropdown in sync but not required for matching values
             categoryFilter.value = '';
-            filterAndSortProducts();
-          }));
-        }
-        
-        if (store) {
-          hasFilters = true;
-          activeFiltersDiv.appendChild(createFilterBadge('Store: ' + store, () => {
+          }
+
+          function filterAndSortProducts() {
+            const searchTerm = searchInput.value.toLowerCase().trim();
+            const selectedCategory = ''; // category filtering now handled server-side via page reload
+            const selectedStore = storeFilter.value;
+            const minPrice = parseFloat(minPriceInput.value) || 0;
+            const maxPrice = parseFloat(maxPriceInput.value) || Infinity;
+
+            let visibleProducts = [];
+
+            allProducts.forEach(card => {
+              const productName = card.dataset.name || '';
+              const productCategory = card.dataset.category || '';
+              const productCategorySlug = slugifyCategory(productCategory);
+              const productPrice = parseFloat(card.dataset.price) || 0;
+
+              // Check store availability
+              let hasStore = !selectedStore;
+              if (selectedStore) {
+                try {
+                  const stores = JSON.parse(card.dataset.stores || '[]');
+                  hasStore = stores.some(s => (s.store || s.name) === selectedStore);
+                } catch (e) { }
+              }
+
+              // Check all conditions
+              const matchesSearch = !searchTerm || productName.includes(searchTerm);
+              const matchesCategory = !selectedCategory || productCategorySlug === selectedCategory;
+              const matchesPrice = productPrice >= minPrice && productPrice <= maxPrice;
+
+              const matchesStore = hasStore;
+              if (matchesSearch && matchesCategory && matchesStore && hasStore) {
+                card.style.display = '';
+                visibleProducts.push({
+                  element: card,
+                  name: productName,
+                  price: productPrice
+                });
+              } else {
+                card.style.display = 'none';
+              }
+            });
+
+            // Apply sorting
+            const sortValue = sortOrder.value;
+            if (sortValue === 'price-asc') {
+              visibleProducts.sort((a, b) => a.price - b.price);
+            } else if (sortValue === 'price-desc') {
+              visibleProducts.sort((a, b) => b.price - a.price);
+            } else if (sortValue === 'name-asc') {
+              visibleProducts.sort((a, b) => a.name.localeCompare(b.name));
+            } else if (sortValue === 'name-desc') {
+              visibleProducts.sort((a, b) => b.name.localeCompare(a.name));
+            }
+
+            // Reorder DOM
+            visibleProducts.forEach(item => {
+              productsGrid.appendChild(item.element);
+            });
+
+            // Update count
+            productsCount.textContent = `${visibleProducts.length} product${visibleProducts.length !== 1 ? 's' : ''}`;
+
+            // Update active filters
+            updateActiveFilters(searchTerm, selectedCategory, selectedStore, minPrice, maxPrice);
+          }
+
+          function updateActiveFilters(searchTerm, categorySlug, store, minPrice, maxPrice) {
+            activeFiltersDiv.innerHTML = '';
+            let hasFilters = false;
+
+            if (searchTerm) {
+              hasFilters = true;
+              activeFiltersDiv.appendChild(createFilterBadge('Search: ' + searchTerm, () => {
+                searchInput.value = '';
+                filterAndSortProducts();
+              }));
+            }
+
+            if (categorySlug) {
+              hasFilters = true;
+              const label = activeCategoryLabel || categoryFilter.options[categoryFilter.selectedIndex || 0]?.textContent || 'Category';
+              activeFiltersDiv.appendChild(createFilterBadge('Category: ' + label, () => {
+                setActiveChip('', '');
+                categoryFilter.value = '';
+                filterAndSortProducts();
+              }));
+            }
+
+            if (store) {
+              hasFilters = true;
+              activeFiltersDiv.appendChild(createFilterBadge('Store: ' + store, () => {
+                storeFilter.value = '';
+                filterAndSortProducts();
+              }));
+            }
+
+            if (minPrice > 0 || maxPrice < Infinity) {
+              hasFilters = true;
+              const priceText = minPrice > 0 && maxPrice < Infinity
+                ? `€${minPrice} - €${maxPrice}`
+                : minPrice > 0
+                  ? `Min: €${minPrice}`
+                  : `Max: €${maxPrice}`;
+              activeFiltersDiv.appendChild(createFilterBadge('Price: ' + priceText, () => {
+                minPriceInput.value = '';
+                maxPriceInput.value = '';
+                filterAndSortProducts();
+              }));
+            }
+
+            if (hasFilters) {
+              activeFiltersDiv.style.display = 'flex';
+              const clearAll = document.createElement('button');
+              clearAll.className = 'btn btn-sm btn-outline-secondary';
+              clearAll.innerHTML = '<i class="bi bi-x-circle"></i> Clear All';
+              clearAll.onclick = clearAllFilters;
+              activeFiltersDiv.appendChild(clearAll);
+            } else {
+              activeFiltersDiv.style.display = 'none';
+            }
+          }
+
+          function createFilterBadge(text, onRemove) {
+            const badge = document.createElement('span');
+            badge.className = 'badge bg-primary d-flex align-items-center gap-1';
+            badge.innerHTML = text + ' <i class="bi bi-x-circle" style="cursor:pointer;"></i>';
+            badge.querySelector('i').onclick = onRemove;
+            return badge;
+          }
+
+          function clearAllFilters() {
+            searchInput.value = '';
+            categoryFilter.value = '';
+            setActiveChip('', '');
             storeFilter.value = '';
-            filterAndSortProducts();
-          }));
-        }
-        
-        if (minPrice > 0 || maxPrice < Infinity) {
-          hasFilters = true;
-          const priceText = minPrice > 0 && maxPrice < Infinity 
-            ? `€${minPrice} - €${maxPrice}` 
-            : minPrice > 0 
-            ? `Min: €${minPrice}` 
-            : `Max: €${maxPrice}`;
-          activeFiltersDiv.appendChild(createFilterBadge('Price: ' + priceText, () => {
             minPriceInput.value = '';
             maxPriceInput.value = '';
             filterAndSortProducts();
-          }));
-        }
-        
-        if (hasFilters) {
-          activeFiltersDiv.style.display = 'flex';
-          const clearAll = document.createElement('button');
-          clearAll.className = 'btn btn-sm btn-outline-secondary';
-          clearAll.innerHTML = '<i class="bi bi-x-circle"></i> Clear All';
-          clearAll.onclick = clearAllFilters;
-          activeFiltersDiv.appendChild(clearAll);
-        } else {
-          activeFiltersDiv.style.display = 'none';
-        }
-      }
-      
-      function createFilterBadge(text, onRemove) {
-        const badge = document.createElement('span');
-        badge.className = 'badge bg-primary d-flex align-items-center gap-1';
-        badge.innerHTML = text + ' <i class="bi bi-x-circle" style="cursor:pointer;"></i>';
-        badge.querySelector('i').onclick = onRemove;
-        return badge;
-      }
-      
-      function clearAllFilters() {
-        searchInput.value = '';
-        categoryFilter.value = '';
-        setActiveChip('', '');
-        storeFilter.value = '';
-        minPriceInput.value = '';
-        maxPriceInput.value = '';
-        filterAndSortProducts();
-      }
-      
-      // Event listeners
-      if (searchBtn) searchBtn.addEventListener('click', filterAndSortProducts);
-      if (searchInput) searchInput.addEventListener('keyup', (e) => {
-        if (e.key === 'Enter') filterAndSortProducts();
-      });
-      if (categoryFilter) categoryFilter.addEventListener('change', () => {
-        const val = (categoryFilter.value || '').toLowerCase();
-        const params = new URLSearchParams(window.location.search);
-        if (val) {
-          params.set('category', val);
-          params.set('page', '1');
-        } else {
-          params.delete('category');
-          params.set('page', '1');
-        }
-        window.location.search = params.toString();
-      });
-      if (storeFilter) storeFilter.addEventListener('change', filterAndSortProducts);
-      if (minPriceInput) minPriceInput.addEventListener('change', filterAndSortProducts);
-      if (maxPriceInput) maxPriceInput.addEventListener('change', filterAndSortProducts);
-      if (sortOrder) sortOrder.addEventListener('change', filterAndSortProducts);
-      if (clearFiltersBtn) clearFiltersBtn.addEventListener('click', clearAllFilters);
-
-      categoryChips.forEach(chip => {
-        chip.addEventListener('click', () => {
-          const slug = (chip.dataset.categoryChip || '').toLowerCase();
-          const params = new URLSearchParams(window.location.search);
-          const current = (params.get('category') || '').toLowerCase();
-          const willClear = slug === '' || slug === current;
-          if (willClear) {
-            params.delete('category');
-          } else {
-            params.set('category', slug);
           }
-          params.set('page', '1');
-          window.location.search = params.toString();
+
+          // Event listeners
+          if (searchBtn) searchBtn.addEventListener('click', filterAndSortProducts);
+          if (searchInput) {
+            searchInput.addEventListener('input', filterAndSortProducts);
+            searchInput.addEventListener('keydown', (e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                handleCompareSearch();
+              }
+            });
+          }
+          if (categoryFilter) categoryFilter.addEventListener('change', () => {
+            const val = (categoryFilter.value || '').toLowerCase();
+            const params = new URLSearchParams(window.location.search);
+            if (val) {
+              params.set('category', val);
+              params.set('page', '1');
+            } else {
+              params.delete('category');
+              params.set('page', '1');
+            }
+            window.location.search = params.toString();
+          });
+          if (storeFilter) storeFilter.addEventListener('change', filterAndSortProducts);
+          if (minPriceInput) minPriceInput.addEventListener('change', filterAndSortProducts);
+          if (maxPriceInput) maxPriceInput.addEventListener('change', filterAndSortProducts);
+          if (sortOrder) sortOrder.addEventListener('change', filterAndSortProducts);
+          if (clearFiltersBtn) clearFiltersBtn.addEventListener('click', clearAllFilters);
+
+          categoryChips.forEach(chip => {
+            chip.addEventListener('click', () => {
+              const slug = (chip.dataset.categoryChip || '').toLowerCase();
+              const params = new URLSearchParams(window.location.search);
+              const current = (params.get('category') || '').toLowerCase();
+              const willClear = slug === '' || slug === current;
+              if (willClear) {
+                params.delete('category');
+              } else {
+                params.set('category', slug);
+              }
+              params.set('page', '1');
+              window.location.search = params.toString();
+            });
+          });
         });
-      });
-    });
+      </script>
 
-    // Handle Add to Shopping List button
-    let pendingItemToAdd = null;
-
-    document.addEventListener('click', function(e) {
-      if (e.target.classList.contains('add-to-list-btn') || e.target.closest('.add-to-list-btn')) {
-        const btn = e.target.classList.contains('add-to-list-btn') ? e.target : e.target.closest('.add-to-list-btn');
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation(); // Stop other event listeners from firing
-        
-        const productName = btn.dataset.productName;
-        const productId = btn.dataset.productId;
-        const productPrice = btn.dataset.productPrice;
-        const productImage = btn.dataset.productImage;
-        
-        // Get stores data from the product card
-        const productCard = btn.closest('.product-card');
-        let stores = [];
-        let selectedStore = null;
-        
-        if (productCard) {
-          try {
-            const storesJson = productCard.dataset.stores;
-            stores = JSON.parse(storesJson) || [];
-          } catch (e) {
-            stores = [];
-          }
-          
-          // Check if a store is already selected
-          const selectedStoreItem = productCard.querySelector('.store-item.selected');
-          if (selectedStoreItem) {
-            selectedStore = {
-              name: selectedStoreItem.dataset.storeName,
-              price: selectedStoreItem.dataset.storePrice
-            };
-          }
-        }
-        
-        pendingItemToAdd = {
-          name: productName,
-          product_id: productId,
-          price: productPrice,
-          image: productImage,
-          stores: stores,
-          selected_store: selectedStore ? selectedStore.name : null,
-          qty: 1
-        };
-        
-        // Always require a store choice before showing list selector
-        if (selectedStore) {
-          // Store already selected, show list selector
-          pendingItemToAdd.price = selectedStore.price;
-          pendingItemToAdd.store = selectedStore.name;
-          showListSelectorForCompare(productName, true);
-        } else if (stores && stores.length > 1) {
-          // Multiple stores available, require user to select one first
-          pendingItemToAdd = null; // Clear pending item FIRST
-          showNotification('Please select a store by clicking on one of the store options in the product card', 'warning');
-          return; // Exit early
-        } else if (stores && stores.length === 1) {
-          // Only one store, auto-select it
-          pendingItemToAdd.selected_store = stores[0].store || stores[0].name;
-          pendingItemToAdd.store = stores[0].store || stores[0].name;
-          pendingItemToAdd.price = stores[0].price;
-          showListSelectorForCompare(productName, true);
-        } else {
-          // No store info available, show error
-          pendingItemToAdd = null; // Clear pending item FIRST
-          showNotification('Cannot add product without store information. Please select a store first.', 'danger');
-          return; // Exit early
-        }
-      }
-    });
-
-    function getCheapestStore(stores) {
-      if (!stores || !stores.length) return null;
-      let cheapest = null;
-      stores.forEach(s => {
-        const priceNum = Number(String(s.price || '').replace(/[^0-9.]/g, '')) || Infinity;
-        if (!cheapest || priceNum < cheapest.priceNum) {
-          cheapest = { price: s.price, store: s.store || s.name, priceNum };
-        }
-      });
-      return cheapest;
-    }
-
-    // Show store selector modal
-    function showStoreSelector(productName, stores) {
-      const itemNameDisplay = document.getElementById('itemNameDisplay');
-      const itemThumb = document.getElementById('itemThumb');
-      const itemStoreHint = document.getElementById('itemStoreHint');
-      const itemCheapestBadge = document.getElementById('itemCheapestBadge');
-      if (itemNameDisplay) {
-        itemNameDisplay.textContent = productName;
-      }
-      if (itemThumb && pendingItemToAdd && pendingItemToAdd.image) {
-        itemThumb.src = pendingItemToAdd.image;
-      }
-      if (itemStoreHint) {
-        itemStoreHint.textContent = stores && stores.length ? `${stores.length} store option${stores.length>1?'s':''}` : '';
-      }
-      if (itemCheapestBadge) {
-        itemCheapestBadge.classList.add('d-none');
-      }
-      const listSelectorContainer = document.getElementById('listSelectorContainer');
-      const cheapest = getCheapestStore(stores);
-      if (itemCheapestBadge && cheapest) {
-        itemCheapestBadge.classList.remove('d-none');
-        itemCheapestBadge.innerHTML = `<i class="bi bi-star-fill me-1"></i>Cheapest: ${cheapest.price}`;
-      }
-
-      listSelectorContainer.innerHTML = `
-        <div class="list-group list-group-flush">
-          ${stores.map(store => {
-            const storePrice = Number(String(store.price || '').replace(/[^0-9.]/g, '')) || Infinity;
-            const isCheapest = cheapest && storePrice === cheapest.priceNum;
-            return `
-            <button type="button" class="list-group-item list-group-item-action list-select-card" data-store-name="${store.store || store.name}" data-store-price="${store.price}" style="border-radius: 12px; margin-bottom: 10px;">
-              <div class="d-flex justify-content-between align-items-center">
-                <div class="d-flex align-items-center gap-2">
-                  ${store.image ? `<img src="${store.image}" alt="${store.store || store.name}" style="width: 48px; height: 48px; object-fit: contain; background: white; border-radius: 8px; border: 1px solid #e9ecef;">` : ''}
-                  <div>
-                    <div class="fw-bold">${store.store || store.name}</div>
-                    <small class="text-muted">Tap to choose</small>
-                  </div>
+      <!-- Product Quick View Modal -->
+      <div class="modal fade" id="productModal" tabindex="-1" aria-labelledby="productModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+          <div class="modal-content overflow-hidden border-0 shadow-lg" style="border-radius: 20px;">
+            <div class="modal-header border-0 pb-0"
+              style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+              <h5 class="modal-title product-modal-title text-white fw-bold py-2 mt-2" id="productModalLabel">
+                <i class="bi bi-info-circle me-2"></i>Product Details
+              </h5>
+              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+              <div class="row g-0">
+                <div class="col-md-5 d-flex align-items-center justify-content-center bg-white">
+                  <img src="" class="img-fluid product-modal-image p-4" alt="Product Image"
+                    style="max-height: 350px; object-fit: contain;">
                 </div>
-                <div class="text-end">
-                  <div class="d-flex align-items-center gap-1 justify-content-end">
-                    ${isCheapest ? '<i class="bi bi-star-fill" style="color: #ffc107; margin-right: 4px;"></i>' : ''}<div class="text-success fw-bold" style="font-size: 1.1rem;">${store.price}</div>
+                <div class="col-md-7">
+                  <div class="p-4" style="background-color: #f8f9fa; height: 100%;">
+                    <div class="product-info-container">
+                      <!-- Dynamic content populated by script.js -->
+                    </div>
                   </div>
-                  ${store.discount ? `<span class="badge bg-danger mt-2">${store.discount}</span>` : ''}
                 </div>
               </div>
-            </button>
-            `;
-          }).join('')}
-        </div>`;
-
-      // Delegate click handling to container to ensure reliability
-      listSelectorContainer.onclick = (event) => {
-        const card = event.target.closest('.list-select-card');
-        if (!card) return;
-        const storeName = card.dataset.storeName;
-        const storePrice = card.dataset.storePrice;
-        pendingItemToAdd.selected_store = storeName;
-        pendingItemToAdd.price = storePrice;
-        const modalInst = bootstrap.Modal.getInstance(document.getElementById('listSelectorModal'));
-        if (modalInst) modalInst.hide();
-        showListSelectorForCompare(pendingItemToAdd.name || productName);
-      };
-
-      // Hover effects remain
-      document.querySelectorAll('.list-select-card').forEach(card => {
-        card.addEventListener('mouseenter', function() {
-          this.style.borderColor = '#667eea';
-          this.style.boxShadow = '0 6px 16px rgba(102,126,234,0.18)';
-          this.style.transform = 'translateY(-2px)';
-        });
-        card.addEventListener('mouseleave', function() {
-          this.style.borderColor = '#e3e6ef';
-          this.style.boxShadow = 'none';
-          this.style.transform = 'translateY(0)';
-        });
-      });
-
-      const modal = new bootstrap.Modal(document.getElementById('listSelectorModal'));
-      modal.show();
-    }
-
-    // Show list selector - directly shows the global list selector modal
-    async function showListSelectorForCompare(productName, skipStoreCheck=false) {
-      if (!pendingItemToAdd) {
-        return;
-      }
-      if (!skipStoreCheck && (!pendingItemToAdd.selected_store || pendingItemToAdd.selected_store === 'Unknown') && pendingItemToAdd.stores && pendingItemToAdd.stores.length > 1) {
-        showNotification('Please select a store first', 'warning');
-        return;
-      }
-      
-      const priceVal = Number(String(pendingItemToAdd.price || '').replace(/[^0-9.]/g, '')) || 0;
-      const itemToAdd = {
-        name: pendingItemToAdd.name,
-        price: pendingItemToAdd.price,
-        price_val: priceVal,
-        store: pendingItemToAdd.selected_store || 'Unknown',
-        image: pendingItemToAdd.image,
-        qty: 1
-      };
-      
-      // Directly call the global list selector
-      if (typeof window.showListSelector === 'function') {
-        try {
-          await window.showListSelector(itemToAdd);
-          pendingItemToAdd = null; // Clear after showing selector
-        } catch (error) {
-          console.error('Error showing list selector:', error);
-          showNotification('Error showing list selector', 'danger');
-        }
-      } else {
-        console.error('Global showListSelector not found');
-        showNotification('List selector not available', 'danger');
-      }
-    }
-
-    // Add item to selected list
-    async function addItemToList(listId, skipStoreCheck=false) {
-      if (!pendingItemToAdd) {
-        return;
-      }
-      if (!listId) {
-        return;
-      }
-      if (!skipStoreCheck && (!pendingItemToAdd.selected_store || pendingItemToAdd.selected_store === 'Unknown') && pendingItemToAdd.stores && pendingItemToAdd.stores.length > 1) {
-        return;
-      }
-      
-      try {
-        const priceVal = Number(String(pendingItemToAdd.price || '').replace(/[^0-9.]/g, '')) || 0;
-        const itemToAdd = {
-          name: pendingItemToAdd.name,
-          price: pendingItemToAdd.price,
-          price_val: priceVal,
-          store: pendingItemToAdd.selected_store || 'Unknown',
-          image: pendingItemToAdd.image,
-          qty: 1
-        };
-        
-        const response = await fetch('/api/list/add-item', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ item: itemToAdd, list_id: listId })
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-          showNotification(`${pendingItemToAdd.name} added to your shopping list`, 'success');
-          pendingItemToAdd = null;
-        }
-      } catch (error) {
-        console.error('Error:', error);
-      }
-    }
-
-    // Product modal handling - FIXED VERSION
-    let currentProductStores = [];
-    const modal = document.getElementById('productModal');
-    
-    // Handle modal open
-    modal.addEventListener('show.bs.modal', function(event) {
-      const button = event.relatedTarget;
-      if (button && button.classList.contains('view-product-details-btn')) {
-        const title = button.getAttribute('data-product-name') || '';
-        const image = button.getAttribute('data-product-image') || '';
-        const storesJson = button.getAttribute('data-product-stores') || '[]';
-        
-        // Update modal title and image
-        modal.querySelector('.product-modal-title').textContent = title;
-        modal.querySelector('.product-modal-image').src = image;
-        
-        // Parse stores
-        try {
-          currentProductStores = JSON.parse(storesJson);
-        } catch(e) {
-          currentProductStores = [];
-        }
-        
-        // Clear and rebuild selector
-        const selector = modal.querySelector('#product-modal-store-selector');
-        selector.innerHTML = '<option value="">-- Select a store --</option>';
-        
-        currentProductStores.forEach(store => {
-          const opt = document.createElement('option');
-          opt.value = store.store || store.name || '';
-          opt.text = (store.store || store.name || '') + ' - €' + (store.price || '0');
-          selector.appendChild(opt);
-        });
-        
-        // Reset selection
-        selector.value = '';
-        
-        // Hide all details
-        modal.querySelector('.product-modal-price').style.display = 'none';
-        modal.querySelector('.product-modal-discount').style.display = 'none';
-        modal.querySelector('.product-modal-expires').style.display = 'none';
-        modal.querySelector('.add-to-cart-btn').style.display = 'none';
-        
-        modal.querySelector('.add-to-cart-btn').setAttribute('data-name', title);
-        modal.querySelector('.add-to-cart-btn').setAttribute('data-image', image);
-      }
-    });
-    
-    // Handle store selection - listen on the modal's selector specifically
-    modal.addEventListener('change', function(event) {
-      if (event.target.id === 'product-modal-store-selector') {
-        const selectedValue = event.target.value;
-        
-        // If no selection, hide everything
-        if (!selectedValue || selectedValue === '') {
-          modal.querySelector('.product-modal-price').style.display = 'none';
-          modal.querySelector('.product-modal-discount').style.display = 'none';
-          modal.querySelector('.product-modal-expires').style.display = 'none';
-          modal.querySelector('.add-to-cart-btn').style.display = 'none';
-          return;
-        }
-        
-        // Find matching store
-        const store = currentProductStores.find(s => (s.store || s.name) === selectedValue);
-        
-        if (store) {
-          // Show price
-          const priceEl = modal.querySelector('.product-modal-price');
-          priceEl.style.display = 'block';
-          priceEl.querySelector('span').textContent = '€' + (store.price || 'N/A');
-          
-          // Show/hide discount
-          const discEl = modal.querySelector('.product-modal-discount');
-          if (store.discount) {
-            discEl.style.display = 'block';
-            discEl.querySelector('span').textContent = store.discount;
-          } else {
-            discEl.style.display = 'none';
-          }
-          
-          // Show/hide expires
-          const expEl = modal.querySelector('.product-modal-expires');
-          if (store.expires) {
-            expEl.style.display = 'block';
-            expEl.querySelector('span').textContent = store.expires;
-          } else {
-            expEl.style.display = 'none';
-          }
-          
-          // Show add button with all required data
-          const addBtn = modal.querySelector('.add-to-cart-btn');
-          addBtn.style.display = 'inline-block';
-          addBtn.setAttribute('data-store', selectedValue);
-          addBtn.setAttribute('data-price', store.price || '');
-          
-          // Remove any old click handlers and add new one
-          const newBtn = addBtn.cloneNode(true);
-          addBtn.parentNode.replaceChild(newBtn, addBtn);
-          
-          // Add click handler to show list selector
-          newBtn.addEventListener('click', async function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            const itemToAdd = {
-              name: newBtn.getAttribute('data-name') || '',
-              price: newBtn.getAttribute('data-price') || '',
-              price_val: Number(String(newBtn.getAttribute('data-price') || '').replace(/[^0-9.]/g, '')) || 0,
-              store: newBtn.getAttribute('data-store') || '',
-              image: newBtn.getAttribute('data-image') || '',
-              qty: 1
-            };
-            
-            // Call the global list selector
-            if (typeof window.showListSelector === 'function') {
-              try {
-                await window.showListSelector(itemToAdd);
-                // Close the product modal
-                const modalInst = bootstrap.Modal.getInstance(modal);
-                if (modalInst) modalInst.hide();
-              } catch (error) {
-                console.error('Error showing list selector:', error);
-                showNotification('Error showing list selector', 'danger');
-              }
-            }
-          });
-        }
-      }
-    });
-  </script>
-
-  <!-- Global List Selector Modal -->
-  <div class="modal fade" id="globalListSelectorModal" tabindex="-1" aria-labelledby="globalListSelectorModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="globalListSelectorModalLabel">
-            <i class="bi bi-cart-plus me-2"></i>Select Shopping List
-          </h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-          <p class="text-muted mb-3">Choose which list to add this item to:</p>
-          <div id="globalListSelectorBody">
-            <!-- List options will be populated here by JavaScript -->
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  </div>
+
+      <!-- Global List Selector Modal -->
+      <div class="modal fade" id="globalListSelectorModal" tabindex="-1" aria-labelledby="globalListSelectorModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content overflow-hidden border-0 shadow" style="border-radius: 20px;">
+            <div class="modal-header border-0 pb-0">
+              <h5 class="modal-title fw-bold" id="globalListSelectorModalLabel">
+                <i class="bi bi-plus-circle-fill me-2 text-primary"></i>Select List
+              </h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+              <p class="text-muted mb-4">Select a list to add <span id="pendingItemName"
+                  class="fw-bold text-dark"></span> to:</p>
+              <div id="globalListSelectorBody" class="d-grid gap-2">
+                <!-- Populated by script.js -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 </body>
+
 </html>

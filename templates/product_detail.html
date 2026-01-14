@@ -15,6 +15,7 @@ Data: Fetches single product details from database
 -->
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -23,8 +24,10 @@ Data: Fetches single product details from database
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
-    body { background: #f3f4f6; }
-    
+    body {
+      background: #f3f4f6;
+    }
+
     /* Hero Section with Gradient */
     .product-detail-hero {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -35,48 +38,59 @@ Data: Fetches single product details from database
       position: relative;
       overflow: hidden;
     }
+
     .product-detail-hero::after {
       content: '';
       position: absolute;
       inset: 0;
-      background: radial-gradient(circle at 20% 20%, rgba(255,255,255,0.08), transparent 45%),
-                  radial-gradient(circle at 80% 0%, rgba(255,255,255,0.07), transparent 40%);
+      background: radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.08), transparent 45%),
+        radial-gradient(circle at 80% 0%, rgba(255, 255, 255, 0.07), transparent 40%);
       pointer-events: none;
     }
-    
+
     /* Breadcrumb Styling */
-    .breadcrumb { margin-bottom: 0.75rem; }
-    .breadcrumb a { color: white; text-decoration: none; }
-    .breadcrumb-item + .breadcrumb-item::before { color: rgba(255,255,255,0.7); }
-    
+    .breadcrumb {
+      margin-bottom: 0.75rem;
+    }
+
+    .breadcrumb a {
+      color: white;
+      text-decoration: none;
+    }
+
+    .breadcrumb-item+.breadcrumb-item::before {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
     /* Category Badge */
     .category-badge {
       display: inline-block;
-      background: rgba(255,255,255,0.15);
+      background: rgba(255, 255, 255, 0.15);
       color: white;
       padding: 6px 12px;
       border-radius: 999px;
       font-weight: 700;
-      border: 1px solid rgba(255,255,255,0.25);
+      border: 1px solid rgba(255, 255, 255, 0.25);
     }
-    
+
     /* Glass Card for Image */
     .glass-card {
-      background: rgba(255,255,255,0.08);
-      border: 1px solid rgba(255,255,255,0.25);
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.25);
       border-radius: 18px;
-      box-shadow: 0 14px 36px rgba(0,0,0,0.18);
+      box-shadow: 0 14px 36px rgba(0, 0, 0, 0.18);
       backdrop-filter: blur(6px);
     }
-    
+
     /* Image Container */
     .image-card {
       background: #ffffff;
       border-radius: 18px;
       padding: 1.25rem;
-      box-shadow: 0 16px 40px rgba(0,0,0,0.12);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12);
       position: relative;
     }
+
     .product-image-large {
       width: 100%;
       height: 420px;
@@ -85,7 +99,7 @@ Data: Fetches single product details from database
       border-radius: 16px;
       padding: 18px;
     }
-    
+
     /* Favorite Button */
     .favorite-btn {
       position: absolute;
@@ -96,7 +110,7 @@ Data: Fetches single product details from database
       border-radius: 50%;
       background: white;
       border: none;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -106,15 +120,17 @@ Data: Fetches single product details from database
       transition: all 0.3s;
       z-index: 10;
     }
+
     .favorite-btn:hover {
       transform: scale(1.1);
-      box-shadow: 0 6px 20px rgba(102,126,234,0.3);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
     }
+
     .favorite-btn.active {
       background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
       color: white;
     }
-    
+
     /* Price Display */
     .price-display-card {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -122,17 +138,23 @@ Data: Fetches single product details from database
       padding: 1.75rem;
       color: white;
       margin-bottom: 1.5rem;
-      box-shadow: 0 12px 35px rgba(102,126,234,0.25);
+      box-shadow: 0 12px 35px rgba(102, 126, 234, 0.25);
       position: relative;
       overflow: hidden;
     }
+
     .price-display-card::before {
       content: '';
       position: absolute;
       inset: 0;
-      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.15), transparent 60%);
+      background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.15), transparent 60%);
     }
-    .price-display-content { position: relative; z-index: 1; }
+
+    .price-display-content {
+      position: relative;
+      z-index: 1;
+    }
+
     .price-label {
       font-size: 0.85rem;
       text-transform: uppercase;
@@ -141,18 +163,28 @@ Data: Fetches single product details from database
       font-weight: 600;
       margin-bottom: 0.5rem;
     }
-    .price { font-size: 2.4rem; font-weight: 900; line-height: 1; margin-bottom: 0.5rem; }
-    .store-name { font-size: 1.05rem; opacity: 0.92; }
-    
+
+    .price {
+      font-size: 2.4rem;
+      font-weight: 900;
+      line-height: 1;
+      margin-bottom: 0.5rem;
+    }
+
+    .store-name {
+      font-size: 1.05rem;
+      opacity: 0.92;
+    }
+
     /* Info Card */
     .info-card {
       background: white;
       border-radius: 18px;
       padding: 1.75rem;
-      box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
       margin-bottom: 1.25rem;
     }
-    
+
     /* Section Titles */
     .section-title {
       font-size: 1.2rem;
@@ -163,8 +195,11 @@ Data: Fetches single product details from database
       align-items: center;
       gap: 0.5rem;
     }
-    .section-title i { color: #667eea; }
-    
+
+    .section-title i {
+      color: #667eea;
+    }
+
     /* Meta Badges */
     .meta-chips .badge {
       font-weight: 700;
@@ -173,7 +208,7 @@ Data: Fetches single product details from database
       margin-right: 0.5rem;
       margin-bottom: 0.5rem;
     }
-    
+
     /* Store Selection Grid */
     .store-grid {
       display: grid;
@@ -181,12 +216,13 @@ Data: Fetches single product details from database
       gap: 1rem;
       margin-bottom: 1.5rem;
     }
+
     @media (max-width: 576px) {
       .store-grid {
         grid-template-columns: 1fr;
       }
     }
-    
+
     /* Store Cards */
     .store-card {
       background: white;
@@ -198,18 +234,26 @@ Data: Fetches single product details from database
       position: relative;
       overflow: hidden;
     }
+
     .store-card:hover {
       border-color: #667eea;
-      box-shadow: 0 8px 25px rgba(102,126,234,0.15);
+      box-shadow: 0 8px 25px rgba(102, 126, 234, 0.15);
       transform: translateY(-3px);
     }
+
     .store-card.selected {
       border-color: #667eea;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
-      box-shadow: 0 12px 35px rgba(102,126,234,0.4);
+      box-shadow: 0 12px 35px rgba(102, 126, 234, 0.4);
     }
-    .store-card-content { position: relative; z-index: 1; text-align: center; }
+
+    .store-card-content {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+    }
+
     .store-card .store-logo {
       width: 60px;
       height: 60px;
@@ -221,10 +265,12 @@ Data: Fetches single product details from database
       display: block;
       border: 2px solid #e9ecef;
     }
+
     .store-card.selected .store-logo {
-      border-color: rgba(255,255,255,0.3);
-      background: rgba(255,255,255,0.15);
+      border-color: rgba(255, 255, 255, 0.3);
+      background: rgba(255, 255, 255, 0.15);
     }
+
     .store-card .card-store-name {
       font-weight: 700;
       font-size: 1.05rem;
@@ -234,13 +280,21 @@ Data: Fetches single product details from database
       text-overflow: ellipsis;
       padding: 0 0.25rem;
     }
-    .store-card.selected .card-store-name { color: white; }
+
+    .store-card.selected .card-store-name {
+      color: white;
+    }
+
     .store-card .card-price {
       font-size: 1.6rem;
       font-weight: 900;
       color: #667eea;
     }
-    .store-card.selected .card-price { color: white; }
+
+    .store-card.selected .card-price {
+      color: white;
+    }
+
     .store-card .check-icon {
       position: absolute;
       top: 0.75rem;
@@ -248,22 +302,32 @@ Data: Fetches single product details from database
       width: 30px;
       height: 30px;
       border-radius: 50%;
-      background: rgba(255,255,255,0.3);
+      background: rgba(255, 255, 255, 0.3);
       display: none;
       align-items: center;
       justify-content: center;
       color: white;
     }
+
     .store-card.selected .check-icon {
       display: flex;
       animation: checkPop 0.3s ease;
     }
+
     @keyframes checkPop {
-      0% { transform: scale(0); }
-      50% { transform: scale(1.2); }
-      100% { transform: scale(1); }
+      0% {
+        transform: scale(0);
+      }
+
+      50% {
+        transform: scale(1.2);
+      }
+
+      100% {
+        transform: scale(1);
+      }
     }
-    
+
     /* Add to List Button */
     .add-to-list-btn {
       width: 100%;
@@ -276,19 +340,21 @@ Data: Fetches single product details from database
       font-size: 1.05rem;
       cursor: pointer;
       transition: all 0.3s;
-      box-shadow: 0 8px 25px rgba(102,126,234,0.3);
+      box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 0.6rem;
     }
+
     .add-to-list-btn:hover {
       transform: translateY(-2px);
-      box-shadow: 0 12px 35px rgba(102,126,234,0.4);
+      box-shadow: 0 12px 35px rgba(102, 126, 234, 0.4);
       color: white;
     }
   </style>
 </head>
+
 <body>
   <!-- Navbar -->
   <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
@@ -302,14 +368,20 @@ Data: Fetches single product details from database
       <div class="collapse navbar-collapse" id="navbarNav">
         {% set cart_count = shopping_list_count or 0 %}
         <ul class="navbar-nav ms-auto">
-          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.home') }}"><i class="bi bi-house-door"></i> Home</a></li>
-          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.stores_page') }}"><i class="bi bi-shop"></i> Stores</a></li>
-          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.featured_deals_page') }}"><i class="bi bi-tags"></i> Deals</a></li>
-          <li class="nav-item"><a class="nav-link active fw-semibold" href="{{ url_for('main.compare_prices') }}"><i class="bi bi-bar-chart"></i> Compare</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.home') }}"><i class="bi bi-house-door"></i>
+              Home</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.stores_page') }}"><i class="bi bi-shop"></i>
+              Stores</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.featured_deals_page') }}"><i
+                class="bi bi-tags"></i> Deals</a></li>
+          <li class="nav-item"><a class="nav-link active fw-semibold" href="{{ url_for('main.compare_prices') }}"><i
+                class="bi bi-bar-chart"></i> Compare</a></li>
           <li class="nav-item">
             <a class="nav-link position-relative" href="{{ url_for('main.shopping_list') }}">
               <i class="bi bi-list-check"></i> Lists
-              <span id="shopping-list-count" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger {{ 'd-none' if not cart_count else '' }}" style="font-size: 0.65rem;">
+              <span id="shopping-list-count"
+                class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger {{ 'd-none' if not cart_count else '' }}"
+                style="font-size: 0.65rem;">
                 {{ cart_count if cart_count else '' }}
               </span>
             </a>
@@ -342,24 +414,25 @@ Data: Fetches single product details from database
         <ol class="breadcrumb">
           {% set trail = product.get('category_path') if product.get('category_path') else [] %}
           {% if not trail and product.get('category') %}
-            {% set trail = ['Products', product.get('category')] %}
+          {% set trail = ['Products', product.get('category')] %}
           {% endif %}
           <li class="breadcrumb-item"><a href="{{ url_for('main.home') }}" class="text-white">Home</a></li>
-          <li class="breadcrumb-item"><a href="{{ url_for('main.compare_prices') }}" class="text-white">Products</a></li>
+          <li class="breadcrumb-item"><a href="{{ url_for('main.compare_prices') }}" class="text-white">Products</a>
+          </li>
           {% if trail %}
-            {% for crumb in trail %}
-              {% if crumb != 'Products' %}
-                {% if loop.last %}
-                  <li class="breadcrumb-item active text-white" aria-current="page">{{ crumb }}</li>
-                {% else %}
-                  <li class="breadcrumb-item">
-                    <a href="{{ url_for('main.compare_prices', category=crumb) }}" class="text-white">{{ crumb }}</a>
-                  </li>
-                {% endif %}
-              {% endif %}
-            {% endfor %}
+          {% for crumb in trail %}
+          {% if crumb != 'Products' %}
+          {% if loop.last %}
+          <li class="breadcrumb-item active text-white" aria-current="page">{{ crumb }}</li>
           {% else %}
-            <li class="breadcrumb-item active text-white" aria-current="page">{{ product.name }}</li>
+          <li class="breadcrumb-item">
+            <a href="{{ url_for('main.compare_prices', category=crumb) }}" class="text-white">{{ crumb }}</a>
+          </li>
+          {% endif %}
+          {% endif %}
+          {% endfor %}
+          {% else %}
+          <li class="breadcrumb-item active text-white" aria-current="page">{{ product.name }}</li>
           {% endif %}
         </ol>
       </nav>
@@ -367,7 +440,8 @@ Data: Fetches single product details from database
 
       <h1 class="display-5 fw-bold text-white mb-2">{{ product.name }}</h1>
       {% if product.category or (product.category_path and product.category_path|length) %}
-        <span class="category-badge mt-1"><i class="bi bi-tag-fill me-1"></i>{{ (product.category_path and product.category_path[-1]) or product.category }}</span>
+      <span class="category-badge mt-1"><i class="bi bi-tag-fill me-1"></i>{{ (product.category_path and
+        product.category_path[-1]) or product.category }}</span>
       {% endif %}
     </div>
   </section>
@@ -380,10 +454,9 @@ Data: Fetches single product details from database
         <div class="image-card position-relative mb-3">
           <!-- Favorite button removed as requested -->
           <img id="product-main-img"
-               src="{{ prefer_processed(product.image or (product.images and product.images[0]) or url_for('static', filename='placeholder.svg')) }}" 
-               data-default-src="{{ prefer_processed(product.image or (product.images and product.images[0]) or url_for('static', filename='placeholder.svg')) }}"
-               alt="{{ product.name }}" 
-               class="product-image-large">
+            src="{{ prefer_processed(product.image or (product.images and product.images[0]) or url_for('static', filename='placeholder.svg')) }}"
+            data-default-src="{{ prefer_processed(product.image or (product.images and product.images[0]) or url_for('static', filename='placeholder.svg')) }}"
+            alt="{{ product.name }}" class="product-image-large">
         </div>
         <!-- Best Price card OUTSIDE the white image card -->
         <div class="price-display-card mt-3">
@@ -393,20 +466,20 @@ Data: Fetches single product details from database
             </div>
             <div class="price" id="selected-price">
               {% if best_price_value is not none %}
-                €{{ best_price_value }}
+              €{{ best_price_value }}
               {% elif product.price %}
-                €{{ product.price }}
+              €{{ product.price }}
               {% else %}
-                Select a Store
+              Select a Store
               {% endif %}
             </div>
             <div class="store-name" id="selected-store">
               {% if best_price_stores and best_price_stores|length > 0 %}
-                at <strong>{{ best_price_stores | join(', ') }}</strong>
+              at <strong>{{ best_price_stores | join(', ') }}</strong>
               {% elif product.store or product.source %}
-                at <strong>{{ product.store or product.source }}</strong>
+              at <strong>{{ product.store or product.source }}</strong>
               {% else %}
-                Choose a store below
+              Choose a store below
               {% endif %}
             </div>
           </div>
@@ -442,7 +515,8 @@ Data: Fetches single product details from database
               <span class="badge bg-light text-primary"><i class="bi bi-box"></i>&nbsp;{{ product.unit }}</span>
               {% endif %}
               {% if product.stores %}
-              <span class="badge bg-light text-primary"><i class="bi bi-shop"></i>&nbsp;{{ product.stores|length }} Store{{ 's' if product.stores|length != 1 }}</span>
+              <span class="badge bg-light text-primary"><i class="bi bi-shop"></i>&nbsp;{{ product.stores|length }}
+                Store{{ 's' if product.stores|length != 1 }}</span>
               {% endif %}
             </div>
           </div>
@@ -456,19 +530,18 @@ Data: Fetches single product details from database
             </div>
             <div class="store-grid">
               {% for store in product.stores %}
-              <div class="store-card" 
-                   data-store="{{ store.store or store.name }}" 
-                   data-price="{{ store.price }}"
-                   data-image="{{ prefer_processed(store.image or (store.images and store.images[0]) or product.image or (product.images and product.images[0]) or url_for('static', filename='placeholder.svg')) }}">
+              <div class="store-card" data-store="{{ store.store or store.name }}" data-price="{{ store.price }}"
+                data-image="{{ prefer_processed(store.image or (store.images and store.images[0]) or product.image or (product.images and product.images[0]) or url_for('static', filename='placeholder.svg')) }}">
                 <div class="check-icon">
                   <i class="bi bi-check-lg"></i>
                 </div>
                 <div class="store-card-content">
-                     <img src="{{ prefer_processed(store.logo or store.store_image or url_for('static', filename='placeholder.svg')) }}" 
-                       alt="{{ store.store or store.name }}" 
-                       class="store-logo"
-                       onerror="this.src={{ "'" }}{{ url_for('static', filename='placeholder.svg') }}{{ "'" }}">
-                  <div class="card-store-name" title="{{ store.store or store.name }}">{{ store.store or store.name }}</div>
+                  <img
+                    src="{{ prefer_processed(store.logo or store.store_image or url_for('static', filename='placeholder.svg')) }}"
+                    alt="{{ store.store or store.name }}" class="store-logo"
+                    onerror="this.src='{{ url_for('static', filename='placeholder.svg') }}'">
+                  <div class="card-store-name" title="{{ store.store or store.name }}">{{ store.store or store.name }}
+                  </div>
                   <div class="card-price">€{{ store.price }}</div>
                 </div>
               </div>
@@ -478,11 +551,8 @@ Data: Fetches single product details from database
           {% endif %}
 
           <!-- Add to List Button -->
-          <button id="add-to-list-btn" class="add-to-list-btn"
-                  data-name="{{ product.name }}"
-                  data-id="{{ product._id or product.id }}"
-                  data-price=""
-                  data-store="">
+          <button id="add-to-list-btn" class="btn btn-premium btn-premium-add w-100 py-3 mt-2"
+            data-name="{{ product.name }}" data-id="{{ product._id or product.id }}" data-price="" data-store="">
             <i class="bi bi-cart-plus-fill"></i>
             Add to Shopping List
           </button>
@@ -498,146 +568,147 @@ Data: Fetches single product details from database
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="{{ url_for('static', filename='js/script.js') }}"></script>
-    <script>
-      // Store selector functionality
-      let selectedStoreData = {};
-    
-      document.addEventListener('DOMContentLoaded', function() {
-        const storeCards = document.querySelectorAll('.store-card');
-        const selectedPriceEl = document.getElementById('selected-price');
-        const selectedStoreEl = document.getElementById('selected-store');
-        const addToListBtn = document.getElementById('add-to-list-btn');
-        const productName = addToListBtn ? addToListBtn.dataset.name : '';
-        const productId = addToListBtn ? addToListBtn.dataset.id : '';
-        const mainImg = document.getElementById('product-main-img');
-        // Use the product image as the default, but allow switching to store image on selection
-        let defaultImgSrc = mainImg ? mainImg.getAttribute('data-default-src') : '';
-        if (mainImg && defaultImgSrc) mainImg.src = defaultImgSrc;
-        const favoriteBtn = document.getElementById('favorite-btn');
+  <script>
+    // Store selector functionality
+    let selectedStoreData = {};
 
-        // Start with no preselected store
-        selectedStoreData.store = '';
-        selectedStoreData.price = '';
-        selectedStoreData.image = defaultImgSrc;
-        storeCards.forEach(c => c.classList.remove('selected'));
-        if (addToListBtn) {
-          addToListBtn.dataset.price = '';
-          addToListBtn.dataset.store = '';
-        }
+    document.addEventListener('DOMContentLoaded', function () {
+      const storeCards = document.querySelectorAll('.store-card');
+      const selectedPriceEl = document.getElementById('selected-price');
+      const selectedStoreEl = document.getElementById('selected-store');
+      const addToListBtn = document.getElementById('add-to-list-btn');
+      const productName = addToListBtn ? addToListBtn.dataset.name : '';
+      const productId = addToListBtn ? addToListBtn.dataset.id : '';
+      const mainImg = document.getElementById('product-main-img');
+      // Use the product image as the default, but allow switching to store image on selection
+      let defaultImgSrc = mainImg ? mainImg.getAttribute('data-default-src') : '';
+      if (mainImg && defaultImgSrc) mainImg.src = defaultImgSrc;
+      const favoriteBtn = document.getElementById('favorite-btn');
 
-        // Handle store card clicks
-        storeCards.forEach(card => {
-          card.addEventListener('click', function() {
-            const isSelected = this.classList.contains('selected');
-            if (isSelected) {
-              // Deselect only, do not redirect
-              this.classList.remove('selected');
-              selectedStoreData.store = '';
-              selectedStoreData.price = '';
-              selectedStoreData.image = defaultImgSrc;
-              if (addToListBtn) {
-                addToListBtn.dataset.price = '';
-                addToListBtn.dataset.store = '';
-              }
-              if (mainImg && defaultImgSrc) mainImg.src = defaultImgSrc;
-              return;
-            }
-            // Remove selected class from all cards
-            storeCards.forEach(c => c.classList.remove('selected'));
-            // Add selected class to clicked card
-            this.classList.add('selected');
-            const store = this.dataset.store;
-            const price = this.dataset.price;
-            // When a store is selected, show the product image for that store (not the store logo)
-            let imgSrc = defaultImgSrc;
-            // Try to get the product image for this store from the data-image attribute (which should be set to the product image for that store)
-            if (this.dataset.image && !this.dataset.image.includes('placeholder.svg')) {
-              imgSrc = this.dataset.image;
-            } else {
-              imgSrc = defaultImgSrc;
-            }
-            // Store selection
-            selectedStoreData.store = store;
-            selectedStoreData.price = price;
-            selectedStoreData.image = imgSrc;
-            // Only update Add to List button and image
+      // Start with no preselected store
+      selectedStoreData.store = '';
+      selectedStoreData.price = '';
+      selectedStoreData.image = defaultImgSrc;
+      storeCards.forEach(c => c.classList.remove('selected'));
+      if (addToListBtn) {
+        addToListBtn.dataset.price = '';
+        addToListBtn.dataset.store = '';
+      }
+
+      // Handle store card clicks
+      storeCards.forEach(card => {
+        card.addEventListener('click', function () {
+          const isSelected = this.classList.contains('selected');
+          if (isSelected) {
+            // Deselect only, do not redirect
+            this.classList.remove('selected');
+            selectedStoreData.store = '';
+            selectedStoreData.price = '';
+            selectedStoreData.image = defaultImgSrc;
             if (addToListBtn) {
-              addToListBtn.dataset.price = price;
-              addToListBtn.dataset.store = store;
+              addToListBtn.dataset.price = '';
+              addToListBtn.dataset.store = '';
             }
-            if (mainImg && imgSrc) {
-              mainImg.src = imgSrc;
-            }
-          });
+            if (mainImg && defaultImgSrc) mainImg.src = defaultImgSrc;
+            return;
+          }
+          // Remove selected class from all cards
+          storeCards.forEach(c => c.classList.remove('selected'));
+          // Add selected class to clicked card
+          this.classList.add('selected');
+          const store = this.dataset.store;
+          const price = this.dataset.price;
+          // When a store is selected, show the product image for that store (not the store logo)
+          let imgSrc = defaultImgSrc;
+          // Try to get the product image for this store from the data-image attribute (which should be set to the product image for that store)
+          if (this.dataset.image && !this.dataset.image.includes('placeholder.svg')) {
+            imgSrc = this.dataset.image;
+          } else {
+            imgSrc = defaultImgSrc;
+          }
+          // Store selection
+          selectedStoreData.store = store;
+          selectedStoreData.price = price;
+          selectedStoreData.image = imgSrc;
+          // Only update Add to List button and image
+          if (addToListBtn) {
+            addToListBtn.dataset.price = price;
+            addToListBtn.dataset.store = store;
+          }
+          if (mainImg && imgSrc) {
+            mainImg.src = imgSrc;
+          }
         });
+      });
 
-        // Add to shopping list
-        if (addToListBtn) {
-          addToListBtn.addEventListener('click', async function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-          
-            // Check if store is selected
-            if (!selectedStoreData.store || !selectedStoreData.price) {
-              showNotification('Please select a store first', 'warning');
-              return;
-            }
-          
-            const price = selectedStoreData.price;
-            const store = selectedStoreData.store;
-          
-            // Validate price
-            if (!price || price === '0' || price === '0.00') {
-              showNotification('Invalid price for selected store', 'danger');
-              return;
-            }
-          
-            // Create item object
-            const item = {
-              name: productName,
-              price: price,
-              price_val: parseFloat(price.replace(/[^0-9.]/g, '')),
-              store: store,
-              qty: 1,
-              id: productId,
-              image: selectedStoreData.image
-            };
-          
-            // Use list selector
-            try {
-              const result = await window.addItemToShoppingList(item);
-              if (result && result.error) {
-                showNotification('Error adding item to list', 'danger');
-              }
-            } catch (error) {
-              console.error('Error adding to list:', error);
+      // Add to shopping list
+      if (addToListBtn) {
+        addToListBtn.addEventListener('click', async function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+
+          // Check if store is selected
+          if (!selectedStoreData.store || !selectedStoreData.price) {
+            showNotification('Please select a store first', 'warning');
+            return;
+          }
+
+          const price = selectedStoreData.price;
+          const store = selectedStoreData.store;
+
+          // Validate price
+          if (!price || price === '0' || price === '0.00') {
+            showNotification('Invalid price for selected store', 'danger');
+            return;
+          }
+
+          // Create item object
+          const item = {
+            name: productName,
+            price: price,
+            price_val: parseFloat(price.replace(/[^0-9.]/g, '')),
+            store: store,
+            qty: 1,
+            id: productId,
+            image: selectedStoreData.image
+          };
+
+          // Use list selector
+          try {
+            const result = await window.addItemToShoppingList(item);
+            if (result && result.error) {
               showNotification('Error adding item to list', 'danger');
             }
-          });
-        }
+          } catch (error) {
+            console.error('Error adding to list:', error);
+            showNotification('Error adding item to list', 'danger');
+          }
+        });
+      }
 
-        // Favorite button
-        if (favoriteBtn) {
-          favoriteBtn.addEventListener('click', function() {
-            this.classList.toggle('active');
-            const icon = this.querySelector('i');
-            if (this.classList.contains('active')) {
-              icon.classList.remove('bi-heart');
-              icon.classList.add('bi-heart-fill');
-              showNotification('Added to favorites', 'success');
-            } else {
-              icon.classList.remove('bi-heart-fill');
-              icon.classList.add('bi-heart');
-              showNotification('Removed from favorites', 'info');
-            }
-          });
-        }
-      });
-    </script>
+      // Favorite button
+      if (favoriteBtn) {
+        favoriteBtn.addEventListener('click', function () {
+          this.classList.toggle('active');
+          const icon = this.querySelector('i');
+          if (this.classList.contains('active')) {
+            icon.classList.remove('bi-heart');
+            icon.classList.add('bi-heart-fill');
+            showNotification('Added to favorites', 'success');
+          } else {
+            icon.classList.remove('bi-heart-fill');
+            icon.classList.add('bi-heart');
+            showNotification('Removed from favorites', 'info');
+          }
+        });
+      }
+    });
+  </script>
   <!-- No custom Add to List handler: rely on global JS handler from script.js -->
 
   <!-- Global List Selector Modal -->
-  <div class="modal fade" id="globalListSelectorModal" tabindex="-1" aria-labelledby="globalListSelectorModalLabel" aria-hidden="true">
+  <div class="modal fade" id="globalListSelectorModal" tabindex="-1" aria-labelledby="globalListSelectorModalLabel"
+    aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
         <div class="modal-header">
@@ -656,4 +727,5 @@ Data: Fetches single product details from database
     </div>
   </div>
 </body>
+
 </html>
