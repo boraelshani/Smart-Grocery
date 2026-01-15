@@ -40,11 +40,18 @@ a:hover {
 input::-webkit-outer-spin-button,
 input::-webkit-inner-spin-button {
   -webkit-appearance: none;
+  appearance: none;
   margin: 0;
 }
 
 input[type=number] {
   -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.product-link:hover {
+  filter: brightness(0.95);
+  transition: all 0.2s ease;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════ */
@@ -159,6 +166,7 @@ input[type=number] {
   position: relative !important;
   overflow: hidden !important;
   letter-spacing: -0.01em !important;
+  cursor: pointer !important;
 }
 
 /* Primary "Add to List" Style */

@@ -89,19 +89,78 @@ function setupCompareHandlers() {
 // Client-side filters, search and sorting for the Compare page
 // Store selection mechanic for compare page
 document.addEventListener('click', function (e) {
+  // If clicking the redirection button, don't trigger selection
+  if (e.target.closest('.btn-go-store')) {
+    e.stopPropagation();
+    return;
+  }
+
   const storeItem = e.target.closest('.store-item');
   if (storeItem) {
-    // Only allow one selected at a time per product card
-    const productCard = storeItem.closest('.card');
+    const productCard = storeItem.closest('.product-card') || storeItem.closest('.card');
     if (productCard) {
-      const allStoreItems = productCard.querySelectorAll('.store-item');
-      allStoreItems.forEach(item => {
-        if (item !== storeItem) item.classList.remove('selected');
+      const isAlreadySelected = storeItem.classList.contains('selected');
+
+      // GLOBAL RESET: Deselect ANY store-item on the entire page first
+      document.querySelectorAll('.store-item.selected').forEach(selectedItem => {
+        if (selectedItem === storeItem) return; // Skip current if we're just toggling
+
+        const otherCard = selectedItem.closest('.product-card') || selectedItem.closest('.card');
+        selectedItem.classList.remove('selected');
+
+        if (otherCard) {
+          const otherAddBtn = otherCard.querySelector('.btn-premium-add');
+          const otherPriceBadge = otherCard.querySelector('.price-badge');
+
+          if (otherAddBtn) {
+            otherAddBtn.dataset.price = otherAddBtn.getAttribute('data-initial-price') || '';
+            otherAddBtn.dataset.store = '';
+          }
+          if (otherPriceBadge) {
+            const initialPrice = otherAddBtn ? otherAddBtn.getAttribute('data-initial-price') : '';
+            if (initialPrice) {
+              const inner = otherPriceBadge.querySelector('i') ? '<i class="bi bi-tag-fill"></i> ' : '';
+              otherPriceBadge.innerHTML = inner + '€' + initialPrice;
+            }
+          }
+        }
       });
+
+      // Local Card Reset (standard toggle behavior)
+      const allLocalStoreItems = productCard.querySelectorAll('.store-item');
+      allLocalStoreItems.forEach(item => item.classList.remove('selected'));
+
+      const addBtn = productCard.querySelector('.btn-premium-add');
+      const priceBadge = productCard.querySelector('.price-badge');
+
+      if (isAlreadySelected) {
+        // Deselect current
+        if (addBtn) {
+          addBtn.dataset.price = addBtn.getAttribute('data-initial-price') || '';
+          addBtn.dataset.store = '';
+        }
+        if (priceBadge) {
+          const initialPrice = addBtn ? addBtn.getAttribute('data-initial-price') : '';
+          if (initialPrice) {
+            const inner = priceBadge.querySelector('i') ? '<i class="bi bi-tag-fill"></i> ' : '';
+            priceBadge.innerHTML = inner + '€' + initialPrice;
+          }
+        }
+      } else {
+        // Select new
+        storeItem.classList.add('selected');
+        if (addBtn) {
+          addBtn.dataset.price = storeItem.dataset.storePrice;
+          addBtn.dataset.store = storeItem.dataset.storeName;
+        }
+        if (priceBadge) {
+          const inner = priceBadge.querySelector('i') ? '<i class="bi bi-tag-fill"></i> ' : '';
+          priceBadge.innerHTML = inner + '€' + storeItem.dataset.storePrice;
+          priceBadge.style.transform = 'scale(1.1)';
+          setTimeout(() => { priceBadge.style.transform = 'scale(1)'; }, 200);
+        }
+      }
     }
-    // Toggle selection on click
-    storeItem.classList.toggle('selected');
-    // Prevent any navigation or detail logic
     e.preventDefault();
     e.stopPropagation();
   }
@@ -208,6 +267,74 @@ function setupCompareFilters() {
       // re-append in sorted order
       visible.forEach(v => productsRow.appendChild(v.col));
     }
+
+    // Update active filter badges
+    updateActiveFilters(searchVal, categoryVal, storeVal, minVal, maxVal);
+  };
+
+  const activeFiltersDiv = document.getElementById('active-filters');
+
+  const updateActiveFilters = (searchVal, categoryVal, storeVal, minVal, maxVal) => {
+    if (!activeFiltersDiv) return;
+    activeFiltersDiv.innerHTML = '';
+    let hasFilters = false;
+
+    const createFilterBadge = (text, onRemove) => {
+      const badge = document.createElement('span');
+      badge.className = 'badge bg-primary d-flex align-items-center gap-1 p-2';
+      badge.style.borderRadius = '20px';
+      badge.innerHTML = text + ' <i class="bi bi-x-circle ms-1" style="cursor:pointer;"></i>';
+      badge.querySelector('i').onclick = onRemove;
+      return badge;
+    };
+
+    if (searchVal) {
+      hasFilters = true;
+      activeFiltersDiv.appendChild(createFilterBadge('Search: ' + searchVal, () => {
+        if (searchInput) { searchInput.value = ''; applyFilters(); }
+      }));
+    }
+
+    if (categoryVal) {
+      hasFilters = true;
+      activeFiltersDiv.appendChild(createFilterBadge('Category: ' + categoryVal, () => {
+        if (categoryChipsRow) categoryChipsRow.querySelectorAll('.category-chip').forEach(ch => ch.classList.remove('active'));
+        if (categorySelect) categorySelect.value = '';
+        applyFilters();
+      }));
+    }
+
+    if (storeVal) {
+      hasFilters = true;
+      activeFiltersDiv.appendChild(createFilterBadge('Store: ' + storeVal, () => {
+        if (storeSelect) { storeSelect.value = ''; applyFilters(); }
+      }));
+    }
+
+    if (!isNaN(minVal) || !isNaN(maxVal)) {
+      hasFilters = true;
+      let text = 'Price: ';
+      if (!isNaN(minVal) && !isNaN(maxVal)) text += `€${minVal}-€${maxVal}`;
+      else if (!isNaN(minVal)) text += `Min €${minVal}`;
+      else text += `Max €${maxVal}`;
+
+      activeFiltersDiv.appendChild(createFilterBadge(text, () => {
+        if (minInput) minInput.value = '';
+        if (maxInput) maxInput.value = '';
+        applyFilters();
+      }));
+    }
+
+    if (hasFilters) {
+      activeFiltersDiv.style.display = 'flex';
+      const clearAll = document.createElement('button');
+      clearAll.className = 'btn btn-sm btn-outline-secondary rounded-pill ms-2';
+      clearAll.innerHTML = '<i class="bi bi-x-circle"></i> Clear All';
+      clearAll.onclick = clearFilters;
+      activeFiltersDiv.appendChild(clearAll);
+    } else {
+      activeFiltersDiv.style.display = 'none';
+    }
   };
 
   const clearFilters = () => {
@@ -234,6 +361,10 @@ function setupCompareFilters() {
     if (categoryChipsRow) categoryChipsRow.querySelectorAll('.category-chip').forEach(ch => ch.classList.remove('active'));
     applyFilters();
   });
+  storeSelect && storeSelect.addEventListener('change', () => { applyFilters(); });
+  minInput && minInput.addEventListener('change', () => { applyFilters(); });
+  maxInput && maxInput.addEventListener('change', () => { applyFilters(); });
+  sortSelect && sortSelect.addEventListener('change', () => { applyFilters(); });
   if (categoryChipsRow) {
     categoryChipsRow.addEventListener('click', (e) => {
       const btn = e.target.closest('.category-chip');

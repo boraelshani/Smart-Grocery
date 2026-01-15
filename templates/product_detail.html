@@ -241,11 +241,16 @@ Data: Fetches single product details from database
       transform: translateY(-3px);
     }
 
-    .store-card.selected {
+    .store-card.selected:not(.btn-go-store) {
       border-color: #667eea;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
       box-shadow: 0 12px 35px rgba(102, 126, 234, 0.4);
+    }
+
+    .store-card.selected .card-store-name,
+    .store-card.selected .card-price {
+      color: white !important;
     }
 
     .store-card-content {
@@ -537,12 +542,20 @@ Data: Fetches single product details from database
                 </div>
                 <div class="store-card-content">
                   <img
-                    src="{{ prefer_processed(store.logo or store.store_image or url_for('static', filename='placeholder.svg')) }}"
+                    src="{{ prefer_processed(store.image or store.logo or store.store_image or url_for('static', filename='placeholder.svg')) }}"
                     alt="{{ store.store or store.name }}" class="store-logo"
                     onerror="this.src='{{ url_for('static', filename='placeholder.svg') }}'">
                   <div class="card-store-name" title="{{ store.store or store.name }}">{{ store.store or store.name }}
                   </div>
-                  <div class="card-price">€{{ store.price }}</div>
+                  <div class="card-price mb-2">€{{ store.price }}</div>
+
+                  {% if store.get('url') %}
+                  <a href="{{ store.get('url') }}" target="_blank" rel="noopener noreferrer"
+                    class="btn btn-sm btn-go-store w-100 py-2 d-flex align-items-center justify-content-center gap-2"
+                    style="background: #f0f0ff; border-radius: 8px; color: #667eea; border: 1px solid #dadaff; font-weight: 600; font-size: 0.85rem;">
+                    <i class="bi bi-box-arrow-up-right"></i> Visit Store
+                  </a>
+                  {% endif %}
                 </div>
               </div>
               {% endfor %}
@@ -597,7 +610,11 @@ Data: Fetches single product details from database
 
       // Handle store card clicks
       storeCards.forEach(card => {
-        card.addEventListener('click', function () {
+        card.addEventListener('click', function (e) {
+          // If clicking the redirection button, don't trigger selection
+          if (e.target.closest('.btn-go-store')) {
+            return;
+          }
           const isSelected = this.classList.contains('selected');
           if (isSelected) {
             // Deselect only, do not redirect

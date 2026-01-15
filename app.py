@@ -6,8 +6,25 @@
 ╚══════════════════════════════════════════════════════════════════════════╝
 """
 
-from flask import Flask, jsonify, session, request
 import os
+import sys
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 0. SELF-REEXECUTION: Automatically use the virtual environment
+# ═══════════════════════════════════════════════════════════════════════════
+def ensure_venv():
+    """If not running in venv, re-execute using the venv's interpreter."""
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    venv_python = os.path.join(current_dir, 'venv', 'bin', 'python')
+    
+    # Check if we are already running the venv python
+    if os.path.exists(venv_python) and sys.executable != venv_python:
+        print(f"INFO: Auto-switching to virtual environment: {venv_python}")
+        os.execv(venv_python, [venv_python] + sys.argv)
+
+ensure_venv()
+
+from flask import Flask, jsonify, session, request
 import certifi
 from dotenv import load_dotenv, find_dotenv
 

@@ -864,6 +864,31 @@ def compare_prices():
             skip_amount = (page - 1) * per_page
             cursor = db.products.find(product_query if search_query else query).skip(skip_amount).limit(per_page)
             products = [sanitize_mongo_doc(p) for p in cursor]
+            
+            # Enrich products with real store images/logos from the stores collection
+            db_stores = []
+            try:
+                db_stores = list(db.stores.find({}, {'name': 1, 'store': 1, 'logo': 1, 'image': 1, 'store_image': 1}))
+            except Exception:
+                db_stores = []
+                
+            def find_store_logo_and_image(store_name, db_stores):
+                norm = lambda n: (n or '').strip().lower()
+                for s in db_stores:
+                    if norm(s.get('name')) == norm(store_name) or norm(s.get('store')) == norm(store_name):
+                        # Return logo, and fallback image field
+                        return s.get('logo'), s.get('image') or s.get('store_image')
+                return None, None
+                
+            for p in products:
+                for s in (p.get('stores') or []):
+                    store_name = s.get('store') or s.get('store_name') or s.get('name')
+                    logo, image = find_store_logo_and_image(store_name, db_stores)
+                    if logo:
+                        s['logo'] = logo
+                    if image:
+                        s['image'] = image  # Standardize on 'image' as requested by user
+                        s['store_image'] = image
             # Since sanitize_mongo_doc converts _id to id, we don't need additional loop
             # products = list(cursor)
             # for p in products:
@@ -993,10 +1018,11 @@ def product_detail(product_id):
         return None, None
     for s in stores_list:
         store_name = s.get('store') or s.get('store_name') or s.get('name')
-        logo, image = find_store_logo_and_image(store_name)
+        logo, image = find_store_logo_and_image(store_name, db_stores)
         if logo:
             s['logo'] = logo
         if image:
+            s['image'] = image  # Match the 'image' field requested by user
             s['store_image'] = image
 
     # Always calculate the best price and its store(s)
