@@ -23,270 +23,822 @@ Requires: User must be logged in
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
+    :root {
+      --premium-purple: #7c3aed;
+      --premium-indigo: #6366f1;
+      --premium-dark: #1e1b4b;
+      --glass-bg: rgba(255, 255, 255, 0.8);
+      --glass-border: rgba(255, 255, 255, 0.4);
+      --card-radius: 24px;
+    }
+
+    body {
+      background: radial-gradient(circle at top left, #f3f4ff 0%, #ffffff 50%);
+      min-height: 100vh;
+    }
+
+    /* Premium Header */
     .profile-header {
-      background: radial-gradient(circle at 20% 20%, #8ea2ff 0%, #667eea 35%, #4b63c9 70%);
+      background: linear-gradient(135deg, #7c3aed 0%, #6366f1 100%);
       color: white;
-      padding: 3.5rem 0 2.5rem;
-      margin-bottom: -3rem;
-      border-radius: 0 0 32px 32px;
+      padding: 1.5rem 0 0.5rem;
+      margin-bottom: -2.5rem;
+      border-radius: 0 0 40px 40px;
+      position: relative;
+      overflow: hidden;
+      z-index: 10;
     }
-    .profile-avatar {
-      width: 110px;
-      height: 110px;
-      border-radius: 50%;
-      background: white;
-      background-size: cover;
-      background-position: center;
-      background-repeat: no-repeat;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border: 4px solid rgba(255,255,255,0.8);
-      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-      margin: 0 auto 1rem;
+
+    .profile-header::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-image: radial-gradient(circle at 2px 2px, rgba(255,255,255,0.05) 1px, transparent 0);
+      background-size: 32px 32px;
+      pointer-events: none;
     }
-    .avatar-chooser {
-      padding: 12px 0 4px;
-      width: 100%;
-      max-width: 320px;
-      margin: 0 auto;
-    }
-    .avatar-choices {
-      display: grid;
-      width: 100%;
-      grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
-      gap: 10px;
-      justify-items: center;
-    }
-    .avatar-option {
-      width: 60px;
-      height: 60px;
-      border-radius: 50%;
-      border: 2px solid transparent;
-      background-size: cover;
-      background-position: center;
-      background-repeat: no-repeat;
-      cursor: pointer;
-      transition: transform 0.15s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-    }
-    .avatar-option:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 18px rgba(0,0,0,0.15);
-    }
-    .avatar-option.active {
-      border-color: #667eea;
-      box-shadow: 0 0 0 4px rgba(102,126,234,0.15);
-    }
+
+    /* Layout Structure */
     .profile-shell {
       display: grid;
-      grid-template-columns: 320px 1fr;
+      grid-template-columns: 350px 1fr;
+      gap: 30px;
+      margin-top: -80px;
+      position: relative;
+      z-index: 20;
+    }
+
+    @media (max-width: 1200px) {
+      .profile-shell {
+        grid-template-columns: 320px 1fr;
+        gap: 20px;
+      }
+    }
+
+    @media (max-width: 991px) {
+      .profile-shell {
+        grid-template-columns: 1fr;
+        margin-top: 20px;
+      }
+      
+      .profile-header {
+        margin-bottom: 0;
+        border-radius: 0;
+      }
+    }
+
+    .column-sidebar {
+      display: flex;
+      flex-direction: column;
       gap: 20px;
-      max-width: 1180px;
-      margin: 0 auto;
-      align-items: stretch;
     }
-    @media (max-width: 992px) {
-      .profile-shell { grid-template-columns: 1fr; }
+
+    .column-main {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
     }
-    .card-neo {
-      border: none;
+
+    /* Identity Card (Sidebar Version) */
+    .identity-card {
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(10px);
+      border-radius: 30px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.05);
+      border: 1px solid rgba(255,255,255,0.3);
+      padding: 2.5rem 2rem;
+      transition: all 0.3s ease;
+      position: sticky;
+      top: 100px;
+    }
+
+    .identity-header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .identity-body {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .info-item {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      padding: 12px 15px;
+      background: #f8fafc;
       border-radius: 18px;
-      background: #ffffff;
-      box-shadow: 0 12px 30px rgba(0,0,0,0.06);
+      border: 1px solid #f1f5f9;
     }
-    .stat-chip {
+
+    .info-item .icon-box {
+      width: 40px;
+      height: 40px;
+      background: white;
       border-radius: 12px;
-      background: #f5f7ff;
-      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--premium-purple);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+    }
+
+    .avatar-outer {
+      position: relative;
+      width: 100px;
+      height: 100px;
+      margin: 0 auto 0.75rem;
+    }
+
+    .profile-avatar {
+      width: 100%;
+      height: 100%;
+      border-radius: 30px;
+      background-size: cover;
+      background-position: center;
+      border: 4px solid white;
+      box-shadow: 0 12px 30px rgba(124, 58, 237, 0.2);
+      background-color: #f5f3ff;
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .avatar-edit-badge {
+      position: absolute;
+      bottom: -5px;
+      right: -5px;
+      width: 34px;
+      height: 34px;
+      background: #7c3aed;
+      color: white;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 3px solid white;
+      cursor: pointer;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+      transition: all 0.2s ease;
+    }
+
+    .avatar-edit-badge:hover {
+      transform: scale(1.1) rotate(15deg);
+    }
+
+    /* Avatar Picker Grid */
+    .avatar-grid {
+      display: grid !important;
+      grid-template-columns: repeat(4, 1fr) !important;
+      gap: 20px !important;
+      padding: 10px;
+    }
+
+    .avatar-option {
+      aspect-ratio: 1 / 1 !important;
+      width: 100% !important;
+      height: auto !important;
+      border-radius: 24px !important;
+      border: 3px solid #f1f5f9 !important;
+      cursor: pointer !important;
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+      position: relative !important;
+      padding: 12px !important;
+      background: white !important;
+      margin: 0 !important;
+    }
+
+    /* Store & Category Tiles */
+    .stores-masonry {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 1.25rem;
+    }
+
+    .categories-masonry {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 1rem;
+    }
+
+    .store-tile {
+      background: #f8fafc;
+      border: 1px solid #f1f5f9;
+      border-radius: 20px;
+      padding: 1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 120px;
+    }
+
+    .store-tile:hover {
+      background: white;
+      border-color: #7c3aed;
+      transform: translateY(-5px);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+    }
+
+    .store-tile.selected {
+      background: #f5f3ff;
+      border-color: #7c3aed;
+    }
+
+    .store-logo-box {
+      width: 60px;
+      height: 60px;
+      background: white;
+      border-radius: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 0.75rem;
+      padding: 8px;
+      border: 1px solid #f1f5f9;
+      transition: all 0.3s ease;
+    }
+
+    .store-tile.selected .store-logo-box {
+      border-color: rgba(124, 58, 237, 0.3);
+      box-shadow: 0 5px 15px rgba(124, 58, 237, 0.1);
+    }
+
+    .store-check {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 24px;
+      height: 24px;
+      background: #7c3aed;
+      color: white;
+      border-radius: 50%;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      border: 2px solid white;
+    }
+
+    .store-tile.selected .store-check {
+      display: flex;
+    }
+
+    .category-tile {
+      background: white;
+      border: 1px solid #f1f5f9;
+      border-radius: 16px;
+      padding: 0.75rem 1rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
       display: flex;
       align-items: center;
       gap: 10px;
-      font-weight: 600;
-      color: #3b4b8f;
+      position: relative;
     }
-    .stat-chip i {
-      color: #667eea;
-      font-size: 1.2rem;
+
+    .category-tile:hover {
+      border-color: #7c3aed;
+      background: #f8fafc;
     }
-    .pill-badge {
-      background: #eef2ff;
-      color: #4b63c9;
-      padding: 6px 12px;
-      border-radius: 999px;
+
+    .category-tile.selected {
+      background: #7c3aed;
+      border-color: #7c3aed;
+      color: white;
+    }
+
+    .category-name {
       font-weight: 600;
       font-size: 0.9rem;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      word-break: break-word;
-      max-width: 100%;
     }
-    .favorite-card {
-      border: 1px solid #eef1f8;
-      border-radius: 16px;
-      padding: 12px;
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+    .stat-pill {
+      background: #f8fafc;
+      border-radius: 15px;
+      padding: 0.5rem 1rem;
+      text-align: center;
+      min-width: 80px;
     }
-    .favorite-card:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 6px 18px rgba(0,0,0,0.05);
+
+    .stat-val {
+      display: block;
+      font-weight: 800;
+      color: #1e293b;
+      line-height: 1;
     }
-    .favorite-card img {
-      width: 56px;
-      height: 56px;
-      object-fit: contain;
-      border-radius: 12px;
-      background: #ffffff !important;
-      padding: 8px;
+
+    .stat-lbl {
+      color: #64748b;
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.05em;
     }
+
+    /* Favorites */
     .favorites-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 16px;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1.5rem;
     }
-    @media (max-width: 576px) {
-      .favorites-grid { grid-template-columns: 1fr; }
-    }
-    .favorites-panel {
-      background: linear-gradient(180deg, #ffffff 0%, #f8f9ff 100%);
-      width: 100%;
-    }
-    .column-stack {
+
+    .favorite-card {
+      background: #f8fafc;
+      border-radius: 20px;
+      padding: 1.25rem;
       display: flex;
-      flex-direction: column;
-      gap: 20px;
-      height: 100%;
-    }
-    .empty-favorites {
-      padding: 18px;
-      border: 1px dashed #e0e5f5;
-      border-radius: 14px;
-      background: #fafbff;
-    }
-    .preference-list .badge {
-      background: #eef2ff;
-      color: #4b63c9;
-      padding: 10px 12px;
-      border-radius: 12px;
-      font-weight: 600;
-    }
-    .btn-favorite {
-      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-      border: none;
-      color: black;
-      border-radius: 50%;
-      width: 38px;
-      height: 38px;
-      display: flex;
+      gap: 1.25rem;
       align-items: center;
-      justify-content: center;
-      transition: transform 0.2s ease;
+      transition: all 0.3s ease;
+      border: 1px solid #f1f5f9;
     }
-    .btn-favorite:hover { transform: scale(1.1); }
-    .btn-favorite.active { background: #dc3545; }
-    .store-box {
-      border: 2px solid #e0e5f5;
-      border-radius: 12px;
-      padding: 14px 16px;
-      background: #fafbff;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      text-align: center;
-      flex: 1;
-      min-width: 120px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-    }
-    .store-box input {
-      display: none;
-    }
-    .store-box:hover {
-      border-color: #667eea;
-      background: #f0f3ff;
-    }
-    .store-box input:checked + label {
-      border-color: #667eea;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-    }
-    .store-label {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 100%;
-      padding: 8px;
-      border-radius: 8px;
-      border: 2px solid transparent;
+
+    .favorite-card:hover {
       background: white;
-      color: #4b63c9;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s ease;
+      transform: scale(1.02);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+      border-color: #7c3aed;
     }
-    .store-box input:checked + .store-label {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+
+    .favorite-card img {
+      width: 70px;
+      height: 70px;
+      object-fit: contain;
+      border-radius: 15px;
+      background: white;
+      padding: 5px;
+    }
+
+    .pill-badge {
+      background: #eceaf3;
+      color: #7c3aed;
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .avatar-option.selected {
+      border-color: var(--premium-purple) !important;
+      background: #f5f3ff !important;
+      box-shadow: 0 10px 20px rgba(124, 58, 237, 0.1) !important;
+    }
+
+    .avatar-check {
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      background: #22c55e;
       color: white;
-      border-color: #667eea;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      border: 3px solid white;
+      opacity: 0;
+      transform: scale(0);
+      transition: all 0.3s ease;
     }
-    .stores-grid {
+
+    .avatar-option.selected .avatar-check {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    @media (max-width: 576px) {
+      .avatar-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+      }
+    }
+
+    /* Premium Buttons */
+    .btn-premium {
+      border-radius: 14px;
+      padding: 0.75rem 1.75rem;
+      font-weight: 700;
+      letter-spacing: -0.2px;
+      transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      border: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn-premium-primary {
+      background: linear-gradient(135deg, var(--premium-purple), #6366f1);
+      background-size: 200% auto;
+      color: white;
+      box-shadow: 0 10px 25px rgba(124, 58, 237, 0.3);
+      border: none;
+      transition: all 0.4s ease;
+    }
+
+    .btn-premium-primary:hover {
+      background-position: right center;
+      transform: translateY(-3px);
+      box-shadow: 0 12px 28px rgba(124, 58, 237, 0.4);
+      color: white !important;
+    }
+
+    .btn-premium-danger {
+      background: #fff1f2;
+      color: #e11d48;
+      border: none;
+      transition: all 0.3s ease;
+    }
+
+    .btn-premium-danger:hover {
+      background: #e11d48;
+      color: white !important;
+      transform: translateY(-3px);
+    }
+
+    /* Preference Tiles */
+    .preference-card {
+      background: white;
+      border-radius: var(--card-radius);
+      padding: 2rem;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.03);
+      border: 1px solid #f1f5f9;
+    }
+
+    .stores-masonry {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 20px;
+    }
+
+    .store-tile {
+      cursor: pointer;
+      background: white;
+      border: 2px solid #e2e8f0;
+      border-radius: 24px;
+      padding: 1.25rem 1.5rem;
+      transition: all 0.4e cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      position: relative;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+      overflow: visible;
+    }
+
+    .store-tile:hover {
+      transform: translateY(-8px);
+      border-color: var(--premium-purple);
+      box-shadow: 0 15px 30px rgba(124, 58, 237, 0.1);
+    }
+
+    .store-tile.selected {
+      border-color: var(--premium-purple);
+      background: #fdfcff;
+      border-width: 2px;
+    }
+
+    .store-tile .store-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
       gap: 12px;
     }
-    @keyframes spin {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
+
+    .store-tile .store-logo-box {
+      width: 70px;
+      height: 70px;
+      background: #f8fafc;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+      overflow: hidden;
+      border: 1px solid #f1f5f9;
     }
-    #savePreferencesBtn .spinner {
-      display: inline-block;
-      animation: spin 1s linear infinite;
+
+    .store-tile .store-logo-box img {
+      width: 85%;
+      height: 85%;
+      object-fit: contain;
+    }
+
+    .store-tile.selected .store-logo-box {
+      background: white;
+      border-color: var(--premium-purple);
+      transform: scale(1.05);
+      box-shadow: 0 8px 20px rgba(124, 58, 237, 0.1);
+    }
+
+    .store-check {
+      position: absolute;
+      top: -10px;
+      right: -10px;
+      background: var(--premium-purple);
+      color: white;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      border: 4px solid white;
+      opacity: 0;
+      transform: scale(0);
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      box-shadow: 0 5px 15px rgba(124, 58, 237, 0.3);
+      z-index: 5;
+    }
+
+    .store-tile.selected .store-check {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    /* Category Tiles */
+    .categories-masonry {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 15px;
+    }
+
+    .category-tile {
+      cursor: pointer;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 18px;
+      padding: 1rem;
+      text-align: center;
+      transition: all 0.3s ease;
+    }
+
+    .category-tile:hover {
+      background: white;
+      border-color: var(--premium-purple);
+      transform: translateY(-3px);
+    }
+
+    .category-tile.selected {
+      background: var(--premium-purple);
+      color: white;
+      border-color: var(--premium-purple);
+      box-shadow: 0 8px 20px rgba(124, 58, 237, 0.2);
+    }
+
+    .category-tile .cat-icon {
+      font-size: 1.5rem;
+      margin-bottom: 5px;
+      display: block;
+    }
+
+    .category-tile .cat-name {
+      font-size: 0.85rem;
+      font-weight: 700;
+    }
+
+    /* Modal Polish Improvements */
+    .modal-content-premium {
+      border-radius: 35px;
+      border: none;
+      overflow: hidden;
+      box-shadow: 0 30px 70px rgba(0,0,0,0.2);
+    }
+
+    .modal-input-group {
+      background: #f8fafc;
+      border: 2px solid #f1f5f9;
+      border-radius: 20px;
+      transition: all 0.3s ease;
+      overflow: hidden;
+    }
+
+    .modal-input-group:focus-within {
+      border-color: var(--premium-purple);
+      background: white;
+      box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.1);
+    }
+
+    .modal-input-group label {
+      padding: 12px 20px 0;
+      color: #94a3b8;
+      font-weight: 700;
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .modal-input-group input, 
+    .modal-input-group select {
+      background: transparent !important;
+      border: none !important;
+      padding: 8px 20px 15px !important;
+      font-weight: 600;
+      color: #1e293b;
+      box-shadow: none !important;
+    }
+
+    .modal-input-group i {
+      padding-left: 20px;
+      color: #6366f1;
+    }
+
+    /* Standard Card Neo */
+    .card-neo {
+      border: none;
+      border-radius: var(--card-radius);
+      background: #ffffff;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.05);
+    }
+    
+    .favorite-card {
+      border: 1px solid #f1f5f9;
+      border-radius: 22px;
+      padding: 1.25rem;
+      display: flex;
+      gap: 18px;
+      align-items: center;
+      transition: all 0.3s ease;
+      background: white;
+    }
+
+    .favorite-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 35px rgba(0,0,0,0.07);
+      border-color: var(--premium-purple);
+    }
+
+    .favorite-card img {
+      width: 85px;
+      height: 85px;
+      object-fit: contain;
+      border-radius: 16px;
+      background: #f8fafc;
+      padding: 8px;
+      border: 1px solid #f1f5f9;
+    }
+
+    .favorites-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    @media (max-width: 992px) {
+      .favorites-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .pill-badge {
+      font-size: 0.7rem;
+      padding: 0.3rem 0.7rem;
+      background: #f1f5f9;
+      border-radius: 20px;
+      font-weight: 600;
+      color: #64748b;
+    }
+
+    .btn-favorite {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      border: none;
+      background: #f8fafc;
+      color: #94a3b8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      font-size: 1.1rem;
+    }
+
+    .btn-favorite:hover {
+      background: #f1f5f9;
+      color: var(--premium-purple);
+      transform: scale(1.1);
+    }
+
+    .btn-favorite.active {
+      background: #fff1f2;
+      color: #e11d48;
+      box-shadow: 0 5px 15px rgba(225, 29, 72, 0.15);
+    }
+
+    .btn-view-product {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+      background: white;
+      color: #64748b;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+      font-size: 1.1rem;
+    }
+
+    .btn-view-product:hover {
+      border-color: var(--premium-purple);
+      color: var(--premium-purple);
+      background: #f5f3ff;
+      transform: scale(1.1);
+    }
+
+    .stat-bar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 2rem;
+    }
+
+    .stat-pill {
+      flex: 1;
+      background: #f8fafc;
+      padding: 12px;
+      border-radius: 16px;
+      text-align: center;
+    }
+
+    .stat-val {
+      display: block;
+      font-weight: 800;
+      color: var(--premium-purple);
+      font-size: 1.1rem;
+    }
+
+    .stat-lbl {
+      font-size: 0.75rem;
+      color: #64748b;
+      font-weight: 600;
+      text-transform: uppercase;
     }
   </style>
 </head>
 <body>
 
-  <!-- Navbar (same for all pages) -->
-  <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
+  <!-- Navigation -->
+  <nav class="navbar navbar-expand-lg sticky-top">
     <div class="container">
-      <a class="navbar-brand fw-bold" href="{{ url_for('main.home') }}" style="font-size: 1.5rem; color: #667eea;">
-        <i class="bi bi-cart-check-fill me-2"></i>Smart Grocery
+      <a class="navbar-brand d-flex align-items-center" href="{{ url_for('main.home') }}">
+        <div class="brand-icon me-3" style="background: linear-gradient(135deg, var(--premium-purple), var(--premium-indigo)); width: 44px; height: 44px; border-radius: 14px; display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 8px 16px -4px rgba(124, 58, 237, 0.3);">
+          <i class="bi bi-cart-check-fill fs-5"></i>
+        </div>
+        <span>Smart<span>Grocery</span></span>
       </a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
         <span class="navbar-toggler-icon"></span>
       </button>
       <div class="collapse navbar-collapse" id="navbarNav">
         {% set cart_count = shopping_list_count or 0 %}
-        <ul class="navbar-nav ms-auto">
+        <ul class="navbar-nav ms-auto align-items-center">
           <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('main.home') }}"><i class="bi bi-house-door"></i> Home</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('main.stores_page') }}"><i class="bi bi-shop"></i> Stores</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('main.featured_deals_page') }}"><i class="bi bi-tags"></i> Deals</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('main.compare_prices') }}"><i class="bi bi-bar-chart"></i> Compare</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('main.shopping_list') }}">
-              <i class="bi bi-list-check"></i> Lists
+            <a class="nav-link" href="{{ url_for('main.home') }}">
+              <i class="bi bi-house-door me-1"></i> Home
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('main.notifications_page') }}">
-              <i class="bi bi-bell"></i> Notifications
+            <a class="nav-link" href="{{ url_for('main.stores_page') }}">
+              <i class="bi bi-shop me-1"></i> Stores
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link active fw-semibold" href="{{ url_for('main.profile') }}">
-              <i class="bi bi-person-circle"></i> Profile
+            <a class="nav-link" href="{{ url_for('main.featured_deals_page') }}">
+              <i class="bi bi-tags me-1"></i> Deals
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('main.compare_prices') }}">
+              <i class="bi bi-arrow-left-right me-1"></i> Compare
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link d-flex align-items-center" href="{{ url_for('main.shopping_list') }}">
+              <i class="bi bi-list-check me-1"></i> Lists
+              {% if cart_count > 0 %}
+              <span class="ms-1 badge rounded-pill bg-danger" style="font-size: 0.7rem; padding: 0.4em 0.6em;">
+                {{ cart_count }}
+              </span>
+              {% endif %}
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link nav-icon-btn" href="{{ url_for('main.notifications_page') }}" aria-label="Notifications">
+              <i class="bi bi-bell fs-5"></i>
+            </a>
+          </li>
+          <li class="nav-item ms-lg-2">
+            <a class="nav-link active nav-icon-btn nav-profile-btn" href="{{ url_for('main.profile') }}" aria-label="User Profile">
+              <i class="bi bi-person-circle fs-5"></i>
             </a>
           </li>
         </ul>
@@ -294,157 +846,212 @@ Requires: User must be logged in
     </div>
   </nav>
 
-  <!-- Profile Header -->
-  <section class="profile-header">
-    <div class="container text-center">
-      <div class="profile-avatar"></div>
-      <h1 class="display-5 fw-bold mb-2">{{ user_data.name if user_data and user_data.get('name') else 'Guest User' }}</h1>
-      <p class="lead opacity-75">
-        <i class="bi bi-envelope"></i> {{ user_data.email if user_data and user_data.get('email') else 'Not logged in' }}
-      </p>
-    </div>
-  </section>
-
   <!-- Profile Content -->
-  <section class="container py-5">
+  <section class="container py-5" style="margin-top: 50px;">
     {% if not session.get('user') %}
       <div class="row justify-content-center">
-        <div class="col-lg-6 text-center">
-          <div class="card-neo card p-5">
-            <i class="bi bi-lock display-1 text-primary mb-3"></i>
-            <h3 class="mb-3">Sign in to view your profile</h3>
-            <p class="text-muted mb-4">Access your favorites, shopping lists, and personalized recommendations</p>
-            <div class="d-flex gap-2 justify-content-center">
-              <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-lg"><i class="bi bi-box-arrow-in-right"></i> Login</a>
-              <a href="{{ url_for('auth.signup') }}" class="btn btn-outline-primary btn-lg"><i class="bi bi-person-plus"></i> Sign Up</a>
+        <div class="col-lg-6">
+          <div class="identity-card p-5">
+            <div class="modal-icon-circle bg-light text-primary mb-4">
+              <i class="bi bi-shield-lock-fill"></i>
+            </div>
+            <h3 class="mb-3 fw-bold">Sign in to your space</h3>
+            <p class="text-muted mb-4">Access your favorites, personalized preferences, and smart shopping features.</p>
+            <div class="d-flex gap-3 justify-content-center">
+              <a href="{{ url_for('auth.login') }}" class="btn btn-premium btn-premium-primary">Login Now</a>
+              <a href="{{ url_for('auth.signup') }}" class="btn btn-premium btn-light border">Create Account</a>
             </div>
           </div>
         </div>
       </div>
     {% else %}
       <div class="profile-shell">
-        <!-- Left column: identity + stats + preferences -->
-        <div class="column-stack">
-          <div class="card-neo p-4">
-            <div class="d-flex flex-column align-items-center gap-2 mb-3 text-center">
-              <div class="profile-avatar"></div>
-              <div class="avatar-chooser text-center">
-                <button id="avatar-chooser-toggle" class="btn btn-outline-primary btn-sm">Choose avatar</button>
-                <div id="avatar-chooser-panel" class="avatar-choices d-none mt-2">
-                  {% set avatars = [
-                    'https://api.dicebear.com/7.x/fun-emoji/svg?seed=groovy-1&backgroundColor=ffffff&scale=90',
-                    'https://api.dicebear.com/7.x/fun-emoji/svg?seed=groovy-2&backgroundColor=ffffff&scale=90',
-                    'https://api.dicebear.com/7.x/fun-emoji/svg?seed=groovy-3&backgroundColor=ffffff&scale=90',
-                    'https://api.dicebear.com/7.x/fun-emoji/svg?seed=groovy-4&backgroundColor=ffffff&scale=90',
-                    'https://api.dicebear.com/7.x/fun-emoji/svg?seed=groovy-5&backgroundColor=ffffff&scale=90',
-                    'https://api.dicebear.com/7.x/identicon/svg?seed=blocks-1&backgroundColor=ffffff&scale=90',
-                    'https://api.dicebear.com/7.x/identicon/svg?seed=blocks-2&backgroundColor=ffffff&scale=90',
-                    'https://api.dicebear.com/7.x/identicon/svg?seed=blocks-3&backgroundColor=ffffff&scale=90'
-                  ] %}
-                  {% for avatar in avatars %}
-                    <div class="avatar-option" data-avatar-url="{{ avatar }}" style="background-image: url('{{ avatar }}');"></div>
-                  {% endfor %}
+        <!-- Left Sidebar: Identity -->
+        <div class="column-sidebar">
+          <div class="identity-card">
+            <div class="identity-header">
+              <div class="avatar-outer mx-auto mb-3">
+                <div class="profile-avatar shadow-lg"></div>
+                <div class="avatar-edit-badge" data-bs-toggle="modal" data-bs-target="#avatarPickerModal">
+                  <i class="bi bi-camera-fill"></i>
                 </div>
               </div>
-              <div class="text-center w-100">
-                <h4 class="mb-1 fw-bold">{{ user_data.name if user_data and user_data.get('name') else 'Guest User' }}</h4>
+              <h3 class="fw-bold mb-0 text-dark">{{ user_data.name if user_data and user_data.get('name') else 'Shopper' }}</h3>
+              <p class="text-muted small mb-3">{{ user_data.email }}</p>
+              
+              <div class="stat-bar bg-transparent p-0 mb-4 d-flex justify-content-center">
+                <div class="stat-pill bg-light me-2">
+                  <span class="stat-val">{{ user_data.favorites|length if user_data.favorites else 0 }}</span>
+                  <span class="stat-lbl">Items</span>
+                </div>
+                <div class="stat-pill bg-light">
+                  <span class="stat-val">{{ user_data.get('preferred_stores', [])|length }}</span>
+                  <span class="stat-lbl">Stores</span>
+                </div>
               </div>
             </div>
-            <div class="d-grid gap-3">
-                            <div class="stat-chip"><i class="bi bi-envelope"></i><span id="profile-email">{{ user_data.email if user_data and user_data.get('email') else 'Not logged in' }}</span></div>
-              <div class="stat-chip"><i class="bi bi-geo-alt"></i><span id="profile-address">{{ user_data.address if user_data and user_data.get('address') else 'Address not provided' }}</span></div>
-              <div class="stat-chip"><i class="bi bi-telephone"></i><span id="profile-phone">{{ user_data.phone if user_data and user_data.get('phone') else 'Phone not provided' }}</span></div>
-              <div class="d-flex gap-2 flex-wrap">
-                <button id="edit-profile-btn" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#profileModal"><i class="bi bi-pencil"></i> Edit Profile</button>
-                <button id="logout-btn" class="btn btn-outline-danger" onclick="confirmLogout()"><i class="bi bi-box-arrow-right"></i> Log Out</button>
+
+            <div class="identity-body">
+              <div class="info-item">
+                <div class="icon-box"><i class="bi bi-geo-alt-fill"></i></div>
+                <div class="min-w-0">
+                  <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.6rem;">Address</small>
+                  <span class="fw-semibold text-truncate d-block">{{ user_data.address if user_data and user_data.get('address') else 'Add address' }}</span>
+                </div>
               </div>
+
+              <div class="info-item">
+                <div class="icon-box"><i class="bi bi-globe"></i></div>
+                <div class="min-w-0">
+                  <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.6rem;">Region</small>
+                  <span class="fw-semibold text-truncate d-block">
+                    {% set flag_map = {
+                      'Austria': '🇦🇹', 'Germany': '🇩🇪', 'Switzerland': '🇨🇭', 'United Kingdom': '🇬🇧', 'USA': '🇺🇸',
+                      'France': '🇫🇷', 'Italy': '🇮🇹', 'Spain': '🇪🇸', 'Netherlands': '🇳🇱', 'Canada': '🇨🇦',
+                      'Australia': '🇦🇺', 'Brazil': '🇧🇷', 'China': '🇨🇳', 'India': '🇮🇳', 'Japan': '🇯🇵',
+                      'Mexico': '🇲🇽', 'Norway': '🇳🇴', 'Poland': '🇵🇱', 'Portugal': '🇵🇹', 'Russia': '🇷🇺',
+                      'South Korea': '🇰🇷', 'Sweden': '🇸🇪', 'Turkey': '🇹🇷', 'Ukraine': '🇺🇦'
+                    } %}
+                    {{ flag_map.get(user_data.country, '🌍') }} {{ user_data.country or 'Set Region' }}
+                  </span>
+                </div>
+              </div>
+
+              <div class="info-item">
+                <div class="icon-box"><i class="bi bi-phone-fill"></i></div>
+                <div class="min-w-0">
+                  <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.6rem;">Phone</small>
+                  <span class="fw-semibold text-truncate d-block">{{ user_data.phone if user_data and user_data.get('phone') else 'Add phone' }}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="d-grid gap-2 mt-4">
+              <button class="btn btn-premium btn-premium-primary" data-bs-toggle="modal" data-bs-target="#profileModal">
+                <i class="bi bi-pencil-square me-2"></i> Edit Profile
+              </button>
+              <button class="btn btn-premium btn-premium-danger" onclick="confirmLogout()">
+                <i class="bi bi-box-arrow-right me-2"></i> Sign Out
+              </button>
             </div>
           </div>
-
-          <!-- At a glance card removed per request -->
         </div>
 
-        <!-- Right column: Favorites only -->
-        <div class="column-stack">
-          <div class="card-neo p-4 favorites-panel">
-            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <!-- Right Column: Dashboard -->
+        <div class="column-main">
+          <!-- Favorites (Full width of main column) -->
+          <div class="preference-card mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
               <div>
-                <h5 class="fw-bold mb-1"><i class="bi bi-heart-fill text-danger"></i> Favorites</h5>
-                <small class="text-muted">Your saved products</small>
+                <h4 class="fw-bold mb-1"><i class="bi bi-heart-fill text-danger me-2"></i> Your Favorites</h4>
+                <p class="text-muted small mb-0">Quick access to saved products</p>
               </div>
-              <a href="{{ url_for('main.compare_prices') }}" class="btn btn-outline-primary btn-sm"><i class="bi bi-search"></i> Browse Products</a>
+              <a href="{{ url_for('main.compare_prices') }}" class="btn btn-outline-primary btn-sm rounded-pill px-3">
+                <i class="bi bi-plus-lg me-1"></i> Add More
+              </a>
             </div>
 
             <div class="favorites-grid" id="favorites-list">
-              {% if user_data and user_data.get('favorites') and user_data.favorites|length > 0 %}
+              {% if user_data.favorites and user_data.favorites|length > 0 %}
                 {% for product in user_data.favorites %}
                   <div class="favorite-card">
                     <img src="{{ prefer_processed(product.image or (product.images and product.images[0]) or url_for('static', filename='placeholder.svg')) }}" alt="{{ product.name }}">
                     <div class="flex-grow-1 min-w-0">
                       <div class="d-flex justify-content-between align-items-start gap-2">
-                        <div>
-                          <h6 class="mb-1 fw-bold text-truncate">{{ product.name }}</h6>
+                        <div class="min-w-0">
+                          <h6 class="mb-1 fw-bold text-truncate" style="font-size: 0.9rem;">{{ product.name }}</h6>
                           <div class="d-flex gap-2 flex-wrap align-items-center">
                             {% if product.store %}
-                            <span class="pill-badge"><i class="bi bi-shop"></i> {{ product.store }}</span>
+                            <span class="pill-badge" style="font-size: 0.65rem;"><i class="bi bi-shop"></i> {{ product.store }}</span>
                             {% endif %}
-                            <span class="badge bg-success">€{{ product.best_price or 'N/A' }}</span>
+                            <span class="badge bg-success-subtle text-success border border-success-subtle">€{{ product.best_price or product.price or 'N/A' }}</span>
                           </div>
                         </div>
                         <div class="d-flex gap-1">
-                          <a href="{{ url_for('main.product_info', product_id=product.id) }}" class="btn btn-outline-primary btn-sm"><i class="bi bi-eye"></i></a>
-                          <button class="btn-favorite active" onclick="toggleFavorite('{{ product.id }}', this)"><i class="bi bi-heart-fill"></i></button>
+                          <a href="{{ url_for('main.product_info', product_id=product.id) }}" class="btn-view-product" title="View Details" style="width: 32px; height: 32px; font-size: 0.9rem;"><i class="bi bi-arrow-right"></i></a>
+                          <button class="btn-favorite active" onclick="toggleFavorite(event, '{{ product.id }}', this)" title="Remove" style="width: 32px; height: 32px; font-size: 0.9rem;"><i class="bi bi-heart-fill text-danger"></i></button>
                         </div>
                       </div>
                     </div>
                   </div>
                 {% endfor %}
               {% else %}
-                <div class="text-center empty-favorites">
-                  <i class="bi bi-heart display-6 text-muted"></i>
-                  <h6 class="mt-2 mb-1 text-muted">No favorites yet</h6>
-                  <p class="text-muted mb-2">Start adding products to see them here.</p>
-                  <a href="{{ url_for('main.home') }}" class="btn btn-primary btn-sm"><i class="bi bi-search"></i> Browse Products</a>
+                <div class="col-12 py-5 text-center text-muted">
+                  <i class="bi bi-heart display-6 opacity-25 mb-3 d-block"></i>
+                  <p>No favorites yet. Start exploring products!</p>
+                  <a href="{{ url_for('main.home') }}" class="btn btn-premium btn-premium-primary btn-sm">Browse Deals</a>
                 </div>
               {% endif %}
             </div>
           </div>
 
-          <div class="card-neo p-4" id="preferences-card">
-            <h6 class="text-muted text-uppercase fw-semibold mb-3">Preferences</h6>
-            {% set selected_stores = (user_data.preferences.preferred_stores if user_data and user_data.get('preferences') else user_data.get('preferred_stores', [])) or [] %}
-            {% set selected_cats = (user_data.preferences.favorite_categories if user_data and user_data.get('preferences') else user_data.get('favorite_categories', [])) or [] %}
-            <div class="preference-list mb-3">
-              <label class="form-label fw-semibold mb-3">Preferred Stores</label>
-              {% if stores_options %}
-                <div class="stores-grid">
-                  {% for store in stores_options %}
-                    <div class="store-box">
-                      <input type="checkbox" id="store-{{ loop.index }}" name="preferred_store" value="{{ store }}" {% if store in selected_stores %}checked{% endif %} class="store-checkbox" disabled>
-                      <label for="store-{{ loop.index }}" class="store-label">{{ store }}</label>
+          <!-- Preferences Row -->
+          <div class="row g-4 mb-4">
+            <div class="col-xl-6">
+              <div class="preference-card h-100">
+                <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+                  <div>
+                    <h4 class="fw-bold mb-1">Stores</h4>
+                    <p class="text-muted small mb-0">Select frequent shops</p>
+                  </div>
+                  <button id="savePreferencesBtn" class="btn btn-premium btn-premium-primary btn-sm px-3" onclick="savePreferences()">
+                    <i class="bi bi-cloud-check me-2"></i> Save
+                  </button>
+                </div>
+                
+                <div class="stores-masonry" style="grid-template-columns: repeat(2, 1fr); gap: 15px;">
+                  {% for store in stores %}
+                  <div class="store-tile {% if store.name in user_data.get('preferred_stores', []) %}selected{% endif %}" 
+                       onclick="toggleStoreTile(this, '{{ store.name }}')" style="padding: 1.25rem;">
+                    <div class="store-inner text-center">
+                      <div class="store-logo-box mx-auto mb-3" style="width: 70px; height: 70px; background: white; border-radius: 18px; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 1px solid #f1f5f9; padding: 5px;">
+                        {% if store.image %}
+                          <img src="{{ store.image }}" alt="{{ store.name }}" style="max-width: 90%; max-height: 90%; object-fit: contain;">
+                        {% else %}
+                          <span class="fw-bold text-primary" style="font-size: 1.1rem;">{{ store.name[:2]|upper }}</span>
+                        {% endif %}
+                      </div>
+                      <span class="d-block fw-bold text-dark" style="font-size: 0.9rem;">{{ store.name }}</span>
                     </div>
+                    <div class="store-check" style="top: 5px; right: 5px; width: 24px; height: 24px; font-size: 11px; border-width: 2px;">
+                      <i class="bi bi-check-lg"></i>
+                    </div>
+                  </div>
                   {% endfor %}
                 </div>
-              {% else %}
-                <p class="text-muted">No stores available yet</p>
-              {% endif %}
-            </div>
-            <div class="mb-3">
-              <label class="form-label fw-semibold">Favorite Categories</label>
-              <div class="d-flex flex-wrap gap-2">
-                {% for cat in category_options %}
-                  {% set slug = cat|replace(' ', '-')|lower %}
-                  <input type="checkbox" class="btn-check" id="cat-{{ slug }}" value="{{ cat }}" autocomplete="off" {% if cat in selected_cats %}checked{% endif %} disabled>
-                  <label class="btn btn-outline-primary" for="cat-{{ slug }}">{{ cat }}</label>
-                {% endfor %}
-                {% if not category_options %}
-                  <span class="text-muted small">No categories available</span>
-                {% endif %}
               </div>
             </div>
-            <div class="d-flex flex-wrap gap-2">
-              <button class="btn btn-outline-primary" type="button" id="editPreferencesBtn" onclick="togglePreferencesEdit()"><i class="bi bi-pencil-square"></i> Edit Preferences</button>
-              <button class="btn btn-primary d-none" id="savePreferencesBtn" onclick="savePreferences()"><i class="bi bi-check-circle"></i> Save Preferences</button>
+
+            <div class="col-xl-6">
+              <div class="preference-card h-100">
+                <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+                  <div>
+                    <h4 class="fw-bold mb-1">Categories</h4>
+                    <p class="text-muted small mb-0">Choose favorites</p>
+                  </div>
+                  <button id="saveCategoriesBtn" class="btn btn-premium btn-premium-primary btn-sm px-3" onclick="saveCategories()">
+                    <i class="bi bi-check2-all me-2"></i> Save
+                  </button>
+                </div>
+                
+                <div class="categories-masonry" style="grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));">
+                  {% set preferred_cats = user_data.get('preferred_categories', []) %}
+                  {% set cat_icons = {
+                    'Produce': '🍎', 'Fruits': '🍎', 'Vegetables': '🥦', 'Dairy': '🥛', 'Bakery': '🥖', 
+                    'Meat': '🍖', 'Seafood': '🐟', 'Beverages': '🥤', 'Soft Drinks': '🥤', 'Wine': '🍷',
+                    'Frozen': '❄️', 'Snacks': '🥨', 'Pantry': '🥫', 'Household': '🧽', 'Cleaning': '🧽',
+                    'Personal Care': '🧴', 'Baby': '👶', 'Baby food': '👶', 'Baby Food': '👶', 'Pets': '🐶', 
+                    'Canned Goods': '🥫', 'Spices': '🧂'
+                  } %}
+                  {% for cat in category_options %}
+                  <div class="category-tile {% if cat in preferred_cats %}selected{% endif %}" 
+                       onclick="toggleCategoryTile(this, '{{ cat }}')" style="padding: 0.75rem; flex-direction: column;">
+                    <span class="cat-icon" style="font-size: 1.3rem; margin-bottom: 2px;">{{ cat_icons.get(cat, '📦') }}</span>
+                    <span class="cat-name text-truncate w-100" style="font-size: 0.75rem; font-weight: 700;">{{ cat }}</span>
+                  </div>
+                  {% endfor %}
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -452,299 +1059,280 @@ Requires: User must be logged in
     {% endif %}
   </section>
 
-  <footer class="text-center py-4 bg-light border-top">
-    <p class="mb-0 text-muted">&copy; 2025 Smart Grocery Team</p>
+  <footer class="text-center py-5 mt-5">
+    <div class="container">
+      <div class="brand-icon mx-auto mb-3" style="background: #f1f5f9; width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: var(--premium-purple);">
+        <i class="bi bi-cart-check-fill"></i>
+      </div>
+      <p class="text-muted small mb-0">&copy; 2025 Smart Grocery &bull; Premium Experience</p>
+    </div>
   </footer>
 
-  <!-- Profile Edit Modal -->
-  <div class="modal fade" id="profileModal" tabindex="-1" aria-labelledby="profileModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
-      <div class="modal-content" style="border-radius: 16px; border: 3px solid #667eea; overflow: hidden; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-        <div style="padding: 1.25rem; text-align: center;">
-          <div class="mb-2">
-            <i class="bi bi-pencil-square" style="font-size: 2.2rem; color: white;"></i>
+  <!-- Logout Confirmation Modal -->
+  <div class="modal fade" id="logoutConfirmModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+      <div class="modal-content overflow-hidden border-0 shadow-lg rounded-5">
+        <div class="modal-body p-4 text-center">
+          <div class="modal-icon-circle bg-danger bg-opacity-10 text-danger mb-4 mx-auto">
+            <i class="bi bi-door-open-fill fs-2"></i>
           </div>
-          <h5 class="text-white mb-0 fw-bold">Edit Profile</h5>
-        </div>
-        <div class="modal-body" style="padding: 1rem 1.25rem;">
-          <form id="profile-edit-form">
-            <div class="mb-3">
-              <label for="profile-phone-input" class="form-label" style="color: white; font-size: 0.9rem; font-weight: 600;">Phone</label>
-              <div style="display: flex; gap: 0;">
-                <select id="profile-country-code" style="flex: 0 0 110px; border: none; border-radius: 8px 0 0 8px; padding: 0.6rem 0.3rem; font-size: 14px; background: white; outline: none;">
-                  <option value="+54">🇦🇷 +54</option>
-                  <option value="+61">🇦🇺 +61</option>
-                  <option value="+43" selected>🇦🇹 +43</option>
-                  <option value="+32">🇧🇪 +32</option>
-                  <option value="+55">🇧🇷 +55</option>
-                  <option value="+1">🇨🇦 +1</option>
-                  <option value="+86">🇨🇳 +86</option>
-                  <option value="+420">🇨🇿 +420</option>
-                  <option value="+45">🇩🇰 +45</option>
-                  <option value="+358">🇫🇮 +358</option>
-                  <option value="+33">🇫🇷 +33</option>
-                  <option value="+49">🇩🇪 +49</option>
-                  <option value="+30">🇬🇷 +30</option>
-                  <option value="+36">🇭🇺 +36</option>
-                  <option value="+91">🇮🇳 +91</option>
-                  <option value="+353">🇮🇪 +353</option>
-                  <option value="+39">🇮🇹 +39</option>
-                  <option value="+81">🇯🇵 +81</option>
-                  <option value="+52">🇲🇽 +52</option>
-                  <option value="+31">🇳🇱 +31</option>
-                  <option value="+64">🇳🇿 +64</option>
-                  <option value="+47">🇳🇴 +47</option>
-                  <option value="+48">🇵🇱 +48</option>
-                  <option value="+351">🇵🇹 +351</option>
-                  <option value="+65">🇸🇬 +65</option>
-                  <option value="+27">🇿🇦 +27</option>
-                  <option value="+82">🇰🇷 +82</option>
-                  <option value="+34">🇪🇸 +34</option>
-                  <option value="+46">🇸🇪 +46</option>
-                  <option value="+41">🇨🇭 +41</option>
-                  <option value="+66">🇹🇭 +66</option>
-                  <option value="+971">🇦🇪 +971</option>
-                  <option value="+44">🇬🇧 +44</option>
-                  <option value="+1">🇺🇸 +1</option>
-                </select>
-                <input type="tel" id="profile-phone-input" name="phone" placeholder="123456789" pattern="[0-9]*" inputmode="numeric" style="flex: 1; min-width: 0; border: none; border-radius: 0 8px 8px 0; padding: 0.6rem; background: white; outline: none; font-size: 16px;" onkeypress="return event.charCode >= 48 && event.charCode <= 57" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
-              </div>
-            </div>
-            <div class="mb-2">
-              <label for="profile-address-input" class="form-label" style="color: white; font-size: 0.9rem; font-weight: 600;">Address</label>
-              <input type="text" id="profile-address-input" name="address" placeholder="" style="border: none; border-radius: 8px; padding: 0.6rem; background: white; outline: none; width: 100%;">
-            </div>
-          </form>
-        </div>
-        <div class="modal-footer" style="border: none; padding: 0.75rem 1.25rem; justify-content: center; gap: 0.75rem;">
-          <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="border: none; padding: 0.5rem 1.25rem; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.backgroundColor='#d3d3d3';" onmouseout="this.style.backgroundColor='white';">Cancel</button>
-          <button type="button" id="save-profile-btn" class="btn btn-light" style="background: white; color: #667eea; padding: 0.5rem 1.25rem; font-weight: 600; border: none; transition: all 0.2s ease;" onmouseover="this.style.background='#e8ecff';" onmouseout="this.style.background='white';"><i class="bi bi-check-circle me-1"></i>Save</button>
+          <h5 class="fw-bold mb-2">Ready to leave?</h5>
+          <p class="text-muted small mb-4">Log out but stay fresh. We'll keep your groceries smart while you're away.</p>
+          <div class="d-grid gap-2">
+            <a href="{{ url_for('auth.logout') }}" class="btn btn-premium btn-premium-danger py-2">Confirm Logout</a>
+            <button type="button" class="btn btn-light rounded-4 py-2" data-bs-dismiss="modal">Cancel</button>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Logout Confirmation Modal -->
-  <div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
-      <div class="modal-content" style="border-radius: 16px; border: 3px solid #dc3545; overflow: hidden; background: linear-gradient(135deg, #dc3545 0%, #bb2d3b 100%);">
-        <div style="padding: 1.25rem; text-align: center;">
-          <div class="mb-2">
-            <i class="bi bi-exclamation-circle" style="font-size: 2.2rem; color: white;"></i>
+  {% if session.get('user') %}
+    <!-- Profile Edit Modal -->
+    <div class="modal fade" id="avatarPickerModal" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content overflow-hidden border-0 shadow-lg rounded-5">
+          <div class="modal-header border-0 bg-premium text-white p-4">
+            <h5 class="modal-title fw-bold">Select Your Avatar</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
           </div>
-          <h5 class="text-white mb-0 fw-bold">Confirm Logout</h5>
-        </div>
-        <div class="modal-body" style="padding: 1.25rem; text-align: center;">
-          <p style="color: white; font-size: 1rem; margin: 0;">Are you sure you want to log out? You'll need to sign in again to access your account.</p>
-        </div>
-        <div class="modal-footer" style="border: none; padding: 0.75rem 1.25rem; justify-content: center; gap: 0.75rem;">
-          <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="border: none; padding: 0.5rem 1.25rem; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.backgroundColor='#d3d3d3';" onmouseout="this.style.backgroundColor='white';">Cancel</button>
-          <a href="{{ url_for('auth.logout') }}" class="btn btn-light" style="background: white; color: #dc3545; padding: 0.5rem 1.25rem; font-weight: 600; border: none; text-decoration: none; transition: all 0.2s ease;" onmouseover="this.style.background='#ffe8e8';" onmouseout="this.style.background='white';"><i class="bi bi-box-arrow-right me-1"></i>Log Out</a>
+          <div class="modal-body p-4">
+            <div class="avatar-grid justify-content-center mb-4" style="grid-template-columns: repeat(3, 1fr) !important; gap: 15px !important;">
+              {% set avatars = [
+                'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix&backgroundColor=b6e3f4',
+                'https://api.dicebear.com/7.x/avataaars/svg?seed=Aneka&backgroundColor=ffdfbf',
+                'https://api.dicebear.com/7.x/avataaars/svg?seed=Jasper&backgroundColor=c0aede',
+                'https://api.dicebear.com/7.x/avataaars/svg?seed=Tigger&backgroundColor=d1d4f9',
+                'https://api.dicebear.com/7.x/avataaars/svg?seed=Simba&backgroundColor=ffd5dc',
+                'https://api.dicebear.com/7.x/avataaars/svg?seed=Nala&backgroundColor=ffdfbf',
+                'https://api.dicebear.com/7.x/avataaars/svg?seed=Oliver&backgroundColor=d1d4f9',
+                'https://api.dicebear.com/7.x/avataaars/svg?seed=Luna&backgroundColor=ffdfbf',
+                'https://api.dicebear.com/7.x/avataaars/svg?seed=Milo&backgroundColor=c0e6ff'
+              ] %}
+              {% for url in avatars %}
+                <div class="avatar-option {% if user_data.profile_image == url %}selected{% endif %}" onclick="selectAvatar('{{ url }}')">
+                  <img src="{{ url }}" alt="Avatar Option">
+                  <div class="avatar-check"><i class="bi bi-check-lg"></i></div>
+                </div>
+              {% endfor %}
+            </div>
+            <div class="text-center">
+              <button class="btn btn-premium btn-premium-primary px-5" data-bs-dismiss="modal">Looks Perfect</button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
-  </div>
+
+    <!-- Profile Data Modal -->
+    <div class="modal fade" id="profileModal" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content modal-content-premium">
+          <div class="modal-header border-0 bg-white p-4 pb-0 d-flex justify-content-between align-items-center">
+            <div>
+              <h4 class="fw-bold mb-0">Identity Settings</h4>
+              <p class="text-muted small mb-0">Update your personal information</p>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body p-4">
+            <form action="{{ url_for('main.profile') }}" method="POST">
+              <div class="modal-input-group mb-3">
+                <label><i class="bi bi-person me-1"></i> Full Name</label>
+                <input type="text" class="form-control" name="name" value="{{ user_data.name }}" required>
+              </div>
+              
+              <div class="modal-input-group mb-3">
+                <label><i class="bi bi-globe2 me-1"></i> Market Country</label>
+                <select name="country" class="form-select">
+                  {% set countries_data = [
+                    ('Afghanistan', '🇦🇫', '+93'), ('Albania', '🇦🇱', '+355'), ('Algeria', '🇩🇿', '+213'), ('Andorra', '🇦🇩', '+376'), ('Angola', '🇦🇴', '+244'),
+                    ('Argentina', '🇦🇷', '+54'), ('Armenia', '🇦🇲', '+374'), ('Australia', '🇦🇺', '+61'), ('Austria', '🇦🇹', '+43'), ('Azerbaijan', '🇦🇿', '+994'),
+                    ('Bahamas', '🇧🇸', '+1-242'), ('Bahrain', '🇧🇭', '+973'), ('Bangladesh', '🇧🇩', '+880'), ('Barbados', '🇧🇧', '+1-246'), ('Belarus', '🇧🇾', '+375'),
+                    ('Belgium', '🇧🇪', '+32'), ('Belize', '🇧🇿', '+501'), ('Benin', '🇧🇯', '+229'), ('Bhutan', '🇧🇹', '+975'), ('Bolivia', '🇧🇴', '+591'),
+                    ('Bosnia and Herzegovina', '🇧🇦', '+387'), ('Botswana', '🇧🇼', '+267'), ('Brazil', '🇧🇷', '+55'), ('Brunei', '🇧🇳', '+673'), ('Bulgaria', '🇧🇬', '+359'),
+                    ('Burkina Faso', '🇧🇫', '+226'), ('Burundi', '🇧🇮', '+257'), ('Cambodia', '🇰🇭', '+855'), ('Cameroon', '🇨🇲', '+237'), ('Canada', '🇨🇦', '+1'),
+                    ('Cape Verde', '🇨🇻', '+238'), ('Central African Republic', '🇨🇫', '+236'), ('Chad', '🇹🇩', '+235'), ('Chile', '🇨🇱', '+56'), ('China', '🇨🇳', '+86'),
+                    ('Colombia', '🇨🇴', '+57'), ('Comoros', '🇰🇲', '+269'), ('Congo', '🇨🇬', '+242'), ('Costa Rica', '🇨🇷', '+506'), ('Croatia', '🇭🇷', '+385'),
+                    ('Cuba', '🇨🇺', '+53'), ('Cyprus', '🇨🇾', '+357'), ('Czech Republic', '🇨🇿', '+420'), ('Denmark', '🇩🇰', '+45'), ('Djibouti', '🇩🇯', '+253'),
+                    ('Dominica', '🇩🇲', '+1-767'), ('Dominican Republic', '🇩🇴', '+1-809'), ('Ecuador', '🇪🇨', '+593'), ('Egypt', '🇪🇬', '+20'), ('El Salvador', '🇸🇻', '+503'),
+                    ('Estonia', '🇪🇪', '+372'), ('Ethiopia', '🇪🇹', '+251'), ('Fiji', '🇫🇯', '+679'), ('Finland', '🇫🇮', '+358'), ('France', '🇫🇷', '+33'),
+                    ('Gabon', '🇬🇦', '+241'), ('Gambia', '🇬🇲', '+220'), ('Georgia', '🇬🇪', '+995'), ('Germany', '🇩🇪', '+49'), ('Ghana', '🇬🇭', '+233'),
+                    ('Greece', '🇬🇷', '+30'), ('Grenada', '🇬🇩', '+1-473'), ('Guatemala', '🇬🇹', '+502'), ('Guinea', '🇬🇳', '+224'), ('Guyana', '🇬🇾', '+592'),
+                    ('Haiti', '🇭🇹', '+509'), ('Honduras', '🇭🇳', '+504'), ('Hungary', '🇭🇺', '+36'), ('Iceland', '🇮🇸', '+354'), ('India', '🇮🇳', '+91'),
+                    ('Indonesia', '🇮🇩', '+62'), ('Iran', '🇮🇷', '+98'), ('Iraq', '🇮🇶', '+964'), ('Ireland', '🇮🇪', '+353'), ('Israel', '🇮🇱', '+972'),
+                    ('Italy', '🇮🇹', '+39'), ('Jamaica', '🇯🇲', '+1-876'), ('Japan', '🇯🇵', '+81'), ('Jordan', '🇯🇴', '+962'), ('Kazakhstan', '🇰🇿', '+7'),
+                    ('Kenya', '🇰🇪', '+254'), ('Kuwait', '🇰🇼', '+965'), ('Kyrgyzstan', '🇰🇬', '+996'), ('Laos', '🇱🇦', '+856'), ('Latvia', '🇱🇻', '+371'),
+                    ('Lebanon', '🇱🇧', '+961'), ('Lesotho', '🇱🇸', '+266'), ('Liberia', '🇱🇷', '+231'), ('Libya', '🇱🇾', '+218'), ('Liechtenstein', '🇱🇮', '+423'),
+                    ('Lithuania', '🇱🇹', '+370'), ('Luxembourg', '🇱🇺', '+352'), ('Madagascar', '🇲🇬', '+261'), ('Malawi', '🇲🇼', '+265'), ('Malaysia', '🇲🇾', '+60'),
+                    ('Maldives', '🇲🇻', '+960'), ('Mali', '🇲🇱', '+223'), ('Malta', '🇲🇹', '+356'), ('Mexico', '🇲🇽', '+52'), ('Moldova', '🇲🇩', '+373'),
+                    ('Monaco', '🇲🇨', '+377'), ('Mongolia', '🇲🇳', '+976'), ('Montenegro', '🇲🇪', '+382'), ('Morocco', '🇲🇦', '+212'), ('Mozambique', '🇲🇿', '+258'),
+                    ('Myanmar', '🇲🇲', '+95'), ('Namibia', '🇳🇦', '+264'), ('Nepal', '🇳🇵', '+977'), ('Netherlands', '🇳🇱', '+31'), ('New Zealand', '🇳🇿', '+64'),
+                    ('Nicaragua', '🇳🇮', '+505'), ('Niger', '🇳🇪', '+227'), ('Nigeria', '🇳🇬', '+234'), ('Norway', '🇳🇴', '+47'), ('Oman', '🇴🇲', '+968'),
+                    ('Pakistan', '🇵🇰', '+92'), ('Panama', '🇵🇦', '+507'), ('Paraguay', '🇵🇾', '+595'), ('Peru', '🇵🇪', '+51'), ('Philippines', '🇵🇭', '+63'),
+                    ('Poland', '🇵🇱', '+48'), ('Portugal', '🇵🇹', '+351'), ('Qatar', '🇶🇦', '+974'), ('Romania', '🇷🇴', '+40'), ('Russia', '🇷🇺', '+7'),
+                    ('Rwanda', '🇷🇼', '+250'), ('Saudi Arabia', '🇸🇦', '+966'), ('Senegal', '🇸🇳', '+221'), ('Serbia', '🇷🇸', '+381'), ('Singapore', '🇸🇬', '+65'),
+                    ('Slovakia', '🇸🇰', '+421'), ('Slovenia', '🇸🇮', '+386'), ('South Africa', '🇿🇦', '+27'), ('South Korea', '🇰🇷', '+82'), ('Spain', '🇪🇸', '+34'),
+                    ('Sri Lanka', '🇱🇰', '+94'), ('Sudan', '🇸🇩', '+249'), ('Suriname', '🇸🇷', '+597'), ('Sweden', '🇸🇪', '+46'), ('Switzerland', '🇨🇭', '+41'),
+                    ('Syria', '🇸🇾', '+963'), ('Taiwan', '🇹🇼', '+886'), ('Tajikistan', '🇹🇯', '+992'), ('Tanzania', '🇹🇿', '+255'), ('Thailand', '🇹🇭', '+66'),
+                    ('Tunisia', '🇹🇳', '+216'), ('Turkey', '🇹🇷', '+90'), ('Turkmenistan', '🇹🇲', '+993'), ('Uganda', '🇺🇬', '+256'), ('Ukraine', '🇺🇦', '+380'),
+                    ('United Arab Emirates', '🇦🇪', '+971'), ('United Kingdom', '🇬🇧', '+44'), ('USA', '🇺🇸', '+1'), ('Uruguay', '🇺🇾', '+598'), ('Uzbekistan', '🇺🇿', '+998'),
+                    ('Vatican City', '🇻🇦', '+379'), ('Venezuela', '🇻🇪', '+58'), ('Vietnam', '🇻🇳', '+84'), ('Yemen', '🇾🇪', '+967'), ('Zambia', '🇿🇲', '+260'), ('Zimbabwe', '🇿🇼', '+263')
+                  ] %}
+                  {% set common_ids = ['Austria', 'Germany', 'Switzerland', 'United Kingdom', 'USA'] %}
+                  <optgroup label="Popular">
+                    {% for c, flag, code in countries_data if c in common_ids %}
+                      <option value="{{ c }}" {% if user_data.country == c %}selected{% endif %}>{{ flag }} {{ c }}</option>
+                    {% endfor %}
+                  </optgroup>
+                  <optgroup label="All Countries">
+                    {% for c, flag, code in countries_data %}
+                      <option value="{{ c }}" {% if user_data.country == c %}selected{% endif %}>{{ flag }} {{ c }}</option>
+                    {% endfor %}
+                  </optgroup>
+                </select>
+              </div>
+
+              <div class="row g-3 mb-3">
+                <div class="col-12">
+                  <div class="modal-input-group">
+                    <label><i class="bi bi-phone me-1"></i> Mobile Phone</label>
+                    <div class="d-flex">
+                      <select name="phone_prefix" class="form-select" style="max-width: 130px; padding-right: 0;">
+                        {% for c, flag, code in countries_data %}
+                          <option value="{{ code }}" {% if user_data.phone and user_data.phone.startswith(code) %}selected{% endif %}>{{ flag }} {{ code }}</option>
+                        {% endfor %}
+                      </select>
+                      <input type="text" class="form-control" name="phone_number" value="{{ user_data.phone.split(' ')[1] if user_data.phone and ' ' in user_data.phone else (user_data.phone[3:] if user_data.phone and user_data.phone.startswith('+') else user_data.phone) }}" placeholder="664 1234567">
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="modal-input-group mb-4">
+                <label><i class="bi bi-geo-alt me-1"></i> Delivery Address</label>
+                <input type="text" class="form-control" name="address" value="{{ user_data.address }}">
+              </div>
+              
+              <!-- Hidden Avatar Input -->
+              <input type="hidden" name="profile_image" id="selectedAvatarInput" value="{{ user_data.profile_image }}">
+              
+              <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-premium btn-premium-primary py-3 rounded-4">
+                  Save Identity <i class="bi bi-arrow-right ms-2"></i>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+{% endif %}
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="{{ url_for('static', filename='js/script.js') }}"></script>
   <script>
-    // Avatar picker (client-side, per browser)
-    (function() {
-      const avatarEls = document.querySelectorAll('.profile-avatar');
-      const options = document.querySelectorAll('.avatar-option');
-      const toggleBtn = document.getElementById('avatar-chooser-toggle');
-      const panel = document.getElementById('avatar-chooser-panel');
-      const storageKey = 'sg.avatar.url';
-      const defaultAvatar = options.length ? options[0].dataset.avatarUrl : '';
-      const saved = localStorage.getItem(storageKey) || defaultAvatar;
-      if (saved) {
-        avatarEls.forEach(el => el.style.backgroundImage = `url('${saved}')`);
-      }
-      options.forEach(opt => {
-        const url = opt.dataset.avatarUrl;
-        if (url === saved) opt.classList.add('active');
-        opt.addEventListener('click', () => {
-          options.forEach(o => o.classList.remove('active'));
-          opt.classList.add('active');
-          avatarEls.forEach(el => el.style.backgroundImage = `url('${url}')`);
-          localStorage.setItem(storageKey, url);
-        });
-      });
+    let selectedStores = {{ user_data.get('preferred_stores', [])|tojson }};
+    let selectedCategories = {{ user_data.get('preferred_categories', [])|tojson }};
 
-      if (toggleBtn && panel) {
-        toggleBtn.addEventListener('click', () => {
-          panel.classList.toggle('d-none');
-        });
+    function toggleStoreTile(el, storeName) {
+      el.classList.toggle('selected');
+      if (selectedStores.includes(storeName)) {
+        selectedStores = selectedStores.filter(s => s !== storeName);
+      } else {
+        selectedStores.push(storeName);
       }
-    })();
+    }
 
-    // Toggle favorite
-    async function toggleFavorite(productId, button) {
+    function toggleCategoryTile(el, catName) {
+      el.classList.toggle('selected');
+      if (selectedCategories.includes(catName)) {
+        selectedCategories = selectedCategories.filter(c => c !== catName);
+      } else {
+        selectedCategories.push(catName);
+      }
+    }
+
+    async function savePreferences() {
+      const btn = document.getElementById('savePreferencesBtn');
+      const originalHTML = btn.innerHTML;
+      
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Saving...';
+
       try {
-        const response = await fetch('/api/toggle-favorite', {
+        const response = await fetch('/api/save-preferences', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ product_id: productId })
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ preferred_stores: selectedStores })
         });
-        
+
         if (response.ok) {
-          const data = await response.json();
-            if (data.action === 'removed') {
-              const card = button.closest('.favorite-card');
-              if (card) {
-                card.style.transition = 'all 0.25s ease';
-                card.style.opacity = '0';
-                card.style.transform = 'translateX(-10px)';
-                setTimeout(() => {
-                  card.remove();
-                  if (document.querySelectorAll('.favorite-card').length === 0) {
-                    location.reload();
-                  }
-                }, 250);
-              }
-            }
+          btn.innerHTML = '<i class="bi bi-check-lg me-2"></i> Saved!';
+          btn.classList.replace('btn-premium-primary', 'btn-success');
+          setTimeout(() => {
+            btn.innerHTML = originalHTML;
+            btn.classList.replace('btn-success', 'btn-premium-primary');
+            btn.disabled = false;
+          }, 2000);
         }
-      } catch (error) {
-        console.error('Error toggling favorite:', error);
+      } catch (err) {
+        console.error(err);
+        btn.disabled = false;
+        btn.innerHTML = originalHTML;
       }
     }
 
-    // Preferences edit flow
-    let preferencesEditing = false;
+    async function saveCategories() {
+      const btn = document.getElementById('saveCategoriesBtn');
+      const originalHTML = btn.innerHTML;
+      
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Saving...';
 
-    function setPreferencesEditable(isEditable) {
-      const card = document.getElementById('preferences-card');
-      if (!card) return;
-      const storeChecks = card.querySelectorAll('.store-checkbox');
-      const catChecks = card.querySelectorAll('.btn-check');
-      storeChecks.forEach(cb => cb.disabled = !isEditable);
-      catChecks.forEach(cb => {
-        cb.disabled = !isEditable;
-        const label = card.querySelector(`label[for="${cb.id}"]`);
-        if (label) {
-          label.classList.toggle('disabled', !isEditable);
-          label.classList.toggle('opacity-50', !isEditable);
-        }
-      });
-      const saveBtn = document.getElementById('savePreferencesBtn');
-      if (saveBtn) {
-        saveBtn.classList.toggle('d-none', !isEditable);
-        saveBtn.disabled = !isEditable;
-      }
-    }
-
-    function togglePreferencesEdit() {
-      preferencesEditing = !preferencesEditing;
-      setPreferencesEditable(preferencesEditing);
-      const editBtn = document.getElementById('editPreferencesBtn');
-      if (editBtn) {
-        editBtn.innerHTML = preferencesEditing
-          ? '<i class="bi bi-x-circle"></i> Cancel Edit'
-          : '<i class="bi bi-pencil-square"></i> Edit Preferences';
-        editBtn.classList.toggle('btn-outline-primary', !preferencesEditing);
-        editBtn.classList.toggle('btn-outline-secondary', preferencesEditing);
-      }
-    }
-
-    function resetPreferencesEditState(saveBtn, originalContent) {
-      preferencesEditing = false;
-      setPreferencesEditable(false);
-      const editBtn = document.getElementById('editPreferencesBtn');
-      if (editBtn) {
-        editBtn.innerHTML = '<i class="bi bi-pencil-square"></i> Edit Preferences';
-        editBtn.classList.add('btn-outline-primary');
-        editBtn.classList.remove('btn-outline-secondary');
-      }
-      if (saveBtn) {
-        saveBtn.classList.add('d-none');
-        saveBtn.classList.remove('btn-success', 'btn-danger');
-        saveBtn.classList.add('btn-primary');
-        saveBtn.innerHTML = originalContent;
-        saveBtn.disabled = false;
-      }
-    }
-
-    // Save preferences
-    function savePreferences() {
-        const btn = document.getElementById('savePreferencesBtn');
-        const originalContent = btn.innerHTML;
-        
-        // Disable button and show loading state
-        btn.disabled = true;
-        btn.innerHTML = '<i class="bi bi-hourglass-split spinner"></i> Saving...';
-        btn.style.transition = 'all 0.3s ease';
-        
-        const preferences = {
-          preferred_stores: Array.from(document.querySelectorAll('.store-checkbox:checked')).map(cb => cb.value),
-          favorite_categories: Array.from(document.querySelectorAll('.btn-check:checked')).map(cb => cb.value || cb.id.replace('cat-', ''))
-        };
-        
-        function revertButton() {
-          btn.classList.remove('btn-success', 'btn-danger');
-          btn.classList.add('btn-primary');
-          btn.innerHTML = originalContent;
-          btn.disabled = false;
-        }
-        
-        fetch('/api/save-preferences', {
+      try {
+        const response = await fetch('/api/save-preferences', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(preferences)
-        })
-        .then(response => {
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-          return response.json();
-        })
-        .then(data => {
-          if (data.success) {
-            // Show success state
-            btn.classList.remove('btn-primary');
-            btn.classList.add('btn-success');
-            btn.innerHTML = '<i class="bi bi-check-circle me-1"></i> Saved!';
-            showNotification('Your preferences have been saved!', 'success');
-            
-            // Revert and exit edit mode after 1.5 seconds
-            setTimeout(() => resetPreferencesEditState(btn, originalContent), 1500);
-          } else {
-            // Show error state
-            btn.classList.remove('btn-primary');
-            btn.classList.add('btn-danger');
-            btn.innerHTML = '<i class="bi bi-exclamation-circle me-1"></i> Failed!';
-            showNotification(data.error || 'Failed to save preferences', 'danger');
-            
-            // Revert button after 2 seconds
-            setTimeout(revertButton, 2000);
-          }
-        })
-        .catch(error => {
-          console.error('Error saving preferences:', error);
-          // Show error state
-          btn.classList.remove('btn-primary');
-          btn.classList.add('btn-danger');
-          btn.innerHTML = '<i class="bi bi-exclamation-circle me-1"></i> Error!';
-          showNotification('Error saving preferences: ' + error.message, 'danger');
-          
-          // Revert button after 2 seconds
-          setTimeout(revertButton, 2000);
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ preferred_categories: selectedCategories })
         });
+
+        if (response.ok) {
+          btn.innerHTML = '<i class="bi bi-check-lg me-2"></i> Updated!';
+          btn.classList.replace('btn-premium-primary', 'btn-success');
+          setTimeout(() => {
+            btn.innerHTML = originalHTML;
+            btn.classList.replace('btn-success', 'btn-premium-primary');
+            btn.disabled = false;
+          }, 2000);
+        }
+      } catch (err) {
+        console.error(err);
+        btn.disabled = false;
+        btn.innerHTML = originalHTML;
+      }
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-      setPreferencesEditable(false);
-    });
+    function selectAvatar(url) {
+      document.querySelectorAll('.avatar-option').forEach(opt => opt.classList.remove('selected'));
+      event.currentTarget.classList.add('selected');
+      document.getElementById('selectedAvatarInput').value = url;
+      document.querySelector('.profile-avatar').style.backgroundImage = `url('${url}')`;
+      
+      // Auto-save avatar via AJAX if you want, or just let them commit the whole profile
+    }
 
-    // Logout confirmation
     function confirmLogout() {
-      const logoutModal = new bootstrap.Modal(document.getElementById('logoutModal'));
-      logoutModal.show();
+      const modal = new bootstrap.Modal(document.getElementById('logoutConfirmModal'));
+      modal.show();
     }
 
+    // Set initial avatar
+    window.onload = () => {
+      const currentAvatar = "{{ user_data.profile_image or 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix&backgroundColor=b6e3f4' }}";
+      document.querySelector('.profile-avatar').style.backgroundImage = `url('${currentAvatar}')`;
+    };
   </script>
 </body>
 </html>
+

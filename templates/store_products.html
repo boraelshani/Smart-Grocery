@@ -5,6 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{ store_name }} Products | Smart Grocery</title>
+  <!-- DEBUG: TEMPLATE_LOADED_OK -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
@@ -16,13 +17,13 @@
     .product-card {
       border: none;
       border-radius: 16px;
-      overflow: hidden;
       transition: all 0.3s ease;
       box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-      height: 100%;
       display: flex;
       flex-direction: column;
       cursor: pointer;
+      background: white;
+      height: 100%;
     }
 
     .product-card:hover {
@@ -31,8 +32,9 @@
     }
 
     .product-card-inner {
+      display: flex;
+      flex-direction: column;
       height: 100%;
-      background: white;
     }
 
     .product-image {
@@ -44,7 +46,7 @@
     }
 
     .store-header {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
       color: white;
       padding: 3rem 0;
       border-bottom-left-radius: 24px;
@@ -55,7 +57,7 @@
       position: absolute;
       top: 12px;
       right: 12px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
       color: white;
       padding: 6px 12px;
       border-radius: 20px;
@@ -99,7 +101,7 @@
 
     .category-badge {
       background-color: #e9ecef;
-      color: #667eea;
+      color: #7c3aed;
       font-weight: 600;
       padding: 4px 8px;
       border-radius: 6px;
@@ -107,7 +109,7 @@
     }
 
     .btn-add-cart {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
       color: white;
       border: none;
       font-weight: 600;
@@ -122,58 +124,81 @@
 
     .add-to-list-btn {
       background: #f8f9fa;
-      color: #667eea;
-      border: 2px solid #667eea;
+      color: #7c3aed;
+      border: 2px solid #7c3aed;
       font-weight: 600;
       transition: all 0.3s ease;
     }
 
     .add-to-list-btn:hover {
-      background: #667eea;
+      background: #7c3aed;
       color: white;
+    }
+
+    /* Target specific card body for debugging */
+    .product-card .p-3 {
+      border: 1px solid rgba(0,0,0,0.05);
+      border-bottom-left-radius: 16px;
+      border-bottom-right-radius: 16px;
+      min-height: 200px;
     }
   </style>
 </head>
 
 <body>
-  <!-- Navbar -->
-  <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
+  <!-- Navigation -->
+  <nav class="navbar navbar-expand-lg sticky-top">
     <div class="container">
-      <a class="navbar-brand fw-bold" href="{{ url_for('main.home') }}" style="font-size: 1.5rem; color: #667eea;">
-        <i class="bi bi-cart-check-fill me-2"></i>Smart Grocery
+      <a class="navbar-brand d-flex align-items-center" href="{{ url_for('main.home') }}">
+        <div class="brand-icon me-3" style="background: linear-gradient(135deg, var(--premium-purple), var(--premium-indigo)); width: 44px; height: 44px; border-radius: 14px; display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 8px 16px -4px rgba(124, 58, 237, 0.3);">
+          <i class="bi bi-cart-check-fill fs-5"></i>
+        </div>
+        <span>Smart<span style="color: var(--premium-dark)">Grocery</span></span>
       </a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
         <span class="navbar-toggler-icon"></span>
       </button>
       <div class="collapse navbar-collapse" id="navbarNav">
         {% set cart_count = shopping_list_count or 0 %}
-        <ul class="navbar-nav ms-auto">
-          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.home') }}"><i class="bi bi-house-door"></i>
-              Home</a></li>
-          <li class="nav-item"><a class="nav-link active fw-semibold" href="{{ url_for('main.stores_page') }}"><i
-                class="bi bi-shop"></i> Stores</a></li>
-          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.featured_deals_page') }}"><i
-                class="bi bi-tags"></i> Deals</a></li>
-          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.compare_prices') }}"><i
-                class="bi bi-bar-chart"></i> Compare</a></li>
+        <ul class="navbar-nav ms-auto align-items-center">
           <li class="nav-item">
-            <a class="nav-link position-relative" href="{{ url_for('main.shopping_list') }}">
-              <i class="bi bi-list-check"></i> Lists
-              <span id="shopping-list-count"
-                class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger {{ 'd-none' if not cart_count else '' }}"
-                style="font-size: 0.65rem;">
-                {{ cart_count if cart_count else '' }}
+            <a class="nav-link" href="{{ url_for('main.home') }}">
+              <i class="bi bi-house-door me-1"></i> Home
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link active" href="{{ url_for('main.stores_page') }}">
+              <i class="bi bi-shop me-1"></i> Stores
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('main.featured_deals_page') }}">
+              <i class="bi bi-tags me-1"></i> Deals
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('main.compare_prices') }}">
+              <i class="bi bi-arrow-left-right me-1"></i> Compare
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link d-flex align-items-center" href="{{ url_for('main.shopping_list') }}">
+              <i class="bi bi-list-check me-1"></i> Lists
+              {% if cart_count > 0 %}
+              <span class="ms-1 badge rounded-pill bg-danger" style="font-size: 0.7rem; padding: 0.4em 0.6em;">
+                {{ cart_count }}
               </span>
+              {% endif %}
             </a>
           </li>
-          <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('main.notifications_page') }}">
-              <i class="bi bi-bell"></i> Notifications
+          <li class="nav-item ms-lg-1">
+            <a class="nav-link nav-icon-btn" href="{{ url_for('main.notifications_page') }}" aria-label="Notifications">
+              <i class="bi bi-bell fs-5"></i>
             </a>
           </li>
-          <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('main.profile') }}">
-              <i class="bi bi-person-circle"></i> Profile
+          <li class="nav-item ms-lg-2">
+            <a class="nav-link nav-icon-btn nav-profile-btn" href="{{ url_for('main.profile') }}" aria-label="User Profile">
+              <i class="bi bi-person-circle fs-5"></i>
             </a>
           </li>
         </ul>
@@ -210,7 +235,7 @@
       <div class="col-md-6 col-lg-4 col-xl-3">
         {% set detail_url = url_for('main.product_info', product_id=product.get('_id') or product.get('id'),
         store_name=store_name, store_price=product.store_price or product.price or '', store_image=product.store_image
-        or product.image or '') %}
+        or product.image or '', store_url=product.get('url') or store.get('website') or store.get('url') or '') %}
         <div class="product-card" role="button" tabindex="0" data-detail-url="{{ detail_url }}">
           <div class="product-card-inner">
             <!-- Price Badge & Favorite Button -->
@@ -218,9 +243,9 @@
               <span class="price-badge">
                 <i class="bi bi-tag me-1"></i>€{{ product.store_price or product.price or 'N/A' }}
               </span>
-              <button class="btn-favorite" data-product-id="{{ product.get('_id') or product.get('id') }}"
-                onclick="toggleFavorite(this.dataset.productId, this)">
-                <i class="bi bi-heart"></i>
+              <button class="btn-favorite {{ 'active' if product.get('is_favorited') else '' }}" 
+                onclick="toggleFavorite(event, '{{ product.get('_id') or product.get('id') }}', this)">
+                <i class="bi {{ 'bi-heart-fill' if product.get('is_favorited') else 'bi-heart' }}"></i>
               </button>
               <img src="{{ product.store_image or product.image or 'https://via.placeholder.com/400x300' }}"
                 alt="{{ product.name }}" class="product-image" onerror="this.src='https://via.placeholder.com/400x300'">
@@ -240,19 +265,23 @@
               {% endif %}
 
               {% if product.description %}
-              <p class="text-muted small mb-3">{{ product.description[:80] }}{% if product.description|length > 80
-                %}...{% endif %}</p>
+              <p class="text-muted small mb-3 product-description-clamp">{{ product.description }}</p>
               {% endif %}
 
               <!-- Buttons Section -->
-              <div class="mt-auto d-flex flex-column gap-2">
-                <button type="button" class="btn btn-premium btn-premium-add w-100" data-name="{{ product.name }}"
+              <div class="d-flex flex-column gap-2 mt-auto">
+                <button type="button" class="btn btn-premium btn-premium-add w-100" 
+                  data-name="{{ product.name }}"
                   data-price="{{ product.store_price or product.price or '' }}"
-                  data-image="{{ product.store_image or product.image or '' }}" data-store="{{ store_name }}">
+                  data-image="{{ product.store_image or product.image or '' }}" 
+                  data-store="{{ store_name }}"
+                  data-id="{{ product.get('_id') or product.get('id') }}"
+                  onclick="event.stopPropagation(); window.showListSelector(this);">
                   <i class="bi bi-cart-plus-fill"></i>Add to List
                 </button>
-                <a href="{{ detail_url }}" class="btn btn-premium btn-premium-view w-100">
-                  <i class="bi bi-info-circle-fill"></i>Details
+                <a href="{{ detail_url }}" class="btn btn-premium btn-premium-view w-100"
+                  onclick="event.stopPropagation();">
+                  <i class="bi bi-info-circle-fill"></i> View Details
                 </a>
               </div>
             </div>
@@ -278,23 +307,6 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="{{ url_for('static', filename='js/script.js') }}"></script>
   <script>
-    // Toggle favorite
-    async function toggleFavorite(productId, button) {
-      try {
-        const isCurrentlyFavorite = button.classList.contains('active');
-        const response = await fetch('/api/toggle-favorite', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ product_id: productId })
-        });
-        if (response.ok) {
-          button.classList.toggle('active');
-        }
-      } catch (error) {
-        console.error('Error toggling favorite:', error);
-      }
-    }
-
     // Make the entire product card open the details page, except when clicking buttons/links inside it.
     document.addEventListener('DOMContentLoaded', function () {
       function shouldIgnoreClick(event) {

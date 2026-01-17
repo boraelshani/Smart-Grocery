@@ -778,6 +778,38 @@ let pendingItemToAdd = null;
 
 // Global list selector function - shows modal for user to select which list to add item to
 window.showListSelector = async function (item) {
+  // If item is a DOM element (button), extract its data attributes
+  if (item instanceof HTMLElement) {
+    const btn = item;
+    const name = btn.getAttribute('data-name') || btn.getAttribute('data-title') || 'Item';
+    const price = btn.getAttribute('data-price') || '';
+    const store = btn.getAttribute('data-store') || '';
+    const image = btn.getAttribute('data-image') || '';
+    const id = btn.getAttribute('data-id') || null;
+
+    const dealId = btn.getAttribute('data-deal-id') || null;
+    const offerJson = btn.getAttribute('data-offer-json') || '';
+    const offerType = btn.getAttribute('data-offer-type') || '';
+    const offerX = btn.getAttribute('data-offer-x') || '';
+    const offerY = btn.getAttribute('data-offer-y') || '';
+
+    // Build offer payload if present
+    let offerPayload = null;
+    try { if (offerJson) offerPayload = JSON.parse(offerJson); } catch (err) { }
+    if (!offerPayload && offerType === 'buyXgetY' && offerX && offerY) {
+      const xNum = parseInt(offerX, 10) || 0;
+      const yNum = parseInt(offerY, 10) || 0;
+      if (xNum && yNum) offerPayload = { type: 'buyXgetY', x: xNum, y: yNum };
+    }
+
+    item = { name, price, store, image, id };
+    if (dealId) item.deal_id = dealId;
+    if (offerPayload) item.offer = offerPayload;
+    
+    const priceVal = formatPrice(price);
+    if (!isNaN(priceVal) && priceVal > 0) item.price_val = priceVal;
+  }
+
   pendingItemToAdd = item;
 
   try {
@@ -1574,7 +1606,12 @@ class CartCounter {
 const cart = new CartCounter();
 
 // Toggle favorite product
-async function toggleFavorite(productId, buttonElement) {
+async function toggleFavorite(event, productId, buttonElement) {
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+  
   try {
     const response = await fetch('/api/toggle-favorite', {
       method: 'POST',
@@ -1588,16 +1625,22 @@ async function toggleFavorite(productId, buttonElement) {
       if (buttonElement) {
         const btn = typeof buttonElement === 'string' ? document.querySelector(buttonElement) : buttonElement;
         if (btn) {
-          // Toggle active state
-          btn.classList.toggle('active');
+          // Set active state based on server response
+          if (data.is_favorite || data.action === 'added') {
+            btn.classList.add('active');
+          } else {
+            btn.classList.remove('active');
+          }
 
           // Update icon
           const icon = btn.querySelector('i');
           if (icon) {
             if (btn.classList.contains('active')) {
-              icon.className = 'bi bi-heart-fill';
+              icon.classList.remove('bi-heart');
+              icon.classList.add('bi-heart-fill');
             } else {
-              icon.className = 'bi bi-heart';
+              icon.classList.remove('bi-heart-fill');
+              icon.classList.add('bi-heart');
             }
           }
 
@@ -1655,7 +1698,7 @@ const favoriteProduct = (event, productId) => {
   if (typeof quickFavorite !== 'undefined') {
     quickFavorite(event, productId, btn);
   } else if (btn) {
-    toggleFavorite(productId, btn);
+    toggleFavorite(event, productId, btn);
   }
 };
 

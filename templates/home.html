@@ -23,490 +23,563 @@ Shown at route: /
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
-    /* Hero Section */
+    /* Animated Hero Section */
     .hero-section {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #8b5cf6 100%);
       color: white;
-      padding: 5rem 0 4rem;
+      padding: 7rem 0 6rem;
       position: relative;
       overflow: hidden;
+      border-bottom-left-radius: 60px;
+      border-bottom-right-radius: 60px;
     }
+
     .hero-section::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: 
+        radial-gradient(circle at 20% 30%, rgba(99, 102, 241, 0.15), transparent 40%),
+        radial-gradient(circle at 80% 70%, rgba(139, 92, 246, 0.15), transparent 40%);
+      pointer-events: none;
+    }
+
+    .hero-section::after {
       content: '';
       position: absolute;
       top: 0;
       left: 0;
       right: 0;
       bottom: 0;
-      background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-      opacity: 0.1;
+      background: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 86c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zm66 3c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zm-46-4c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zm20-46c.552 0 1-.448 1-1s-.448-1-1-1-1 .448-1 1 .448 1 1 1z' fill='%23ffffff' fill-opacity='0.08' fill-rule='evenodd'/%3E%3C/svg%3E");
+      opacity: 0.3;
     }
+
     .hero-content {
       position: relative;
-      z-index: 1;
+      z-index: 2;
     }
+
     .hero-title {
-      font-size: 3.5rem;
-      font-weight: 800;
+      font-size: 4.2rem;
+      font-weight: 900;
       margin-bottom: 1.5rem;
-      text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+      letter-spacing: -0.04em;
+      line-height: 1.1;
+      background: linear-gradient(to bottom, #ffffff, #e0e7ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: fadeInDown 0.8s ease-out;
     }
+
+    @keyframes fadeInDown {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
     .hero-subtitle {
-      font-size: 1.3rem;
-      opacity: 0.95;
-      margin-bottom: 2rem;
+      font-size: 1.4rem;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.9);
+      margin-bottom: 3rem;
+      max-width: 700px;
+      margin-left: auto;
+      margin-right: auto;
     }
+
     .search-box {
       background: white;
-      border-radius: 50px;
-      padding: 8px 8px 8px 25px;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+      border-radius: 24px;
+      padding: 10px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
       display: flex;
       align-items: center;
-      max-width: 600px;
+      max-width: 750px;
       margin: 0 auto;
+      transition: transform 0.3s ease;
     }
+
+    .search-box:focus-within {
+      transform: translateY(-5px);
+    }
+
     .search-box input {
       border: none;
       outline: none;
       flex: 1;
-      padding: 10px;
-      font-size: 1.1rem;
-    }
-    .search-box button {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      border: none;
-      color: white;
-      padding: 12px 30px;
-      border-radius: 50px;
-      font-weight: 600;
-      transition: all 0.3s ease;
-    }
-    .search-box button:hover {
-      transform: scale(1.05);
-      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-    }
-
-    /* Stats Section */
-    .stats-section {
-      background: #f8f9fa;
-      padding: 3rem 0;
-      margin-top: -2rem;
-      position: relative;
-      z-index: 2;
-    }
-    .stat-card {
-      text-align: center;
-      padding: 2rem 1rem;
-      background: white;
-      border-radius: 15px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-      transition: all 0.3s ease;
-    }
-    .stat-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-    }
-    .stat-icon {
-      width: 60px;
-      height: 60px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin: 0 auto 1rem;
-      font-size: 1.8rem;
-      color: white;
-    }
-    .stat-number {
-      font-size: 2.5rem;
-      font-weight: 800;
-      color: #667eea;
-      margin-bottom: 0.5rem;
-    }
-    .stat-label {
-      color: #6c757d;
+      padding: 15px 25px;
+      font-size: 1.2rem;
+      color: var(--premium-dark);
       font-weight: 500;
     }
 
-    /* Section Headers */
-    .section-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 2rem;
-    }
-    .section-title {
-      font-size: 2rem;
-      font-weight: 700;
-      color: #333;
-      margin: 0;
-    }
-    .section-subtitle {
-      color: #6c757d;
-      font-size: 1rem;
-    }
-    .view-all-btn {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
+    .search-box button {
+      background: linear-gradient(135deg, var(--premium-purple), var(--premium-indigo));
       border: none;
-      padding: 10px 25px;
-      border-radius: 25px;
-      font-weight: 600;
-      text-decoration: none;
-      transition: all 0.3s ease;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
+      color: white;
+      padding: 16px 40px;
+      border-radius: 18px;
+      font-weight: 700;
+      font-size: 1.1rem;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 10px 20px -5px rgba(124, 58, 237, 0.4);
     }
-    .view-all-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+
+    .search-box button:hover {
+      transform: scale(1.02);
+      box-shadow: 0 20px 25px -5px rgba(124, 58, 237, 0.5);
+    }
+
+    /* Stats Section with Glassmorphism */
+    .stats-section {
+      margin-top: -3.5rem;
+      position: relative;
+      z-index: 10;
+    }
+
+    .stat-card {
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      border-radius: 24px;
+      padding: 2.5rem 1.5rem;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      text-align: center;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-10px);
+      background: white;
+      box-shadow: 0 25px 50px -12px rgba(124, 58, 237, 0.15);
+    }
+
+    .stat-icon {
+      width: 70px;
+      height: 70px;
+      background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+      color: var(--premium-purple);
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1.5rem;
+      font-size: 2rem;
+      transition: transform 0.5s ease;
+    }
+
+    .stat-card:hover .stat-icon {
+      transform: rotateY(180deg);
+      background: var(--premium-purple);
       color: white;
     }
 
-    /* Horizontal Scroll Container */
+    .stat-number {
+      font-size: 2.8rem;
+      font-weight: 900;
+      color: var(--premium-dark);
+      margin-bottom: 0.25rem;
+      letter-spacing: -2px;
+    }
+
+    .stat-label {
+      color: #64748b;
+      font-size: 0.95rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* Modern Section Headers */
+    .section-header {
+      margin-bottom: 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+
+    .section-title {
+      font-size: 2.5rem;
+      font-weight: 900;
+      color: var(--premium-dark);
+      letter-spacing: -0.03em;
+      margin-bottom: 0.5rem;
+    }
+
+    .section-subtitle {
+      font-size: 1.1rem;
+      color: #64748b;
+      font-weight: 500;
+      margin-bottom: 0;
+    }
+
+    .view-all-btn {
+      background: #f1f5f9;
+      color: var(--premium-dark);
+      padding: 12px 28px;
+      border-radius: 14px;
+      font-weight: 700;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      border: 1px solid #e2e8f0;
+    }
+
+    .view-all-btn:hover {
+      background: var(--premium-purple);
+      color: white;
+      border-color: transparent;
+      transform: translateX(5px);
+      text-decoration: none;
+    }
+
+    /* Scroll Container & Wrapper - CRITICAL */
     .scroll-container {
       position: relative;
-      overflow: visible;
       margin: 0 -15px;
-      padding: 0 15px;
+      padding: 10px 15px;
     }
+
     .scroll-wrapper {
       display: flex;
-      gap: 1.5rem;
       overflow-x: auto;
       scroll-behavior: smooth;
-      padding: 1rem 0;
+      gap: 24px;
+      padding: 20px 5px;
       scrollbar-width: none;
       -ms-overflow-style: none;
     }
+
     .scroll-wrapper::-webkit-scrollbar {
       display: none;
     }
+
     .scroll-arrow {
       position: absolute;
       top: 50%;
       transform: translateY(-50%);
-      background: white;
-      border: none;
       width: 50px;
       height: 50px;
+      background: white;
+      border: 1px solid #e2e8f0;
       border-radius: 50%;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-      display: none;
+      display: flex;
       align-items: center;
       justify-content: center;
+      z-index: 10;
       cursor: pointer;
-      z-index: 100;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
       transition: all 0.3s ease;
-      pointer-events: auto;
+      color: var(--premium-purple);
     }
+
     .scroll-arrow:hover {
-      background: #667eea;
+      background: var(--premium-purple);
       color: white;
+      box-shadow: 0 20px 25px -5px rgba(124, 58, 237, 0.3);
       transform: translateY(-50%) scale(1.1);
     }
-    .scroll-arrow.left {
-      left: 0;
-    }
-    .scroll-arrow.right {
-      right: 0;
-    }
-    .scroll-arrow i {
-      font-size: 1.5rem;
-    }
+
+    .scroll-arrow.left { left: -10px; }
+    .scroll-arrow.right { right: -10px; }
 
     /* Product Cards */
     .product-card-horizontal {
-      min-width: 280px;
-      max-width: 280px;
+      min-width: 320px;
+      max-width: 320px;
       background: white;
-      border-radius: 15px;
-      overflow: hidden;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-      transition: all 0.3s ease;
+      border-radius: 28px;
+      border: 1px solid #f1f5f9;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .product-card-horizontal:hover {
+      transform: translateY(-12px);
+      box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.12);
+      border-color: var(--premium-purple);
+    }
+
+    .card-image-wrapper {
+      width: 100%;
+      height: 240px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 30px;
       position: relative;
     }
-    .product-card-horizontal:hover {
-      transform: translateY(-8px);
-      box-shadow: 0 12px 30px rgba(0,0,0,0.15);
-    }
-    .product-card-horizontal img {
-      width: 100%;
-      height: 200px;
+
+    .card-image-wrapper img {
+      max-height: 100%;
+      max-width: 100%;
       object-fit: contain;
-      background: #ffffff;
-      padding: 15px;
+      transition: transform 0.5s ease;
     }
-    .product-card-body {
-      padding: 1.25rem;
-      background-color: #f8f9fa;
-    }
-    .product-name {
-      font-size: 1rem;
-      font-weight: 700;
-      color: #333;
-      margin-bottom: 0.5rem;
-      display: -webkit-box;
-      line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-    }
-    .product-price {
-      font-size: 1.5rem;
-      font-weight: 800;
-      color: #667eea;
-      margin-bottom: 0.75rem;
-    }
-    .product-store {
-      font-size: 0.85rem;
-      color: #6c757d;
-      margin-bottom: 0.75rem;
-    }
-    .discount-badge {
-      position: absolute;
-      top: 15px;
-      right: 15px;
-      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-      color: white;
-      padding: 5px 12px;
-      border-radius: 20px;
-      font-size: 0.85rem;
-      font-weight: 700;
-      box-shadow: 0 3px 10px rgba(245, 87, 108, 0.3);
-    }
-    .btn-favorite {
-      position: absolute;
-      top: 12px;
-      left: 12px;
-      width: 38px;
-      height: 38px;
-      border-radius: 50%;
-      background: white;
-      border: none;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-      color: #ccc;
-      font-size: 1.2rem;
-      transition: all 0.2s ease;
-      z-index: 10;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .btn-favorite:hover {
-      color: #ff6b6b;
+
+    .product-card-horizontal:hover .card-image-wrapper img {
       transform: scale(1.1);
     }
-    .btn-favorite.active {
-      color: #ff6b6b;
+
+    .product-card-body {
+      padding: 1.75rem;
+      background: #fbfcfe;
+      border-top: 1px solid #f1f5f9;
+      border-bottom-left-radius: 28px;
+      border-bottom-right-radius: 28px;
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
     }
-    .add-to-cart-btn-modern {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      border: none;
-      width: 100%;
-      padding: 12px;
-      border-radius: 10px;
-      font-weight: 600;
-      transition: all 0.3s ease;
+
+    .product-name {
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: var(--premium-dark);
+      margin-bottom: 0.75rem;
+    }
+
+    .product-description-clamp {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      height: 2.8rem;
+    }
+
+    .btn-favorite {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      width: 40px;
+      height: 40px;
+      background: white;
+      border: 1px solid #f1f5f9;
+      border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
-    }
-    .add-to-cart-btn-modern:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-    }
-
-    /* Store Cards */
-    .store-card {
-      min-width: 250px;
-      max-width: 250px;
-      background: white;
-      border-radius: 15px;
-      overflow: hidden;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+      color: #cbd5e1;
+      z-index: 5;
       transition: all 0.3s ease;
-      text-decoration: none;
-      color: inherit;
-    }
-    .store-card:hover {
-      transform: translateY(-8px);
-      box-shadow: 0 12px 30px rgba(0,0,0,0.15);
-      text-decoration: none;
-    }
-    .store-card-img {
-      width: 100%;
-      height: 150px;
-      object-fit: contain;
-      background: #ffffff;
-      padding: 20px;
-    }
-    .store-card-body {
-      padding: 1.5rem;
-      text-align: center;
-      background: #f8f9fa;
-    }
-    .store-name {
-      font-size: 1.2rem;
-      font-weight: 700;
-      color: #333;
-      margin-bottom: 0.5rem;
-    }
-    .store-products-count {
-      color: #6c757d;
-      font-size: 0.9rem;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
     }
 
-    /* Categories */
+    .btn-favorite:hover, .btn-favorite.active {
+      background: #fff1f2;
+      color: #f43f5e;
+      border-color: #fecdd3;
+    }
+
+    /* Category Cards */
     .category-card {
-      min-width: 180px;
-      max-width: 180px;
-      height: 120px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      border-radius: 15px;
+      min-width: 190px;
+      height: 150px;
+      background: white;
+      border: 1px solid #f1f5f9;
+      border-radius: 28px;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      color: white;
       text-decoration: none;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      padding: 1.5rem;
+    }
+
+    .category-card:hover {
+      background: var(--premium-purple);
+      border-color: transparent;
+      transform: translateY(-10px);
+      box-shadow: 0 20px 25px -5px rgba(124, 58, 237, 0.2);
+      text-decoration: none;
+    }
+
+    .category-icon {
+      font-size: 2.8rem;
+      color: var(--premium-purple);
+      margin-bottom: 0.75rem;
       transition: all 0.3s ease;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-      position: relative;
+    }
+
+    .category-name {
+      font-weight: 700;
+      color: var(--premium-dark);
+      font-size: 1rem;
+      transition: all 0.3s ease;
+    }
+
+    .category-card:hover .category-icon,
+    .category-card:hover .category-name {
+      color: white !important;
+    }
+
+    /* Store Cards */
+    .store-card {
+      min-width: 280px;
+      background: white;
+      border-radius: 32px;
+      border: 1px solid #f1f5f9;
+      text-decoration: none;
+      color: inherit;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
       overflow: hidden;
     }
-    .category-card::before {
-      content: '';
-      position: absolute;
-      top: -50%;
-      right: -50%;
-      width: 200%;
-      height: 200%;
-      background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-      transition: all 0.5s ease;
-    }
-    .category-card:hover::before {
-      top: -100%;
-      right: -100%;
-    }
-    .category-card:hover {
-      transform: translateY(-8px) scale(1.05);
-      box-shadow: 0 12px 30px rgba(102, 126, 234, 0.3);
+
+    .store-card:hover {
+      transform: translateY(-12px);
+      box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.12);
       text-decoration: none;
-      color: white;
     }
-    .category-icon {
-      font-size: 2.5rem;
-      margin-bottom: 0.5rem;
+
+    .store-card-image {
+      height: 180px;
+      padding: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: white;
     }
-    .category-name {
-      font-weight: 600;
-      font-size: 1rem;
+
+    .store-card-image img {
+      max-height: 100%;
+      max-width: 100%;
+      object-fit: contain;
+    }
+
+    .store-card-body {
+      padding: 1.75rem;
+      background: #fbfcfe;
+      border-top: 1px solid #f1f5f9;
     }
 
     /* Newsletter Section */
     .newsletter-section {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, var(--premium-purple) 0%, var(--premium-indigo) 100%);
       color: white;
-      padding: 4rem 0;
-      margin-top: 4rem;
+      padding: 6rem 0;
+      border-radius: 60px;
+      margin: 4rem 0;
+      position: relative;
+      overflow: hidden;
     }
-    .newsletter-title {
-      font-size: 2.5rem;
-      font-weight: 700;
-      margin-bottom: 1rem;
+
+    .newsletter-section::before {
+      content: '';
+      position: absolute;
+      width: 300px;
+      height: 300px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 50%;
+      top: -150px;
+      right: -150px;
     }
-    .newsletter-subtitle {
-      font-size: 1.2rem;
-      opacity: 0.9;
-      margin-bottom: 2rem;
-    }
+
     .newsletter-form {
-      max-width: 500px;
+      max-width: 600px;
       margin: 0 auto;
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(10px);
+      padding: 10px;
+      border-radius: 24px;
       display: flex;
       gap: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
     }
+
     .newsletter-form input {
       flex: 1;
-      padding: 15px 20px;
+      background: transparent;
       border: none;
-      border-radius: 50px;
-      font-size: 1rem;
+      padding: 15px 20px;
+      color: white;
+      font-weight: 500;
     }
+
+    .newsletter-form input::placeholder {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
     .newsletter-form button {
       background: white;
-      color: #667eea;
+      color: var(--premium-purple);
       border: none;
-      padding: 15px 30px;
-      border-radius: 50px;
-      font-weight: 700;
+      padding: 15px 35px;
+      border-radius: 18px;
+      font-weight: 800;
       transition: all 0.3s ease;
     }
+
     .newsletter-form button:hover {
       transform: scale(1.05);
-      box-shadow: 0 5px 15px rgba(255,255,255,0.3);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
     }
 
     /* Section Spacing */
     .content-section {
-      padding: 2rem 0;
+      padding: 2.5rem 0;
+    }
+
+    .bg-soft-purple {
+      background: #f5f3ff;
     }
   </style>
 </head>
 <body>
-  <!-- Navbar -->
-  <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
+  <!-- Navigation -->
+  <nav class="navbar navbar-expand-lg sticky-top">
     <div class="container">
-      <a class="navbar-brand fw-bold" href="{{ url_for('main.home') }}" style="font-size: 1.5rem; color: #667eea;">
-        <i class="bi bi-cart-check-fill me-2"></i>Smart Grocery
+      <a class="navbar-brand d-flex align-items-center" href="{{ url_for('main.home') }}">
+        <div class="brand-icon me-3" style="background: linear-gradient(135deg, var(--premium-purple), var(--premium-indigo)); width: 44px; height: 44px; border-radius: 14px; display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 8px 16px -4px rgba(124, 58, 237, 0.3);">
+          <i class="bi bi-cart-check-fill fs-5"></i>
+        </div>
+        <span>Smart<span style="color: var(--premium-dark)">Grocery</span></span>
       </a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
         <span class="navbar-toggler-icon"></span>
       </button>
       <div class="collapse navbar-collapse" id="navbarNav">
         {% set cart_count = shopping_list_count or 0 %}
-        <ul class="navbar-nav ms-auto">
+        <ul class="navbar-nav ms-auto align-items-center">
           <li class="nav-item">
-            <a class="nav-link active fw-semibold" href="{{ url_for('main.home') }}">
-              <i class="bi bi-house-door"></i> Home
+            <a class="nav-link active" href="{{ url_for('main.home') }}">
+              <i class="bi bi-house-door me-1"></i> Home
             </a>
           </li>
           <li class="nav-item">
             <a class="nav-link" href="{{ url_for('main.stores_page') }}">
-              <i class="bi bi-shop"></i> Stores
+              <i class="bi bi-shop me-1"></i> Stores
             </a>
           </li>
           <li class="nav-item">
             <a class="nav-link" href="{{ url_for('main.featured_deals_page') }}">
-              <i class="bi bi-tags"></i> Deals
+              <i class="bi bi-tags me-1"></i> Deals
             </a>
           </li>
           <li class="nav-item">
             <a class="nav-link" href="{{ url_for('main.compare_prices') }}">
-              <i class="bi bi-bar-chart"></i> Compare
+              <i class="bi bi-arrow-left-right me-1"></i> Compare
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link position-relative" href="{{ url_for('main.shopping_list') }}">
-              <i class="bi bi-list-check"></i> Lists
-              <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger {{ 'd-none' if not cart_count else '' }}" style="font-size: 0.65rem;">
-                {{ cart_count if cart_count else '' }}
+            <a class="nav-link d-flex align-items-center" href="{{ url_for('main.shopping_list') }}">
+              <i class="bi bi-list-check me-1"></i> Lists
+              {% if cart_count > 0 %}
+              <span class="ms-1 badge rounded-pill bg-danger" style="font-size: 0.7rem; padding: 0.4em 0.6em;">
+                {{ cart_count }}
               </span>
+              {% endif %}
             </a>
           </li>
-          <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('main.notifications_page') }}">
-              <i class="bi bi-bell"></i> Notifications
+          <li class="nav-item ms-lg-1">
+            <a class="nav-link nav-icon-btn" href="{{ url_for('main.notifications_page') }}" aria-label="Notifications">
+              <i class="bi bi-bell fs-5"></i>
             </a>
           </li>
-          <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('main.profile') }}">
-              <i class="bi bi-person-circle"></i> Profile
+          <li class="nav-item ms-lg-2">
+            <a class="nav-link nav-icon-btn nav-profile-btn" href="{{ url_for('main.profile') }}" aria-label="User Profile">
+              <i class="bi bi-person-circle fs-5"></i>
             </a>
           </li>
         </ul>
@@ -516,15 +589,30 @@ Shown at route: /
 
   <!-- Hero Section -->
   <section class="hero-section">
-    <div class="container hero-content">
-      <div class="text-center">
-        <h1 class="hero-title">Find Your Best Grocery Deals</h1>
-        <p class="hero-subtitle">Compare prices from multiple stores and save money on every purchase</p>
-        <div class="search-box">
-          <input type="text" placeholder="Search for products, stores, or deals..." id="hero-search">
-          <button onclick="handleHeroSearch()">
-            <i class="bi bi-search me-2"></i>Search
-          </button>
+    <div class="container hero-content text-center">
+      <div class="badge bg-white bg-opacity-10 text-white px-3 py-2 rounded-pill mb-4 border border-white border-opacity-20" style="backdrop-filter: blur(10px);">
+        <i class="bi bi-stars me-2"></i>AI-Powered Savings Multiplier
+      </div>
+      <h1 class="hero-title">Shop Smarter,<br>Save Bigger.</h1>
+      <p class="hero-subtitle">The ultimate destination to track prices, find exclusive coupons, and coordinate your grocery trips across all major retailers.</p>
+      
+      <div class="search-box">
+        <i class="bi bi-search ms-3 text-muted fs-5"></i>
+        <input type="text" placeholder="Search brands, products, or stores..." id="hero-search">
+        <button onclick="handleHeroSearch()" class="me-1">
+          Explore Deals
+        </button>
+      </div>
+
+      <div class="mt-5 d-flex justify-content-center gap-4 flex-wrap opacity-75">
+        <div class="d-flex align-items-center text-white small">
+          <i class="bi bi-check-circle-fill me-2 text-info"></i> No hidden fees
+        </div>
+        <div class="d-flex align-items-center text-white small">
+          <i class="bi bi-check-circle-fill me-2 text-info"></i> Real-time updates
+        </div>
+        <div class="d-flex align-items-center text-white small">
+          <i class="bi bi-check-circle-fill me-2 text-info"></i> Trusted by 10k+ users
         </div>
       </div>
     </div>
@@ -534,41 +622,41 @@ Shown at route: /
   <!-- Stats Section -->
   <section class="stats-section">
     <div class="container">
-      <div class="row g-4">
-        <div class="col-md-3 col-6">
+      <div class="row g-4 justify-content-center">
+        <div class="col-lg-3 col-md-6">
           <div class="stat-card">
             <div class="stat-icon">
               <i class="bi bi-shop"></i>
             </div>
-            <div class="stat-number">{{ stores|length }}</div>
-            <div class="stat-label">Stores</div>
+            <div class="stat-number" data-target="{{ stores|length }}">0</div>
+            <div class="stat-label">Verified Stores</div>
           </div>
         </div>
-        <div class="col-md-3 col-6">
+        <div class="col-lg-3 col-md-6">
           <div class="stat-card">
             <div class="stat-icon">
               <i class="bi bi-box-seam"></i>
             </div>
-            <div class="stat-number">{{ total_product_count }}</div>
-            <div class="stat-label">Products</div>
+            <div class="stat-number" data-target="{{ total_product_count }}">0</div>
+            <div class="stat-label">Stock Items</div>
           </div>
         </div>
-        <div class="col-md-3 col-6">
+        <div class="col-lg-3 col-md-6">
           <div class="stat-card">
             <div class="stat-icon">
-              <i class="bi bi-lightning-fill"></i>
+              <i class="bi bi-lightning-charge-fill"></i>
             </div>
-            <div class="stat-number">{{ total_deals_count }}</div>
-            <div class="stat-label">Hot Deals</div>
+            <div class="stat-number" data-target="{{ total_deals_count }}">0</div>
+            <div class="stat-label">Live Discounts</div>
           </div>
         </div>
-        <div class="col-md-3 col-6">
+        <div class="col-lg-3 col-md-6">
           <div class="stat-card">
             <div class="stat-icon">
-              <i class="bi bi-percent"></i>
+              <i class="bi bi-piggy-bank-fill"></i>
             </div>
-            <div class="stat-number">{{ max_savings }}%</div>
-            <div class="stat-label">Max Savings</div>
+            <div class="stat-number" data-target="{{ max_savings }}">0</div>
+            <div class="stat-label">% Max Savings</div>
           </div>
         </div>
       </div>
@@ -581,133 +669,48 @@ Shown at route: /
       <div class="section-header">
         <div>
           <h2 class="section-title">Shop by Category</h2>
-          <p class="section-subtitle">Browse our popular categories</p>
+          <p class="section-subtitle">Discover high-quality essentials across our verified departments</p>
         </div>
       </div>
       <div class="scroll-container">
-        <button class="scroll-arrow left" onclick="scrollSection('categories', 'left')">
+        <button class="scroll-arrow left" onclick="scrollSection('categories', 'left')" aria-label="Scroll left">
           <i class="bi bi-chevron-left"></i>
         </button>
-        <div class="scroll-wrapper" id="categories-scroll">
-          <a href="{{ url_for('main.compare_prices') }}?category=dairy" class="category-card">
-            <div class="category-icon"><i class="bi bi-egg-fried"></i></div>
+        <div class="scroll-wrapper d-flex flex-nowrap" id="categories-scroll" style="overflow-x: auto; gap: 20px; scrollbar-width: none; -ms-overflow-style: none;">
+          <a href="{{ url_for('main.compare_prices') }}?category=dairy" class="category-card premium-outline-hover">
+            <div class="category-icon text-premium-purple"><i class="bi bi-egg-fried"></i></div>
             <div class="category-name">Dairy & Eggs</div>
           </a>
-          <a href="{{ url_for('main.compare_prices') }}?category=produce" class="category-card">
-            <div class="category-icon"><i class="bi bi-apple"></i></div>
+          <a href="{{ url_for('main.compare_prices') }}?category=produce" class="category-card premium-outline-hover">
+            <div class="category-icon text-premium-purple"><i class="bi bi-apple"></i></div>
             <div class="category-name">Fresh Produce</div>
           </a>
-          <a href="{{ url_for('main.compare_prices') }}?category=meat" class="category-card">
-            <div class="category-icon"><i class="bi bi-egg-fill"></i></div>
+          <a href="{{ url_for('main.compare_prices') }}?category=meat" class="category-card premium-outline-hover">
+            <div class="category-icon text-premium-purple"><i class="bi bi-egg-fill"></i></div>
             <div class="category-name">Meat & Seafood</div>
           </a>
-          <a href="{{ url_for('main.compare_prices') }}?category=bakery" class="category-card">
-            <div class="category-icon"><i class="bi bi-cake2"></i></div>
-            <div class="category-name">Bakery</div>
+          <a href="{{ url_for('main.compare_prices') }}?category=bakery" class="category-card premium-outline-hover">
+            <div class="category-icon text-premium-purple"><i class="bi bi-cake2"></i></div>
+            <div class="category-name">Bakery Fresh</div>
           </a>
-          <a href="{{ url_for('main.compare_prices') }}?category=snacks" class="category-card">
-            <div class="category-icon"><i class="bi bi-bag-fill"></i></div>
-            <div class="category-name">Snacks</div>
+          <a href="{{ url_for('main.compare_prices') }}?category=snacks" class="category-card premium-outline-hover">
+            <div class="category-icon text-premium-purple"><i class="bi bi-bag-fill"></i></div>
+            <div class="category-name">Snacks & More</div>
           </a>
-          <a href="{{ url_for('main.compare_prices') }}?category=beverages" class="category-card">
-            <div class="category-icon"><i class="bi bi-cup-straw"></i></div>
+          <a href="{{ url_for('main.compare_prices') }}?category=beverages" class="category-card premium-outline-hover">
+            <div class="category-icon text-premium-purple"><i class="bi bi-cup-straw"></i></div>
             <div class="category-name">Beverages</div>
           </a>
-          <a href="{{ url_for('main.compare_prices') }}?category=frozen" class="category-card">
-            <div class="category-icon"><i class="bi bi-snow"></i></div>
-            <div class="category-name">Frozen Foods</div>
+          <a href="{{ url_for('main.compare_prices') }}?category=frozen" class="category-card premium-outline-hover">
+            <div class="category-icon text-premium-purple"><i class="bi bi-snow"></i></div>
+            <div class="category-name">Frozen Goods</div>
           </a>
-          <a href="{{ url_for('main.compare_prices') }}?category=pantry" class="category-card">
-            <div class="category-icon"><i class="bi bi-archive"></i></div>
-            <div class="category-name">Pantry Staples</div>
+          <a href="{{ url_for('main.compare_prices') }}?category=pantry" class="category-card premium-outline-hover">
+            <div class="category-icon text-premium-purple"><i class="bi bi-archive"></i></div>
+            <div class="category-name">Pantry Elite</div>
           </a>
         </div>
-        <button class="scroll-arrow right" onclick="scrollSection('categories', 'right')">
-          <i class="bi bi-chevron-right"></i>
-        </button>
-      </div>
-    </div>
-  </section>
-
-  <!-- Featured Deals Section -->
-  <section class="content-section">
-    <div class="container">
-      <div class="section-header">
-        <div>
-          <h2 class="section-title"><i class="bi bi-lightning-fill text-warning me-2"></i>Featured Deals</h2>
-          <p class="section-subtitle">Limited time offers you don't want to miss</p>
-        </div>
-        <a href="{{ url_for('main.featured_deals_page') }}" class="view-all-btn">
-          View All <i class="bi bi-arrow-right"></i>
-        </a>
-      </div>
-      <div class="scroll-container">
-        <button class="scroll-arrow left" onclick="scrollSection('deals', 'left')">
-          <i class="bi bi-chevron-left"></i>
-        </button>
-        <div class="scroll-wrapper" id="deals-scroll">
-          {% for deal in featured_deals[:20] %}
-          <div class="product-card-horizontal" onclick="window.location.href='{{ url_for('main.featured_deal_detail', deal_id=deal.get('id') or deal.get('_id')) }}'" style="cursor: pointer;">
-            {% if deal.get('discount_label') or deal.get('discount_percent') %}
-            <div class="discount-badge">
-              {{ deal.get('discount_label') or (deal.get('discount_percent') ~ '% OFF') }}
-            </div>
-            {% endif %}
-            <button class="btn-favorite" data-product-id="{{ deal.get('_id') or deal.get('id') }}" onclick="event.stopPropagation(); toggleFavorite('{{ deal.get('_id') or deal.get('id') }}', this)">
-              <i class="bi bi-heart"></i>
-            </button>
-            <img src="{{ deal.get('image') or 'https://via.placeholder.com/280x200' }}" alt="{{ deal.get('title') or deal.get('name') }}">
-            <div class="product-card-body">
-              <div class="product-name">{{ deal.get('title') or deal.get('name', 'Product') }}</div>
-              <div class="product-store"><i class="bi bi-shop me-1"></i>{{ deal.get('store') or deal.get('source', 'Store') }}</div>
-              {% set original_price = deal.get('original_price') %}
-              {% set offer_obj = deal.get('offer') if deal.get('offer') is mapping else None %}
-              {% set offer = deal.get('offer', '') %}
-              {% set offer_x = offer_obj.x if offer_obj is not none else (deal.get('buy_quantity') or deal.get('multibuy_buy') or '') %}
-              {% set offer_y = offer_obj.y if offer_obj is not none else (deal.get('free_quantity') or deal.get('multibuy_free') or '') %}
-              {% set offer_type = offer_obj.type if offer_obj is not none else ('buyXgetY' if offer_x and offer_y else '') %}
-              {% if offer_obj is not none %}
-                {% set offer_text = 'Buy ' ~ offer_x ~ ' Get ' ~ offer_y ~ ' Free' if offer_x and offer_y else offer %}
-              {% else %}
-                {% set offer_text = offer if offer is string else '' %}
-              {% endif %}
-              {% set is_buy_get_deal = (offer_type == 'buyXgetY') or (offer_text and ('buy' in offer_text|lower and ('get' in offer_text|lower or 'free' in offer_text|lower or '+' in offer_text))) %}
-              {% if is_buy_get_deal %}
-                <div class="product-price">€{{ deal.get('price', '0.00') }} each</div>
-                <div class="text-muted small mb-2">{{ offer_text }}</div>
-              {% else %}
-                {% if original_price %}
-                  <div class="text-muted small text-decoration-line-through">Was: €{{ '%.2f' % (original_price|float) }}</div>
-                {% endif %}
-                <div class="product-price">€{{ deal.get('price', '0.00') }}</div>
-              {% endif %}
-              <div class="d-flex gap-2 flex-wrap">
-                {% set offer_obj = deal.get('offer') if deal.get('offer') is mapping else None %}
-                {% set offer_x = offer_obj.x if offer_obj is not none else (deal.get('buy_quantity') or deal.get('multibuy_buy') or '') %}
-                {% set offer_y = offer_obj.y if offer_obj is not none else (deal.get('free_quantity') or deal.get('multibuy_free') or '') %}
-                {% set offer_type = offer_obj.type if offer_obj is not none else ('buyXgetY' if offer_x and offer_y else '') %}
-                <button class="add-to-cart-btn-modern claim-deal-btn" 
-                        onclick="event.stopPropagation();"
-                        data-id="{{ deal.get('id') or deal.get('_id') }}" 
-                  data-title="{{ deal.get('title') or deal.get('name') }}" 
-                  data-price="{{ deal.get('price') }}"
-                  data-original-price="{{ deal.get('original_price','') }}"
-                  data-image="{{ deal.get('image') or url_for('static', filename='placeholder.svg') }}"
-                  data-offer-json='{{ offer_obj|tojson|forceescape if offer_obj is not none else "" }}'
-                  data-offer-type="{{ offer_type }}"
-                  data-offer-x="{{ offer_x }}"
-                  data-offer-y="{{ offer_y }}">
-                  <i class="bi bi-cart-plus"></i> Add to Cart
-                </button>
-                <a href="{{ url_for('main.featured_deal_detail', deal_id=deal.get('id') or deal.get('_id')) }}" class="btn btn-outline-secondary btn-sm" onclick="event.stopPropagation();">
-                  <i class="bi bi-info-circle"></i> View Details
-                </a>
-              </div>
-            </div>
-          </div>
-          {% endfor %}
-        </div>
-        <button class="scroll-arrow right" onclick="scrollSection('deals', 'right')">
+        <button class="scroll-arrow right" onclick="scrollSection('categories', 'right')" aria-label="Scroll right">
           <i class="bi bi-chevron-right"></i>
         </button>
       </div>
@@ -719,24 +722,27 @@ Shown at route: /
     <div class="container">
       <div class="section-header">
         <div>
-          <h2 class="section-title"><i class="bi bi-bar-chart me-2" style="color: #667eea;"></i>Compare Prices</h2>
-          <p class="section-subtitle">Find the best deals across all stores</p>
+          <h2 class="section-title"><i class="bi bi-arrow-left-right text-premium-purple me-2"></i>Market Intelligence</h2>
+          <p class="section-subtitle">Real-time price comparisons across the entire network</p>
         </div>
         <a href="{{ url_for('main.compare_prices') }}" class="view-all-btn">
-          Compare All <i class="bi bi-arrow-right"></i>
+          Compare All <i class="bi bi-arrow-right ms-1"></i>
         </a>
       </div>
       <div class="scroll-container">
-        <button class="scroll-arrow left" onclick="scrollSection('compare', 'left')">
+        <button class="scroll-arrow left" onclick="scrollSection('compare', 'left')" aria-label="Scroll left">
           <i class="bi bi-chevron-left"></i>
         </button>
-        <div class="scroll-wrapper" id="compare-scroll">
+        <div class="scroll-wrapper d-flex flex-nowrap" id="compare-scroll" style="overflow-x: auto; gap: 24px; scrollbar-width: none; -ms-overflow-style: none;">
           {% for product in products[:20] %}
           {% set pid = product.get('id') or product.get('_id') %}
-          <div class="product-card-horizontal" {% if pid %}onclick="window.location='{{ url_for('main.product_detail', product_id=pid) }}'"{% endif %} style="cursor: {% if pid %}pointer{% else %}default{% endif %};">
-            <img src="{{ product.get('image') or 'https://via.placeholder.com/280x200' }}" alt="{{ product.get('name') }}">
+          <div class="product-card-horizontal premium-outline-hover" {% if pid %}onclick="window.location='{{ url_for('main.product_detail', product_id=pid) }}'"{% endif %} style="cursor: {% if pid %}pointer{% else %}default{% endif %}; min-width: 320px;">
+            <div class="card-image-wrapper">
+              <img src="{{ product.get('image') or 'https://via.placeholder.com/280x200' }}" alt="{{ product.get('name') }}">
+            </div>
             <div class="product-card-body">
-              <div class="product-name">{{ product.get('name', 'Product') }}</div>
+              <div class="product-name product-description-clamp">{{ product.get('name', 'Premium Item') }}</div>
+              
               {% if product.get('stores') and product.get('stores')|length > 0 %}
               {% set prices = [] %}
               {% for store in product.get('stores', []) %}
@@ -745,25 +751,31 @@ Shown at route: /
                   {% set _ = prices.append(price_val|float if price_val is string else price_val) %}
                 {% endif %}
               {% endfor %}
+              
               {% if prices|length > 0 %}
               {% set min_price = prices|min %}
               {% set max_price = prices|max %}
-              <div class="product-store">
-                <i class="bi bi-shop me-1"></i>{{ product.get('stores')|length }} stores
+              <div class="product-store text-muted small mb-1">
+                <i class="bi bi-diagram-3 me-1"></i>Available at {{ product.get('stores')|length }} stores
               </div>
-              <div class="product-price">€{{ "%.2f"|format(min_price) }}{% if min_price != max_price %} - €{{ "%.2f"|format(max_price) }}{% endif %}</div>
+              <div class="product-price text-premium-purple mb-3">
+                €{{ "%.2f"|format(min_price) }}{% if min_price != max_price %} - <small class="text-muted">€{{ "%.2f"|format(max_price) }}</small>{% endif %}
+              </div>
               {% endif %}
               {% endif %}
-              {% if pid %}
-              <a href="{{ url_for('main.product_detail', product_id=pid) }}" class="add-to-cart-btn-modern" style="text-decoration: none;" onclick="event.stopPropagation();">
-                <i class="bi bi-bar-chart"></i> Compare Prices
-              </a>
-              {% endif %}
+
+              <div class="d-grid mt-auto">
+                {% if pid %}
+                <a href="{{ url_for('main.product_detail', product_id=pid) }}" class="btn btn-premium-purple" onclick="event.stopPropagation();">
+                  <i class="bi bi-bar-chart-fill me-1"></i> Compare Prices
+                </a>
+                {% endif %}
+              </div>
             </div>
           </div>
           {% endfor %}
         </div>
-        <button class="scroll-arrow right" onclick="scrollSection('compare', 'right')">
+        <button class="scroll-arrow right" onclick="scrollSection('compare', 'right')" aria-label="Scroll right">
           <i class="bi bi-chevron-right"></i>
         </button>
       </div>
@@ -775,31 +787,33 @@ Shown at route: /
     <div class="container">
       <div class="section-header">
         <div>
-          <h2 class="section-title"><i class="bi bi-shop me-2" style="color: #667eea;"></i>Popular Stores</h2>
-          <p class="section-subtitle">Shop from your favorite stores</p>
+          <h2 class="section-title"><i class="bi bi-shop-window text-premium-purple me-2"></i>Verified Partners</h2>
+          <p class="section-subtitle">Exclusive catalogs from the region's top grocery chains</p>
         </div>
         <a href="{{ url_for('main.stores_page') }}" class="view-all-btn">
-          View All <i class="bi bi-arrow-right"></i>
+          View All <i class="bi bi-arrow-right ms-1"></i>
         </a>
       </div>
       <div class="scroll-container">
-        <button class="scroll-arrow left" onclick="scrollSection('stores', 'left')">
+        <button class="scroll-arrow left" onclick="scrollSection('stores', 'left')" aria-label="Scroll left">
           <i class="bi bi-chevron-left"></i>
         </button>
-        <div class="scroll-wrapper" id="stores-scroll">
+        <div class="scroll-wrapper d-flex flex-nowrap" id="stores-scroll" style="overflow-x: auto; gap: 24px; scrollbar-width: none; -ms-overflow-style: none;">
           {% for store in stores %}
-          <a href="{{ url_for('main.store_products_page', store_name=store.get('name')) }}" class="store-card">
-            <img src="{{ store.get('image') or 'https://via.placeholder.com/250x150' }}" alt="{{ store.get('name') }}" class="store-card-img">
-            <div class="store-card-body">
-              <div class="store-name">{{ store.get('name') }}</div>
-              <div class="store-products-count">
-                <i class="bi bi-box-seam me-1"></i>{{ store.get('product_count', 0) }} products
+          <a href="{{ url_for('main.store_products_page', store_name=store.get('name')) }}" class="store-card premium-outline-hover" style="min-width: 280px;">
+            <div class="store-card-image">
+              <img src="{{ store.get('image') or 'https://via.placeholder.com/250x150' }}" alt="{{ store.get('name') }}">
+            </div>
+            <div class="store-card-body text-center">
+              <div class="store-name text-dark fw-bold">{{ store.get('name') }}</div>
+              <div class="badge bg-soft-purple text-premium-purple mt-2">
+                <i class="bi bi-box-seam me-1"></i>{{ store.get('product_count', 0) }} Products
               </div>
             </div>
           </a>
           {% endfor %}
         </div>
-        <button class="scroll-arrow right" onclick="scrollSection('stores', 'right')">
+        <button class="scroll-arrow right" onclick="scrollSection('stores', 'right')" aria-label="Scroll right">
           <i class="bi bi-chevron-right"></i>
         </button>
       </div>
@@ -808,42 +822,54 @@ Shown at route: /
 
   <!-- Products from Preferred/Random Store -->
   {% if store_products and store_products|length > 0 %}
-  {% set store_name = chosen_store_name or (store_products[0].store if store_products and store_products[0].store else 'Store') %}
+  {% set store_name = chosen_store_name or (store_products[0].store if store_products and store_products[0].store else 'Major Partner') %}
   <section class="content-section">
     <div class="container">
       <div class="section-header">
         <div>
-          <h2 class="section-title"><i class="bi bi-shop me-2" style="color:#667eea;"></i>Products from {{ store_name }}</h2>
-          <p class="section-subtitle"><i class="bi bi-stars me-2" style="color:#a78bfa;"></i>Fresh picks tailored to your preferred store</p>
+          <h2 class="section-title"><i class="bi bi-shop-window text-premium-purple me-2"></i>Store Highlights: {{ store_name }}</h2>
+          <p class="section-subtitle">Fresh highlights and trending essentials from your selected shop</p>
         </div>
         <a href="{{ url_for('main.store_products_page', store_name=store_name) }}" class="view-all-btn">
-          View All <i class="bi bi-arrow-right"></i>
+          Explore Catalog <i class="bi bi-arrow-right ms-1"></i>
         </a>
       </div>
       <div class="scroll-container">
-        <button class="scroll-arrow left" onclick="scrollSection('store-products', 'left')">
+        <button class="scroll-arrow left" onclick="scrollSection('store-products', 'left')" aria-label="Scroll left">
           <i class="bi bi-chevron-left"></i>
         </button>
-        <div class="scroll-wrapper" id="store-products-scroll">
+        <div class="scroll-wrapper d-flex flex-nowrap" id="store-products-scroll" style="overflow-x: auto; gap: 24px; scrollbar-width: none; -ms-overflow-style: none;">
           {% for product in store_products %}
-          {% set detail_url = url_for('main.product_info', product_id=product.id, store_name=store_name, store_price=product.price or '', store_image=product.image or '') %}
-          <div class="product-card-horizontal" {% if product.id %}onclick="window.location='{{ detail_url }}'"{% endif %} style="cursor: {% if product.id %}pointer{% else %}default{% endif %};">
-            <button class="btn-favorite" data-product-id="{{ product.id }}" onclick="event.stopPropagation(); toggleFavorite('{{ product.id }}', this)">
-              <i class="bi bi-heart"></i>
+          {% set detail_url = url_for('main.product_info', product_id=product.id, store_name=store_name, store_price=product.price or '', store_image=product.image or '', store_url=product.url or '') %}
+          <div class="product-card-horizontal premium-outline-hover" {% if product.id %}onclick="window.location='{{ detail_url }}'"{% endif %} style="cursor: {% if product.id %}pointer{% else %}default{% endif %}; min-width: 320px;">
+            <button class="btn-favorite {{ 'active' if product.get('is_favorited') else '' }}" 
+                    onclick="toggleFavorite(event, '{{ product.id }}', this)"
+                    aria-label="Add to favorites">
+              <i class="bi {{ 'bi-heart-fill' if product.get('is_favorited') else 'bi-heart' }}"></i>
             </button>
-            <img src="{{ product.image or url_for('static', filename='placeholder.svg') }}" alt="{{ product.name }}">
+            <div class="card-image-wrapper">
+              <img src="{{ product.image or url_for('static', filename='placeholder.svg') }}" alt="{{ product.name }}">
+            </div>
             <div class="product-card-body">
-              <div class="product-name">{{ product.name }}</div>
-              <div class="product-store"><i class="bi bi-shop me-1"></i>{{ store_name }}</div>
-              <div class="product-price">€{{ '%.2f'|format((product.price or 0)|float) }}</div>
-              <div class="d-flex gap-2 flex-wrap">
-                <button class="add-to-cart-btn-modern" 
-                        onclick="handleAddToCart(event, '{{ product.name|replace("'", "\\'") }}', '{{ product.price }}', '{{ product.image or url_for('static', filename='placeholder.svg') }}', '{{ store_name|replace("'", "\\'") }}');">
-                  <i class="bi bi-cart-plus"></i> Add to Cart
+              <div class="product-name product-description-clamp">{{ product.name }}</div>
+              <div class="product-store text-muted small mb-1">
+                <i class="bi bi-shop me-1"></i>{{ store_name }}
+              </div>
+              <div class="product-price text-premium-purple mb-3">€{{ '%.2f'|format((product.price or 0)|float) }}</div>
+              
+              <div class="d-grid gap-2">
+                <button type="button" class="btn btn-premium-purple w-100" 
+                        data-name="{{ product.name }}"
+                        data-price="{{ product.price or '0.00' }}"
+                        data-image="{{ product.image or url_for('static', filename='placeholder.svg') }}"
+                        data-store="{{ store_name }}"
+                        data-id="{{ product.id }}"
+                        onclick="event.stopPropagation(); window.showListSelector(this);">
+                  <i class="bi bi-plus-circle me-1"></i> Add to List
                 </button>
                 {% if product.id %}
-                <a href="{{ detail_url }}" class="btn btn-outline-secondary btn-sm" onclick="event.stopPropagation();">
-                  <i class="bi bi-info-circle"></i> View Details
+                <a href="{{ detail_url }}" class="btn btn-premium btn-premium-view btn-sm w-100" onclick="event.stopPropagation();">
+                  <i class="bi bi-eye me-1"></i> Details
                 </a>
                 {% endif %}
               </div>
@@ -851,7 +877,7 @@ Shown at route: /
           </div>
           {% endfor %}
         </div>
-        <button class="scroll-arrow right" onclick="scrollSection('store-products', 'right')">
+        <button class="scroll-arrow right" onclick="scrollSection('store-products', 'right')" aria-label="Scroll right">
           <i class="bi bi-chevron-right"></i>
         </button>
       </div>
@@ -865,46 +891,59 @@ Shown at route: /
     <div class="container">
       <div class="section-header">
         <div>
-          <h2 class="section-title"><i class="bi bi-heart-fill text-danger me-2"></i>Things You Might Like</h2>
-          <p class="section-subtitle">Personalized picks based on your activity</p>
+          <h2 class="section-title"><i class="bi bi-stars text-warning me-2"></i>Personalized for You</h2>
+          <p class="section-subtitle">Intelligent suggestions based on your frequent favorites</p>
         </div>
         <a href="{{ url_for('main.compare_prices') }}" class="view-all-btn">
-          Browse More <i class="bi bi-arrow-right"></i>
+          Explore More <i class="bi bi-arrow-right ms-1"></i>
         </a>
       </div>
       <div class="scroll-container">
-        <button class="scroll-arrow left" onclick="scrollSection('recommend', 'left')">
+        <button class="scroll-arrow left" onclick="scrollSection('recommend', 'left')" aria-label="Scroll left">
           <i class="bi bi-chevron-left"></i>
         </button>
-        <div class="scroll-wrapper" id="recommend-scroll">
+        <div class="scroll-wrapper d-flex flex-nowrap" id="recommend-scroll" style="overflow-x: auto; gap: 24px; scrollbar-width: none; -ms-overflow-style: none;">
           {% for product in recommended_products %}
           {% set store_data = (product.get('stores') or [{}])[0] %}
           {% set pid = product.get('id') or product.get('_id') %}
-          {% set store_name = store_data.get('store') or store_data.get('store_name') or 'Store' %}
-          {% set detail_url = url_for('main.product_info', product_id=pid, store_name=store_name, store_price=store_data.get('price') or product.get('best_price') or product.get('price') or '0.00', store_image=product.get('image') or '') %}
-          <div class="product-card-horizontal" {% if pid %}onclick="window.location='{{ detail_url }}'"{% endif %} style="cursor: {% if pid %}pointer{% else %}default{% endif %};">
-            <button class="btn-favorite" data-product-id="{{ pid }}" onclick="event.stopPropagation(); toggleFavorite('{{ pid }}', this);">
-              <i class="bi bi-heart"></i>
+          {% set store_name = store_data.get('store') or store_data.get('store_name') or 'Partner' %}
+          {% set detail_url = url_for('main.product_info', product_id=pid, store_name=store_name, store_price=store_data.get('price') or product.get('best_price') or product.get('price') or '0.00', store_image=product.get('image') or '', store_url=store_data.get('url') or product.get('url') or '') %}
+          <div class="product-card-horizontal premium-outline-hover" {% if pid %}onclick="window.location='{{ detail_url }}'"{% endif %} style="cursor: {% if pid %}pointer{% else %}default{% endif %}; min-width: 320px;">
+            <button class="btn-favorite {{ 'active' if product.get('is_favorited') else '' }}" 
+                    data-product-id="{{ pid }}" 
+                    onclick="toggleFavorite(event, '{{ pid }}', this)"
+                    aria-label="Add to favorites">
+              <i class="bi {{ 'bi-heart-fill' if product.get('is_favorited') else 'bi-heart' }}"></i>
             </button>
-            <img src="{{ product.get('image') or 'https://via.placeholder.com/280x200' }}" alt="{{ product.get('name', 'Product') }}">
+            <div class="card-image-wrapper">
+              <img src="{{ product.get('image') or 'https://via.placeholder.com/280x200' }}" alt="{{ product.get('name', 'Product') }}">
+            </div>
             <div class="product-card-body">
-              <div class="product-name">{{ product.get('name', 'Product') }}</div>
-              <div class="product-store"><i class="bi bi-shop me-1"></i>{{ store_name }}</div>
-              <div class="product-price">€{{ store_data.get('price') or product.get('best_price') or product.get('price') or 'N/A' }}</div>
-              <div class="d-flex flex-wrap gap-2">
-                <button class="add-to-cart-btn-modern"
-                        onclick="handleAddToCart(event, '{{ product.get('name', 'Product')|replace("'", "\\'") }}', '{{ store_data.get('price') or product.get('best_price') or product.get('price') or '0.00' }}', '{{ product.get('image') }}', '{{ store_name|replace("'", "\\'") }}');">
-                  <i class="bi bi-cart-plus"></i> Add to Cart
+              <div class="product-name product-description-clamp">{{ product.get('name', 'Premium Product') }}</div>
+              <div class="product-store text-muted small mb-1">
+                <i class="bi bi-shop me-1"></i>{{ store_name }}
+              </div>
+              <div class="product-price text-premium-purple mb-3">€{{ store_data.get('price') or product.get('best_price') or product.get('price') or '0.00' }}</div>
+              
+              <div class="d-grid gap-2">
+                <button type="button" class="btn btn-premium-purple w-100"
+                        data-name="{{ product.get('name', 'Product') }}"
+                        data-price="{{ store_data.get('price') or product.get('best_price') or product.get('price') or '0.00' }}"
+                        data-image="{{ product.get('image') or url_for('static', filename='placeholder.svg') }}"
+                        data-store="{{ store_name }}"
+                        data-id="{{ pid }}"
+                        onclick="event.stopPropagation(); window.showListSelector(this);">
+                  <i class="bi bi-plus-circle me-1"></i> Add to List
                 </button>
-                <a href="{{ detail_url }}" class="btn btn-outline-secondary btn-sm" style="text-decoration: none;" onclick="event.stopPropagation();">
-                  <i class="bi bi-info-circle"></i> View Details
+                <a href="{{ detail_url }}" class="btn btn-premium btn-premium-view btn-sm w-100" onclick="event.stopPropagation();">
+                  <i class="bi bi-eye me-1"></i> Details
                 </a>
               </div>
             </div>
           </div>
           {% endfor %}
         </div>
-        <button class="scroll-arrow right" onclick="scrollSection('recommend', 'right')">
+        <button class="scroll-arrow right" onclick="scrollSection('recommend', 'right')" aria-label="Scroll right">
           <i class="bi bi-chevron-right"></i>
         </button>
       </div>
@@ -912,17 +951,18 @@ Shown at route: /
   </section>
   {% endif %}
 
-  
-
   <!-- Newsletter Section -->
-  <section class="newsletter-section">
-    <div class="container text-center">
-      <h2 class="newsletter-title">Stay Updated with Best Deals</h2>
-      <p class="newsletter-subtitle">Subscribe to our newsletter and never miss a great offer</p>
-      <form class="newsletter-form" onsubmit="handleNewsletterSubmit(event)">
-        <input type="email" placeholder="Enter your email address" required>
-        <button type="submit">Subscribe</button>
-      </form>
+  <section class="newsletter-section my-4">
+    <div class="container">
+      <div class="newsletter-inner p-5 text-center text-white rounded-5 shadow-lg" style="background: linear-gradient(135deg, var(--premium-purple), #4c1d95);">
+        <h2 class="fw-bold mb-3">Join the Smart Shopping Revolution</h2>
+        <p class="mb-4 opacity-90 mx-auto" style="max-width: 600px;">Get personalized deal alerts, exclusive retail insights, and price drop notifications delivered straight to your inbox.</p>
+        <form class="newsletter-form d-flex gap-2 justify-content-center mx-auto" style="max-width: 500px;" onsubmit="handleNewsletterSubmit(event)">
+          <input type="email" class="form-control rounded-pill px-4 border-0 shadow-sm" style="height: 54px;" placeholder="Your email address" required>
+          <button type="submit" class="btn btn-white rounded-pill px-4 fw-bold text-premium-purple shadow" style="height: 54px; background: white;">Subscribe</button>
+        </form>
+        <p class="mt-3 small opacity-75">We value your privacy. Unsubscribe at any time.</p>
+      </div>
     </div>
   </section>
 
@@ -1046,158 +1086,39 @@ Shown at route: /
     window.addEventListener('load', updateScrollArrows);
     window.addEventListener('resize', updateScrollArrows);
 
-    // Simple favorite function for inline onclick
-    function favoriteProduct(event, productId) {
-      event.preventDefault();
-      event.stopPropagation();
-      
-      const button = event.currentTarget;
-      console.log('=== FAVORITE BUTTON CLICKED ===');
-      console.log('Product ID:', productId);
-      console.log('Button element:', button);
-      
-      if (!productId || productId === 'None' || productId === 'undefined') {
-        console.error('Invalid product ID:', productId);
-        alert('Unable to favorite: Invalid product ID');
-        return;
-      }
-      
-      console.log('Sending request to /api/toggle-favorite with ID:', productId);
-      
-      fetch('/api/toggle-favorite', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ product_id: productId })
-      })
-      .then(response => {
-        console.log('Response status:', response.status);
-        if (response.ok) {
-          return response.json();
-        } else if (response.status === 401) {
-          alert('Please log in to add favorites');
-          window.location.href = '/login';
-          throw new Error('Not authenticated');
-        }
-        return response.json().then(err => {
-          throw new Error(err.error || `HTTP ${response.status}`);
-        });
-      })
-      .then(data => {
-        console.log('API Response:', data);
-        const icon = button.querySelector('i');
-        
-        if (data.is_favorite) {
-          icon.classList.remove('bi-heart');
-          icon.classList.add('bi-heart-fill');
-          button.classList.add('active');
-          console.log('Added to favorites');
-        } else {
-          icon.classList.remove('bi-heart-fill');
-          icon.classList.add('bi-heart');
-          button.classList.remove('active');
-          console.log('Removed from favorites');
-        }
-      })
-      .catch(error => {
-        console.error('Error toggling favorite:', error);
-        alert('Error: ' + error.message);
+    // Number counter animation for stats
+    function animateCounters() {
+      const counters = document.querySelectorAll('.stat-number');
+      const speed = 200;
+
+      counters.forEach(counter => {
+        const updateCount = () => {
+          const target = +counter.getAttribute('data-target');
+          const count = +counter.innerText;
+          const inc = target / speed;
+
+          if (count < target) {
+            counter.innerText = Math.ceil(count + inc);
+            setTimeout(updateCount, 1);
+          } else {
+            counter.innerText = target;
+          }
+        };
+        updateCount();
       });
     }
 
-    // Quick favorite toggle function
-    async function quickFavorite(event, productId, button) {
-      if (event) {
-        event.preventDefault();
-        event.stopPropagation();
-      }
-      
-      if (!productId) return;
-      
-      try {
-        const response = await fetch('/api/toggle-favorite', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ product_id: productId })
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          const icon = button.querySelector('i');
-          
-          if (data.is_favorite) {
-            icon.classList.remove('bi-heart');
-            icon.classList.add('bi-heart-fill');
-            button.classList.add('active');
-          } else {
-            icon.classList.remove('bi-heart-fill');
-            icon.classList.add('bi-heart');
-            button.classList.remove('active');
-          }
-        } else if (response.status === 401) {
-          alert('Please log in to add favorites');
-          window.location.href = '/login';
-        } else {
-          console.error('Failed to toggle favorite:', response.status);
+    // Run animation when stats section is in view
+    const statsSection = document.querySelector('.stats-section');
+    if (statsSection) {
+      const observer = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting) {
+          animateCounters();
+          observer.unobserve(statsSection);
         }
-      } catch (error) {
-        console.error('Error toggling favorite:', error);
-      }
+      }, { threshold: 0.5 });
+      observer.observe(statsSection);
     }
-
-    // Event delegation for favorite buttons (only those without onclick handlers)
-    document.addEventListener('click', function(e) {
-      const button = e.target.closest('.btn-favorite');
-      if (button) {
-        // Skip if button has onclick attribute with favoriteProduct call (handled by onclick)
-        const onclickAttr = button.getAttribute('onclick');
-        if (onclickAttr && onclickAttr.includes('favoriteProduct')) return;
-        
-        const productId = button.getAttribute('data-product-id');
-        console.log('Favorite button clicked, productId:', productId);
-        if (productId) {
-          quickFavorite(e, productId, button);
-        } else {
-          console.error('No product ID found on favorite button');
-        }
-      }
-    }, true); // Use capture phase to ensure we catch the event
-
-    // Load favorite states for all products on the page
-    async function loadFavoriteStates() {
-      const favoriteButtons = document.querySelectorAll('.btn-favorite');
-      
-      for (const btn of favoriteButtons) {
-        const productId = btn.dataset.productId;
-        if (!productId) continue;
-        
-        try {
-          const response = await fetch(`/api/check-favorite?product_id=${productId}`);
-          const data = await response.json();
-          
-          const icon = btn.querySelector('i');
-          if (data.is_favorite) {
-            icon.classList.remove('bi-heart');
-            icon.classList.add('bi-heart-fill');
-          } else {
-            icon.classList.remove('bi-heart-fill');
-            icon.classList.add('bi-heart');
-          }
-        } catch (error) {
-          console.error('Error checking favorite status:', error);
-          // Default to unfilled heart on error
-          const icon = btn.querySelector('i');
-          icon.classList.remove('bi-heart-fill');
-          icon.classList.add('bi-heart');
-        }
-      }
-    }
-
-    // Load favorites when page loads
-    window.addEventListener('load', loadFavoriteStates);
   </script>
 
   <!-- Global List Selector Modal -->

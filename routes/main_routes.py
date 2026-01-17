@@ -104,8 +104,12 @@ def sanitize_mongo_doc(doc):
     if isinstance(doc, dict):
         new_doc = {}
         for k, v in doc.items():
-            if k == '_id' and isinstance(v, ObjectId):
-                new_doc['id'] = str(v)
+            if k == '_id':
+                id_str = str(v)
+                new_doc['id'] = id_str
+                new_doc['_id'] = id_str
+            elif isinstance(v, Decimal128):
+                new_doc[k] = float(v.to_decimal())
             else:
                 new_doc[k] = sanitize_mongo_doc(v)
         return new_doc
@@ -199,6 +203,22 @@ def home():
         stores = sanitize_mongo_doc(stores)
         products = sanitize_mongo_doc(products)
         featured_deals = sanitize_mongo_doc(featured_deals)
+
+        # Check favorites for user
+        fav_ids = set()
+        if user_email:
+            try:
+                from models.favorites_model import get_user_favorites
+                user_favs = get_user_favorites(user_email)
+                fav_ids = {str(f.get('product_id')) for f in user_favs}
+            except Exception as e:
+                print(f"Error loading favorites for home page: {e}")
+        
+        # Mark favorited items
+        for p in products:
+            p['is_favorited'] = str(p.get('id') or p.get('_id', '')) in fav_ids
+        for d in featured_deals:
+            d['is_favorited'] = str(d.get('id') or d.get('_id', '')) in fav_ids
     else:
         using_fallback = True
         print('WARNING: Using in-memory fallback data for home page (DB unavailable)')
@@ -343,6 +363,7 @@ def home():
                     'price': price_val,
                     'category': product.get('category'),
                     'unit': product.get('unit'),
+                    'url': product.get('url') or match_entry.get('url') or product.get('link') or product.get('product_url') or '',
                 })
 
         # Also include featured deals for the chosen store
@@ -364,6 +385,7 @@ def home():
                         'price': dprice,
                         'category': deal.get('category'),
                         'unit': deal.get('unit'),
+                        'url': deal.get('url') or deal.get('deal_url') or deal.get('link') or '',
                     })
         except Exception:
             pass
@@ -526,6 +548,28 @@ def home():
         except Exception as e:
             print(f'WARNING: Failed to load favorites: {e}')
 
+    # Ensure all product lists are marked with is_favorited status
+    if user_email:
+        try:
+            from models.favorites_model import get_user_favorites
+            user_favs = get_user_favorites(user_email)
+            fav_ids = {str(f.get('product_id')) for f in user_favs}
+            
+            # Universal marker function to avoid repetition
+            def mark_list(items):
+                if not items: return
+                for item in items:
+                    if isinstance(item, dict):
+                        item_id = str(item.get('id') or item.get('_id', ''))
+                        item['is_favorited'] = item_id in fav_ids
+            
+            mark_list(products)
+            mark_list(featured_deals)
+            mark_list(store_products)
+            mark_list(recommended_products)
+        except Exception as e:
+            print(f"Error marking favorites on home page: {e}")
+
     return render_template('home.html', 
                          stores=stores, 
                          products=products, 
@@ -549,9 +593,28 @@ def stores_page():
             for s in stores:
                 if '_id' in s:
                     s['id'] = str(s['_id'])
-        except Exception:
+                
+                # Count products for this store
+                store_name = s.get('name', '')
+                regex = {'$regex': re.escape(store_name), '$options': 'i'}
+                
+                # Count in products collection
+                product_count = db.products.count_documents({
+                    '$or': [
+                        {'stores': {'$elemMatch': {'$or': [{'store': regex}, {'name': regex}]}}},
+                        {'store': regex}
+                    ]
+                })
+                
+                # Also count in featured_deals collection
+                deals_count = db.featured_deals.count_documents({
+                    'store': regex
+                })
+                
+                s['product_count'] = product_count + deals_count
+        except Exception as e:
+            print(f"Error fetching stores with counts: {e}")
             using_fallback = True
-            print('WARNING: Using in-memory fallback data for stores page (DB query failed)')
             stores = getattr(m, 'stores', [])
     else:
         using_fallback = True
@@ -591,6 +654,9 @@ def store_products_page(store_name):
                 if matched_stores:
                     prod['store_price'] = matched_stores[0].get('price')
                     prod['store_image'] = matched_stores[0].get('image') or prod.get('image')
+                    # Extract URL from store entry if available
+                    if matched_stores[0].get('url'):
+                        prod['url'] = matched_stores[0].get('url')
                 else:
                     prod['store_price'] = prod.get('price')
                     prod['store_image'] = prod.get('image')
@@ -614,6 +680,21 @@ def store_products_page(store_name):
                 deal['store_price'] = deal.get('price')
                 deal['store_image'] = deal.get('image')
                 products.append(deal)
+
+            # Check favorites for user
+            user_email = session.get('user')
+            fav_ids = set()
+            if user_email:
+                try:
+                    from models.favorites_model import get_user_favorites
+                    user_favs = get_user_favorites(user_email)
+                    fav_ids = {str(f.get('product_id')) for f in user_favs}
+                except Exception as e:
+                    print(f"Error loading favorites for store products: {e}")
+            
+            for p in products:
+                p['is_favorited'] = str(p.get('id') or p.get('_id', '')) in fav_ids
+
         except Exception as e:
             print(f'ERROR loading products for {store_name}: {e}')
 
@@ -633,6 +714,8 @@ def store_products_page(store_name):
                         shaped['id'] = str(shaped['_id'])
                     shaped['store_price'] = matched_stores[0].get('price') if matched_stores else prod.get('price')
                     shaped['store_image'] = matched_stores[0].get('image') if matched_stores else prod.get('image')
+                    if matched_stores and matched_stores[0].get('url'):
+                        shaped['url'] = matched_stores[0].get('url')
                     products.append(shaped)
 
             # Featured deals fallback JSON
@@ -645,6 +728,21 @@ def store_products_page(store_name):
                     products.append(shaped)
     except Exception as e:
         print(f'ERROR loading fallback products for {store_name}: {e}')
+    
+    # Enrich fallback products with is_favorited status
+    user_email = session.get('user')
+    fav_ids = set()
+    if user_email:
+        try:
+            from models.favorites_model import get_user_favorites
+            user_favs = get_user_favorites(user_email)
+            fav_ids = {str(f.get('product_id')) for f in user_favs}
+        except Exception:
+            pass
+            
+    for p in products:
+        if 'is_favorited' not in p:
+            p['is_favorited'] = str(p.get('id') or p.get('_id', '')) in fav_ids
     
     return render_template('store_products.html', 
                          store_name=store_name, 
@@ -696,6 +794,19 @@ def featured_deals_page():
             # Combine both lists
             deals = featured_deals_list + multibuy_offers_list
             
+            # Check favorites for user
+            fav_ids = set()
+            if user_email:
+                try:
+                    from models.favorites_model import get_user_favorites
+                    user_favs = get_user_favorites(user_email)
+                    fav_ids = {str(f.get('product_id')) for f in user_favs}
+                except Exception as e:
+                    print(f"Error loading favorites for deals page: {e}")
+            
+            for deal in deals:
+                deal['is_favorited'] = str(deal.get('id') or deal.get('_id', '')) in fav_ids
+            
             # Notifications logic (kept same)
             if user_email and deals:
                 try:
@@ -729,13 +840,30 @@ def featured_deals_page():
             if not deals and not query:
                 using_fallback = True
                 deals = load_featured_deals_fallback()
+                # Mark favorites for fallback deals
+                for deal in deals:
+                    deal['is_favorited'] = str(deal.get('id') or deal.get('_id', '')) in fav_ids
         except Exception as e:
             print(f'WARNING: MongoDB query failed for deals: {e}')
             using_fallback = True
             deals = load_featured_deals_fallback()
+            # Mark favorites for fallback deals
+            if user_email:
+                for deal in deals:
+                    deal['is_favorited'] = str(deal.get('id') or deal.get('_id', '')) in fav_ids
     else:
         using_fallback = True
         deals = load_featured_deals_fallback()
+        # Mark favorites for fallback deals
+        if user_email:
+            try:
+                from models.favorites_model import get_user_favorites
+                user_favs = get_user_favorites(user_email)
+                fav_ids = {str(f.get('product_id')) for f in user_favs}
+                for deal in deals:
+                    deal['is_favorited'] = str(deal.get('id') or deal.get('_id', '')) in fav_ids
+            except:
+                pass
     
     # Sort deals by discount percentage (highest first)
     def get_sort_key(deal):
@@ -889,6 +1017,21 @@ def compare_prices():
                     if image:
                         s['image'] = image  # Standardize on 'image' as requested by user
                         s['store_image'] = image
+                        
+            # Handle is_favorited status for products
+            user_email = session.get('user')
+            fav_ids = set()
+            if user_email:
+                try:
+                    from models.favorites_model import get_user_favorites
+                    user_favs = get_user_favorites(user_email)
+                    fav_ids = {str(f.get('product_id')) for f in user_favs}
+                except Exception as e:
+                    print(f"Error loading favorites for compare page: {e}")
+            
+            for p in products:
+                p['is_favorited'] = str(p.get('id') or p.get('_id', '')) in fav_ids
+                
             # Since sanitize_mongo_doc converts _id to id, we don't need additional loop
             # products = list(cursor)
             # for p in products:
@@ -927,6 +1070,21 @@ def compare_prices():
                 search_lower in (p.get('store') or '').lower()]
         total_products = len(products)
         total_pages = (total_products + per_page - 1) // per_page if total_products else 1
+
+    # Enrich fallback products with is_favorited status
+    if products and any('is_favorited' not in p for p in products):
+        user_email = session.get('user')
+        fav_ids = set()
+        if user_email:
+            try:
+                from models.favorites_model import get_user_favorites
+                user_favs = get_user_favorites(user_email)
+                fav_ids = {str(f.get('product_id')) for f in user_favs}
+            except Exception:
+                pass
+        for p in products:
+            if 'is_favorited' not in p:
+                p['is_favorited'] = str(p.get('id') or p.get('_id', '')) in fav_ids
 
     has_prev = page > 1
     has_next = page < total_pages
@@ -981,6 +1139,7 @@ def product_detail(product_id):
         except Exception as e:
             print(f'Error fetching product from MongoDB: {e}')
     
+
     # If not found in database, fall back to JSON featured deals
     if not product:
         featured_deals = load_featured_deals_fallback()
@@ -988,7 +1147,15 @@ def product_detail(product_id):
             if deal.get('id') == product_id:
                 product = deal
                 break
-    
+
+    # If still not found, check fallback products (used by compare page)
+    if not product:
+        from models import models as m
+        for prod in getattr(m, 'products', []):
+            if prod.get('id') == product_id:
+                product = prod
+                break
+
     if not product:
         return render_template('404.html'), 404
 
@@ -1010,7 +1177,7 @@ def product_detail(product_id):
             db_stores = list(db.stores.find({}, {'name': 1, 'store': 1, 'logo': 1, 'image': 1, 'store_image': 1}))
         except Exception:
             db_stores = []
-    def find_store_logo_and_image(store_name):
+    def find_store_logo_and_image(store_name, db_stores):
         norm = lambda n: (n or '').strip().lower()
         for s in db_stores:
             if norm(s.get('name')) == norm(store_name) or norm(s.get('store')) == norm(store_name):
@@ -1022,8 +1189,8 @@ def product_detail(product_id):
         if logo:
             s['logo'] = logo
         if image:
-            s['image'] = image  # Match the 'image' field requested by user
-            s['store_image'] = image
+            # Don't overwrite product image with store image
+            s['store_display_image'] = image
 
     # Always calculate the best price and its store(s)
     best_price_value = None
@@ -1048,7 +1215,17 @@ def product_detail(product_id):
         best_price_stores = []
 
     # Do NOT filter stores by requested_store for detail page; always show all stores
-    return render_template('product_detail.html', product=product, best_price_value=best_price_value, best_price_stores=best_price_stores)
+    # Check if favorited
+    is_favorited = False
+    user_email = session.get('user')
+    if user_email and db is not None:
+        try:
+            from models.favorites_model import is_favorited as check_fav
+            is_favorited = check_fav(user_email, str(product.get('id') or product.get('_id', '')))
+        except Exception as e:
+            print(f"Error checking favorites for product_detail: {e}")
+
+    return render_template('product_detail.html', product=product, best_price_value=best_price_value, best_price_stores=best_price_stores, is_favorited=is_favorited)
 
 
 @main_bp.route('/featured-deal/<deal_id>')
@@ -1075,6 +1252,17 @@ def featured_deal_detail(deal_id):
             
             if deal and '_id' in deal:
                 deal['id'] = str(deal['_id'])
+            
+            # Check if favorited
+            is_favorited = False
+            user_email = session.get('user')
+            if user_email and deal:
+                try:
+                    from models.favorites_model import is_favorited as check_fav
+                    is_favorited = check_fav(user_email, str(deal.get('id') or deal.get('_id', '')))
+                    deal['is_favorited'] = is_favorited
+                except Exception as e:
+                    print(f"Error checking favorites for featured_deal_detail: {e}")
         except Exception as e:
             print(f'ERROR loading featured deal {deal_id}: {e}')
 
@@ -1153,7 +1341,17 @@ def product_info(product_id):
     if not product:
         return render_template('404.html'), 404
     
-    return render_template('product_info.html', product=product, store_name=store_name, store_price=store_price)
+    # Check if favorited
+    is_favorited = False
+    user_email = session.get('user')
+    if user_email and db is not None:
+        try:
+            from models.favorites_model import is_favorited as check_fav
+            is_favorited = check_fav(user_email, str(product.get('id') or product.get('_id', '')))
+        except Exception as e:
+            print(f"Error checking favorites for product_info: {e}")
+    
+    return render_template('product_info.html', product=product, store_name=store_name, store_price=store_price, is_favorited=is_favorited)
 
 @main_bp.route('/shopping-list')
 def shopping_list():
@@ -1209,6 +1407,7 @@ def shopping_list():
             items = lst.get('items', []) or []
             total += sum(1 for it in items if not (isinstance(it, dict) and it.get('purchased')))
         session['last_viewed_list_count'] = total
+        session.modified = True
 
     # Get user data
     if db is not None and user_email:
@@ -1452,31 +1651,10 @@ def notifications_page():
     notifications = get_user_notifications(user_email, unread_only=False, limit=100)
     unread_count = get_unread_count(user_email)
     
-    # Get shopping list count for navbar
-    shopping_list_count = 0
-    try:
-        if _has_db():
-            from models.users_model import get_user_lists
-            lists_data = get_user_lists(user_email)
-            if lists_data and lists_data.get('active_list_id'):
-                active_list = next(
-                    (lst for lst in lists_data.get('lists', []) 
-                     if lst.get('id') == lists_data.get('active_list_id')),
-                    None
-                )
-                if active_list:
-                    shopping_list_count = sum(
-                        1 for item in active_list.get('items', [])
-                        if not (isinstance(item, dict) and item.get('purchased'))
-                    )
-    except Exception as e:
-        print(f'Error getting shopping list count: {e}')
-    
     return render_template(
         'notifications.html',
         notifications=notifications,
-        unread_count=unread_count,
-        shopping_list_count=shopping_list_count
+        unread_count=unread_count
     )
 
 
@@ -1501,13 +1679,34 @@ def delete_notification(notification_id):
         return jsonify({'error': str(e)}), 500
 
 
-@main_bp.route('/profile')
+@main_bp.route('/profile', methods=['GET', 'POST'])
 def profile():
     user_email = session.get('user')
     stores_options = []
     category_options = []
 
     if _has_db() and user_email:
+        if request.method == 'POST':
+            name = request.form.get('name')
+            phone_prefix = request.form.get('phone_prefix', '')
+            phone_number = request.form.get('phone_number', '')
+            phone = f"{phone_prefix} {phone_number}".strip()
+            address = request.form.get('address')
+            profile_image = request.form.get('profile_image')
+            country = request.form.get('country')
+            
+            update_data = {
+                'name': name,
+                'phone': phone,
+                'address': address,
+                'country': country
+            }
+            if profile_image:
+                update_data['profile_image'] = profile_image
+                
+            mongo.db.users.update_one({'email': user_email}, {'$set': update_data})
+            return redirect(url_for('main.profile'))
+
         user = mongo.db.users.find_one({'email': user_email})
         if user and '_id' in user:
             user['id'] = str(user['_id'])
@@ -1538,10 +1737,25 @@ def profile():
 
         user_data = user or {}
         try:
-            stores_cursor = mongo.db.stores.find({}, {'name': 1}).limit(200)
-            stores_options = sorted({s.get('name') for s in stores_cursor if s.get('name')})
+            # Use a more descriptive variable for the template
+            stores_cursor = mongo.db.stores.find({}, {'name': 1, 'image': 1, 'logo': 1}).limit(200)
+            seen_names = set()
+            stores_list = []
+            for s in stores_cursor:
+                name = s.get('name')
+                if name and name not in seen_names:
+                    seen_names.add(name)
+                    stores_list.append({
+                        'name': name,
+                        'id': str(s['_id']),
+                        'image': s.get('image') or s.get('logo'),
+                        # Simplified count for profile view
+                        'count': mongo.db.products.count_documents({'store': name})
+                    })
+            stores_list.sort(key=lambda x: x['name'])
         except Exception:
-            stores_options = []
+            stores_list = []
+            
         try:
             from collections import Counter
             all_prods = list(mongo.db.products.find({}, {'category': 1}))
@@ -1551,12 +1765,12 @@ def profile():
             category_options = []
     else:
         user_data = getattr(m, 'users', {}).get('user1@example.com', {})
-        stores_options = [s.get('name') for s in getattr(m, 'stores', []) if s.get('name')]
+        stores_list = [{'name': s.get('name'), 'count': 0} for s in getattr(m, 'stores', []) if s.get('name')]
         from collections import Counter
         cat_counts = Counter(p.get('category') for p in getattr(m, 'products', []) if p.get('category'))
         category_options = sorted(cat_counts.keys(), key=lambda c: (-cat_counts[c], c.lower()))
 
-    return render_template('profile.html', user_data=user_data, stores_options=stores_options, category_options=category_options)
+    return render_template('profile.html', user_data=user_data, stores=stores_list, category_options=category_options)
 
 
 @main_bp.route('/admin/status')
@@ -2154,36 +2368,43 @@ def mark_notifications_read():
 
 @main_bp.route('/api/save-preferences', methods=['POST'])
 def save_preferences():
-    """Save user preferences"""
+    """Save user preferences without overwriting existing ones"""
     try:
         user_email = session.get('user')
         if not user_email:
             return jsonify({'error': 'Not logged in'}), 401
         
         data = request.get_json() or {}
-        preferred_stores = [s for s in data.get('preferred_stores', []) if s]
-        favorite_categories = [c for c in data.get('favorite_categories', []) if c]
-        prefs = {
-            'preferred_stores': preferred_stores,
-            'favorite_categories': favorite_categories
-        }
-        
         db = get_db()
         if db is None:
             return jsonify({'error': 'Database not available'}), 500
         
+        update_doc = {}
+        
+        # Build update document based on provided keys
+        if 'preferred_stores' in data:
+            preferred_stores = [s for s in data.get('preferred_stores', []) if s]
+            update_doc['preferred_stores'] = preferred_stores
+            update_doc['preferences.preferred_stores'] = preferred_stores
+            
+        if 'preferred_categories' in data:
+            preferred_categories = [c for c in data.get('preferred_categories', []) if c]
+            update_doc['preferred_categories'] = preferred_categories
+            update_doc['preferences.preferred_categories'] = preferred_categories
+            
+        if not update_doc:
+            return jsonify({'success': True, 'message': 'No changes provided'})
+            
         db.users.update_one(
             {'email': user_email},
-            {'$set': {
-                'preferences': prefs,
-                'preferred_stores': preferred_stores,
-                'favorite_categories': favorite_categories
-            }}
+            {'$set': update_doc}
         )
         
-        return jsonify({'success': True, 'preferences': prefs})
+        return jsonify({'success': True, 'updated_fields': list(update_doc.keys())})
     
     except Exception as e:
+        print(f"Error saving preferences: {e}")
+        return jsonify({'error': str(e)}), 500
         return jsonify({'error': str(e)}), 500
 
 

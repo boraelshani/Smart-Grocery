@@ -65,7 +65,7 @@ Data: Fetches all products and their store prices from database
     }
 
     .hero-section {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
       color: white;
       padding: 4rem 0;
     }
@@ -78,17 +78,18 @@ Data: Fetches all products and their store prices from database
     }
 
     .product-card-inner {
-      border: none;
+      border: 2px solid transparent;
       border-radius: 15px;
       overflow: hidden;
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       background: white;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     }
 
     .product-card-inner:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+      transform: translateY(-8px);
+      box-shadow: 0 20px 40px rgba(124, 58, 237, 0.12);
+      border-color: var(--premium-purple);
     }
 
     .product-image {
@@ -136,8 +137,8 @@ Data: Fetches all products and their store prices from database
     }
 
     .store-item.selected {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      border-color: #667eea;
+      background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+      border-color: #7c3aed;
       color: white;
     }
 
@@ -155,13 +156,13 @@ Data: Fetches all products and their store prices from database
 
     .btn-go-store:hover {
       background: #e0e0ff !important;
-      border-color: #667eea !important;
+      border-color: #7c3aed !important;
       transform: scale(1.1);
       transition: all 0.2s ease;
     }
 
     .btn-add-cart {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
       border: none;
       color: white;
       border-radius: 12px;
@@ -222,12 +223,12 @@ Data: Fetches all products and their store prices from database
 
     .form-control:focus,
     .form-select:focus {
-      border-color: #667eea;
+      border-color: #7c3aed;
       box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
     }
 
     .badge-filter {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
       padding: 8px 14px;
       border-radius: 20px;
       font-weight: 500;
@@ -275,7 +276,7 @@ Data: Fetches all products and their store prices from database
     }
 
     .category-chip.active {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
       color: white;
       border-color: transparent;
       box-shadow: 0 6px 16px rgba(102, 126, 234, 0.3);
@@ -314,39 +315,59 @@ Data: Fetches all products and their store prices from database
 </head>
 
 <body>
-  <!-- Navbar -->
-  <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
+  <!-- Navigation -->
+  <nav class="navbar navbar-expand-lg sticky-top">
     <div class="container">
-      <a class="navbar-brand fw-bold" href="{{ url_for('main.home') }}" style="font-size: 1.5rem; color: #667eea;">
-        <i class="bi bi-cart-check-fill me-2"></i>Smart Grocery
+      <a class="navbar-brand d-flex align-items-center" href="{{ url_for('main.home') }}">
+        <div class="brand-icon me-3" style="background: linear-gradient(135deg, var(--premium-purple), var(--premium-indigo)); width: 44px; height: 44px; border-radius: 14px; display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 8px 16px -4px rgba(124, 58, 237, 0.3);">
+          <i class="bi bi-cart-check-fill fs-5"></i>
+        </div>
+        <span>Smart<span style="color: var(--premium-dark)">Grocery</span></span>
       </a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
         <span class="navbar-toggler-icon"></span>
       </button>
       <div class="collapse navbar-collapse" id="navbarNav">
         {% set cart_count = shopping_list_count or 0 %}
-        <ul class="navbar-nav ms-auto">
-          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.home') }}"><i class="bi bi-house-door"></i>
-              Home</a></li>
-          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.stores_page') }}"><i class="bi bi-shop"></i>
-              Stores</a></li>
-          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.featured_deals_page') }}"><i
-                class="bi bi-tags"></i> Deals</a></li>
-          <li class="nav-item"><a class="nav-link active fw-semibold" href="{{ url_for('main.compare_prices') }}"><i
-                class="bi bi-bar-chart"></i> Compare</a></li>
+        <ul class="navbar-nav ms-auto align-items-center">
           <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('main.shopping_list') }}">
-              <i class="bi bi-list-check"></i> Lists
+            <a class="nav-link" href="{{ url_for('main.home') }}">
+              <i class="bi bi-house-door me-1"></i> Home
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('main.notifications_page') }}">
-              <i class="bi bi-bell"></i> Notifications
+            <a class="nav-link" href="{{ url_for('main.stores_page') }}">
+              <i class="bi bi-shop me-1"></i> Stores
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('main.profile') }}">
-              <i class="bi bi-person-circle"></i> Profile
+            <a class="nav-link" href="{{ url_for('main.featured_deals_page') }}">
+              <i class="bi bi-tags me-1"></i> Deals
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link active" href="{{ url_for('main.compare_prices') }}">
+              <i class="bi bi-arrow-left-right me-1"></i> Compare
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link d-flex align-items-center" href="{{ url_for('main.shopping_list') }}">
+              <i class="bi bi-list-check me-1"></i> Lists
+              {% if cart_count > 0 %}
+              <span class="ms-1 badge rounded-pill bg-danger" style="font-size: 0.7rem; padding: 0.4em 0.6em;">
+                {{ cart_count }}
+              </span>
+              {% endif %}
+            </a>
+          </li>
+          <li class="nav-item ms-lg-1">
+            <a class="nav-link nav-icon-btn" href="{{ url_for('main.notifications_page') }}" aria-label="Notifications">
+              <i class="bi bi-bell fs-5"></i>
+            </a>
+          </li>
+          <li class="nav-item ms-lg-2">
+            <a class="nav-link nav-icon-btn nav-profile-btn" href="{{ url_for('main.profile') }}" aria-label="User Profile">
+              <i class="bi bi-person-circle fs-5"></i>
             </a>
           </li>
         </ul>
@@ -429,7 +450,7 @@ Data: Fetches all products and their store prices from database
               </div>
 
               <div class="d-flex gap-2 mt-3">
-                <button id="apply-filters" class="btn flex-grow-1" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                <button id="apply-filters" class="btn flex-grow-1" style="background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); 
                              color: white; 
                              border: none; 
                              border-radius: 8px; 
@@ -536,7 +557,7 @@ Data: Fetches all products and their store prices from database
                         style="width: 24px; height: 24px; object-fit: contain; border-radius: 4px; background: white; padding: 2px; border: 1px solid #eee;"
                         onerror="this.src='{{ url_for('static', filename='placeholder.svg') }}'">
                       <div class="lh-sm overflow-hidden">
-                        <span class="fw-semibold text-truncate d-block" style="color: #667eea;">{{ s.get('store') or
+                        <span class="fw-semibold text-truncate d-block" style="color: #7c3aed;">{{ s.get('store') or
                           s.get('name')
                           }}</span>
                       </div>
@@ -550,7 +571,7 @@ Data: Fetches all products and their store prices from database
                       {% if s.get('url') %}
                       <a href="{{ s.get('url') }}" target="_blank" rel="noopener noreferrer"
                         class="btn btn-sm btn-go-store p-1" title="Go to official store"
-                        style="background: #f0f0ff; border-radius: 6px; color: #667eea; border: 1px solid #dadaff; line-height: 1;">
+                        style="background: #f0f0ff; border-radius: 6px; color: #7c3aed; border: 1px solid #dadaff; line-height: 1;">
                         <i class="bi bi-box-arrow-up-right" style="font-size: 0.85rem;"></i>
                       </a>
                       {% endif %}
@@ -569,17 +590,18 @@ Data: Fetches all products and their store prices from database
                   <i class="bi bi-clock-history"></i> Expires in {{ p.get('expires') }}
                 </p>
                 {% endif %}
-                <div class="d-grid gap-2">
+                <div class="d-flex flex-column gap-2">
                   <button type="button" class="btn btn-premium btn-premium-add w-100"
                     data-name="{{ p.get('name') or p.get('title','') }}" data-id="{{ p.get('id') }}"
                     data-price="{{ (p.get('cheapest') and p.get('cheapest').get('price')) or p.get('price','N/A') }}"
-                    data-initial-price="{{ (p.get('cheapest') and p.get('cheapest').get('price')) or p.get('price','N/A') }}"
                     data-image="{{ prefer_processed(p.get('image') or (p.get('images') and p.get('images')[0]) or url_for('static', filename='placeholder.svg')) }}"
-                    data-store="">
-                    <i class="bi bi-cart-plus-fill"></i> Add to List
+                    data-store=""
+                    onclick="event.stopPropagation(); window.showListSelector(this);">
+                    <i class="bi bi-cart-plus-fill"></i>Add to List
                   </button>
                   <a href="{{ url_for('main.product_detail', product_id=p.get('id')) }}"
-                    class="btn btn-premium btn-premium-view w-100">
+                    class="btn btn-premium btn-premium-view w-100"
+                    onclick="event.stopPropagation();">
                     <i class="bi bi-info-circle-fill"></i> View Details
                   </a>
                 </div>
@@ -712,7 +734,7 @@ Data: Fetches all products and their store prices from database
           <div class="modal-content"
             style="border-radius: 14px; border: none; box-shadow: 0 12px 40px rgba(0,0,0,0.15);">
             <div class="modal-header"
-              style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 14px 14px 0 0; padding: 1.1rem 1.4rem;">
+              style="background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); color: white; border: none; border-radius: 14px 14px 0 0; padding: 1.1rem 1.4rem;">
               <h6 class="modal-title mb-0" id="listSelectorLabel">
                 <i class="bi bi-cart-plus me-2"></i>Add to Shopping List
               </h6>
@@ -775,7 +797,7 @@ Data: Fetches all products and their store prices from database
         <div class="modal-dialog modal-dialog-centered modal-lg">
           <div class="modal-content overflow-hidden border-0 shadow-lg" style="border-radius: 20px;">
             <div class="modal-header border-0 pb-0"
-              style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+              style="background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);">
               <h5 class="modal-title product-modal-title text-white fw-bold py-2 mt-2" id="productModalLabel">
                 <i class="bi bi-info-circle me-2"></i>Product Details
               </h5>

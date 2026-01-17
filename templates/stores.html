@@ -25,7 +25,7 @@ Data: Fetches store list and products by store from database
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
     .hero-gradient {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
       color: white;
       margin-top: 0;
       padding-top: 3.5rem;
@@ -50,25 +50,48 @@ Data: Fetches store list and products by store from database
     }
 
     .store-card {
-      border: none;
+      border: 2px solid transparent;
       border-radius: 20px;
       overflow: hidden;
-      transition: all 0.3s ease;
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
       background: white;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
       height: 100%;
+      position: relative;
     }
 
     .store-card:hover {
-      transform: translateY(-8px);
-      box-shadow: 0 12px 30px rgba(102, 126, 234, 0.25);
+      transform: translateY(-10px) scale(1.02);
+      box-shadow: 0 20px 40px rgba(102, 126, 234, 0.15);
+      border-color: var(--premium-purple);
     }
 
     .store-card-link {
       text-decoration: none;
       color: inherit;
-      display: block;
+      display: flex;
+      flex-direction: column;
       height: 100%;
+    }
+
+    .store-card-link:hover {
+      color: inherit;
+    }
+
+    .product-count-badge {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(8px);
+      padding: 0.5rem 0.9rem;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      font-weight: 800;
+      color: #7c3aed;
+      box-shadow: 0 4px 15px rgba(124, 58, 237, 0.15);
+      z-index: 3;
+      border: 1px solid rgba(124, 58, 237, 0.1);
     }
 
     .store-image-wrapper {
@@ -77,9 +100,10 @@ Data: Fetches store list and products by store from database
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 20px;
+      padding: 30px;
       position: relative;
       overflow: hidden;
+      border-bottom: 1px solid #f0f0f0;
     }
 
     .store-image-wrapper::before {
@@ -106,14 +130,20 @@ Data: Fetches store list and products by store from database
     }
 
     .store-name {
-      font-size: 1.4rem;
-      font-weight: 700;
-      color: #2d3748;
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: #1a202c;
       margin-bottom: 0.5rem;
+      letter-spacing: -0.02em;
     }
 
     .store-location {
-      display: none;
+      color: #718096;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      margin-bottom: 1rem;
     }
 
     .store-hours {
@@ -122,16 +152,18 @@ Data: Fetches store list and products by store from database
       display: inline-flex;
       align-items: center;
       gap: 0.25rem;
+      font-weight: 600;
     }
 
     .store-badge {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
       color: white;
       border: none;
       padding: 0.4rem 0.8rem;
       border-radius: 20px;
       font-size: 0.8rem;
       font-weight: 600;
+      box-shadow: 0 4px 10px rgba(102, 126, 234, 0.2);
     }
 
     .search-box {
@@ -144,7 +176,7 @@ Data: Fetches store list and products by store from database
     }
 
     .search-box:focus {
-      border-color: #667eea;
+      border-color: #7c3aed;
       box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
     }
 
@@ -176,44 +208,59 @@ Data: Fetches store list and products by store from database
 </head>
 
 <body>
-  <!-- Navbar -->
-  <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
+  <!-- Navigation -->
+  <nav class="navbar navbar-expand-lg sticky-top">
     <div class="container">
-      <a class="navbar-brand fw-bold" href="{{ url_for('main.home') }}" style="font-size: 1.5rem; color: #667eea;">
-        <i class="bi bi-cart-check-fill me-2"></i>Smart Grocery
+      <a class="navbar-brand d-flex align-items-center" href="{{ url_for('main.home') }}">
+        <div class="brand-icon me-3" style="background: linear-gradient(135deg, var(--premium-purple), var(--premium-indigo)); width: 44px; height: 44px; border-radius: 14px; display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 8px 16px -4px rgba(124, 58, 237, 0.3);">
+          <i class="bi bi-cart-check-fill fs-5"></i>
+        </div>
+        <span>Smart<span style="color: var(--premium-dark)">Grocery</span></span>
       </a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
         <span class="navbar-toggler-icon"></span>
       </button>
       <div class="collapse navbar-collapse" id="navbarNav">
         {% set cart_count = shopping_list_count or 0 %}
-        <ul class="navbar-nav ms-auto">
-          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.home') }}"><i class="bi bi-house-door"></i>
-              Home</a></li>
-          <li class="nav-item"><a class="nav-link active fw-semibold" href="{{ url_for('main.stores_page') }}"><i
-                class="bi bi-shop"></i> Stores</a></li>
-          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.featured_deals_page') }}"><i
-                class="bi bi-tags"></i> Deals</a></li>
-          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.compare_prices') }}"><i
-                class="bi bi-bar-chart"></i> Compare</a></li>
+        <ul class="navbar-nav ms-auto align-items-center">
           <li class="nav-item">
-            <a class="nav-link position-relative" href="{{ url_for('main.shopping_list') }}">
-              <i class="bi bi-list-check"></i> Lists
-              <span id="shopping-list-count"
-                class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger {{ 'd-none' if not cart_count else '' }}"
-                style="font-size: 0.65rem;">
-                {{ cart_count if cart_count else '' }}
+            <a class="nav-link" href="{{ url_for('main.home') }}">
+              <i class="bi bi-house-door me-1"></i> Home
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link active" href="{{ url_for('main.stores_page') }}">
+              <i class="bi bi-shop me-1"></i> Stores
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('main.featured_deals_page') }}">
+              <i class="bi bi-tags me-1"></i> Deals
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('main.compare_prices') }}">
+              <i class="bi bi-arrow-left-right me-1"></i> Compare
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link d-flex align-items-center" href="{{ url_for('main.shopping_list') }}">
+              <i class="bi bi-list-check me-1"></i> Lists
+              {% if cart_count > 0 %}
+              <span class="ms-1 badge rounded-pill bg-danger" style="font-size: 0.7rem; padding: 0.4em 0.6em;">
+                {{ cart_count }}
               </span>
+              {% endif %}
             </a>
           </li>
-          <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('main.notifications_page') }}">
-              <i class="bi bi-bell"></i> Notifications
+          <li class="nav-item ms-lg-1">
+            <a class="nav-link nav-icon-btn" href="{{ url_for('main.notifications_page') }}" aria-label="Notifications">
+              <i class="bi bi-bell fs-5"></i>
             </a>
           </li>
-          <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('main.profile') }}">
-              <i class="bi bi-person-circle"></i> Profile
+          <li class="nav-item ms-lg-2">
+            <a class="nav-link nav-icon-btn nav-profile-btn" href="{{ url_for('main.profile') }}" aria-label="User Profile">
+              <i class="bi bi-person-circle fs-5"></i>
             </a>
           </li>
         </ul>
@@ -242,26 +289,25 @@ Data: Fetches store list and products by store from database
       {% if stores %}
       {% for store in stores %}
       <div class="col-12 col-md-6 col-lg-4 col-xl-3">
-        <div class="store-card h-100">
+        <div class="store-card h-100" style="cursor: pointer;" onclick="window.location.href='{{ url_for('main.store_products_page', store_name=store.name) }}'">
+          {% if store.product_count is defined %}
+          <div class="product-count-badge">
+            <i class="bi bi-box-seam me-1"></i> {{ store.product_count }} Products
+          </div>
+          {% endif %}
+          
           <div class="store-image-wrapper">
             <img
               src="{{ prefer_processed(store.image or 'https://via.placeholder.com/200x150') or (store.image or 'https://via.placeholder.com/200x150') }}"
               alt="{{ store.name }}">
           </div>
-          <div class="store-card-body d-flex flex-column">
+          <div class="store-card-body d-flex flex-column flex-grow-1">
             <h3 class="store-name">{{ store.name }}</h3>
 
-            {% if store.location or store.city or store.address %}
-            <div class="store-location">
-              <i class="bi bi-geo-alt-fill"></i>
-              {{ store.location or store.city or store.address }}
-            </div>
-            {% endif %}
-
-            <div class="d-flex justify-content-between align-items-center mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-4 mt-2">
               {% if store.hours %}
               <span class="store-hours">
-                <i class="bi bi-clock-fill"></i>
+                <i class="bi bi-clock-fill me-1"></i>
                 {{ store.hours }}
               </span>
               {% else %}
@@ -273,14 +319,11 @@ Data: Fetches store list and products by store from database
               {% endif %}
             </div>
 
-            <div class="mt-auto d-grid gap-2">
-              <a href="{{ url_for('main.store_products_page', store_name=store.name) }}"
-                class="btn btn-premium btn-premium-add w-100">
-                <i class="bi bi-grid-3x3-gap-fill"></i> Browse Catalog
-              </a>
-              <a href="{{ url_for('main.store_products_page', store_name=store.name) }}"
-                class="btn btn-premium btn-premium-view w-100">
-                <i class="bi bi-info-circle-fill"></i> Store Details
+            <div class="mt-auto">
+              <a href="{{ url_for('main.store_products_page', store_name=store.name) }}" 
+                 class="btn btn-premium btn-premium-add w-100" style="padding: 0.75rem 1rem; font-size: 1rem;"
+                 onclick="event.stopPropagation();">
+                <i class="bi bi-grid-3x3-gap-fill me-2"></i> Browse Products
               </a>
             </div>
           </div>

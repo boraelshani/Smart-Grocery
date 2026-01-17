@@ -15,6 +15,15 @@ Provides styling for:
 /* ═══════════════════════════════════════════════════════════════════════════ */
 /* RESET & BASE STYLES */
 /* ═══════════════════════════════════════════════════════════════════════════ */
+:root {
+  --premium-purple: #7c3aed;
+  --premium-indigo: #6366f1;
+  --premium-violet: #8b5cf6;
+  --premium-dark: #1e1b4b;
+  --glass-white: rgba(255, 255, 255, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.2);
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -49,6 +58,17 @@ input[type=number] {
   appearance: textfield;
 }
 
+/* Clamping product descriptions to exactly 2 lines for visual consistency */
+.product-description-clamp {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-height: 2.8em; /* Ensures consistent card height if description is short */
+  line-height: 1.4;
+}
+
 .product-link:hover {
   filter: brightness(0.95);
   transition: all 0.2s ease;
@@ -57,20 +77,144 @@ input[type=number] {
 /* ═══════════════════════════════════════════════════════════════════════════ */
 /* NAVIGATION BAR - Purple gradient with responsive design */
 /* ═══════════════════════════════════════════════════════════════════════════ */
+/* Modern Navbar */
 .navbar {
-  background: linear-gradient(135deg, #7c3aed, #6d28d9) !important;
-  box-shadow: 0 2px 10px rgba(124, 58, 237, 0.2);
+  background: rgba(255, 255, 255, 0.72) !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(124, 58, 237, 0.1) !important;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05) !important;
+  padding: 0.8rem 0 !important;
+  transition: all 0.3s ease;
 }
 
 .navbar-brand {
-  color: white !important;
-  font-size: 1.5rem;
-  font-weight: 700;
+  color: #7c3aed !important;
+  font-weight: 900 !important;
+  font-size: 1.6rem !important;
+  letter-spacing: -1.5px !important;
+  display: flex !important;
+  align-items: center !important;
 }
 
-.navbar-toggler {
-  border: none;
-  padding: 0.25rem 0.75rem;
+.navbar-brand span {
+  color: var(--premium-purple) !important;
+}
+
+.navbar-brand span span {
+  color: var(--premium-dark) !important;
+}
+
+.nav-link {
+  color: #1e1b4b !important;
+  font-weight: 700 !important;
+  padding: 0.6rem 1.2rem !important;
+  font-size: 1rem !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  border-radius: 12px !important;
+}
+
+.nav-link:hover {
+  color: #7c3aed !important;
+  background: rgba(124, 58, 237, 0.05) !important;
+  transform: translateY(-2px);
+}
+
+.nav-link.active {
+  color: #7c3aed !important;
+  background: rgba(124, 58, 237, 0.1) !important;
+}
+
+/* Scroll Containers - Global Layout Fix */
+.scroll-container {
+  position: relative;
+  margin: 0 -15px;
+}
+
+.scroll-wrapper {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  overflow-x: auto !important;
+  gap: 24px;
+  padding: 20px 5px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scroll-wrapper::-webkit-scrollbar {
+  display: none;
+}
+
+.product-card-horizontal {
+  min-width: 320px;
+  max-width: 320px;
+  background: white;
+  border-radius: 24px;
+  border: 1px solid #f1f5f9;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.card-image-wrapper {
+  height: 200px;
+  width: 100%;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 20px;
+  background: white;
+}
+
+.card-image-wrapper img {
+  max-height: 100%;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+.product-card-body {
+  padding: 1.5rem;
+  background: #fbfcfe;
+  flex-grow: 1;
+}
+
+.product-name {
+  font-weight: 800;
+  color: #1e1b4b;
+  margin-bottom: 0.5rem;
+  font-size: 1.1rem;
+}
+
+.category-card {
+  min-width: 190px;
+  height: 140px;
+  background: white;
+  border-radius: 20px;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border: 1px solid #f1f5f9;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.category-icon {
+  font-size: 2.5rem !important;
+  margin-bottom: 0.5rem;
+}
+
+.category-name {
+  font-weight: 700;
+  color: #1e1b4b;
+}
+
+.category-card:hover {
+  background: #f5f3ff;
+  border-color: #7c3aed;
+  transform: translateY(-5px);
 }
 
 .navbar-toggler:focus {
@@ -79,21 +223,41 @@ input[type=number] {
 }
 
 .navbar-toggler-icon {
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='white' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2.5' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgb(124, 58, 237)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2.5' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e") !important;
 }
 
-.navbar-nav .nav-link {
-  color: rgba(255, 255, 255, 0.9) !important;
-  margin-left: 0.5rem;
-  margin-right: 0.5rem;
-  border-radius: 4px;
+/* User Profile & Icons */
+.nav-icon-btn {
+  background: #f8fafc;
+  border-radius: 14px;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #1e1b4b;
   transition: all 0.3s ease;
+  margin-left: 0.5rem;
+  border: 1px solid #f1f5f9;
 }
 
-.navbar-nav .nav-link:hover,
-.navbar-nav .nav-link.active {
+.nav-icon-btn:hover {
+  background: white;
+  color: #7c3aed;
+  box-shadow: 0 10px 15px -3px rgba(124, 58, 237, 0.1);
+  transform: translateY(-3px);
+  border-color: #e2e8f0;
+}
+
+.nav-profile-btn {
+  background: linear-gradient(135deg, #7c3aed, #6366f1);
   color: white !important;
-  background-color: rgba(255, 255, 255, 0.2);
+  border: none;
+}
+
+.nav-profile-btn:hover {
+  box-shadow: 0 10px 20px -5px rgba(124, 58, 237, 0.4);
+  transform: translateY(-3px) scale(1.05);
 }
 
 /* Search Bar Styles */
@@ -174,6 +338,8 @@ input[type=number] {
   background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%) !important;
   color: white !important;
   box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3) !important;
+  padding-top: 13px !important;
+  padding-bottom: 13px !important;
 }
 
 .btn-premium-add:hover {
@@ -188,25 +354,84 @@ input[type=number] {
   box-shadow: 0 4px 8px rgba(124, 58, 237, 0.2) !important;
 }
 
+/* Variant for Purple Backgrounds */
+.btn-premium-hero-add {
+  background: white !important;
+  color: #7c3aed !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
+  border: 2px solid white !important;
+}
+
+.btn-premium-hero-add:hover {
+  background: #f5f3ff !important;
+  color: #6d28d9 !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2) !important;
+}
+
+.text-premium-purple {
+  color: #7c3aed !important;
+}
+
+.btn-premium-purple {
+  background: #7c3aed !important;
+  color: #ffffff !important;
+  border-radius: 12px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  padding-top: 13px !important;
+  padding-bottom: 13px !important;
+}
+
+.btn-premium-purple:hover {
+  background: #5b21b6 !important;
+  color: white !important;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px -5px rgba(124, 58, 237, 0.4);
+}
+
+.btn-premium-outline {
+  background: transparent !important;
+  color: #7c3aed !important;
+  border: 2px solid #7c3aed !important;
+  border-radius: 12px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.btn-premium-outline:hover {
+  background: #7c3aed !important;
+  color: #ffffff !important;
+  transform: translateY(-2px);
+}
+
+.bg-soft-purple {
+  background-color: rgba(124, 58, 237, 0.08) !important;
+}
+
 /* Secondary "View Details" Style */
 .btn-premium-view {
-  background: #f5f3ff !important;
-  color: #7c3aed !important;
-  border: 1px solid #ddd6fe !important;
-  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.08) !important;
+  background: #f8fafc !important;
+  color: #64748b !important;
+  border: 1.5px solid #e2e8f0 !important;
+  border-radius: 12px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  padding-top: 4px !important;
+  padding-bottom: 4px !important;
 }
 
 .btn-premium-view:hover {
-  background: #ede9fe !important;
-  border-color: #c4b5fd !important;
-  color: #6d28d9 !important;
+  background: #64748b !important;
+  color: white !important;
+  border-color: #64748b !important;
   transform: translateY(-2px) !important;
-  box-shadow: 0 6px 16px rgba(124, 58, 237, 0.15) !important;
+  box-shadow: 0 10px 20px -5px rgba(100, 116, 139, 0.3) !important;
 }
 
 .btn-premium-view:active {
   transform: translateY(0) !important;
-  box-shadow: 0 2px 4px rgba(124, 58, 237, 0.05) !important;
+  box-shadow: 0 2px 4px rgba(100, 116, 139, 0.05) !important;
 }
 
 .btn-premium i {
@@ -1005,7 +1230,7 @@ input[type=number] {
 }
 
 .btn-add-cart {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
   border: none;
   color: white;
   border-radius: 10px;
@@ -1037,8 +1262,17 @@ input[type=number] {
   color: #dc2626 !important;
 }
 
-.btn.rounded-circle:active {
-  transform: scale(0.95);
+/* Global Favorite Button State */
+.btn-favorite.active {
+  color: #ff4757 !important;
+}
+
+.btn-favorite.active i::before {
+  content: "\f415"; /* Bootstrap Icon bi-heart-fill unicode */
+}
+
+.btn-favorite.active i {
+  color: #ff4757 !important;
 }
 
 /* Breadcrumb link hover underline effect */
@@ -1057,8 +1291,8 @@ input[type=number] {
 
 /* Modal Content Background - Strong Purple (Matches Create List Modal) */
 #globalListSelectorModal .modal-content {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border: 3px solid #667eea;
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+  border: 3px solid #7c3aed;
 }
 
 #globalListSelectorModal .modal-body {
@@ -1163,8 +1397,8 @@ input[type=number] {
 
 /* Modal Content Background - Strong Purple (Matches Create List Modal) */
 #globalListSelectorModal .modal-content {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border: 3px solid #667eea;
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+  border: 3px solid #7c3aed;
 }
 
 #globalListSelectorModal .modal-body {
