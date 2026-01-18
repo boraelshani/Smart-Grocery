@@ -64,17 +64,27 @@ Validates: Email and password against database with hashed passwords
         </li>
         <li class="nav-item">
           <a class="nav-link d-flex align-items-center" href="{{ url_for('main.shopping_list') }}">
-            <i class="bi bi-list-check me-1"></i> Lists
-            {% if cart_count > 0 %}
-            <span class="ms-1 badge rounded-pill bg-danger" style="font-size: 0.7rem; padding: 0.4em 0.6em;">
-              {{ cart_count }}
-            </span>
-            {% endif %}
+            <div class="position-relative me-1">
+              <i class="bi bi-list-check fs-5"></i>
+              {% if (shopping_list_count or 0) > 0 %}
+              <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem; min-width: 14px; height: 14px; display: flex; align-items: center; justify-content: center; transform: translate(25%, -180%) !important;">
+                {{ shopping_list_count }}
+              </span>
+              {% endif %}
+            </div>
+            Lists
           </a>
         </li>
         <li class="nav-item ms-lg-1">
-          <a class="nav-link nav-icon-btn" href="{{ url_for('main.notifications_page') }}" aria-label="Notifications">
-            <i class="bi bi-bell fs-5"></i>
+          <a class="nav-link nav-icon-btn d-flex align-items-center" href="{{ url_for('main.notifications_page') }}" aria-label="Notifications">
+            <div class="position-relative">
+              <i class="bi bi-bell fs-5"></i>
+              {% if (unread_notifications_count or 0) > 0 %}
+              <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem; min-width: 14px; height: 14px; display: flex; align-items: center; justify-content: center; transform: translate(25%, -180%) !important;">
+                {{ unread_notifications_count }}
+              </span>
+              {% endif %}
+            </div>
           </a>
         </li>
         <li class="nav-item ms-lg-2">

@@ -75,11 +75,47 @@ def add_or_update_product():
     set_doc = {k: v for k, v in data.items() if k != '_id'}
 
     try:
+        # Check for price drop if product exists
+        old_price = None
+        existing_product = mongo.db.products.find_one(key)
+        if existing_product:
+            old_price = existing_product.get('price_val')
+
         res = mongo.db.products.update_one(key, {'$set': set_doc}, upsert=True)
+        
+        # Determine if it's a new product or an update
+        action = 'updated'
+        product_id = str(existing_product['_id']) if existing_product else None
+        
         if getattr(res, 'upserted_id', None):
-            return jsonify({'status': 'ok', 'action': 'created', 'id': str(res.upserted_id)}), 201
-        else:
-            return jsonify({'status': 'ok', 'action': 'updated'}), 200
+            action = 'created'
+            product_id = str(res.upserted_id)
+            
+            # BROADCAST: New Product Alert
+            from models.notifications_model import NotificationsModel
+            nm = NotificationsModel()
+            nm.broadcast_notification({
+                'type': 'system',
+                'title': f"New Product: {set_doc.get('name')}",
+                'message': f"A new product has been added to our catalog: {set_doc.get('name')} for only €{set_doc.get('price_val', 0):.2f}!",
+                'product_id': product_id,
+                'priority': 'normal'
+            })
+        elif old_price and set_doc.get('price_val') and float(set_doc.get('price_val')) < float(old_price):
+            # BROADCAST: Price Drop Alert
+            from models.notifications_model import NotificationsModel
+            nm = NotificationsModel()
+            nm.broadcast_notification({
+                'type': 'price_drop',
+                'title': f"Price Drop: {set_doc.get('name')}",
+                'message': f"Price fell from €{old_price:.2f} to €{set_doc.get('price_val'):.2f}! Save money today.",
+                'product_id': product_id,
+                'priority': 'high',
+                'old_price': old_price,
+                'price': set_doc.get('price_val')
+            })
+
+        return jsonify({'status': 'ok', 'action': action, 'id': product_id}), 201 if action == 'created' else 200
     except Exception as e:
         return jsonify({'status': 'error', 'detail': str(e)}), 500
 
@@ -108,5 +144,40 @@ def db_info():
         cols = db.list_collection_names()
         counts = {c: db[c].count_documents({}) for c in cols}
         return jsonify({'db_name': name, 'collections': counts}), 200
+    except Exception as e:
+        return jsonify({'status': 'error', 'detail': str(e)}), 500
+
+
+@admin_bp.route('/featured-deal', methods=['POST'])
+def add_featured_deal():
+    """Add a new featured deal and notify all users."""
+    err = _require_token()
+    if err:
+        return err
+
+    if not request.is_json:
+        return jsonify({'status': 'error', 'detail': 'expected JSON body'}), 400
+
+    data = request.get_json()
+    if not data or 'title' not in data:
+        return jsonify({'status': 'error', 'detail': 'missing "title" in deal data'}), 400
+
+    try:
+        from models.featured_deals_model import FeaturedDealsModel
+        fdm = FeaturedDealsModel()
+        deal_id = fdm.insert_deal(data)
+
+        # BROADCAST: New Deal Alert
+        from models.notifications_model import NotificationsModel
+        nm = NotificationsModel()
+        nm.broadcast_notification({
+            'type': 'deal_alert',
+            'title': f"HOT DEAL: {data.get('title')}",
+            'message': f"New discount available: {data.get('description', 'Check out the new deal!')}",
+            'product_id': data.get('product_id'),
+            'priority': 'high'
+        })
+
+        return jsonify({'status': 'ok', 'action': 'created', 'id': deal_id}), 201
     except Exception as e:
         return jsonify({'status': 'error', 'detail': str(e)}), 500

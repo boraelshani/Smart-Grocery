@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupCompareHandlers();
   setupCompareFilters();
   setupPaginationSmoothTransition();
+  setupLogoutConfirmation();
 
   // Always hide product modal on page load (prevents unwanted popup on back)
   const productModalEl = document.getElementById('productModal');
@@ -39,6 +40,60 @@ window.addEventListener('pageshow', function (event) {
 function initializeBootstrapComponents() {
   const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
   tooltipTriggerList.map(function (tooltipTriggerEl) { return new bootstrap.Tooltip(tooltipTriggerEl); });
+}
+
+function setupLogoutConfirmation() {
+  // Use a capture phase listener on the document to intercept logout clicks
+  document.addEventListener('click', (e) => {
+    // If the click is inside our custom logout modal, let it happen naturally
+    if (e.target.closest('#customLogoutModal')) {
+      return;
+    }
+
+    const logoutBtn = e.target.closest('a[href*="/logout"]');
+    if (logoutBtn) {
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      
+      showLogoutModal(logoutBtn.href);
+      return false;
+    }
+  }, true); 
+}
+
+function showLogoutModal(logoutUrl) {
+  // Check if modal already exists
+  let modalElem = document.getElementById('customLogoutModal');
+  if (!modalElem) {
+    const modalHtml = `
+      <div class="modal fade" id="customLogoutModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+          <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+            <div class="modal-body text-center p-4">
+              <div class="mb-3">
+                <i class="bi bi-door-open text-danger" style="font-size: 3rem;"></i>
+              </div>
+              <h5 class="fw-bold mb-2">Wait! Logging out?</h5>
+              <p class="text-muted small mb-4">Are you sure you want to end your session?</p>
+              <div class="d-grid gap-2">
+                <a href="${logoutUrl}" class="btn btn-danger rounded-pill fw-bold py-2">Yes, Log Out</a>
+                <button type="button" class="btn btn-light rounded-pill fw-semibold py-2" data-bs-dismiss="modal">Stay Logged In</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>`;
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    modalElem = document.getElementById('customLogoutModal');
+  } else {
+    // Update the URL in case it's different
+    const confirmBtn = modalElem.querySelector('a.btn-danger');
+    if (confirmBtn) confirmBtn.href = logoutUrl;
+  }
+
+  const modal = new bootstrap.Modal(modalElem);
+  modal.show();
 }
 
 // Compare page: sort the rendered store list items by numeric price (client-side)
@@ -447,7 +502,7 @@ function setupSearchFunctionality() {
               <p class="card-text text-muted mb-2">${price}</p>
               <div class="d-flex gap-2">
                 <button class="btn btn-sm btn-info view-details-btn" data-bs-toggle="modal" data-bs-target="#productModal" data-title="${escapeHtml(title)}" data-price="${escapeHtml(price)}" data-store="${escapeHtml(store)}" data-image="${escapeHtml(img)}">View Details</button>
-                <button class="btn btn-sm btn-primary add-to-list-btn" data-id="${escapeHtml(id)}" data-name="${escapeHtml(title)}" data-price="${escapeHtml(price)}" data-image="${escapeHtml(img)}">Add to List</button>
+                <button class="btn btn-sm btn-primary add-to-list-btn" data-id="${escapeHtml(id)}" data-name="${escapeHtml(title)}" data-price="${escapeHtml(price)}" data-image="${escapeHtml(img)}" data-store="${escapeHtml(store)}">Add to List</button>
               </div>
             </div>
           </div>
@@ -1178,7 +1233,8 @@ function setupProductModalHandlers() {
 
     // Add to List button in search results or elsewhere (including Compare Page)
     if (target.classList && (target.classList.contains('add-to-list-btn') || target.closest('.add-to-list-btn') ||
-      target.classList.contains('btn-premium-add') || target.closest('.btn-premium-add'))) {
+      target.classList.contains('btn-premium-add') || target.closest('.btn-premium-add') ||
+      target.classList.contains('btn-premium-hero-add') || target.closest('.btn-premium-hero-add'))) {
       e.stopPropagation(); // Stop redirection
       e.preventDefault();
 

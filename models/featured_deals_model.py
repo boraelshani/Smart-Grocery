@@ -94,8 +94,38 @@ class FeaturedDealsModel:
 
     def insert_deal(self, doc: dict) -> str:
         # ADD NEW DEAL to database (admin only)
+        if 'created_at' not in doc:
+            from datetime import datetime
+            doc['created_at'] = datetime.utcnow()
         res = self.db.featured_deals.insert_one(doc)
-        return str(res.inserted_id)
+        deal_id = str(res.inserted_id)
+        
+        # BROADCAST NOTIFICATION to all users
+        try:
+            from models.notifications_model import NotificationsModel
+            from models.users_model import get_all_users
+            
+            nm = NotificationsModel()
+            users = get_all_users()
+            
+            for user in users:
+                user_email = user.get('email')
+                if not user_email:
+                    continue
+                
+                nm.create_notification({
+                    'user_email': user_email,
+                    'type': 'deal_alert',
+                    'title': 'New Featured Deal!',
+                    'message': f"A new deal on {doc.get('title', 'a product')} is now available.",
+                    'deal_id': deal_id,
+                    'action_url': f"/featured-deal/{deal_id}",
+                    'priority': 'normal'
+                })
+        except Exception as e:
+            print(f"Error sending broadcast notifications: {e}")
+            
+        return deal_id
 
     def update_deal(self, id_str: str, update_doc: dict) -> bool:
         # MODIFY DEAL in database (admin only)

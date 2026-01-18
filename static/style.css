@@ -79,50 +79,173 @@ input[type=number] {
 /* ═══════════════════════════════════════════════════════════════════════════ */
 /* Modern Navbar */
 .navbar {
-  background: rgba(255, 255, 255, 0.72) !important;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(124, 58, 237, 0.1) !important;
-  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05) !important;
+  background: #ffffff !important;
+  border-bottom: 1px solid #eef2f7 !important;
+  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08) !important;
   padding: 0.8rem 0 !important;
   transition: all 0.3s ease;
 }
 
 .navbar-brand {
-  color: #7c3aed !important;
-  font-weight: 900 !important;
-  font-size: 1.6rem !important;
-  letter-spacing: -1.5px !important;
+  color: #667eea !important;
+  font-weight: 800 !important;
+  font-size: 1.5rem !important;
+  letter-spacing: -0.5px !important;
   display: flex !important;
   align-items: center !important;
 }
 
-.navbar-brand span {
-  color: var(--premium-purple) !important;
+.navbar-brand i {
+  color: #667eea;
 }
 
-.navbar-brand span span {
-  color: var(--premium-dark) !important;
+/* ═══════════════════════════════════════════════════════════════════════════ */
+/* PREMIUM NAV ICON EFFECTS */
+/* ═══════════════════════════════════════════════════════════════════════════ */
+.nav-icon-link {
+  position: relative;
+  transition: all 0.3s ease !important;
+  border-radius: 12px;
+  padding: 8px 12px !important;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid transparent;
 }
 
-.nav-link {
-  color: #1e1b4b !important;
-  font-weight: 700 !important;
-  padding: 0.6rem 1.2rem !important;
-  font-size: 1rem !important;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-  border-radius: 12px !important;
-}
-
-.nav-link:hover {
+.nav-icon-link:hover {
+  background: rgba(124, 58, 237, 0.08) !important;
   color: #7c3aed !important;
-  background: rgba(124, 58, 237, 0.05) !important;
   transform: translateY(-2px);
 }
 
-.nav-link.active {
+.nav-icon-link.active {
+  background: rgba(124, 58, 237, 0.12) !important;
   color: #7c3aed !important;
-  background: rgba(124, 58, 237, 0.1) !important;
+}
+
+/* Special Profile Tab Purple Box */
+.nav-profile-box {
+  border: 2px solid #7c3aed !important;
+  background: #fdfbff !important;
+  padding: 6px 14px !important;
+  margin-left: 8px;
+}
+
+.nav-profile-box:hover {
+  background: #7c3aed !important;
+  color: white !important;
+}
+
+.nav-profile-box i {
+  color: #7c3aed;
+}
+
+.nav-profile-box:hover i {
+  color: white;
+}
+
+/* Premium Profile Buttons */
+.btn-edit-profile {
+  background: white;
+  color: #7c3aed;
+  border: 2px solid #7c3aed;
+  font-weight: 700;
+  padding: 8px 20px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-edit-profile:hover {
+  background: #7c3aed;
+  color: white;
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+  transform: translateY(-2px);
+}
+
+.btn-logout-premium {
+  background: #fff;
+  color: #ef4444;
+  border: 2px solid #ef4444;
+  font-weight: 700;
+  padding: 12px 40px;
+  transition: all 0.3s ease;
+  overflow: hidden;
+  position: relative;
+}
+
+.btn-logout-premium::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: #ef4444;
+  transition: all 0.3s ease;
+  z-index: 0;
+}
+
+.btn-logout-premium:hover {
+  color: #fff;
+}
+
+.btn-logout-premium:hover::before {
+  left: 0;
+}
+
+.btn-logout-premium span, .btn-logout-premium i {
+  position: relative;
+  z-index: 1;
+}
+
+/* Modal Enhancements */
+.modal-confirm-logout .modal-content {
+  border: none;
+  border-radius: 24px;
+  overflow: hidden;
+}
+
+.modal-confirm-logout .modal-header {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: none;
+}
+
+.logout-icon-circle {
+  width: 80px;
+  height: 80px;
+  background: #fee2e2;
+  color: #ef4444;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+}
+
+.nav-link {
+  color: #4a5568 !important;
+  font-weight: 600 !important;
+  padding: 0.6rem 1rem !important;
+  font-size: 1rem !important;
+  transition: all 0.2s ease !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+.nav-link i {
+  font-size: 1.1rem;
+}
+
+.nav-link:hover {
+  color: #667eea !important;
+  background: rgba(102, 126, 234, 0.05) !important;
+}
+
+.nav-link.active {
+  color: #667eea !important;
+  font-weight: 700 !important;
 }
 
 /* Scroll Containers - Global Layout Fix */
@@ -710,8 +833,12 @@ input[type=number] {
 .pill {
   display: inline-flex;
   align-items: center;
-  padding: 4px 8px;
+  padding: 2px 6px;
   line-height: 1.2;
+}
+
+.navbar .badge.rounded-pill {
+  padding: 0 !important;
 }
 
 /* ensure left-justified layout on summary row */

@@ -15,12 +15,20 @@ import sys
 def ensure_venv():
     """If not running in venv, re-execute using the venv's interpreter."""
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    venv_python = os.path.join(current_dir, 'venv', 'bin', 'python')
+    
+    # Path handling for both Windows and Linux/Mac
+    if sys.platform == "win32":
+        venv_python = os.path.join(current_dir, 'venv', 'Scripts', 'python.exe')
+    else:
+        venv_python = os.path.join(current_dir, 'venv', 'bin', 'python')
     
     # Check if we are already running the venv python
     if os.path.exists(venv_python) and sys.executable != venv_python:
         print(f"INFO: Auto-switching to virtual environment: {venv_python}")
-        os.execv(venv_python, [venv_python] + sys.argv)
+        try:
+            os.execv(venv_python, [venv_python] + sys.argv)
+        except Exception as e:
+            print(f"WARNING: Venv auto-switch failed ({e}). Continuing with current interpreter.")
 
 ensure_venv()
 
@@ -106,29 +114,39 @@ app.register_blueprint(admin_bp)
 
 
 @app.context_processor
-def inject_shopping_list_count():
-    """Expose a shopping list count for nav badges; only shows count for new items since last viewing."""
-    count = 0
+def inject_navbar_data():
+    """Expose dynamic navbar data (counts for shopping lists and notifications) to all templates."""
+    shopping_list_count = 0
+    unread_notifications_count = 0
     try:
         email = session.get('user')
         if email:
-            from models.users_model import get_user_lists
-            data = get_user_lists(email) or {}
-            lists = data.get('lists', []) or []
-            total = 0
-            for lst in lists:
-                items = lst.get('items', []) or []
-                total += sum(1 for it in items if not (isinstance(it, dict) and it.get('purchased')))
-            
-            # Only show badge if count has increased since last viewing
-            last_viewed = session.get('last_viewed_list_count', 0)
-            if total > last_viewed:
-                count = total - last_viewed
-            else:
-                count = 0
+            from utils.db import mongo
+            db = getattr(mongo, 'db', None)
+            if db is not None:
+                # 1. Calculate Unread Notifications Count
+                from models.notifications_model import get_unread_count
+                unread_notifications_count = get_unread_count(email)
+                
+                # 2. Calculate Shopping List Count (New items only logic)
+                from models.users_model import get_user_lists
+                data = get_user_lists(email) or {}
+                lists = data.get('lists', []) or []
+                total = 0
+                for lst in lists:
+                    items = lst.get('items', []) or []
+                    total += sum(1 for it in items if not (isinstance(it, dict) and it.get('purchased')))
+                
+                last_viewed = session.get('last_viewed_list_count', 0)
+                if total > last_viewed:
+                    shopping_list_count = total - last_viewed
     except Exception:
-        count = 0
-    return {'shopping_list_count': count}
+        pass
+        
+    return {
+        'shopping_list_count': shopping_list_count,
+        'unread_notifications_count': unread_notifications_count
+    }
 
 
 # Template helper: return image URL as-is (processed image functionality removed)
@@ -198,4 +216,5 @@ def debug_mongo():
 
 
 if __name__ == '__main__':
-    app.run(debug=False, use_reloader=False)
+    # use_reloader=False prevents WinError 10038 on some Windows environments
+    app.run(debug=True, use_reloader=False, port=5000)

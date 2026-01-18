@@ -112,58 +112,64 @@ Data: Fetches featured deals from database
 
 <body>
   <!-- Navigation -->
-  <nav class="navbar navbar-expand-lg sticky-top">
+        <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
     <div class="container">
-      <a class="navbar-brand d-flex align-items-center" href="{{ url_for('main.home') }}">
-        <div class="brand-icon me-3" style="background: linear-gradient(135deg, var(--premium-purple), var(--premium-indigo)); width: 44px; height: 44px; border-radius: 14px; display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 8px 16px -4px rgba(124, 58, 237, 0.3);">
-          <i class="bi bi-cart-check-fill fs-5"></i>
-        </div>
-        <span>Smart<span style="color: var(--premium-dark)">Grocery</span></span>
+      <a class="navbar-brand fw-bold" href="{{ url_for('main.home') }}" style="font-size: 1.5rem; color: #667eea !important;">
+        <i class="bi bi-cart-check-fill me-2"></i>Smart Grocery
       </a>
-      <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
         <span class="navbar-toggler-icon"></span>
       </button>
       <div class="collapse navbar-collapse" id="navbarNav">
-        {% set cart_count = shopping_list_count or 0 %}
         <ul class="navbar-nav ms-auto align-items-center">
           <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('main.home') }}">
-              <i class="bi bi-house-door me-1"></i> Home
+            <a class="nav-link {% if request.endpoint == 'main.home' %}active fw-semibold{% endif %}" href="{{ url_for('main.home') }}">
+              <i class="bi bi-house-door"></i> Home
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('main.stores_page') }}">
-              <i class="bi bi-shop me-1"></i> Stores
+            <a class="nav-link {% if 'stores' in request.path %}active fw-semibold{% endif %}" href="{{ url_for('main.stores_page') }}">
+              <i class="bi bi-shop"></i> Stores
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link active" href="{{ url_for('main.featured_deals_page') }}">
-              <i class="bi bi-tags me-1"></i> Deals
+            <a class="nav-link {% if 'featured-deals' in request.path %}active fw-semibold{% endif %}" href="{{ url_for('main.featured_deals_page') }}">
+              <i class="bi bi-tags"></i> Deals
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('main.compare_prices') }}">
-              <i class="bi bi-arrow-left-right me-1"></i> Compare
+            <a class="nav-link {% if 'compare' in request.path %}active fw-semibold{% endif %}" href="{{ url_for('main.compare_prices') }}">
+              <i class="bi bi-arrow-left-right"></i> Compare
             </a>
           </li>
+          <li class="nav-item me-lg-3">
+            <a class="nav-link d-flex align-items-center {% if 'shopping-list' in request.path %}active fw-semibold{% endif %}" href="{{ url_for('main.shopping_list') }}">
+              <div class="position-relative me-1">
+                <i class="bi bi-list-check fs-5"></i>
+                {% if (shopping_list_count or 0) > 0 %}
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem; min-width: 14px; height: 14px; display: flex; align-items: center; justify-content: center; transform: translate(25%, -110%) !important;">
+                  {{ shopping_list_count }}
+                </span>
+                {% endif %}
+              </div>
+              Lists
+            </a>
+          </li>
+          
+          <!-- Icon-only Menu Items -->
           <li class="nav-item">
-            <a class="nav-link d-flex align-items-center" href="{{ url_for('main.shopping_list') }}">
-              <i class="bi bi-list-check me-1"></i> Lists
-              {% if cart_count > 0 %}
-              <span class="ms-1 badge rounded-pill bg-danger" style="font-size: 0.7rem; padding: 0.4em 0.6em;">
-                {{ cart_count }}
+            <a class="nav-link nav-icon-link px-2 position-relative {% if 'notifications' in request.path %}active{% endif %}" href="{{ url_for('main.notifications_page') }}" title="Notifications">
+              <i class="bi bi-bell-fill fs-4"></i>
+              {% if (unread_notifications_count or 0) > 0 %}
+              <span class="position-absolute badge rounded-pill bg-danger" style="font-size: 0.6rem; min-width: 14px; height: 14px; display: flex; align-items: center; justify-content: center; top: 8px; right: 2px;">
+                {{ unread_notifications_count }}
               </span>
               {% endif %}
             </a>
           </li>
-          <li class="nav-item ms-lg-1">
-            <a class="nav-link nav-icon-btn" href="{{ url_for('main.notifications_page') }}" aria-label="Notifications">
-              <i class="bi bi-bell fs-5"></i>
-            </a>
-          </li>
-          <li class="nav-item ms-lg-2">
-            <a class="nav-link nav-icon-btn nav-profile-btn" href="{{ url_for('main.profile') }}" aria-label="User Profile">
-              <i class="bi bi-person-circle fs-5"></i>
+          <li class="nav-item">
+            <a class="nav-link nav-icon-link px-2 {% if 'profile' in request.path %}active{% endif %}" href="{{ url_for('main.profile') }}" title="My Profile">
+              <i class="bi bi-person-circle fs-4"></i>
             </a>
           </li>
         </ul>
@@ -384,9 +390,9 @@ Data: Fetches featured deals from database
                 data-id="{{ pid }}" data-title="{{ p.get('title') or p.get('name','') }}"
                 data-price="{{ p.get('price','') }}" data-original-price="{{ p.get('original_price','') }}"
                 data-image="{{ p.get('image') or url_for('static', filename='placeholder.svg') }}"
+                data-store="{{ p.get('store') or p.get('source','') }}"
                 data-offer-json='{{ offer_obj|tojson|forceescape if offer_obj is not none else "" }}'
-                data-offer-type="{{ offer_type }}" data-offer-x="{{ offer_x }}" data-offer-y="{{ offer_y }}"
-                onclick="event.stopPropagation(); window.showListSelector(this);">
+                data-offer-type="{{ offer_type }}" data-offer-x="{{ offer_x }}" data-offer-y="{{ offer_y }}">
                 <i class="bi bi-cart-plus-fill"></i>Add to List
               </button>
               <a href="{{ detail_url }}" class="btn btn-premium btn-premium-view w-100"
@@ -491,3 +497,13 @@ Data: Fetches featured deals from database
 </body>
 
 </html>
+
+
+
+
+
+
+
+
+
+

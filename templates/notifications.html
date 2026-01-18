@@ -22,123 +22,304 @@ Data: Fetches from notifications collection
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
+    :root {
+      --premium-purple: #7c3aed;
+      --premium-indigo: #4f46e5;
+      --success-green: #10b981;
+      --warning-amber: #f59e0b;
+      --danger-red: #ef4444;
+      --glass-white: rgba(255, 255, 255, 0.9);
+    }
+
+    body {
+      background-color: #f6f8fb;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    .notification-header {
+      /* Vibrant animated gradient matching Profile Page */
+      background: linear-gradient(-45deg, #7c3aed, #6366f1, #8b5cf6, #d946ef);
+      background-size: 400% 400%;
+      animation: gradientBG 15s ease infinite;
+      padding: 1.5rem 0 2rem;
+      border-radius: 0 0 12px 12px;
+      margin-bottom: -25px;
+      color: white;
+      position: relative;
+      overflow: hidden;
+      z-index: 10;
+      box-shadow: 0 8px 30px rgba(124, 58, 237, 0.3);
+    }
+    
+    @keyframes gradientBG {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    /* Floating shapes for fun */
+    .bg-shape {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(5px);
+      border-radius: 20%;
+      animation: float 15s infinite ease-in-out; opacity: 0.4;
+    }
+    
+    .shape-1 { top: 20%; left: 5%; width: 100px; height: 100px; animation-delay: 0s; }
+    .shape-2 { top: 60%; right: 5%; width: 150px; height: 150px; animation-delay: -2s; border-radius: 50%; }
+    .shape-3 { bottom: 10%; left: 20%; width: 60px; height: 60px; animation-delay: -5s; }
+    
+    @keyframes float {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-30px) rotate(10deg); }
+    }
+
+    .notification-container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    .action-bar {
+      background: white;
+      border-radius: 20px;
+      padding: 15px 25px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+      margin-bottom: 25px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 90px;
+      z-index: 100;
+      border: 1px solid rgba(0,0,0,0.03);
+    }
+
     .notification-card {
-      transition: all 0.2s ease;
-      border-left: 4px solid transparent;
+      background: white;
+      border-radius: 24px;
+      border: 1px solid rgba(0,0,0,0.05);
+      margin-bottom: 16px;
+      padding: 24px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
     }
-    .notification-card.unread {
-      background-color: #f8f9ff;
-      border-left-color: #7c3aed;
-    }
+
     .notification-card:hover {
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      transform: translateY(-2px);
+      transform: translateY(-4px) scale(1.01);
+      box-shadow: 0 12px 24px -8px rgba(0,0,0,0.1);
+      border-color: var(--premium-purple);
     }
-    .notification-icon {
-      width: 48px;
-      height: 48px;
+
+    .notification-card.unread {
+      background-color: #fdfbff;
+      border-left: 6px solid var(--premium-purple);
+    }
+
+    .notification-card.unread::after {
+      content: '';
+      position: absolute;
+      top: 24px;
+      right: 24px;
+      width: 10px;
+      height: 10px;
+      background-color: var(--premium-purple);
       border-radius: 50%;
+      box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.2);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.4); }
+      70% { box-shadow: 0 0 0 6px rgba(124, 58, 237, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(124, 58, 237, 0); }
+    }
+
+    .notification-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 18px;
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 1.5rem;
+      margin-right: 20px;
+      flex-shrink: 0;
     }
-    .notification-icon.new-deal {
-      background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
-      color: white;
+
+    .icon-deal_alert { background: rgba(124, 58, 237, 0.1); color: var(--premium-purple); }
+    .icon-price_drop { background: rgba(16, 185, 129, 0.1); color: var(--success-green); }
+    .icon-system { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
+
+    .notification-content h6 {
+      font-weight: 700;
+      color: #1f2937;
+      margin-bottom: 4px;
+      font-size: 1.1rem;
     }
-    .notification-icon.price-drop {
-      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-      color: white;
+
+    .notification-content p {
+      color: #6b7280;
+      margin-bottom: 12px;
+      line-height: 1.5;
     }
-    .notification-icon.system {
-      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-      color: white;
+
+    .notification-time {
+      font-size: 0.85rem;
+      color: #9ca3af;
+      display: block;
+      margin-bottom: 8px;
     }
-    .filter-chip {
-      cursor: pointer;
+
+    .notification-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 16px;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all 0.3s ease;
+    }
+
+    .notification-card:hover .notification-actions {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .btn-action {
+      padding: 6px 16px;
+      border-radius: 12px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
       transition: all 0.2s;
-      padding: 8px 16px;
-      border-radius: 20px;
-      border: 2px solid #dee2e6;
+    }
+
+    .filter-pills {
+      display: flex;
+      gap: 10px;
+      padding: 10px 0;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .filter-pills::-webkit-scrollbar { display: none; }
+
+    .filter-pill {
+      padding: 10px 20px;
+      border-radius: 30px;
       background: white;
+      border: 1px solid rgba(0,0,0,0.05);
+      color: #6b7280;
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
     }
-    .filter-chip:hover {
-      border-color: #7c3aed;
-    }
-    .filter-chip.active {
-      background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+
+    .filter-pill.active {
+      background: var(--premium-purple);
       color: white;
-      border-color: transparent;
+      box-shadow: 0 4px 12px rgba(124, 58, 237, 0.2);
     }
+
     .empty-state {
-      padding: 60px 20px;
+      padding: 80px 20px;
+      background: white;
+      border-radius: 32px;
       text-align: center;
-      color: #6c757d;
+      box-shadow: 0 4px 30px rgba(0,0,0,0.03);
     }
-    .empty-state i {
+
+    .empty-icon {
+      width: 120px;
+      height: 120px;
+      background: #fdfbff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 30px;
+      color: #e5e7eb;
       font-size: 4rem;
-      opacity: 0.3;
-      margin-bottom: 20px;
+    }
+
+    .navbar {
+      background: var(--glass-white);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(0,0,0,0.05);
     }
   </style>
 </head>
 <body>
-  <!-- Navbar -->
-  <!-- Navigation -->
-  <nav class="navbar navbar-expand-lg sticky-top">
+  <!-- Navbar (Standardized to Home version) -->
+  <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
     <div class="container">
-      <a class="navbar-brand d-flex align-items-center" href="{{ url_for('main.home') }}">
-        <div class="brand-icon me-3" style="background: linear-gradient(135deg, var(--premium-purple), var(--premium-indigo)); width: 44px; height: 44px; border-radius: 14px; display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 8px 16px -4px rgba(124, 58, 237, 0.3);">
-          <i class="bi bi-cart-check-fill fs-5"></i>
-        </div>
-        <span>Smart<span>Grocery</span></span>
+      <a class="navbar-brand fw-bold" href="{{ url_for('main.home') }}" style="font-size: 1.5rem; color: #667eea !important;">
+        <i class="bi bi-cart-check-fill me-2"></i>Smart Grocery
       </a>
-      <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
         <span class="navbar-toggler-icon"></span>
       </button>
       <div class="collapse navbar-collapse" id="navbarNav">
-        {% set cart_count = shopping_list_count or 0 %}
         <ul class="navbar-nav ms-auto align-items-center">
           <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('main.home') }}">
-              <i class="bi bi-house-door me-1"></i> Home
+            <a class="nav-link {% if request.endpoint == 'main.home' %}active fw-semibold{% endif %}" href="{{ url_for('main.home') }}">
+              <i class="bi bi-house-door"></i> Home
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('main.stores_page') }}">
-              <i class="bi bi-shop me-1"></i> Stores
+            <a class="nav-link {% if 'stores' in request.path %}active fw-semibold{% endif %}" href="{{ url_for('main.stores_page') }}">
+              <i class="bi bi-shop"></i> Stores
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('main.featured_deals_page') }}">
-              <i class="bi bi-tags me-1"></i> Deals
+            <a class="nav-link {% if 'featured-deals' in request.path %}active fw-semibold{% endif %}" href="{{ url_for('main.featured_deals_page') }}">
+              <i class="bi bi-tags"></i> Deals
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('main.compare_prices') }}">
-              <i class="bi bi-arrow-left-right me-1"></i> Compare
+            <a class="nav-link {% if 'compare' in request.path %}active fw-semibold{% endif %}" href="{{ url_for('main.compare_prices') }}">
+              <i class="bi bi-arrow-left-right"></i> Compare
             </a>
           </li>
+          <li class="nav-item me-lg-3">
+            <a class="nav-link d-flex align-items-center {% if 'shopping-list' in request.path %}active fw-semibold{% endif %}" href="{{ url_for('main.shopping_list') }}">
+              <div class="position-relative me-1">
+                <i class="bi bi-list-check fs-5"></i>
+                {% if (shopping_list_count or 0) > 0 %}
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem; min-width: 14px; height: 14px; display: flex; align-items: center; justify-content: center; transform: translate(25%, -110%) !important;">
+                  {{ shopping_list_count }}
+                </span>
+                {% endif %}
+              </div>
+              Lists
+            </a>
+          </li>
+          
+          <!-- Icon-only Menu Items -->
           <li class="nav-item">
-            <a class="nav-link d-flex align-items-center" href="{{ url_for('main.shopping_list') }}">
-              <i class="bi bi-list-check me-1"></i> Lists
-              {% if cart_count > 0 %}
-              <span class="ms-1 badge rounded-pill bg-danger" style="font-size: 0.7rem; padding: 0.4em 0.6em;">
-                {{ cart_count }}
+            <a class="nav-link nav-icon-link px-2 position-relative {% if 'notifications' in request.path %}active{% endif %}" href="{{ url_for('main.notifications_page') }}" title="Notifications">
+              <i class="bi bi-bell-fill fs-4"></i>
+              {% if (unread_notifications_count or 0) > 0 %}
+              <span class="position-absolute badge rounded-pill bg-danger" style="font-size: 0.6rem; min-width: 14px; height: 14px; display: flex; align-items: center; justify-content: center; top: 8px; right: 2px;">
+                {{ unread_notifications_count }}
               </span>
               {% endif %}
             </a>
           </li>
-          <li class="nav-item ms-lg-1">
-            <a class="nav-link active nav-icon-btn" href="{{ url_for('main.notifications_page') }}" aria-label="Notifications">
-              <i class="bi bi-bell fs-5"></i>
-            </a>
-          </li>
-          <li class="nav-item ms-lg-2">
-            <a class="nav-link nav-icon-btn nav-profile-btn" href="{{ url_for('main.profile') }}" aria-label="User Profile">
-              <i class="bi bi-person-circle fs-5"></i>
+          <li class="nav-item">
+            <a class="nav-link nav-icon-link px-2 {% if 'profile' in request.path %}active{% endif %}" href="{{ url_for('main.profile') }}" title="My Profile">
+              <i class="bi bi-person-circle fs-4"></i>
             </a>
           </li>
         </ul>
@@ -146,146 +327,169 @@ Data: Fetches from notifications collection
     </div>
   </nav>
 
-  <!-- Page Header -->
-  <section class="text-center py-5" style="background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); color: white;">
-    <div class="container">
-      <h1 class="fw-bold mb-3"><i class="bi bi-bell-fill me-2"></i>Notifications</h1>
-      <p class="lead mb-0">Stay updated with new deals and price drops</p>
+  <!-- Header Section (Enhanced) -->
+    <!-- Notification Header -->
+    <!-- Notification Header -->
+  <section class="notification-header text-center position-relative">
+    <div class="bg-shape shape-1"></div>
+    <div class="bg-shape shape-2"></div>
+    <div class="bg-shape shape-3"></div>
+    <div class="container position-relative py-4">
+      <div class="row items-center">
+        <div class="col-lg-8 mx-auto">
+          <h1 class="fw-bold mb-2 display-5 text-white">Alert Center</h1>
+          <p class="lead opacity-90 mb-3 text-white" style="font-size: 1rem;">Track price drops and new deals in real-time.</p>
+          
+          <div class="row g-3 justify-content-center mt-1">
+            <div class="col-5 col-md-3">
+              <div class="p-2 bg-white bg-opacity-10 rounded-4 border border-white border-opacity-25 backdrop-blur shadow-sm">
+                <i class="bi bi-envelope-exclamation fs-4 d-block mb-1 text-white"></i>
+                <span class="d-block fs-4 fw-bold text-white">{{ unread_count }}</span>
+                <span class="small opacity-75 text-uppercase text-white tracking-wider" style="font-size: 0.65rem;">Unread</span>
+              </div>
+            </div>
+            <div class="col-5 col-md-3">
+              <div class="p-2 bg-white bg-opacity-10 rounded-4 border border-white border-opacity-25 backdrop-blur shadow-sm">
+                <i class="bi bi-archive fs-4 d-block mb-1 text-white"></i>
+                <span class="d-block fs-4 fw-bold text-white">{{ notifications|length }}</span>
+                <span class="small opacity-75 text-uppercase text-white tracking-wider" style="font-size: 0.65rem;">Total</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </section>
 
-  <!-- Main Content -->
-  <div class="container my-5">
+  <!-- Main Content Area -->
+  <div class="notification-container">
     
     <!-- Action Bar -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-      <div>
-        <h5 class="mb-0">
-          {% if unread_count > 0 %}
-            <span class="badge bg-primary rounded-pill">{{ unread_count }} unread</span>
-          {% else %}
-            <span class="text-muted">All caught up!</span>
-          {% endif %}
-        </h5>
+    <div class="action-bar mt-4">
+      <div class="filter-pills" id="type-filters">
+        <span class="filter-pill active" data-type="all">All</span>
+        <span class="filter-pill" data-type="deal_alert">Deals</span>
+        <span class="filter-pill" data-type="price_drop">Price Drops</span>
+        <span class="filter-pill" data-type="system">System</span>
       </div>
-      <div>
+      <div class="d-flex gap-2">
         {% if unread_count > 0 %}
-        <button id="mark-all-read-btn" class="btn btn-outline-primary btn-sm">
-          <i class="bi bi-check-all"></i> Mark All Read
+        <button class="btn btn-light btn-action" id="btn-mark-all">
+          <i class="bi bi-check-all fs-5"></i>
+          <span class="d-none d-md-inline">Mark All Read</span>
+        </button>
+        {% endif %}
+        {% if notifications %}
+        <button class="btn btn-light btn-action text-danger" id="btn-clear-all">
+          <i class="bi bi-trash fs-5"></i>
+          <span class="d-none d-md-inline">Clear All</span>
         </button>
         {% endif %}
       </div>
     </div>
 
-    <!-- Filter Chips -->
-    <div class="d-flex gap-2 mb-4 flex-wrap">
-      <span class="filter-chip active" data-filter="all">
-        <i class="bi bi-filter"></i> All
-      </span>
-      <span class="filter-chip" data-filter="new_deal">
-        <i class="bi bi-lightning-fill"></i> New Deals
-      </span>
-      <span class="filter-chip" data-filter="price_drop">
-        <i class="bi bi-graph-down-arrow"></i> Price Drops
-      </span>
-      <span class="filter-chip" data-filter="system">
-        <i class="bi bi-info-circle"></i> System
-      </span>
-    </div>
-
     <!-- Notifications List -->
-    <div id="notifications-container">
+    <div class="notifications-list pb-5">
       {% if notifications %}
         {% for notification in notifications %}
-        <div class="card notification-card mb-3 {{ 'unread' if not notification.read else '' }}" 
-             data-notification-id="{{ notification.id }}"
-             data-notification-type="{{ notification.type }}">
-          <div class="card-body">
-            <div class="d-flex">
-              <!-- Icon -->
-              <div class="notification-icon {{ notification.type }} me-3">
-                {% if notification.type == 'new_deal' %}
-                  <i class="bi bi-lightning-fill"></i>
-                {% elif notification.type == 'price_drop' %}
-                  <i class="bi bi-graph-down-arrow"></i>
-                {% else %}
-                  <i class="bi bi-info-circle"></i>
-                {% endif %}
-              </div>
+        {% set n_type = notification.get('type', 'system') %}
+        <div class="notification-card {{ 'unread' if not notification.read else '' }}" 
+             data-id="{{ notification.id }}" 
+             data-type="{{ n_type }}"
+             onclick="handleCardClick(event, '{{ notification.action_url }}', '{{ notification.id }}', '{{ notification.deal_id }}', '{{ notification.product_id }}')">
+          <div class="d-flex align-items-start">
+            <div class="notification-icon icon-{{ n_type }} shadow-sm">
+              {% if n_type == "deal_alert" %}
+                <i class="bi bi-tag-fill"></i>
+              {% elif n_type == "price_drop" %}
+                <i class="bi bi-graph-down-arrow"></i>
+              {% else %}
+                <i class="bi bi-info-circle-fill"></i>
+              {% endif %}
+            </div>
+            <div class="notification-content flex-grow-1">
+              <span class="notification-time text-uppercase fw-bold" style="font-size: 0.75rem; letter-spacing: 0.5px; opacity: 0.7;">
+                {{ notification.created_at.strftime("%b %d  %I:%M %p") if notification.created_at else "Now" }}
+              </span>
+              <h6 class="fw-bold mb-1" style="color: #1a202c;">{{ notification.title }}</h6>
+              <p class="text-secondary mb-2" style="font-size: 0.95rem;">{{ notification.message }}</p>
               
-              <!-- Content -->
-              <div class="flex-grow-1">
-                <div class="d-flex justify-content-between align-items-start mb-2">
-                  <h6 class="mb-1 fw-bold">{{ notification.title }}</h6>
-                  <small class="text-muted">{{ notification.created_at.strftime('%b %d, %I:%M %p') if notification.created_at else 'Just now' }}</small>
+              {% if notification.product_id or notification.deal_id %}
+              <div class="product-preview-card mt-3 p-2 rounded-3 bg-light border-0 d-flex align-items-center animate__animated animate__fadeInUp" style="transition: all 0.3s ease;">
+                {% if notification.product_image or notification.deal_image %}
+                <div class="flex-shrink-0 me-3">
+                  <img src="{{ notification.product_image or notification.deal_image }}" alt="Product" class="rounded-2 shadow-sm" style="width: 70px; height: 70px; object-fit: cover; border: 2px solid white;">
                 </div>
-                <p class="mb-2">{{ notification.message }}</p>
-                
-                {% if notification.store_name %}
-                <span class="badge bg-light text-dark me-2">
-                  <i class="bi bi-shop"></i> {{ notification.store_name }}
+                {% endif %}
+                <div class="flex-grow-1">
+                  <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                      <span class="badge bg-soft-primary text-primary rounded-pill mb-1" style="background: rgba(102, 126, 234, 0.1); font-size: 0.7rem;">PRODUCT ALERT</span>
+                      <div class="fw-bold text-dark small">{{ notification.product_name or notification.store_name or "Deal Details" }}</div>
+                    </div>
+                    {% if notification.price %}
+                    <div class="text-end">
+                      <div class="text-success fw-bold">{{ notification.price }}</div>
+                      {% if notification.old_price %}
+                      <div class="text-decoration-line-through text-muted small" style="font-size: 0.7rem;">{{ notification.old_price }}</div>
+                      {% endif %}
+                    </div>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+              {% endif %}
+              
+              {% if notification.store_name %}
+              <div class="mt-2">
+                <span class="badge bg-light text-secondary rounded-pill border py-1 px-3">
+                  <i class="bi bi-shop me-1"></i> {{ notification.store_name }}
                 </span>
-                {% endif %}
-                
+              </div>
+              {% endif %}
+
+              <div class="notification-actions">
                 {% if not notification.read %}
-                <span class="badge bg-primary">New</span>
+                <button class="btn btn-primary btn-action mark-read-btn" data-id="{{ notification.id }}">
+                  <i class="bi bi-check2"></i> Mark Read
+                </button>
                 {% endif %}
-                
-                <!-- Action Buttons -->
-                <div class="mt-3">
-                  {% if notification.action_url %}
-                  <a href="{{ notification.action_url }}" class="btn btn-sm btn-outline-primary me-2">
-                    <i class="bi bi-eye"></i> View Deal
-                  </a>
-                  {% endif %}
-                  
-                  {% if not notification.read %}
-                  <button class="btn btn-sm btn-outline-secondary mark-read-btn" data-id="{{ notification.id }}">
-                    <i class="bi bi-check"></i> Mark Read
-                  </button>
-                  {% endif %}
-                  
-                  <button class="btn btn-sm btn-outline-danger delete-btn" data-id="{{ notification.id }}">
-                    <i class="bi bi-trash"></i> Delete
-                  </button>
-                </div>
+                <button class="btn btn-light btn-action text-danger delete-btn" data-id="{{ notification.id }}">
+                  <i class="bi bi-trash"></i> Delete
+                </button>
               </div>
             </div>
           </div>
         </div>
         {% endfor %}
       {% else %}
-        <!-- Empty State -->
         <div class="empty-state">
-          <i class="bi bi-bell-slash"></i>
-          <h4>No notifications yet</h4>
-          <p>Check back later for new deals and updates!</p>
-          <a href="{{ url_for('main.featured_deals_page') }}" class="btn btn-primary mt-3">
-            <i class="bi bi-tags"></i> Browse Deals
+          <div class="empty-icon">
+            <i class="bi bi-bell-slash"></i>
+          </div>
+          <h4 class="fw-bold">No notifications yet</h4>
+          <p class="text-muted">Stay tuned! We'll notify you when we find new deals or price drops for your favorite products.</p>
+          <a href="{{ url_for('main.featured_deals_page') }}" class="btn btn-primary px-5 py-3 rounded-pill mt-3 shadow-sm">
+            Discover Deals
           </a>
         </div>
       {% endif %}
     </div>
-
   </div>
 
-  <!-- Scripts -->
+  <!-- JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
   <script>
-    // Filter functionality
-    document.querySelectorAll('.filter-chip').forEach(chip => {
-      chip.addEventListener('click', function() {
-        // Update active state
-        document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
-        this.classList.add('active');
+    // Filtering Logic
+    document.querySelectorAll('.filter-pill').forEach(pill => {
+      pill.addEventListener('click', () => {
+        document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+        pill.classList.add('active');
         
-        const filter = this.dataset.filter;
-        const cards = document.querySelectorAll('.notification-card');
-        
-        cards.forEach(card => {
-          if (filter === 'all' || card.dataset.notificationType === filter) {
-            card.style.display = '';
+        const type = pill.dataset.type;
+        document.querySelectorAll('.notification-card').forEach(card => {
+          if (type === 'all' || card.dataset.type === type) {
+            card.style.display = 'block';
           } else {
             card.style.display = 'none';
           }
@@ -293,91 +497,129 @@ Data: Fetches from notifications collection
       });
     });
 
-    // Mark single notification as read
+    // Mark as Read
     document.querySelectorAll('.mark-read-btn').forEach(btn => {
-      btn.addEventListener('click', async function() {
-        const notificationId = this.dataset.id;
-        
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const id = btn.dataset.id;
         try {
-          const response = await fetch('/api/notifications/mark-read', {
+          const res = await fetch('/api/notifications/mark-read', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ notification_ids: [notificationId] })
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({notification_ids: [id]})
           });
-          
-          if (response.ok) {
-            // Remove unread styling
-            const card = this.closest('.notification-card');
+          if (res.ok) {
+            const card = btn.closest('.notification-card');
             card.classList.remove('unread');
-            
-            // Remove "New" badge
-            const badge = card.querySelector('.badge.bg-primary');
-            if (badge) badge.remove();
-            
-            // Remove this button
-            this.remove();
-            
-            // Update unread count
-            location.reload();
+            btn.remove();
+            updateUnreadCount(-1);
           }
-        } catch (error) {
-          console.error('Error marking as read:', error);
-        }
+        } catch (err) { console.error(err); }
       });
     });
 
-    // Mark all as read
-    const markAllBtn = document.getElementById('mark-all-read-btn');
-    if (markAllBtn) {
-      markAllBtn.addEventListener('click', async function() {
-        const unreadIds = Array.from(document.querySelectorAll('.notification-card.unread'))
-          .map(card => card.dataset.notificationId);
-        
-        if (unreadIds.length === 0) return;
+    // Delete
+    document.querySelectorAll('.delete-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const id = btn.dataset.id;
+        const card = btn.closest('.notification-card');
+        card.style.opacity = '0.5';
+        card.style.pointerEvents = 'none';
         
         try {
-          const response = await fetch('/api/notifications/mark-read', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ notification_ids: unreadIds })
-          });
-          
-          if (response.ok) {
-            location.reload();
+          const res = await fetch(`/api/notifications/${id}`, { method: 'DELETE' });
+          if (res.ok) {
+            card.style.transform = 'translateX(50px)';
+            card.style.opacity = '0';
+            setTimeout(() => {
+              card.remove();
+              if (document.querySelectorAll('.notification-card').length === 0) {
+                location.reload();
+              }
+            }, 300);
+          } else {
+            card.style.opacity = '1';
+            card.style.pointerEvents = 'all';
           }
-        } catch (error) {
-          console.error('Error marking all as read:', error);
-        }
+        } catch (err) { console.error(err); }
+      });
+    });
+
+    // Mark All Read
+    const markAllBtn = document.getElementById('btn-mark-all');
+    if (markAllBtn) {
+      markAllBtn.addEventListener('click', async () => {
+        try {
+          const res = await fetch('/api/notifications/mark-all-read', { method: 'POST' });
+          if (res.ok) location.reload();
+        } catch (err) { console.error(err); }
       });
     }
 
-    // Delete notification
-    document.querySelectorAll('.delete-btn').forEach(btn => {
-      btn.addEventListener('click', async function() {
-        const notificationId = this.dataset.id;
-        
-        if (!confirm('Delete this notification?')) return;
-        
+    // Clear All
+    const clearAllBtn = document.getElementById('btn-clear-all');
+    if (clearAllBtn) {
+      clearAllBtn.addEventListener('click', async () => {
+        if (!confirm('Are you sure you want to delete all notifications?')) return;
         try {
-          const response = await fetch(`/api/notifications/${notificationId}`, {
-            method: 'DELETE'
-          });
-          
-          if (response.ok) {
-            const card = this.closest('.notification-card');
-            card.remove();
-            
-            // Check if empty
-            const remaining = document.querySelectorAll('.notification-card').length;
-            if (remaining === 0) {
-              location.reload();
-            }
-          }
-        } catch (error) {
-          console.error('Error deleting notification:', error);
-        }
+          const res = await fetch('/api/notifications/clear-all', { method: 'DELETE' });
+          if (res.ok) location.reload();
+        } catch (err) { console.error(err); }
       });
-    });
+    }
+
+    // Handle Card Click (Navigation)
+    function handleCardClick(event, url, id, dealId, productId) {
+      // Don't navigate if clicking a button
+      if (event.target.closest('.btn-action')) return;
+      
+      // Mark as read first in background
+      fetch('/api/notifications/mark-read', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({notification_ids: [id]})
+      });
+
+      // Navigate to resolved URL
+      let finalUrl = url;
+      
+      // Prioritize specific product/deal routing logic
+      if (dealId && dealId !== 'None' && dealId !== '') {
+        finalUrl = '/featured-deal/' + dealId;
+      } else if (productId && productId !== 'None' && productId !== '') {
+        finalUrl = '/product/' + productId;
+      }
+      
+      if (finalUrl && finalUrl !== '#' && finalUrl !== 'None') {
+        window.location.href = finalUrl;
+      }
+    }
+
+    function updateUnreadCount(delta) {
+      const headerText = document.querySelector('.notification-header p');
+      if (headerText) {
+        let countText = headerText.textContent.match(/\d+/);
+        if (countText) {
+          let count = parseInt(countText[0]);
+          count = Math.max(0, count + delta);
+          headerText.textContent = `You have ${count} unread messages`;
+        }
+      }
+    }
   </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+

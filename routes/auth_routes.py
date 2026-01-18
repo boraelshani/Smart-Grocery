@@ -175,25 +175,6 @@ def signup():
     return render_template('signup.html')
 
 
-@auth_bp.route('/profile', methods=['POST'])
-def update_profile():
-    if 'user' not in session:
-        return redirect(url_for('auth.login'))
-    email = session['user']
-    new_list = request.form.getlist('shopping_list')
-    # update shopping list in DB if available, otherwise the fallback in models will handle it
-    try:
-        if _has_db():
-            mongo.db.users.update_one({'email': email}, {'$set': {'shopping_list': new_list}})
-        else:
-            # fallback: update via users_model helper
-            users_model.update_shopping_list(email, new_list)
-    except Exception:
-        pass
-    return redirect(url_for('main.profile'))
-
-
-
 @auth_bp.route('/shopping-list/add', methods=['POST'])
 def add_shopping_item():
     email = _get_user_email()
@@ -470,27 +451,31 @@ def api_update_profile():
     email = _get_user_email()
     if not email:
         return jsonify({'error': 'not_authenticated'}), 401
-    data = request.get_json() or request.form or {}
+        
+    data = {}
+    if request.is_json:
+        data = request.get_json()
+    else:
+        data = request.form
+        
     phone = data.get('phone')
     address = data.get('address')
+    avatar = data.get('avatar')
+    name = data.get('name')
+    
+    update_data = {}
+    if phone is not None: update_data['phone'] = phone
+    if address is not None: update_data['address'] = address
+    if avatar is not None: update_data['avatar'] = avatar
+    if name is not None: update_data['name'] = name
+
     try:
-        if _has_db():
-            mongo.db.users.update_one({'email': email}, {'$set': {'phone': phone, 'address': address}}, upsert=True)
+        from models.users_model import update_user_profile
+        success = update_user_profile(email, update_data)
+        
+        if success:
+            return jsonify({'success': True, **update_data})
         else:
-            # fallback to in-memory models.users if available
-            try:
-                from models import models as mock_models
-                if getattr(mock_models, 'users', None) is None:
-                    mock_models.users = {}
-                u = mock_models.users.get(email) or {}
-                u['email'] = email
-                if phone is not None:
-                    u['phone'] = phone
-                if address is not None:
-                    u['address'] = address
-                mock_models.users[email] = u
-            except Exception:
-                pass
-        return jsonify({'success': True, 'phone': phone, 'address': address})
+            return jsonify({'error': 'Failed to update profile'}), 500
     except Exception as e:
         return jsonify({'error': str(e)}), 500

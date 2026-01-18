@@ -20,12 +20,14 @@ Used by: navigation bar, profile, background tasks
 from pymongo import MongoClient
 from bson import ObjectId
 import os
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
 from typing import List, Optional, Dict
 from datetime import datetime, timedelta
 import certifi
 
-load_dotenv()
+# Load environment variables with override to ensure .env file values take precedence
+# over any existing environment variables (e.g. default localhost from system/shell)
+load_dotenv(find_dotenv(usecwd=True), override=True)
 
 
 class NotificationsModel:
@@ -44,10 +46,20 @@ class NotificationsModel:
             self.db = flask_mongo.db
             self._client = None
         else:
+            # Check if using localhost (don't use SSL for local dev unless specified)
+            use_ssl = True
+            if 'localhost' in mongo_uri or '127.0.0.1' in mongo_uri:
+                use_ssl = False
+
             try:
-                self._client = MongoClient(mongo_uri, tlsCAFile=certifi.where())
-            except TypeError:
+                if use_ssl:
+                    self._client = MongoClient(mongo_uri, tlsCAFile=certifi.where())
+                else:
+                    self._client = MongoClient(mongo_uri)
+            except Exception:
+                # Fallback to simple connection if SSL/certifi fails or if arguments are wrong
                 self._client = MongoClient(mongo_uri)
+                
             if database_name:
                 self.db = self._client[database_name]
             else:
@@ -95,6 +107,9 @@ class NotificationsModel:
             except Exception:
                 pass
         
+        if notification_data.get('deal_id'):
+            notification['deal_id'] = notification_data['deal_id']
+        
         if notification_data.get('store_name'):
             notification['store_name'] = notification_data['store_name']
         
@@ -115,6 +130,14 @@ class NotificationsModel:
         query = {'user_email': user_email}
         if unread_only:
             query['read'] = False
+
+        # Filter: Only show notifications created AFTER the user joined
+        try:
+            user = self.db.users.find_one({'email': user_email}, {'created_at': 1})
+            if user and user.get('created_at'):
+                query['created_at'] = {'$gte': user['created_at']}
+        except Exception as e:
+            print(f"Error fetching user join date for notification filtering: {e}")
         
         notifications = list(self.db.notifications.find(query)
                            .sort('created_at', -1)
@@ -123,8 +146,24 @@ class NotificationsModel:
         for n in notifications:
             if '_id' in n:
                 n['id'] = str(n['_id'])
-            if 'product_id' in n:
-                n['product_id'] = str(n['product_id'])
+            if n.get('product_id'):
+                try:
+                    product = self.db.products.find_one({'_id': ObjectId(n['product_id'])})
+                    if not product and 'name' in n.get('title', ''):
+                        # fallback search by name if ID fails
+                        product = self.db.products.find_one({'name': {'$regex': n.get('title',''), '$options': 'i'}})
+                    
+                    if product:
+                        n['product_name'] = product.get('name')
+                        n['product_image'] = product.get('image') or product.get('images', [None])[0]
+                        n['price'] = product.get('price_val') or product.get('price')
+                        if not n.get('store_name'):
+                            stores = product.get('stores', [])
+                            if stores and isinstance(stores, list):
+                                n['store_name'] = stores[0].get('store')
+                except Exception:
+                    pass
+            n['product_id'] = str(n.get('product_id')) if n.get('product_id') else None
         
         return notifications
 
@@ -133,10 +172,20 @@ class NotificationsModel:
         if not user_email:
             return 0
         
-        return self.db.notifications.count_documents({
+        query = {
             'user_email': user_email,
             'read': False
-        })
+        }
+
+        # Filter: Only count notifications created AFTER the user joined
+        try:
+            user = self.db.users.find_one({'email': user_email}, {'created_at': 1})
+            if user and user.get('created_at'):
+                query['created_at'] = {'$gte': user['created_at']}
+        except Exception:
+            pass
+        
+        return self.db.notifications.count_documents(query)
 
     def mark_as_read(self, notification_id: str, user_email: str) -> bool:
         """Mark a notification as read"""
@@ -187,17 +236,17 @@ class NotificationsModel:
         except Exception:
             return False
 
-    def cleanup_old_notifications(self, days: int = 30) -> int:
-        """Delete read notifications older than specified days"""
+    def cleanup_old_notifications(self, days: int = 7) -> int:
+        """Delete ANY notifications older than specified days (read or unread)"""
         cutoff_date = datetime.utcnow() - timedelta(days=days)
         
         try:
             result = self.db.notifications.delete_many({
-                'read': True,
                 'created_at': {'$lt': cutoff_date}
             })
             return result.deleted_count
-        except Exception:
+        except Exception as e:
+            print(f"Error cleaning up old notifications: {e}")
             return 0
 
     def create_deal_alert(self, user_email: str, product_id: str, 
@@ -241,14 +290,26 @@ class NotificationsModel:
             'priority': priority
         })
 
-    def broadcast_notification(self, notification_data: dict, 
-                              user_emails: List[str]) -> int:
-        """Send same notification to multiple users"""
+    def broadcast_notification(self, notification_data: dict, user_emails: List[str] = None) -> int:
+        """
+        Send a notification to multiple users. 
+        If user_emails is None, send to ALL registered users.
+        """
         count = 0
-        for email in user_emails:
-            notification_data['user_email'] = email
-            if self.create_notification(notification_data):
-                count += 1
+        try:
+            if user_emails is None:
+                users = list(self.db.users.find({}, {'email': 1}))
+                target_emails = [u.get('email') for u in users if u.get('email')]
+            else:
+                target_emails = user_emails
+
+            for email in target_emails:
+                data = notification_data.copy()
+                data['user_email'] = email
+                if self.create_notification(data):
+                    count += 1
+        except Exception as e:
+            print(f"Error broadcasting notification: {e}")
         return count
 
     def close_connection(self):

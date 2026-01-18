@@ -68,6 +68,17 @@ def get_user_by_email(email: str):
     return mock_models.users.get(email)
 
 
+def get_all_users():
+    """
+    Retrieve all user accounts.
+    """
+    if flask_mongo is not None and getattr(flask_mongo, 'db', None) is not None:
+        return list(flask_mongo.db.users.find({}))
+    if getattr(mock_models, 'users', None) is not None:
+        return [data for email, data in mock_models.users.items()]
+    return []
+
+
 def hash_password(password: str) -> str:
     """Hash a password using bcrypt (includes a per-password salt)."""
     if password is None:
@@ -109,10 +120,16 @@ def create_user(user_doc: dict):
         pass
 
     if flask_mongo is not None and getattr(flask_mongo, 'db', None) is not None:
+        if 'created_at' not in user_doc:
+            from datetime import datetime
+            user_doc['created_at'] = datetime.utcnow()
         res = flask_mongo.db.users.insert_one(user_doc)
         return str(res.inserted_id)
     if getattr(mock_models, 'users', None) is None:
         return None
+    if 'created_at' not in user_doc:
+        from datetime import datetime
+        user_doc['created_at'] = datetime.utcnow()
     mock_models.users[user_doc['email']] = user_doc
     return user_doc['email']
 
@@ -199,17 +216,45 @@ def remove_from_shopping_list(email: str, item) -> bool:
     u = mock_models.users.get(email)
     if not u:
         return False
-    lst = u.get('shopping_list', [])
-    try:
-        # remove string matches
-        while item in lst:
-            lst.remove(item)
-        # remove objects with name field
-        lst[:] = [it for it in lst if not (isinstance(it, dict) and it.get('name') == item)]
-        u['shopping_list'] = lst
-        return True
-    except Exception:
+    
+    # Remove by name or exact match
+    new_list = [i for i in u.get('shopping_list', []) if i != item and not (isinstance(i, dict) and i.get('name') == item)]
+    u['shopping_list'] = new_list
+    return True
+
+
+def update_user_profile(email: str, update_data: dict) -> bool:
+    """
+    Update user profile information.
+    
+    Args:
+        email: User email address
+        update_data: Dictionary of fields to update (name, phone, address, avatar, etc.)
+    
+    Returns:
+        Boolean indicating success
+    """
+    if not email or not update_data:
         return False
+        
+    if flask_mongo is not None and getattr(flask_mongo, 'db', None) is not None:
+        try:
+            flask_mongo.db.users.update_one({'email': email}, {'$set': update_data}, upsert=True)
+            return True
+        except Exception as e:
+            print(f"[DB ERROR] Failed to update user profile: {e}")
+            return False
+            
+    # Fallback to mock data
+    if getattr(mock_models, 'users', None) is not None:
+        u = mock_models.users.get(email)
+        if not u:
+            mock_models.users[email] = {'email': email, **update_data}
+        else:
+            u.update(update_data)
+        return True
+        
+    return False
 
 
 # Multi-List Shopping List Functions

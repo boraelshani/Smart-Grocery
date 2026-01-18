@@ -45,6 +45,25 @@ def import_featured_deals():
             result = db.featured_deals.insert_many(deals)
             print(f"Inserted {len(result.inserted_ids)} featured deals into MongoDB")
             print("Featured deals successfully imported!")
+
+            # Add a broadcast notification
+            print("Sending broadcast notification...")
+            try:
+                # Add project root to sys.path to import models
+                sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+                from models.notifications_model import NotificationsModel
+                nm = NotificationsModel()
+                # We can't use the singleton because we are in a script, 
+                # but the class constructor should handle it.
+                nm.broadcast_notification({
+                    'type': 'deal_alert',
+                    'title': "Deals Updated!",
+                    'message': f"We've just added {len(deals)} new featured deals! Check them out in the Deals section.",
+                    'priority': 'high'
+                })
+                print("Broadcast notification sent.")
+            except Exception as e:
+                print(f"Could not send broadcast: {e}")
         else:
             print("No deals to import")
             

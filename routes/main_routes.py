@@ -128,6 +128,18 @@ def home():
     if not user_email:
         return render_template('entry.html')
 
+    # Get user join date for "NEW" badge logic
+    user_join_date = None
+    db = get_db()
+    if user_email:
+        try:
+            from models.users_model import get_user_by_email
+            user_data = get_user_by_email(user_email)
+            if user_data:
+                user_join_date = user_data.get('created_at')
+        except:
+            pass
+
     # Load stores/products/deals from MongoDB when available, otherwise use in-memory mocks
     using_fallback = False
     db = get_db()
@@ -203,6 +215,20 @@ def home():
         stores = sanitize_mongo_doc(stores)
         products = sanitize_mongo_doc(products)
         featured_deals = sanitize_mongo_doc(featured_deals)
+        
+        # Filter featured deals based on user join date if requested
+        if user_join_date:
+            from datetime import datetime
+            # Helper to parse dates from Mongo/JSON strings if needed
+            def get_date(d):
+                dt = d.get('created_at')
+                if isinstance(dt, str):
+                    try: return datetime.fromisoformat(dt)
+                    except: return None
+                return dt
+            
+            # Filter notification-like "posts" (featured deals)
+            featured_deals = [d for d in featured_deals if not get_date(d) or get_date(d) >= user_join_date]
 
         # Check favorites for user
         fav_ids = set()
@@ -581,7 +607,8 @@ def home():
                          chosen_store_name=chosen_store_name,
                          using_fallback=using_fallback, 
                          total_product_count=total_product_count, 
-                         max_savings=max_savings)
+                         max_savings=max_savings,
+                         user_join_date=user_join_date)
 
 @main_bp.route('/stores')
 def stores_page():
@@ -807,33 +834,45 @@ def featured_deals_page():
             for deal in deals:
                 deal['is_favorited'] = str(deal.get('id') or deal.get('_id', '')) in fav_ids
             
-            # Notifications logic (kept same)
+            # Notifications logic (modified)
             if user_email and deals:
                 try:
-                    from models.notifications_model import create_notification
+                    from models.notifications_model import create_notification, notifications_model
+                    
+                    # Auto-delete notifications older than 7 days
+                    notifications_model.cleanup_old_notifications(7)
+
                     user = db.users.find_one({'email': user_email})
                     if user:
-                        seen_deals = user.get('seen_deals', [])
-                        new_deal_ids = []
-                        for deal in deals:
-                            deal_id = deal.get('id')
-                            if deal_id and deal_id not in seen_deals:
-                                deal_title = deal.get('title') or deal.get('name', 'New Deal')
-                                store_name = deal.get('store', '')
-                                create_notification({
-                                    'user_email': user_email,
-                                    'type': 'new_deal',
-                                    'title': 'New Deal Available!',
-                                    'message': f'{deal_title}{" at " + store_name if store_name else ""}',
-                                    'deal_id': deal_id,
-                                    'store_name': store_name,
-                                    'action_url': '/featured-deals',
-                                    'priority': 'normal'
-                                })
-                                new_deal_ids.append(deal_id)
-                        if new_deal_ids:
-                            all_deal_ids = [d.get('id') for d in deals if d.get('id')]
-                            db.users.update_one({'email': user_email}, {'$set': {'seen_deals': all_deal_ids}})
+                        current_deal_ids = [str(d.get('id') or d.get('_id')) for d in deals if d.get('id') or d.get('_id')]
+                        
+                        if 'seen_deals' not in user:
+                            # First time or migration: Mark current deals as seen WITHOUT notifying
+                            # This prevents spamming 50+ notifications for existing deals
+                            db.users.update_one({'email': user_email}, {'$set': {'seen_deals': current_deal_ids}})
+                        else:
+                            seen_deals = set(user.get('seen_deals', []))
+                            new_deal_ids = []
+                            for deal in deals:
+                                deal_id = str(deal.get('id') or deal.get('_id'))
+                                if deal_id and deal_id not in seen_deals:
+                                    deal_title = deal.get('title') or deal.get('name', 'New Deal')
+                                    store_name = deal.get('store', '')
+                                    create_notification({
+                                        'user_email': user_email,
+                                        'type': 'new_deal',
+                                        'title': 'New Deal Available!',
+                                        'message': f'{deal_title}{" at " + store_name if store_name else ""}',
+                                        'deal_id': deal_id,
+                                        'store_name': store_name,
+                                        'action_url': f'/featured-deal/{deal_id}',
+                                        'priority': 'normal'
+                                    })
+                                    new_deal_ids.append(deal_id)
+                            
+                            if new_deal_ids:
+                                # Update seen list with current state
+                                db.users.update_one({'email': user_email}, {'$set': {'seen_deals': current_deal_ids}})
                 except Exception as e:
                     print(f'WARNING: Failed notifications: {e}')
             
@@ -1645,7 +1684,13 @@ def notifications_page():
     if not user_email:
         return redirect(url_for('auth.login'))
     
-    from models.notifications_model import get_user_notifications, get_unread_count
+    from models.notifications_model import get_user_notifications, get_unread_count, notifications_model
+    
+    # Clean up old notifications (older than 7 days) whenever page is visited
+    try:
+        notifications_model.cleanup_old_notifications(7)
+    except Exception as e:
+        print(f"Error cleaning up notifications: {e}")
     
     # Get all notifications
     notifications = get_user_notifications(user_email, unread_only=False, limit=100)
@@ -1681,35 +1726,53 @@ def delete_notification(notification_id):
 
 @main_bp.route('/profile', methods=['GET', 'POST'])
 def profile():
-    user_email = session.get('user')
-    stores_options = []
+    user_email = _get_user_email()
+    db = get_db()
+    
+    if request.method == 'POST' and user_email:
+        name = request.form.get('name')
+        phone = request.form.get('phone_number', '')
+        address = request.form.get('address')
+        avatar = request.form.get('avatar')
+        
+        print(f"DEBUG PROFILE UPDATE: User={user_email}, Avatar={avatar}")
+
+        update_data = {
+            'name': name,
+            'phone': phone,
+            'address': address
+        }
+        if avatar:
+            update_data['avatar'] = avatar
+            
+        from models.users_model import update_user_profile
+        update_user_profile(user_email, update_data)
+        
+        # Add system notification for profile update
+        from models.notifications_model import NotificationsModel
+        nm = NotificationsModel()
+        nm.create_system_notification(
+            user_email, 
+            "Profile Updated", 
+            "Your profile details have been successfully updated.",
+            priority="normal"
+        )
+        
+        return redirect(url_for('main.profile'))
+
+    user_data = {}
+    stores_list = []
     category_options = []
 
-    if _has_db() and user_email:
-        if request.method == 'POST':
-            name = request.form.get('name')
-            phone_prefix = request.form.get('phone_prefix', '')
-            phone_number = request.form.get('phone_number', '')
-            phone = f"{phone_prefix} {phone_number}".strip()
-            address = request.form.get('address')
-            profile_image = request.form.get('profile_image')
-            country = request.form.get('country')
-            
-            update_data = {
-                'name': name,
-                'phone': phone,
-                'address': address,
-                'country': country
-            }
-            if profile_image:
-                update_data['profile_image'] = profile_image
-                
-            mongo.db.users.update_one({'email': user_email}, {'$set': update_data})
-            return redirect(url_for('main.profile'))
-
-        user = mongo.db.users.find_one({'email': user_email})
-        if user and '_id' in user:
-            user['id'] = str(user['_id'])
+    if db is not None and user_email:
+        user = db.users.find_one({'email': user_email})
+        if user:
+            if '_id' in user:
+                user['id'] = str(user['_id'])
+            user_data = user
+        else:
+            # If not in DB, check mock data
+            user_data = getattr(m, 'users', {}).get(user_email, {})
 
         # Load favorites from the normalized favorites collection
         from models import favorites_model
@@ -1726,21 +1789,16 @@ def profile():
                     fav['image'] = fav.get('product_image')
         
         # Add favorites to user_data
-        if user:
-            user['favorites'] = favorites
-        else:
-            user = {'favorites': favorites}
+        user_data['favorites'] = favorites
         
         # Initialize recent_views if not present
-        if user and 'recent_views' not in user:
-            user['recent_views'] = []
+        if 'recent_views' not in user_data:
+            user_data['recent_views'] = []
 
-        user_data = user or {}
         try:
             # Use a more descriptive variable for the template
-            stores_cursor = mongo.db.stores.find({}, {'name': 1, 'image': 1, 'logo': 1}).limit(200)
+            stores_cursor = db.stores.find({}, {'name': 1, 'image': 1, 'logo': 1}).limit(200)
             seen_names = set()
-            stores_list = []
             for s in stores_cursor:
                 name = s.get('name')
                 if name and name not in seen_names:
@@ -1750,27 +1808,85 @@ def profile():
                         'id': str(s['_id']),
                         'image': s.get('image') or s.get('logo'),
                         # Simplified count for profile view
-                        'count': mongo.db.products.count_documents({'store': name})
+                        'count': db.products.count_documents({'store': name})
                     })
             stores_list.sort(key=lambda x: x['name'])
         except Exception:
-            stores_list = []
+            pass
             
         try:
             from collections import Counter
-            all_prods = list(mongo.db.products.find({}, {'category': 1}))
+            all_prods = list(db.products.find({}, {'category': 1}))
             cat_counts = Counter(p.get('category') for p in all_prods if p.get('category'))
             category_options = sorted(cat_counts.keys(), key=lambda c: (-cat_counts[c], c.lower()))
         except Exception:
-            category_options = []
-    else:
-        user_data = getattr(m, 'users', {}).get('user1@example.com', {})
+            pass
+    elif user_email:
+        # Fallback when no DB but we have a user
+        user_data = getattr(m, 'users', {}).get(user_email, {})
         stores_list = [{'name': s.get('name'), 'count': 0} for s in getattr(m, 'stores', []) if s.get('name')]
         from collections import Counter
         cat_counts = Counter(p.get('category') for p in getattr(m, 'products', []) if p.get('category'))
         category_options = sorted(cat_counts.keys(), key=lambda c: (-cat_counts[c], c.lower()))
 
     return render_template('profile.html', user_data=user_data, stores=stores_list, category_options=category_options)
+
+    return render_template('profile.html', user_data=user_data, stores=stores_list, category_options=category_options)
+
+
+@main_bp.route('/update-stores', methods=['POST'])
+def update_stores():
+    """Handle preferred stores update from profile page"""
+    user_email = _get_user_email()
+    if not user_email:
+        return redirect(url_for('auth.login'))
+        
+    db = get_db()
+    if db is not None:
+        selected_stores = request.form.getlist('stores')
+        db.users.update_one(
+            {'email': user_email},
+            {'$set': {'preferred_stores': selected_stores}}
+        )
+        
+        # Add system notification
+        from models.notifications_model import NotificationsModel
+        nm = NotificationsModel()
+        nm.create_system_notification(
+            user_email, 
+            "Preferences Updated", 
+            f"You have updated your preferred stores to: {', '.join(selected_stores) if selected_stores else 'None'}",
+            priority="normal"
+        )
+    return redirect(url_for('main.profile'))
+
+
+@main_bp.route('/update-categories', methods=['POST'])
+def update_categories():
+    """Handle preferred categories update from profile page"""
+    user_email = _get_user_email()
+    if not user_email:
+        return redirect(url_for('auth.login'))
+        
+    db = get_db()
+    if db is not None:
+        selected_categories = request.form.getlist('categories')
+        db.users.update_one(
+            {'email': user_email},
+            {'$set': {'preferred_categories': selected_categories}}
+        )
+        
+        # Add system notification
+        from models.notifications_model import NotificationsModel
+        nm = NotificationsModel()
+        nm.create_system_notification(
+            user_email, 
+            "Preferences Updated", 
+            f"You have updated your preferred categories to include {len(selected_categories)} items.",
+            priority="normal"
+        )
+    return redirect(url_for('main.profile'))
+    return redirect(url_for('main.profile'))
 
 
 @main_bp.route('/admin/status')
@@ -2362,6 +2478,42 @@ def mark_notifications_read():
                 success_count += 1
         
         return jsonify({'success': True, 'marked_count': success_count})
+    
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@main_bp.route('/api/notifications/mark-all-read', methods=['POST'])
+def mark_all_notifications_read():
+    """Mark all notifications for the user as read"""
+    try:
+        user_email = session.get('user')
+        if not user_email:
+            return jsonify({'error': 'Not logged in'}), 401
+        
+        from models.notifications_model import notifications_model
+        
+        success = notifications_model.mark_all_as_read(user_email)
+        
+        return jsonify({'success': True})
+    
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@main_bp.route('/api/notifications/clear-all', methods=['DELETE'])
+def clear_all_notifications():
+    """Delete all notifications for the user"""
+    try:
+        user_email = session.get('user')
+        if not user_email:
+            return jsonify({'error': 'Not logged in'}), 401
+        
+        from models.notifications_model import notifications_model
+        
+        success = notifications_model.delete_all_notifications(user_email)
+        
+        return jsonify({'success': True})
     
     except Exception as e:
         return jsonify({'error': str(e)}), 500
