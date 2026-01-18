@@ -14,7 +14,11 @@ Security: Should be restricted to admin users only
 """
 
 from flask import Blueprint, request, jsonify, current_app
-from utils.db import mongo
+from models.products_model import products_model
+from models.stores_model import stores_model
+from models.featured_deals_model import featured_deals_model
+from models.multibuy_offers_model import multibuy_offers_model
+from models.notifications_model import notifications_model
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
@@ -75,26 +79,28 @@ def add_or_update_product():
     set_doc = {k: v for k, v in data.items() if k != '_id'}
 
     try:
-        # Check for price drop if product exists
+        # Check for price drop if product exists using model
         old_price = None
-        existing_product = mongo.db.products.find_one(key)
+        existing_product = products_model.get_product_by_name(data.get('name')) if data.get('name') else None
+        if not existing_product and data.get('_id'):
+             existing_product = products_model.get_product_by_id(str(data.get('_id')))
+             
         if existing_product:
             old_price = existing_product.get('price_val')
 
-        res = mongo.db.products.update_one(key, {'$set': set_doc}, upsert=True)
+        # Use model for upsert
+        res = products_model.upsert_product(key, set_doc)
         
         # Determine if it's a new product or an update
         action = 'updated'
-        product_id = str(existing_product['_id']) if existing_product else None
+        product_id = existing_product.get('id') if existing_product else None
         
-        if getattr(res, 'upserted_id', None):
+        if res.get('upserted_id'):
             action = 'created'
-            product_id = str(res.upserted_id)
+            product_id = str(res.get('upserted_id'))
             
-            # BROADCAST: New Product Alert
-            from models.notifications_model import NotificationsModel
-            nm = NotificationsModel()
-            nm.broadcast_notification({
+            # BROADCAST: New Product Alert using Model
+            notifications_model.broadcast_notification({
                 'type': 'system',
                 'title': f"New Product: {set_doc.get('name')}",
                 'message': f"A new product has been added to our catalog: {set_doc.get('name')} for only €{set_doc.get('price_val', 0):.2f}!",
@@ -130,20 +136,9 @@ def db_info():
         return err
 
     try:
-        # prefer Flask-PyMongo db if available
-        if getattr(mongo, 'db', None) is not None:
-            db = mongo.db
-        else:
-            from pymongo import MongoClient
-            uri = current_app.config.get('MONGO_URI')
-            client = MongoClient(uri, serverSelectionTimeoutMS=5000)
-            # pick DB from URI if present
-            db = client.get_database()
-
-        name = getattr(db, 'name', None) or current_app.config.get('MONGO_URI')
-        cols = db.list_collection_names()
-        counts = {c: db[c].count_documents({}) for c in cols}
-        return jsonify({'db_name': name, 'collections': counts}), 200
+        from models.models import get_db_info
+        info = get_db_info()
+        return jsonify(info), 200
     except Exception as e:
         return jsonify({'status': 'error', 'detail': str(e)}), 500
 

@@ -362,14 +362,14 @@ Data: Fetches single product details from database
 </head>
 
 <body>
-  <!-- Navbar -->
+  <!-- Navigation -->
   <nav class="navbar navbar-expand-lg sticky-top">
     <div class="container">
       <a class="navbar-brand d-flex align-items-center" href="{{ url_for('main.home') }}">
         <div class="brand-icon me-3" style="background: linear-gradient(135deg, var(--premium-purple), var(--premium-indigo)); width: 44px; height: 44px; border-radius: 14px; display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 8px 16px -4px rgba(124, 58, 237, 0.3);">
           <i class="bi bi-cart-check-fill fs-5"></i>
         </div>
-        <span>Smart<span style="color: var(--premium-dark)">Grocery</span></span>
+        <span>Smart<span class="brand-grocery-text">Grocery</span></span>
       </a>
       <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
         <span class="navbar-toggler-icon"></span>
@@ -378,42 +378,47 @@ Data: Fetches single product details from database
         {% set cart_count = shopping_list_count or 0 %}
         <ul class="navbar-nav ms-auto align-items-center">
           <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('main.home') }}">
+            <a class="nav-link {% if request.endpoint == 'main.home' %}active{% endif %}" href="{{ url_for('main.home') }}">
               <i class="bi bi-house-door me-1"></i> Home
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('main.stores_page') }}">
+            <a class="nav-link {% if 'stores' in request.path or request.endpoint == 'main.stores_page' %}active{% endif %}" href="{{ url_for('main.stores_page') }}">
               <i class="bi bi-shop me-1"></i> Stores
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('main.featured_deals_page') }}">
+            <a class="nav-link {% if 'featured-deals' in request.path or request.endpoint == 'main.featured_deals_page' %}active{% endif %}" href="{{ url_for('main.featured_deals_page') }}">
               <i class="bi bi-tags me-1"></i> Deals
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link active" href="{{ url_for('main.compare_prices') }}">
+            <a class="nav-link {% if 'compare' in request.path or request.endpoint == 'main.compare_prices' %}active{% endif %}" href="{{ url_for('main.compare_prices') }}">
               <i class="bi bi-arrow-left-right me-1"></i> Compare
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link d-flex align-items-center" href="{{ url_for('main.shopping_list') }}">
+            <a class="nav-link d-flex align-items-center position-relative {% if 'shopping-list' in request.path or request.endpoint == 'main.shopping_list' %}active{% endif %}" href="{{ url_for('main.shopping_list') }}">
               <i class="bi bi-list-check me-1"></i> Lists
-              {% if cart_count > 0 %}
-              <span class="ms-1 badge rounded-pill bg-danger" style="font-size: 0.7rem; padding: 0.4em 0.6em;">
-                {{ cart_count }}
+              {% if (shopping_list_count or 0) > 0 %}
+              <span class="position-absolute badge rounded-pill bg-danger" style="font-size: 0.65rem; padding: 0.45em 0.7em; top: -5px; right: -10px; border: 2px solid white; box-shadow: 0 4px 10px rgba(220, 53, 69, 0.4); min-width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;">
+                {{ shopping_list_count }}
               </span>
               {% endif %}
             </a>
           </li>
           <li class="nav-item ms-lg-1">
-            <a class="nav-link nav-icon-btn" href="{{ url_for('main.notifications_page') }}" aria-label="Notifications">
+            <a class="nav-link nav-icon-btn position-relative {% if 'notifications' in request.path %}active{% endif %}" href="{{ url_for('main.notifications_page') }}" aria-label="Notifications">
               <i class="bi bi-bell fs-5"></i>
+              {% if (unread_notifications_count or 0) > 0 %}
+              <span class="position-absolute badge rounded-pill bg-danger" style="font-size: 0.65rem; padding: 0.45em 0.7em; top: -5px; right: -10px; border: 2px solid white; box-shadow: 0 4px 10px rgba(220, 53, 69, 0.4); min-width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;">
+                {{ unread_notifications_count }}
+              </span>
+              {% endif %}
             </a>
           </li>
           <li class="nav-item ms-lg-2">
-            <a class="nav-link nav-icon-btn nav-profile-btn" href="{{ url_for('main.profile') }}" aria-label="User Profile">
+            <a class="nav-link nav-icon-btn nav-profile-btn {% if 'profile' in request.path %}active{% endif %}" href="{{ url_for('main.profile') }}" aria-label="User Profile">
               <i class="bi bi-person-circle fs-5"></i>
             </a>
           </li>
@@ -580,7 +585,12 @@ Data: Fetches single product details from database
 
           <!-- Add to List Button -->
           <button id="add-to-list-btn" class="btn btn-premium btn-premium-add w-100 mt-2"
-            data-name="{{ product.name }}" data-id="{{ product._id or product.id }}" data-price="" data-store="">
+            data-name="{{ product.name }}" data-id="{{ product._id or product.id }}" data-price="" data-store=""
+            data-original-price="{{ product.original_price or '' }}"
+            data-offer-json='{{ product.offer|tojson|forceescape if product.offer else "" }}'
+            data-offer-type="{{ product.offer_type or '' }}"
+            data-offer-x="{{ product.offer_x or '' }}"
+            data-offer-y="{{ product.offer_y or '' }}">
             <i class="bi bi-cart-plus-fill"></i>
             Add to Shopping List
           </button>

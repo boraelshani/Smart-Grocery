@@ -17,18 +17,23 @@ def ensure_venv():
     current_dir = os.path.dirname(os.path.abspath(__file__))
     
     # Path handling for both Windows and Linux/Mac
-    if sys.platform == "win32":
-        venv_python = os.path.join(current_dir, 'venv', 'Scripts', 'python.exe')
-    else:
-        venv_python = os.path.join(current_dir, 'venv', 'bin', 'python')
+    # Checks for both 'venv' and '.venv' folders
+    venv_options = ['venv', '.venv']
     
-    # Check if we are already running the venv python
-    if os.path.exists(venv_python) and sys.executable != venv_python:
-        print(f"INFO: Auto-switching to virtual environment: {venv_python}")
-        try:
-            os.execv(venv_python, [venv_python] + sys.argv)
-        except Exception as e:
-            print(f"WARNING: Venv auto-switch failed ({e}). Continuing with current interpreter.")
+    for venv_name in venv_options:
+        if sys.platform == "win32":
+            venv_python = os.path.join(current_dir, venv_name, 'Scripts', 'python.exe')
+        else:
+            venv_python = os.path.join(current_dir, venv_name, 'bin', 'python')
+        
+        # Check if we are already running the venv python
+        if os.path.exists(venv_python) and sys.executable != venv_python:
+            print(f"INFO: Auto-switching to virtual environment: {venv_python}")
+            try:
+                os.execv(venv_python, [venv_python] + sys.argv)
+            except Exception as e:
+                print(f"WARNING: Could not switch to venv: {e}")
+            break
 
 ensure_venv()
 
@@ -75,9 +80,23 @@ if '/' not in raw_uri.split('@')[-1].rstrip('/'):
     app.config.setdefault('MONGO_DBNAME', 'smart_grocery')
 
 # Initialize PyMongo with the Flask app
-mongo.init_app(app)
+# We wrap this in a try-except to handle cases where the MONGO_URI (especially SRV)
+# fails to resolve due to network or DNS issues, allowing the app to still boot in fallback mode.
+try:
+    app.config['MONGO_CONNECTTIMEOUTMS'] = 5000  # 5 second timeout for connection
+    app.config['MONGO_SERVERSELECTIONTIMEOUTMS'] = 5000 # 5 second timeout for server selection
+    mongo.init_app(app)
+    # Test connection if possible
+    with app.app_context():
+        if mongo.db is not None:
+            # The command 'ping' is a low-impact way to verify connection
+            mongo.db.command('ping')
+            print("INFO: MongoDB connection verified.")
+except Exception as e:
+    print(f'WARNING: MongoDB initialization or connection failed: {e}')
+    print('INFO: Running in fallback mode with local JSON data.')
 
-# Now import the blueprints (after PyMongo initialized) so routes can safely access `mongo`
+# Now import the blueprints (after PyMongo attempted initialization)
 from routes import main_bp, auth_bp
 from routes.admin_routes import admin_bp
 
@@ -121,25 +140,20 @@ def inject_navbar_data():
     try:
         email = session.get('user')
         if email:
-            from utils.db import mongo
-            db = getattr(mongo, 'db', None)
-            if db is not None:
-                # 1. Calculate Unread Notifications Count
-                from models.notifications_model import get_unread_count
-                unread_notifications_count = get_unread_count(email)
-                
-                # 2. Calculate Shopping List Count (New items only logic)
-                from models.users_model import get_user_lists
-                data = get_user_lists(email) or {}
-                lists = data.get('lists', []) or []
-                total = 0
-                for lst in lists:
-                    items = lst.get('items', []) or []
-                    total += sum(1 for it in items if not (isinstance(it, dict) and it.get('purchased')))
-                
-                last_viewed = session.get('last_viewed_list_count', 0)
-                if total > last_viewed:
-                    shopping_list_count = total - last_viewed
+            # 1. Calculate Unread Notifications Count using model
+            from models.notifications_model import get_unread_count
+            unread_notifications_count = get_unread_count(email)
+            
+            # 2. Calculate Shopping List Count (New items only)
+            from models.users_model import get_user_lists
+            data = get_user_lists(email) or {}
+            lists = data.get('lists', []) or []
+            new_items_count = 0
+            for lst in lists:
+                items = lst.get('items', []) or []
+                new_items_count += sum(1 for it in items if isinstance(it, dict) and it.get('is_new'))
+            
+            shopping_list_count = new_items_count
     except Exception:
         pass
         
@@ -217,4 +231,4 @@ def debug_mongo():
 
 if __name__ == '__main__':
     # use_reloader=False prevents WinError 10038 on some Windows environments
-    app.run(debug=True, use_reloader=False, port=5000)
+    app.run(debug=True, use_reloader=False, port=5001)

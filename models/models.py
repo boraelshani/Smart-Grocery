@@ -32,6 +32,26 @@ except Exception:
 # USER HELPER FUNCTIONS
 # ═══════════════════════════════════════════════════════════════════════════
 
+def get_db_info():
+    """Retrieve database info and collection counts"""
+    if HAS_DB and mongo is not None and getattr(mongo, 'db', None) is not None:
+        db = mongo.db
+        cols = db.list_collection_names()
+        counts = {c: db[c].count_documents({}) for c in cols}
+        return {'db_name': getattr(db, 'name', 'unknown'), 'collections': counts}
+    
+    # Fallback info
+    return {
+        'db_name': 'in-memory-fallback',
+        'collections': {
+            'products': len(products),
+            'stores': len(stores),
+            'featured_deals': len(featured_deals),
+            'users': len(users)
+        }
+    }
+
+
 def get_user_by_email(email):
     """
     Retrieve user account by email address.

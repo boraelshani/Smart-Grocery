@@ -6,6 +6,7 @@
 document.addEventListener('DOMContentLoaded', () => {
   // INITIALIZE: Run all setup functions when page loads
   initializeBootstrapComponents();
+  setupNavbarScroll();
   setupSearchFunctionality();
   setupShoppingListHandlers();
   setupShoppingListInteractions();
@@ -35,6 +36,22 @@ window.addEventListener('pageshow', function (event) {
     modalInstance.hide();
   }
 });
+
+function setupNavbarScroll() {
+  const nav = document.querySelector('.navbar-premium');
+  if (!nav) return;
+
+  const handleScroll = () => {
+    if (window.scrollY > 50) {
+      nav.classList.add('scrolled');
+    } else {
+      nav.classList.remove('scrolled');
+    }
+  };
+
+  window.addEventListener('scroll', handleScroll);
+  handleScroll(); // Initial check
+}
 
 // BOOTSTRAP: Activate tooltip popovers
 function initializeBootstrapComponents() {
@@ -838,6 +855,7 @@ window.showListSelector = async function (item) {
     const btn = item;
     const name = btn.getAttribute('data-name') || btn.getAttribute('data-title') || 'Item';
     const price = btn.getAttribute('data-price') || '';
+    const originalPrice = btn.getAttribute('data-original-price') || '';
     const store = btn.getAttribute('data-store') || '';
     const image = btn.getAttribute('data-image') || '';
     const id = btn.getAttribute('data-id') || null;
@@ -857,11 +875,18 @@ window.showListSelector = async function (item) {
       if (xNum && yNum) offerPayload = { type: 'buyXgetY', x: xNum, y: yNum };
     }
 
-    item = { name, price, store, image, id };
+    // Determine the base price to use. 
+    // For multibuy deals, we MUST use the original (full) unit price for the calculation to work on the list.
+    let basePriceToStore = price;
+    if (offerPayload && (offerPayload.type === 'buyXgetY' || offerType === 'buyXgetY') && originalPrice) {
+      basePriceToStore = originalPrice;
+    }
+
+    item = { name, price: basePriceToStore, store, image, id };
     if (dealId) item.deal_id = dealId;
     if (offerPayload) item.offer = offerPayload;
     
-    const priceVal = formatPrice(price);
+    const priceVal = formatPrice(basePriceToStore);
     if (!isNaN(priceVal) && priceVal > 0) item.price_val = priceVal;
   }
 
@@ -1245,6 +1270,7 @@ function setupProductModalHandlers() {
       const offerType = btn.getAttribute('data-offer-type') || '';
       const offerX = btn.getAttribute('data-offer-x') || '';
       const offerY = btn.getAttribute('data-offer-y') || '';
+      const originalPrice = btn.getAttribute('data-original-price') || '';
       const dealId = btn.getAttribute('data-id') || btn.getAttribute('data-deal-id') || null;
 
       // Determine effective price and store based on selection state (if in compare page context)
@@ -1286,12 +1312,18 @@ function setupProductModalHandlers() {
       }
 
       // Create item object and show list selector
-      const item = { name, price, id };
+      // For multibuy deals, we MUST use the original (full) unit price for the calculation to work on the list.
+      let priceToUse = price;
+      if (offerPayload && (offerPayload.type === 'buyXgetY' || offerType === 'buyXgetY') && originalPrice) {
+        priceToUse = originalPrice;
+      }
+
+      const item = { name, price: priceToUse, id };
       if (img) item.image = img;
       if (store) item.store = store;
       if (dealId) item.deal_id = dealId;
       if (offerPayload) item.offer = offerPayload;
-      const priceVal = formatPrice(price);
+      const priceVal = formatPrice(priceToUse);
       if (!isNaN(priceVal) && priceVal > 0) item.price_val = priceVal;
 
       // Prefer list selector when available; otherwise add to the active list directly

@@ -245,7 +245,28 @@ def update_user_profile(email: str, update_data: dict) -> bool:
             print(f"[DB ERROR] Failed to update user profile: {e}")
             return False
             
-    # Fallback to mock data
+    # Mock fallback
+    u = (mock_models.users.get(email)) if mock_models else None
+    if u:
+        u.update(update_data)
+        return True
+    return False
+
+
+def update_user(email: str, update_data: dict) -> bool:
+    """Generic update for user document."""
+    if not email or not update_data:
+        return False
+        
+    if flask_mongo is not None and getattr(flask_mongo, 'db', None) is not None:
+        try:
+            flask_mongo.db.users.update_one({'email': email}, {'$set': update_data}, upsert=True)
+            return True
+        except Exception as e:
+            print(f"[DB ERROR] Failed to update user: {e}")
+            return False
+            
+    # Mock fallback
     if getattr(mock_models, 'users', None) is not None:
         u = mock_models.users.get(email)
         if not u:
@@ -253,7 +274,6 @@ def update_user_profile(email: str, update_data: dict) -> bool:
         else:
             u.update(update_data)
         return True
-        
     return False
 
 
@@ -540,6 +560,7 @@ def add_item_to_list(email: str, list_id: str, item) -> bool:
                 existing_item = items[existing_idx]
                 merged_item = existing_item.copy() if isinstance(existing_item, dict) else {'name': str(existing_item)}
                 merged_item['qty'] = _coerce_qty(existing_item) + _coerce_qty(item_obj)
+                merged_item['is_new'] = True  # Mark as new even if merged
                 if not merged_item.get('store') and item_obj.get('store'):
                     merged_item['store'] = item_obj.get('store')
                 if not merged_item.get('image') and item_obj.get('image'):
@@ -551,6 +572,7 @@ def add_item_to_list(email: str, list_id: str, item) -> bool:
                         merged_item['price'] = price_val
                 items[existing_idx] = merged_item
             else:
+                item_obj['is_new'] = True  # New item added
                 items.append(item_obj)
 
             result = flask_mongo.db.users.update_one(
@@ -582,6 +604,7 @@ def add_item_to_list(email: str, list_id: str, item) -> bool:
                     existing_item = items[existing_idx]
                     merged_item = existing_item.copy() if isinstance(existing_item, dict) else {'name': str(existing_item)}
                     merged_item['qty'] = _coerce_qty(existing_item) + _coerce_qty(item_obj)
+                    merged_item['is_new'] = True
                     if not merged_item.get('store') and item_obj.get('store'):
                         merged_item['store'] = item_obj.get('store')
                     if not merged_item.get('image') and item_obj.get('image'):
@@ -595,10 +618,53 @@ def add_item_to_list(email: str, list_id: str, item) -> bool:
                     return True
 
                 # Item doesn't exist - add it or multibuy should stay separate
+                item_obj['is_new'] = True
                 items.append(item_obj)
                 return True
     return False
 
+
+def mark_items_as_seen(email: str, list_id: str) -> bool:
+    """Clear the 'is_new' flag from all items in a specific list."""
+    if not email or not list_id:
+        return False
+    
+    if flask_mongo is not None and getattr(flask_mongo, 'db', None) is not None:
+        try:
+            user = flask_mongo.db.users.find_one({'email': email})
+            if not user:
+                return False
+            
+            for lst in user.get('shopping_lists', []):
+                if lst.get('id') == list_id:
+                    items = lst.get('items', [])
+                    changed = False
+                    for item in items:
+                        if isinstance(item, dict) and item.get('is_new'):
+                            item['is_new'] = False
+                            changed = True
+                    
+                    if changed:
+                        flask_mongo.db.users.update_one(
+                            {'email': email, 'shopping_lists.id': list_id},
+                            {'$set': {'shopping_lists.$.items': items}}
+                        )
+                    return True
+            return False
+        except Exception as e:
+            print(f"Error marking items as seen: {e}")
+            return False
+    
+    # Mock fallback
+    u = mock_models.users.get(email) if (mock_models and email) else None
+    if u:
+        for lst in u.get('shopping_lists', []):
+            if lst.get('id') == list_id:
+                for item in lst.get('items', []):
+                    if isinstance(item, dict):
+                        item['is_new'] = False
+                return True
+    return False
 
 def remove_item_from_list(email: str, list_id: str, item_name: str) -> bool:
     """Remove an item from a specific shopping list."""
@@ -625,7 +691,7 @@ def remove_item_from_list(email: str, list_id: str, item_name: str) -> bool:
             return False
     
     # Mock fallback
-    u = mock_models.users.get(email)
+    u = mock_models.users.get(email) if mock_models else None
     if u:
         for lst in u.get('shopping_lists', []):
             if lst.get('id') == list_id:
@@ -637,3 +703,22 @@ def remove_item_from_list(email: str, list_id: str, item_name: str) -> bool:
                 lst['items'] = [it for it in items if not (isinstance(it, dict) and it.get('name') == item_name)]
                 return True
     return False
+
+class UsersModel:
+    """Wrapper class for user functions."""
+    def get_user_by_email(self, email): return get_user_by_email(email)
+    def update_user(self, email, update_data): return update_user(email, update_data)
+    def update_user_profile(self, email, update_data): return update_user_profile(email, update_data)
+    def create_user(self, user_doc): return create_user(user_doc)
+    def authenticate(self, email, password): return authenticate(email, password)
+    def get_user_lists(self, email): return get_user_lists(email)
+    def create_shopping_list(self, email, list_name): return create_shopping_list(email, list_name)
+    def rename_shopping_list(self, email, list_id, new_name): return rename_shopping_list(email, list_id, new_name)
+    def delete_shopping_list(self, email, list_id): return delete_shopping_list(email, list_id)
+    def set_active_list(self, email, list_id): return set_active_list(email, list_id)
+    def add_item_to_list(self, email, list_id, item): return add_item_to_list(email, list_id, item)
+    def remove_item_from_list(self, email, list_id, item_name): return remove_item_from_list(email, list_id, item_name)
+    def update_list_items(self, email, list_id, items): return update_list_items(email, list_id, items)
+    def mark_items_as_seen(self, email, list_id): return mark_items_as_seen(email, list_id)
+
+users_model = UsersModel()

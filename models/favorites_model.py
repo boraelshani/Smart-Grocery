@@ -260,3 +260,16 @@ def clear_user_favorites(user_email: str) -> bool:
     except Exception as e:
         print(f'ERROR clearing favorites: {e}')
         return False
+
+
+class FavoritesModel:
+    """Wrapper class for favorites functions."""
+    def add_favorite(self, user_email, product_id, product_data): return add_favorite(user_email, product_id, product_data)
+    def remove_favorite(self, user_email, product_id): return remove_favorite(user_email, product_id)
+    def is_favorited(self, user_email, product_id): return is_favorited(user_email, product_id)
+    def get_user_favorites(self, user_email, category=None, limit=100): return get_user_favorites(user_email, category, limit)
+    def get_favorites_count(self, user_email): return get_favorites_count(user_email)
+    def get_favorite_product_ids(self, user_email): return get_favorite_product_ids(user_email)
+    def clear_user_favorites(self, user_email): return clear_user_favorites(user_email)
+
+favorites_model = FavoritesModel()

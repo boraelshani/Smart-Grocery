@@ -14,197 +14,265 @@
       background-color: #f8f9fa;
     }
 
-    .product-card {
-      border: none;
-      border-radius: 16px;
-      transition: all 0.3s ease;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-      display: flex;
-      flex-direction: column;
-      cursor: pointer;
+    .premium-hero {
+      background: linear-gradient(-45deg, #7c3aed, #6366f1, #8b5cf6, #d946ef);
+      background-size: 400% 400%;
+      animation: gradientBG 15s ease infinite;
+      color: white;
+      padding: 120px 0 100px;
+      border-radius: 0 0 50px 50px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 10px 40px rgba(124, 58, 237, 0.4);
+    }
+
+    @keyframes gradientBG {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .breadcrumb-item + .breadcrumb-item::before {
+      color: rgba(255, 255, 255, 0.4);
+    }
+
+    /* Floating shapes */
+    .bg-shape {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(5px);
+      border-radius: 20%;
+      animation: float 10s infinite ease-in-out;
+    }
+    .shape-1 { top: 10%; left: 5%; width: 80px; height: 80px; }
+    .shape-2 { top: 50%; right: 5%; width: 120px; height: 120px; border-radius: 50%; animation-delay: -2s; }
+    
+    @keyframes float {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-20px) rotate(10deg); }
+    }
+
+    .store-logo-large {
+      width: 120px;
+      height: 120px;
       background: white;
-      height: 100%;
-    }
-
-    .product-card:hover {
-      transform: translateY(-6px);
-      box-shadow: 0 12px 30px rgba(102, 126, 234, 0.25);
-    }
-
-    .product-card-inner {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-    }
-
-    .product-image {
-      width: 100%;
-      height: 280px;
-      object-fit: contain;
-      background: white;
+      border-radius: 30px;
       padding: 15px;
-    }
-
-    .store-header {
-      background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
-      color: white;
-      padding: 3rem 0;
-      border-bottom-left-radius: 24px;
-      border-bottom-right-radius: 24px;
-    }
-
-    .price-badge {
-      position: absolute;
-      top: 12px;
-      right: 12px;
-      background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
-      color: white;
-      padding: 6px 12px;
-      border-radius: 20px;
-      font-weight: 600;
-      font-size: 0.95rem;
-      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-    }
-
-    .btn-favorite {
-      position: absolute;
-      top: 12px;
-      left: 12px;
-      width: 38px;
-      height: 38px;
-      border-radius: 50%;
-      background: white;
-      border: none;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-      color: #ccc;
-      font-size: 1.2rem;
-      transition: all 0.2s ease;
-      z-index: 10;
       display: flex;
       align-items: center;
       justify-content: center;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+      margin-bottom: 1.5rem;
+      position: relative;
+      z-index: 2;
     }
 
-    .btn-favorite:hover {
-      color: #ff6b6b;
-      transform: scale(1.1);
+    .store-logo-large img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
     }
 
-    .btn-favorite.active {
-      color: #ff6b6b;
+    /* Filters Bar Styling synced with Compare Prices */
+    .filter-section {
+      margin-top: -30px;
+      position: relative;
+      z-index: 10;
     }
 
-    .card-title {
-      font-size: 1.1rem;
-      line-height: 1.4;
+    .search-wrapper-premium {
+      background: white;
+      border-radius: 50px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+      padding: 8px;
+      display: flex;
+      align-items: center;
+      border: 1px solid #eef2f7;
     }
 
-    .category-badge {
-      background-color: #e9ecef;
-      color: #7c3aed;
-      font-weight: 600;
-      padding: 4px 8px;
-      border-radius: 6px;
-      font-size: 0.8rem;
-    }
-
-    .btn-add-cart {
-      background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
-      color: white;
+    .btn-smooth {
       border: none;
+      border-radius: 50px;
+      padding: 10px 24px;
       font-weight: 600;
       transition: all 0.3s ease;
     }
 
-    .btn-add-cart:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 16px rgba(102, 126, 234, 0.3);
-      color: white;
+    /* Product Cards Premium - Matching other pages */
+    .product-card-premium {
+      background: white;
+      border-radius: 24px;
+      border: 1px solid #f1f5f9;
+      overflow: hidden;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      height: 100%;
+      position: relative;
+      display: flex;
+      flex-direction: column;
     }
 
-    .add-to-list-btn {
-      background: #f8f9fa;
-      color: #7c3aed;
-      border: 2px solid #7c3aed;
-      font-weight: 600;
+    .product-card-premium:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 20px 40px rgba(124, 58, 237, 0.12);
+      border-color: #7c3aed;
+    }
+
+    .card-img-container {
+      height: 220px;
+      padding: 24px;
+      background: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .card-img-container img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      transition: transform 0.5s ease;
+    }
+
+    .product-card-premium:hover .card-img-container img {
+      transform: scale(1.08);
+    }
+
+    .premium-badge-price {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: rgba(124, 58, 237, 0.9);
+      backdrop-filter: blur(8px);
+      color: white;
+      padding: 6px 14px;
+      border-radius: 12px;
+      font-weight: 800;
+      font-size: 0.95rem;
+      z-index: 5;
+      box-shadow: 0 8px 16px rgba(124, 58, 237, 0.2);
+    }
+
+    .product-details {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      flex-grow: 1;
+    }
+
+    .product-cat-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 6px;
+    }
+
+    .product-name-premium {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #1e293b;
+      margin-bottom: 12px;
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      min-height: 3.2em;
+    }
+
+
+
+    .btn-favorite-premium {
+      position: absolute;
+      top: 15px;
+      left: 15px;
+      width: 40px;
+      height: 40px;
+      background: white;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+      border: 1px solid #f1f5f9;
+      color: #cbd5e1;
       transition: all 0.3s ease;
+      z-index: 5;
     }
 
-    .add-to-list-btn:hover {
-      background: #7c3aed;
-      color: white;
+    .btn-favorite-premium.active {
+      color: #ef4444;
+      background: #fef2f2;
+      border-color: #fee2e2;
     }
 
-    /* Target specific card body for debugging */
-    .product-card .p-3 {
-      border: 1px solid rgba(0,0,0,0.05);
-      border-bottom-left-radius: 16px;
-      border-bottom-right-radius: 16px;
-      min-height: 200px;
+    .btn-favorite-premium:hover {
+      transform: scale(1.1);
     }
   </style>
 </head>
 
 <body>
   <!-- Navigation -->
-        <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
+  <nav class="navbar navbar-expand-lg navbar-premium">
     <div class="container">
-      <a class="navbar-brand fw-bold" href="{{ url_for('main.home') }}" style="font-size: 1.5rem; color: #667eea !important;">
-        <i class="bi bi-cart-check-fill me-2"></i>Smart Grocery
+      <a class="navbar-brand d-flex align-items-center" href="{{ url_for('main.home') }}">
+        <div class="brand-icon me-3">
+          <i class="bi bi-cart-check-fill fs-5"></i>
+        </div>
+        <span>Smart<span class="brand-grocery-text">Grocery</span></span>
       </a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
         <span class="navbar-toggler-icon"></span>
       </button>
       <div class="collapse navbar-collapse" id="navbarNav">
+        {% set cart_count = shopping_list_count or 0 %}
         <ul class="navbar-nav ms-auto align-items-center">
           <li class="nav-item">
-            <a class="nav-link {% if request.endpoint == 'main.home' %}active fw-semibold{% endif %}" href="{{ url_for('main.home') }}">
-              <i class="bi bi-house-door"></i> Home
+            <a class="nav-link {% if request.endpoint == 'main.home' %}active{% endif %}" href="{{ url_for('main.home') }}">
+              <i class="bi bi-house-door me-1"></i> Home
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link {% if 'stores' in request.path %}active fw-semibold{% endif %}" href="{{ url_for('main.stores_page') }}">
-              <i class="bi bi-shop"></i> Stores
+            <a class="nav-link {% if 'stores' in request.path or request.endpoint == 'main.stores_page' %}active{% endif %}" href="{{ url_for('main.stores_page') }}">
+              <i class="bi bi-shop me-1"></i> Stores
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link {% if 'featured-deals' in request.path %}active fw-semibold{% endif %}" href="{{ url_for('main.featured_deals_page') }}">
-              <i class="bi bi-tags"></i> Deals
+            <a class="nav-link {% if 'featured-deals' in request.path or request.endpoint == 'main.featured_deals_page' %}active{% endif %}" href="{{ url_for('main.featured_deals_page') }}">
+              <i class="bi bi-tags me-1"></i> Deals
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link {% if 'compare' in request.path %}active fw-semibold{% endif %}" href="{{ url_for('main.compare_prices') }}">
-              <i class="bi bi-arrow-left-right"></i> Compare
+            <a class="nav-link {% if 'compare' in request.path or request.endpoint == 'main.compare_prices' %}active{% endif %}" href="{{ url_for('main.compare_prices') }}">
+              <i class="bi bi-arrow-left-right me-1"></i> Compare
             </a>
           </li>
-          <li class="nav-item me-lg-3">
-            <a class="nav-link d-flex align-items-center {% if 'shopping-list' in request.path %}active fw-semibold{% endif %}" href="{{ url_for('main.shopping_list') }}">
-              <div class="position-relative me-1">
-                <i class="bi bi-list-check fs-5"></i>
-                {% if (shopping_list_count or 0) > 0 %}
-                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem; min-width: 14px; height: 14px; display: flex; align-items: center; justify-content: center; transform: translate(25%, -110%) !important;">
-                  {{ shopping_list_count }}
-                </span>
-                {% endif %}
-              </div>
-              Lists
-            </a>
-          </li>
-          
-          <!-- Icon-only Menu Items -->
           <li class="nav-item">
-            <a class="nav-link nav-icon-link px-2 position-relative {% if 'notifications' in request.path %}active{% endif %}" href="{{ url_for('main.notifications_page') }}" title="Notifications">
-              <i class="bi bi-bell-fill fs-4"></i>
+            <a class="nav-link d-flex align-items-center position-relative {% if 'shopping-list' in request.path or request.endpoint == 'main.shopping_list' %}active{% endif %}" href="{{ url_for('main.shopping_list') }}">
+              <i class="bi bi-list-check me-1"></i> Lists
+              {% if (shopping_list_count or 0) > 0 %}
+              <span class="position-absolute badge rounded-pill bg-danger" style="font-size: 0.65rem; padding: 0.45em 0.7em; top: -5px; right: -10px; border: 2px solid white; box-shadow: 0 4px 10px rgba(220, 53, 69, 0.4); min-width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;">
+                {{ shopping_list_count }}
+              </span>
+              {% endif %}
+            </a>
+          </li>
+          <li class="nav-item ms-lg-1">
+            <a class="nav-link nav-icon-btn position-relative {% if 'notifications' in request.path %}active{% endif %}" href="{{ url_for('main.notifications_page') }}" aria-label="Notifications">
+              <i class="bi bi-bell fs-5"></i>
               {% if (unread_notifications_count or 0) > 0 %}
-              <span class="position-absolute badge rounded-pill bg-danger" style="font-size: 0.6rem; min-width: 14px; height: 14px; display: flex; align-items: center; justify-content: center; top: 8px; right: 2px;">
+              <span class="position-absolute badge rounded-pill bg-danger" style="font-size: 0.65rem; padding: 0.45em 0.7em; top: -5px; right: -10px; border: 2px solid white; box-shadow: 0 4px 10px rgba(220, 53, 69, 0.4); min-width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;">
                 {{ unread_notifications_count }}
               </span>
               {% endif %}
             </a>
           </li>
-          <li class="nav-item">
-            <a class="nav-link nav-icon-link px-2 {% if 'profile' in request.path %}active{% endif %}" href="{{ url_for('main.profile') }}" title="My Profile">
-              <i class="bi bi-person-circle fs-4"></i>
+          <li class="nav-item ms-lg-2">
+            <a class="nav-link nav-icon-btn nav-profile-btn {% if 'profile' in request.path %}active{% endif %}" href="{{ url_for('main.profile') }}" aria-label="User Profile">
+              <i class="bi bi-person-circle fs-5"></i>
             </a>
           </li>
         </ul>
@@ -212,96 +280,191 @@
     </div>
   </nav>
 
-  <!-- Store Header -->
-  <section class="store-header">
-    <div class="container">
-      <div class="d-flex justify-content-start mb-3">
-        <a href="{{ url_for('main.stores_page') }}" class="btn btn-light btn-sm shadow-sm">
-          ← Back to Stores
-        </a>
-      </div>
-      <div class="text-center">
-        {% if store and store.image %}
-        <div class="mb-3">
-          <img src="{{ store.image }}" alt="{{ store_name }}"
-            style="max-width: 200px; max-height: 120px; object-fit: contain; background: white; padding: 15px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+  <!-- Premium Store Header -->
+  <header class="premium-hero">
+    <div class="bg-shape shape-1"></div>
+    <div class="bg-shape shape-2"></div>
+    <div class="bg-shape shape-3" style="position: absolute; bottom: 10%; left: 30%; width: 60px; height: 60px; background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(5px); border-radius: 20%; animation: float 10s infinite ease-in-out; animation-delay: -5s;"></div>
+    
+    <div class="container position-relative" style="z-index: 2;">
+      <!-- Breadcrumb -->
+      <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb justify-content-center m-0">
+          <li class="breadcrumb-item"><a href="/" class="text-white opacity-75 text-decoration-none">Home</a></li>
+          <li class="breadcrumb-item"><a href="/stores" class="text-white opacity-75 text-decoration-none">Stores</a></li>
+          <li class="breadcrumb-item active text-white fw-bold" aria-current="page">{{ store_name }}</li>
+        </ol>
+      </nav>
+
+      <div class="d-flex flex-column align-items-center mb-4">
+        <div class="store-logo-large">
+          {% if store and store.image %}
+          <img src="{{ store.image }}" 
+               alt="{{ store_name }}" 
+               onerror="this.src='https://ui-avatars.com/api/?name={{ store_name }}&background=7c3aed&color=fff&size=128'">
+          {% else %}
+          <img src="{{ url_for('static', filename='images/' + store_name.lower() + '_logo.png') }}" 
+               alt="{{ store_name }}" 
+               onerror="this.src='https://ui-avatars.com/api/?name={{ store_name }}&background=7c3aed&color=fff&size=128'">
+          {% endif %}
         </div>
-        {% endif %}
-        <h1 class="fw-bold mb-2">{{ store_name }}</h1>
-        <p class="lead mb-0">{{ product_count }} product{{ 's' if product_count != 1 else '' }} available</p>
+        <h1 class="display-4 fw-bold mb-2 text-white">{{ store_name }} Catalogue</h1>
+        <p class="lead opacity-90 text-white">Browse and compare the best deals at {{ store_name }}</p>
       </div>
     </div>
-  </section>
+  </header>
 
-  <!-- Products Grid -->
-  <section class="container py-5">
-    {% if products %}
-    <div class="row g-4">
-      {% for product in products %}
-      <div class="col-md-6 col-lg-4 col-xl-3">
-        {% set detail_url = url_for('main.product_info', product_id=product.get('_id') or product.get('id'),
-        store_name=store_name, store_price=product.store_price or product.price or '', store_image=product.store_image
-        or product.image or '', store_url=product.get('url') or store.get('website') or store.get('url') or '') %}
-        <div class="product-card" role="button" tabindex="0" data-detail-url="{{ detail_url }}">
-          <div class="product-card-inner">
-            <!-- Price Badge & Favorite Button -->
-            <div class="position-relative">
-              <span class="price-badge">
-                <i class="bi bi-tag me-1"></i>€{{ product.store_price or product.price or 'N/A' }}
-              </span>
-              <button class="btn-favorite {{ 'active' if product.get('is_favorited') else '' }}" 
-                onclick="toggleFavorite(event, '{{ product.get('_id') or product.get('id') }}', this)">
-                <i class="bi {{ 'bi-heart-fill' if product.get('is_favorited') else 'bi-heart' }}"></i>
-              </button>
-              <img src="{{ product.store_image or product.image or 'https://via.placeholder.com/400x300' }}"
-                alt="{{ product.name }}" class="product-image" onerror="this.src='https://via.placeholder.com/400x300'">
-            </div>
-            <!-- Card Body -->
-            <div class="p-3 d-flex flex-column h-100">
-              <h5 class="card-title text-dark mb-2">{{ product.name }}</h5>
+  <!-- Filter Section -->
+  <div class="container filter-section">
+    <div class="row justify-content-center">
+      <div class="col-lg-10">
+        <!-- Search Bar with Filters Button (Identical to Compare Page) -->
+        <div class="d-flex align-items-center bg-white shadow-sm p-1 mb-4"
+          style="border-radius: 50px; border: 1px solid #e2e8f0; height: 60px;">
+          <span class="ps-4 pe-2 text-muted" style="font-size: 1.2rem;"><i class="bi bi-search"></i></span>
+          <input id="search-input" type="text" class="form-control border-0 shadow-none bg-transparent"
+            placeholder="Search products in {{ store_name }}..." autocomplete="off"
+            style="outline: none !important; box-shadow: none !important; font-size: 1.1rem; height: 100%;" onkeyup="filterProducts()">
 
-              {% if product.category %}
-              <p class="text-muted small mb-3">
-                <span class="category-badge">{{ product.category }}</span>
-              </p>
-              {% endif %}
+          <!-- Filters Dropdown Button -->
+          <div class="dropdown ms-2 me-1">
+            <button class="btn btn-smooth rounded-pill px-4" type="button" id="filtersDropdownBtn"
+              data-bs-toggle="dropdown" aria-expanded="false"
+              style="height: 50px; display: flex; align-items: center; border: 2px solid #e2e8f0; background: #f5f3ff; color: #7c3aed; font-weight: 600; font-size: 1.05rem; transition: all 0.3s ease;">
+              <i class="bi bi-sliders2 me-2"></i> Filters
+            </button>
+            <div class="dropdown-menu dropdown-menu-end p-3 shadow-lg border-0 mt-2"
+              aria-labelledby="filtersDropdownBtn" style="min-width: 320px; border-radius: 16px; z-index: 1050;">
+              <div class="mb-2">
+                <label class="form-label"><i class="bi bi-grid"></i> Category</label>
+                <select id="category-filter-dropdown" class="form-select" onchange="syncChipFromDropdown()">
+                  <option value="">All Categories</option>
+                  {% for category in category_options %}
+                  <option value="{{ category.name }}">{{ category.name }}</option>
+                  {% endfor %}
+                </select>
+              </div>
 
-              {% if product.unit %}
-              <div class="text-muted small mb-2">{{ product.unit }}</div>
-              {% endif %}
+              <div class="mb-2">
+                <label class="form-label"><i class="bi bi-currency-euro"></i> Price Range</label>
+                <div class="input-group">
+                  <input id="min-price" type="number" step="0.01" class="form-control bg-white" placeholder="Min" onchange="filterProducts()">
+                  <span class="input-group-text">to</span>
+                  <input id="max-price" type="number" step="0.01" class="form-control bg-white" placeholder="Max" onchange="filterProducts()">
+                </div>
+              </div>
 
-              {% if product.description %}
-              <p class="text-muted small mb-3 product-description-clamp">{{ product.description }}</p>
-              {% endif %}
+              <div class="mb-2">
+                <label class="form-label"><i class="bi bi-sort-down"></i> Sort By</label>
+                <select id="sort-order" class="form-select" onchange="filterProducts()">
+                  <option value="price-asc">Price: Low to High</option>
+                  <option value="price-desc">Price: High to Low</option>
+                  <option value="name-asc">Name: A to Z</option>
+                  <option value="name-desc">Name: Z to A</option>
+                </select>
+              </div>
 
-              <!-- Buttons Section -->
-              <div class="d-flex flex-column gap-2 mt-auto">
-                <button type="button" class="btn btn-premium btn-premium-add w-100" 
-                  data-name="{{ product.name }}"
-                  data-price="{{ product.store_price or product.price or '' }}"
-                  data-image="{{ product.store_image or product.image or '' }}" 
-                  data-store="{{ store_name }}"
-                  data-id="{{ product.get('_id') or product.get('id') }}">
-                  <i class="bi bi-cart-plus-fill"></i>Add to List
-                </button>
-                <a href="{{ detail_url }}" class="btn btn-premium btn-premium-view w-100"
-                  onclick="event.stopPropagation();">
-                  <i class="bi bi-info-circle-fill"></i> View Details
-                </a>
+              <div class="d-flex gap-2 mt-3">
+                <button id="apply-filters-btn" class="btn flex-grow-1" onclick="filterProducts()" style="background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); 
+                             color: white; 
+                             border: none; 
+                             border-radius: 8px; 
+                             padding: 10px; 
+                             font-weight: 500;">Apply Settings</button>
+                <button id="clear-filters-btn" class="btn" onclick="clearFilters()" style="background: linear-gradient(135deg, #6c757d 0%, #495057 100%); 
+                             color: white; 
+                             border: none; 
+                             border-radius: 8px; 
+                             padding: 10px; 
+                             font-weight: 500;">Reset</button>
               </div>
             </div>
           </div>
         </div>
+
+        <!-- Categories Filter (Synced with Compare/Deals) -->
+        <div class="category-chip-row mt-4 mb-3">
+          <button type="button" class="category-chip active" data-category-chip="" onclick="selectCategoryChip(this)">All</button>
+          {% set cats = category_options if category_options is defined else [] %}
+          {% for cat_obj in cats %}
+          {% set cat_name = cat_obj.name if cat_obj is mapping else cat_obj %}
+          <button type="button" class="category-chip" data-category-chip="{{ cat_name }}" onclick="selectCategoryChip(this)">
+            {{ cat_name }}
+          </button>
+          {% endfor %}
+        </div>
       </div>
-      {% endfor %}
     </div>
-    {% else %}
-    <div class="text-center py-5">
-      <h3 class="text-muted">No products found for {{ store_name }}</h3>
-      <p class="text-muted">Check back later or browse other stores.</p>
-      <a href="{{ url_for('main.stores_page') }}" class="btn btn-primary">Browse All Stores</a>
+  </div>
+
+  <!-- Products Catalog -->
+  <section class="container py-5">
+    <div class="row g-4" id="products-grid">
+      {% if products %}
+        {% for product in products %}
+          <div class="col-md-6 col-lg-4 col-xl-3 product-item" 
+               data-category="{{ product.category }}" 
+               data-name="{{ product.name|lower }}">
+            {% set detail_url = url_for('main.product_info', product_id=product.get('_id') or product.get('id'),
+                store_name=store_name, store_price=product.store_price or product.price or '', store_image=product.store_image
+                or product.image or '', store_url=product.get('url') or store.get('website') or store.get('url') or '') %}
+            
+            <div class="product-card-premium">
+              <!-- Favorite Button -->
+              <button class="btn-favorite-premium {{ 'active' if product.get('is_favorited') else '' }}" 
+                      onclick="toggleFavorite(event, '{{ product.get('_id') or product.get('id') }}', this); event.stopPropagation();" 
+                      title="Add to Favorites">
+                <i class="bi bi-heart{{ '-fill' if product.get('is_favorited') else '' }}"></i>
+              </button>
+
+              <!-- Price Badge -->
+              <div class="premium-badge-price">
+                €{{ "%.2f"|format((product.store_price or product.price or 0)|float) }}
+              </div>
+
+              <!-- Product Image -->
+              <div class="card-img-container" onclick="window.location.href='{{ detail_url }}'">
+                <img src="{{ product.store_image or product.image or '/static/images/placeholder.png' }}" 
+                     alt="{{ product.name }}" 
+                     onerror="this.src='/static/images/placeholder.png'">
+              </div>
+
+              <!-- Product Details -->
+              <div class="product-details">
+                <div class="product-cat-label">{{ product.category or 'General' }}</div>
+                <h5 class="product-name-premium" onclick="window.location.href='{{ detail_url }}'" style="cursor: pointer;">
+                  {{ product.name }}
+                </h5>
+                
+                <div class="mt-auto d-grid gap-2">
+                  <button class="btn btn-premium-action" 
+                    data-name="{{ product.name }}"
+                    data-price="{{ product.store_price or product.price or '0.00' }}"
+                    data-image="{{ product.store_image or product.image or '' }}" 
+                    data-store="{{ store_name }}"
+                    data-id="{{ product.get('_id') or product.get('id') }}"
+                    onclick="window.showListSelector(this);">
+                    <i class="bi bi-plus-circle-fill"></i> Add to List
+                  </button>
+                  <a href="{{ detail_url }}" class="btn btn-outline-secondary" style="border-radius: 12px; font-weight: 600;" onclick="event.stopPropagation();">
+                    <i class="bi bi-info-circle"></i> View Details
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      {% else %}
+        <div class="col-12 text-center py-5">
+          <div class="bg-white p-5 rounded-4 shadow-sm border">
+            <i class="bi bi-search fa-3x text-muted mb-3" style="font-size: 3rem;"></i>
+            <h3>No products found</h3>
+            <p class="text-muted">We couldn't find any products for {{ store_name }} right now. Please try again later.</p>
+            <a href="/stores" class="btn btn-primary rounded-pill px-4 mt-2">Back to Stores</a>
+          </div>
+        </div>
+      {% endif %}
     </div>
-    {% endif %}
   </section>
 
   <!-- Footer -->
@@ -312,33 +475,114 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="{{ url_for('static', filename='js/script.js') }}"></script>
   <script>
-    // Make the entire product card open the details page, except when clicking buttons/links inside it.
-    document.addEventListener('DOMContentLoaded', function () {
-      function shouldIgnoreClick(event) {
-        return event.target.closest('.add-to-cart-btn') ||
-          event.target.closest('a') ||
-          event.target.closest('.btn-favorite') ||
-          event.target.closest('.btn-premium-add') ||
-          event.target.closest('.btn-premium-view');
+    window.addEventListener('scroll', function() {
+      const nav = document.querySelector('.navbar');
+      if (window.scrollY > 50) {
+        nav.classList.add('scrolled');
+      } else {
+        nav.classList.remove('scrolled');
       }
-
-      document.querySelectorAll('.product-card').forEach(card => {
-        const detailUrl = card.dataset.detailUrl;
-        if (!detailUrl) return;
-
-        card.addEventListener('click', (event) => {
-          if (shouldIgnoreClick(event)) return;
-          window.location.href = detailUrl;
-        });
-
-        card.addEventListener('keydown', (event) => {
-          if (event.key === 'Enter' || event.key === ' ') {
-            event.preventDefault();
-            window.location.href = detailUrl;
-          }
-        });
-      });
     });
+
+    // Initialize on load
+    document.addEventListener('DOMContentLoaded', function() {
+      const nav = document.querySelector('.navbar');
+      if (window.scrollY > 50) {
+        nav.classList.add('scrolled');
+      }
+    });
+
+    function filterProducts() {
+      const searchTerm = document.getElementById('search-input').value.toLowerCase();
+      
+      // Get active category from chips
+      const activeChip = document.querySelector('.category-chip.active');
+      const categoryFilter = activeChip ? activeChip.getAttribute('data-category-chip') : '';
+      
+      const minPrice = parseFloat(document.getElementById('min-price')?.value) || 0;
+      const maxPrice = parseFloat(document.getElementById('max-price')?.value) || Infinity;
+      const sortOrder = document.getElementById('sort-order')?.value || 'price-asc';
+      
+      const grid = document.getElementById('products-grid');
+      const items = Array.from(document.querySelectorAll('.product-item'));
+
+      items.forEach(item => {
+        const name = item.getAttribute('data-name') || '';
+        const category = item.getAttribute('data-category') || '';
+        const priceText = item.querySelector('.premium-badge-price')?.textContent || '';
+        const price = parseFloat(priceText.replace(/[^0-9.]/g, '')) || 0;
+        
+        const matchesSearch = name.includes(searchTerm);
+        const matchesCategory = !categoryFilter || category === categoryFilter;
+        const matchesPrice = price >= minPrice && price <= maxPrice;
+
+        if (matchesSearch && matchesCategory && matchesPrice) {
+          item.style.display = 'block';
+        } else {
+          item.style.display = 'none';
+        }
+      });
+
+      // Sorting Logic
+      const visibleItems = items.filter(item => item.style.display !== 'none');
+      visibleItems.sort((a, b) => {
+        const nameA = a.getAttribute('data-name') || '';
+        const nameB = b.getAttribute('data-name') || '';
+        const priceA = parseFloat(a.querySelector('.premium-badge-price')?.textContent.replace(/[^0-9.]/g, '')) || 0;
+        const priceB = parseFloat(b.querySelector('.premium-badge-price')?.textContent.replace(/[^0-9.]/g, '')) || 0;
+
+        if (sortOrder === 'price-asc') return priceA - priceB;
+        if (sortOrder === 'price-desc') return priceB - priceA;
+        if (sortOrder === 'name-asc') return nameA.localeCompare(nameB);
+        if (sortOrder === 'name-desc') return nameB.localeCompare(nameA);
+        return 0;
+      });
+
+      // Re-append sorted visible items to grid
+      visibleItems.forEach(item => grid.appendChild(item));
+    }
+
+    function selectCategoryChip(chip) {
+      // Toggle active class
+      document.querySelectorAll('.category-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      
+      // Sync dropdown for consistency
+      const category = chip.getAttribute('data-category-chip');
+      const dropdown = document.getElementById('category-filter-dropdown');
+      if (dropdown) dropdown.value = category;
+      
+      filterProducts();
+    }
+
+    function syncChipFromDropdown() {
+      const dropdown = document.getElementById('category-filter-dropdown');
+      const val = dropdown.value;
+      const chips = document.querySelectorAll('.category-chip');
+      
+      chips.forEach(chip => {
+        if (chip.getAttribute('data-category-chip') === val) {
+          chip.classList.add('active');
+        } else {
+          chip.classList.remove('active');
+        }
+      });
+      
+      filterProducts();
+    }
+
+    function clearFilters() {
+      document.getElementById('search-input').value = '';
+      const dropdown = document.getElementById('category-filter-dropdown');
+      if (dropdown) dropdown.value = '';
+      
+      document.querySelectorAll('.category-chip').forEach(c => c.classList.remove('active'));
+      document.querySelector('.category-chip[data-category-chip=""]')?.classList.add('active');
+      
+      document.getElementById('min-price').value = '';
+      document.getElementById('max-price').value = '';
+      filterProducts();
+    }
   </script>
 
   <!-- Global List Selector Modal -->

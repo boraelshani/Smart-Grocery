@@ -67,6 +67,10 @@
 			box-shadow: 0 2px 4px rgba(124, 58, 237, 0.05);
 		}
 
+		.header-chip.price-chip {
+			gap: 0;
+		}
+
 		.header-chip.dark {
 			background: #f3f0ff;
 			color: var(--premium-purple);
@@ -294,25 +298,7 @@
 			background: #fbfcfe;
 		}
 
-		/* Unified Buttons */
-		.btn-premium-action {
-			height: 48px !important;
-			width: auto;
-			min-width: 48px;
-			display: inline-flex;
-			align-items: center;
-			justify-content: center;
-			font-weight: 700;
-			border-radius: 12px !important;
-			transition: all 0.2s ease;
-			padding: 0 20px !important;
-			font-size: 0.95rem;
-		}
 
-		.btn-premium-action:hover {
-			transform: translateY(-2px);
-			box-shadow: 0 8px 20px rgba(124, 58, 237, 0.1);
-		}
 
 		.btn-confirm-action {
 			border-radius: 14px;
@@ -334,40 +320,42 @@
 			border: 1px solid rgba(255, 255, 255, 0.2);
 		}
 
-		/* Hero Removal / Page Header */
-		.page-header {
-			padding: 2.5rem 0;
-			background: white;
-			border-bottom: 1px solid #f1f5f9;
-			margin-bottom: 2rem;
-			position: relative;
-			background: linear-gradient(to bottom, #ffffff 0%, #fafbff 100%);
-		}
+		/* Premium Header */
+    .premium-hero {
+      background: linear-gradient(-45deg, #7c3aed, #6366f1, #8b5cf6, #d946ef);
+      background-size: 400% 400%;
+      animation: gradientBG 15s ease infinite;
+      margin-top: 0;
+      padding-top: 8rem;
+      padding-bottom: 9rem;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 10px 40px rgba(124, 58, 237, 0.4);
+      border-radius: 0 0 50% 50% / 0 0 60px 60px;
+    }
 
-		.page-header::after {
-			content: '';
-			position: absolute;
-			bottom: -1px;
-			left: 0;
-			right: 0;
-			height: 1px;
-			background: linear-gradient(to right, transparent, var(--premium-purple), transparent);
-			opacity: 0.3;
-		}
+    @keyframes gradientBG {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
 
-		.page-header h1 {
-			font-size: 1.75rem !important;
-			font-weight: 800 !important;
-			margin: 0 !important;
-			letter-spacing: -0.5px;
-			color: var(--premium-dark);
-		}
-
-		.page-header p {
-			font-size: 1rem;
-			color: #64748b;
-			margin-top: 0.25rem;
-		}
+    /* Floating shapes */
+    .bg-shape {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(5px);
+      border-radius: 20%;
+      animation: float 10s infinite ease-in-out;
+    }
+    .shape-1 { top: 10%; left: 5%; width: 80px; height: 80px; }
+    .shape-2 { top: 50%; right: 5%; width: 120px; height: 120px; border-radius: 50%; animation-delay: -2s; }
+    .shape-3 { bottom: 10%; left: 30%; width: 60px; height: 60px; animation-delay: -5s; }
+    
+    @keyframes float {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-30px) rotate(10deg); }
+    }
 
 		/* Premium Modals */
 		.modal-content {
@@ -411,65 +399,64 @@
 </head>
 
 <body>
-	<!-- Navigation -->
-	      <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
+  <!-- Navigation -->
+  <nav class="navbar navbar-expand-lg navbar-premium">
     <div class="container">
-      <a class="navbar-brand fw-bold" href="{{ url_for('main.home') }}" style="font-size: 1.5rem; color: #667eea !important;">
-        <i class="bi bi-cart-check-fill me-2"></i>Smart Grocery
+      <a class="navbar-brand d-flex align-items-center" href="{{ url_for('main.home') }}">
+        <div class="brand-icon me-3">
+          <i class="bi bi-cart-check-fill fs-5"></i>
+        </div>
+        <span>Smart<span class="brand-grocery-text">Grocery</span></span>
       </a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
         <span class="navbar-toggler-icon"></span>
       </button>
       <div class="collapse navbar-collapse" id="navbarNav">
+        {% set cart_count = shopping_list_count or 0 %}
         <ul class="navbar-nav ms-auto align-items-center">
           <li class="nav-item">
-            <a class="nav-link {% if request.endpoint == 'main.home' %}active fw-semibold{% endif %}" href="{{ url_for('main.home') }}">
-              <i class="bi bi-house-door"></i> Home
+            <a class="nav-link {% if request.endpoint == 'main.home' %}active{% endif %}" href="{{ url_for('main.home') }}">
+              <i class="bi bi-house-door me-1"></i> Home
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link {% if 'stores' in request.path %}active fw-semibold{% endif %}" href="{{ url_for('main.stores_page') }}">
-              <i class="bi bi-shop"></i> Stores
+            <a class="nav-link {% if 'stores' in request.path or request.endpoint == 'main.stores_page' %}active{% endif %}" href="{{ url_for('main.stores_page') }}">
+              <i class="bi bi-shop me-1"></i> Stores
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link {% if 'featured-deals' in request.path %}active fw-semibold{% endif %}" href="{{ url_for('main.featured_deals_page') }}">
-              <i class="bi bi-tags"></i> Deals
+            <a class="nav-link {% if 'featured-deals' in request.path or request.endpoint == 'main.featured_deals_page' %}active{% endif %}" href="{{ url_for('main.featured_deals_page') }}">
+              <i class="bi bi-tags me-1"></i> Deals
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link {% if 'compare' in request.path %}active fw-semibold{% endif %}" href="{{ url_for('main.compare_prices') }}">
-              <i class="bi bi-arrow-left-right"></i> Compare
+            <a class="nav-link {% if 'compare' in request.path or request.endpoint == 'main.compare_prices' %}active{% endif %}" href="{{ url_for('main.compare_prices') }}">
+              <i class="bi bi-arrow-left-right me-1"></i> Compare
             </a>
           </li>
-          <li class="nav-item me-lg-3">
-            <a class="nav-link d-flex align-items-center {% if 'shopping-list' in request.path %}active fw-semibold{% endif %}" href="{{ url_for('main.shopping_list') }}">
-              <div class="position-relative me-1">
-                <i class="bi bi-list-check fs-5"></i>
-                {% if (shopping_list_count or 0) > 0 %}
-                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem; min-width: 14px; height: 14px; display: flex; align-items: center; justify-content: center; transform: translate(25%, -110%) !important;">
-                  {{ shopping_list_count }}
-                </span>
-                {% endif %}
-              </div>
-              Lists
-            </a>
-          </li>
-          
-          <!-- Icon-only Menu Items -->
           <li class="nav-item">
-            <a class="nav-link nav-icon-link px-2 position-relative {% if 'notifications' in request.path %}active{% endif %}" href="{{ url_for('main.notifications_page') }}" title="Notifications">
-              <i class="bi bi-bell-fill fs-4"></i>
+            <a class="nav-link d-flex align-items-center position-relative {% if 'shopping-list' in request.path or request.endpoint == 'main.shopping_list' %}active{% endif %}" href="{{ url_for('main.shopping_list') }}">
+              <i class="bi bi-list-check me-1"></i> Lists
+              {% if (shopping_list_count or 0) > 0 %}
+              <span class="position-absolute badge rounded-pill bg-danger" style="font-size: 0.65rem; padding: 0.45em 0.7em; top: -5px; right: -10px; border: 2px solid white; box-shadow: 0 4px 10px rgba(220, 53, 69, 0.4); min-width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;">
+                {{ shopping_list_count }}
+              </span>
+              {% endif %}
+            </a>
+          </li>
+          <li class="nav-item ms-lg-1">
+            <a class="nav-link nav-icon-btn position-relative {% if 'notifications' in request.path %}active{% endif %}" href="{{ url_for('main.notifications_page') }}" aria-label="Notifications">
+              <i class="bi bi-bell fs-5"></i>
               {% if (unread_notifications_count or 0) > 0 %}
-              <span class="position-absolute badge rounded-pill bg-danger" style="font-size: 0.6rem; min-width: 14px; height: 14px; display: flex; align-items: center; justify-content: center; top: 8px; right: 2px;">
+              <span class="position-absolute badge rounded-pill bg-danger" style="font-size: 0.65rem; padding: 0.45em 0.7em; top: -5px; right: -5px; border: 2px solid white; box-shadow: 0 4px 10px rgba(220, 53, 69, 0.4); min-width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;">
                 {{ unread_notifications_count }}
               </span>
               {% endif %}
             </a>
           </li>
-          <li class="nav-item">
-            <a class="nav-link nav-icon-link px-2 {% if 'profile' in request.path %}active{% endif %}" href="{{ url_for('main.profile') }}" title="My Profile">
-              <i class="bi bi-person-circle fs-4"></i>
+          <li class="nav-item ms-lg-2">
+            <a class="nav-link nav-icon-btn nav-profile-btn {% if 'profile' in request.path %}active{% endif %}" href="{{ url_for('main.profile') }}" aria-label="User Profile">
+              <i class="bi bi-person-circle fs-5"></i>
             </a>
           </li>
         </ul>
@@ -477,34 +464,50 @@
     </div>
   </nav>
 
-	<header class="page-header">
-		<div class="container">
-			<div class="d-flex justify-content-between align-items-center flex-wrap gap-4">
-				<div>
-					<h1 class="fw-800 text-premium-dark mb-1">My Shopping Lists</h1>
-					<p class="text-muted mb-0">Organize your trips and optimize your budget.</p>
-				</div>
-				<button class="btn btn-premium-purple btn-premium-action" 
-						data-bs-toggle="modal" data-bs-target="#createListModal">
-					<i class="bi bi-plus-circle-fill me-2"></i>Create New List
-				</button>
-			</div>
-		</div>
-	</header>
+  <!-- Premium Shopping List Header -->
+  <header class="premium-hero" style="padding: 7rem 0 4rem;">
+    <div class="bg-shape shape-1"></div>
+    <div class="bg-shape shape-2"></div>
+    <div class="bg-shape shape-3" style="position: absolute; bottom: 10%; left: 30%; width: 60px; height: 60px; background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(5px); border-radius: 20%; animation: float 10s infinite ease-in-out; animation-delay: -5s;"></div>
+    
+    <div class="container position-relative" style="z-index: 2;">
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-4">
+        <div class="text-white">
+          <h1 class="display-5 fw-800 mb-1" style="font-weight: 800;">My Shopping Lists</h1>
+          <p class="lead opacity-90 mb-0">Organize your trips and optimize your budget.</p>
+        </div>
+        <button class="btn btn-premium-action shadow-lg" 
+            style="background: white !important; color: #7c3aed !important; border: none !important; font-size: 1.1rem; padding: 12px 28px !important;"
+            data-bs-toggle="modal" data-bs-target="#createListModal">
+          <i class="bi bi-plus-circle-fill me-2"></i>Create New List
+        </button>
+      </div>
+    </div>
+  </header>
 
-	<div class="container pb-5">
+	<div class="container pb-5" style="margin-top: -2rem; position: relative; z-index: 5;">
 		<div id="list-tabs-container">
 			{% if all_lists %}
 			{% for shopping_list in all_lists %}
-			{% set list_count = shopping_list.list_items|length if shopping_list.list_items is defined else
-			(shopping_list.items|length if shopping_list.items is defined else 0) %}
+			{% set list_items_list = shopping_list.list_items if shopping_list.list_items is defined else (shopping_list['items'] if 'items' in shopping_list else []) %}
+			{% set list_count = list_items_list|length %}
 			<div class="list-card premium-outline-hover {{ 'active' if active_list and shopping_list.id == active_list.id else '' }}"
 				style="min-width: 320px; position: relative;"
 				data-list-id="{{ shopping_list.id }}" onclick="switchList('{{ shopping_list.id }}')">
 				<div class="p-4 d-flex flex-column gap-3">
+					{% set ns = namespace(new_count=0) %}
+					{% if list_items_list is iterable and list_items_list is not string and list_items_list is not mapping %}
+						{% for it in list_items_list %}
+							{% if it is mapping and it.get('is_new') %}
+								{% set ns.new_count = ns.new_count + 1 %}
+							{% endif %}
+						{% endfor %}
+					{% endif %}
 					<div class="d-flex justify-content-between align-items-start">
 						<div class="pe-3">
-							<h5 class="fw-800 mb-1 text-premium-dark" style="font-weight: 800;">{{ shopping_list.name }}</h5>
+							<h5 class="fw-800 mb-1 text-premium-dark" style="font-weight: 800;">
+								{{ shopping_list.name }}
+							</h5>
 							<div class="text-muted small">
 								<i class="bi bi-calendar3 me-1"></i>
 								{{ shopping_list.created_at[:10] if shopping_list.created_at else 'No date' }}
@@ -528,9 +531,8 @@
 							<span>{{ list_count }}</span>
 							<span class="muted ms-1">Items</span>
 						</span>
-						<span class="header-chip">
-							<i class="bi bi-currency-euro"></i>
-							<span>{{ shopping_list.estimated_total|replace('€','')|default('0.00', true) }}</span>
+						<span class="header-chip price-chip">
+							<i class="bi bi-currency-euro"></i><span>{{ shopping_list.estimated_total|replace('€','')|default('0.00', true) }}</span>
 						</span>
 					</div>
 				</div>
@@ -555,18 +557,17 @@
 		</div>
 
 		<!-- Active List Content -->
-		{% if active_list %}
-		<div id="active-list-wrapper" class="active-list-container" style="position: relative;">
+		<div id="active-list-wrapper" class="active-list-container {% if not active_list %}d-none{% endif %}" style="position: relative;">
 			<div class="p-4 border-bottom bg-white bg-opacity-50" style="backdrop-filter: blur(10px);">
 				<div class="d-flex justify-content-between align-items-center flex-wrap gap-4">
 					<div class="me-auto">
 						<h2 class="fw-900 text-premium-dark mb-2" id="active-list-title" style="font-weight: 900;">
-							<i class="bi bi-basket3-fill text-premium-purple me-2"></i>{{ active_list.name }}
+							<i class="bi bi-basket3-fill text-premium-purple me-2"></i>{{ active_list.name if active_list else 'Select a List' }}
 						</h2>
 						<div class="d-flex flex-wrap gap-2">
 							<span class="header-chip">
 								<i class="bi bi-list-task"></i>
-								<span id="items-count">{{ items|length }}</span>
+								<span id="items-count">{{ items|length if items else 0 }}</span>
 								<span class="muted ms-1">Total</span>
 							</span>
 							<span class="header-chip">
@@ -598,7 +599,7 @@
 								<li><button class="dropdown-item rounded-3 py-2" onclick="showExportListConfirm()"><i class="bi bi-download me-2"></i>Export List</button></li>
 								<li><button class="dropdown-item rounded-3 py-2" onclick="showPrintListConfirm()"><i class="bi bi-printer me-2"></i>Print List</button></li>
 								<li><hr class="dropdown-divider"></li>
-								<li><button class="dropdown-item rounded-3 py-2 text-danger" onclick="clearAllItems()"><i class="bi bi-trash me-2"></i>Clear All Items</button></li>
+								<li><button class="dropdown-item rounded-3 py-2 text-danger" onclick="showClearAllConfirm()"><i class="bi bi-trash me-2"></i>Clear All Items</button></li>
 							</ul>
 						</div>
 					</div>
@@ -647,7 +648,7 @@
 
 					<div class="item-row d-flex align-items-center gap-3 {{ 'completed' if purchased }}" draggable="true"
 						data-item-id="{{ item_id }}" data-name="{{ name }}" data-price="{{ raw_price }}"
-						data-qty="{{ qty }}" data-store="{{ store }}"
+						data-qty="{{ qty }}" data-store="{{ store }}" data-image="{{ img }}"
 						data-offer-json='{{ offer_obj|tojson|forceescape if offer_obj is not none else "" }}'
 						data-offer-type="{{ offer_obj.type if offer_obj is not none else ('buyXgetY' if offer_x and offer_y else '') }}"
 						data-offer-x="{{ offer_x }}" data-offer-y="{{ offer_y }}">
@@ -738,7 +739,6 @@
 			<!-- Footer actions removed per request -->
 			{% endif %}
 		</div>
-		{% endif %}
 	</section>
 
 	<!-- Create List Modal -->
@@ -1244,7 +1244,7 @@
 		// Display list items dynamically
 		function displayListItems(data) {
 			if (!data) return;
-			const listName = data.name || 'Unnamed List';
+			const listName = data.list_name || data.name || 'Unnamed List';
 			let items = data.items || [];
 
 			// Merge duplicate items by name
@@ -1258,7 +1258,10 @@
 
 			// Update items container
 			const cardBody = document.getElementById('active-list-body');
-			if (!cardBody) return;
+			if (!cardBody) {
+				console.error('active-list-body not found');
+				return;
+			}
 
 			if (items.length === 0) {
 				cardBody.innerHTML = `
@@ -1322,7 +1325,7 @@
 				itemsHTML += `
 					<div class="item-row d-flex align-items-center gap-3 ${purchased ? 'completed' : ''}" draggable="true"
 						data-item-id="${item_id}" data-name="${name}" data-price="${unit}"
-						data-qty="${qty}" data-store="${store}"
+						data-qty="${qty}" data-store="${store}" data-image="${img}"
 						data-offer-json='${offerJson}'
 						data-offer-type="${offerType}"
 						data-offer-x="${offerX}" data-offer-y="${offerY}"
@@ -1392,32 +1395,74 @@
 
 		// Create new list
 		function createList() {
-			const name = document.getElementById('new-list-name').value.trim();
-			if (!name) {
-				showNotification('Please enter a list name', 'warning');
+			const nameInput = document.getElementById('new-list-name');
+			if (!nameInput) {
+				console.error('List name input not found');
 				return;
+			}
+			
+			const listName = nameInput.value.trim();
+			if (!listName) {
+				if (typeof showNotification === 'function') {
+					showNotification('Please enter a list name', 'warning');
+				} else {
+					alert('Please enter a list name');
+				}
+				return;
+			}
+
+			// Change button state to show progress
+			const btn = document.querySelector('#createListModal button[onclick*="createList"]');
+			const originalText = btn ? btn.innerHTML : 'Create List';
+			if (btn) {
+				btn.disabled = true;
+				btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Creating...';
 			}
 
 			fetch('/api/list/create', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ name: name })
+				body: JSON.stringify({ name: listName })
 			})
-				.then(r => r.json())
+				.then(async response => {
+					const data = await response.json();
+					if (!response.ok) throw new Error(data.error || 'Server error');
+					return data;
+				})
 				.then(data => {
 					if (data.success) {
-						bootstrap.Modal.getInstance(document.getElementById('createListModal')).hide();
+						// Success!
 						window.location.reload();
+					} else {
+						throw new Error(data.error || 'Failed to create list');
+					}
+				})
+				.catch(err => {
+					console.error('Error creating list:', err);
+					if (btn) {
+						btn.disabled = false;
+						btn.innerHTML = originalText;
+					}
+					if (typeof showNotification === 'function') {
+						showNotification(err.message || 'A server error occurred', 'danger');
+					} else {
+						alert(err.message || 'A server error occurred');
 					}
 				});
 		}
 
 		// Rename list
 		function renameList(listId, currentName) {
-			event.stopPropagation();
-			document.getElementById('rename-list-id').value = listId;
-			document.getElementById('rename-list-name').value = currentName;
-			new bootstrap.Modal(document.getElementById('renameListModal')).show();
+			const renameIdEl = document.getElementById('rename-list-id');
+			const renameNameEl = document.getElementById('rename-list-name');
+			if (renameIdEl) renameIdEl.value = listId;
+			if (renameNameEl) renameNameEl.value = currentName;
+			
+			const modalEl = document.getElementById('renameListModal');
+			if (modalEl) {
+				const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+				modal.show();
+			}
 		}
 
 		function confirmRename() {
@@ -1425,8 +1470,20 @@
 			const newName = document.getElementById('rename-list-name').value.trim();
 
 			if (!newName) {
-				showNotification('Please enter a name', 'warning');
+				if (typeof showNotification === 'function') {
+					showNotification('Please enter a name', 'warning');
+				} else {
+					alert('Please enter a name');
+				}
 				return;
+			}
+
+			// Add loading state
+			const btn = document.querySelector('#renameListModal .btn-premium-purple');
+			const originalText = btn ? btn.innerHTML : 'Update';
+			if (btn) {
+				btn.disabled = true;
+				btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Updating...';
 			}
 
 			fetch('/api/list/rename', {
@@ -1437,8 +1494,19 @@
 				.then(r => r.json())
 				.then(data => {
 					if (data.success) {
-						bootstrap.Modal.getInstance(document.getElementById('renameListModal')).hide();
 						window.location.reload();
+					} else {
+						throw new Error(data.error || 'Failed to rename list');
+					}
+				})
+				.catch(err => {
+					console.error('Error renaming list:', err);
+					if (btn) {
+						btn.disabled = false;
+						btn.innerHTML = originalText;
+					}
+					if (typeof showNotification === 'function') {
+						showNotification(err.message || 'Error updating list', 'danger');
 					}
 				});
 		}
@@ -1452,15 +1520,29 @@
 			const idEl = document.getElementById('delete-list-id');
 			if (nameEl) nameEl.textContent = listName || 'this list';
 			if (idEl) idEl.value = listId;
+			
 			const modalEl = document.getElementById('deleteListModal');
-			if (modalEl) new bootstrap.Modal(modalEl).show();
+			if (modalEl) {
+				const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+				modal.show();
+			}
 		}
 
 		function confirmDeleteList() {
 			const listId = deleteListTargetId || document.getElementById('delete-list-id')?.value;
 			if (!listId) {
-				showNotification('List id missing', 'danger');
+				if (typeof showNotification === 'function') {
+					showNotification('List ID missing', 'danger');
+				}
 				return;
+			}
+
+			// Add loading state
+			const btn = document.querySelector('#deleteListModal .btn-danger');
+			const originalText = btn ? btn.innerHTML : 'Delete Forever';
+			if (btn) {
+				btn.disabled = true;
+				btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Deleting...';
 			}
 
 			fetch('/api/list/delete', {
@@ -1470,6 +1552,23 @@
 			})
 				.then(r => r.json())
 				.then(data => {
+					if (data.success) {
+						window.location.reload();
+					} else {
+						throw new Error(data.error || 'Failed to delete list');
+					}
+				})
+				.catch(err => {
+					console.error('Error deleting list:', err);
+					if (btn) {
+						btn.disabled = false;
+						btn.innerHTML = originalText;
+					}
+					if (typeof showNotification === 'function') {
+						showNotification(err.message || 'Error deleting list', 'danger');
+					}
+				});
+		}
 					if (data.success) {
 						showNotification('List deleted', 'success');
 						setTimeout(() => window.location.reload(), 300);
@@ -1634,15 +1733,26 @@
 			document.getElementById('clearAllCount').textContent = allItems.length;
 
 			// Show modal
-			const modal = new bootstrap.Modal(document.getElementById('clearAllModal'));
-			modal.show();
+			const modalEl = document.getElementById('clearAllModal');
+			if (modalEl) {
+				const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+				modal.show();
+			}
+		}
+
+		// Show clear all items confirmation modal
+		function showClearAllConfirm() {
+			clearAllItems();
 		}
 
 		// Confirm clear all items
 		function confirmClearAll() {
 			// Hide modal
-			const modal = bootstrap.Modal.getInstance(document.getElementById('clearAllModal'));
-			modal.hide();
+			const modalEl = document.getElementById('clearAllModal');
+			if (modalEl) {
+				const modal = bootstrap.Modal.getInstance(modalEl);
+				if (modal) modal.hide();
+			}
 
 			fetch('/api/list/clear-all', {
 				method: 'POST',
@@ -1657,7 +1767,10 @@
 						showNotification('Failed to clear all items', 'danger');
 					}
 				})
-				.catch(err => showNotification('Error clearing list', 'danger'));
+				.catch(err => {
+					console.error('Error clearing list:', err);
+					showNotification('Error clearing list', 'danger');
+				});
 		}
 
 		// Clear all items (legacy function)
@@ -1673,12 +1786,24 @@
 
 		// Save list state
 		function saveListState() {
-			const items = Array.from(document.querySelectorAll('.item-row')).map(row => ({
-				name: row.getAttribute('data-name'),
-				qty: parseInt(row.getAttribute('data-qty') || 1),
-				purchased: row.classList.contains('completed'),
-				price: parseFloat(row.getAttribute('data-price') || 0)
-			}));
+			const items = Array.from(document.querySelectorAll('.item-row')).map(row => {
+				let offer = null;
+				try {
+					const offerJson = row.getAttribute('data-offer-json');
+					if (offerJson) offer = JSON.parse(offerJson);
+				} catch (e) { }
+
+				return {
+					name: row.getAttribute('data-name'),
+					qty: parseInt(row.getAttribute('data-qty') || 1),
+					purchased: row.classList.contains('completed'),
+					price: parseFloat(row.getAttribute('data-price') || 0),
+					store: row.getAttribute('data-store') || '',
+					image: row.getAttribute('data-image') || '',
+					offer: offer,
+					special_offer: row.getAttribute('data-special-offer') || ''
+				};
+			});
 
 			fetch('/api/list/update-items', {
 				method: 'POST',
@@ -1833,45 +1958,48 @@
 		// Show list selector modal when adding an item
 		function showListSelector(item) {
 			pendingItemToAdd = item;
-			const modal = new bootstrap.Modal(document.getElementById('listSelectorModal'));
+			const modalEl = document.getElementById('listSelectorModal');
+			if (!modalEl) return;
+			const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
 			const body = document.getElementById('listSelectorBody');
 
-			body.innerHTML = '';
+			if (body) body.innerHTML = '';
 
 			// Fetch all lists from the current page data
 			const listTabs = document.querySelectorAll('[data-list-id]');
 
 			if (listTabs.length === 0) {
-				body.innerHTML = '<p class="text-muted">No lists available. Create a list first.</p>';
+				if (body) body.innerHTML = '<p class="text-muted">No lists available. Create a list first.</p>';
 				modal.show();
 				return;
 			}
 
 			listTabs.forEach(tab => {
 				const listId = tab.getAttribute('data-list-id');
+				if (listId === 'all') return; // Skip "All" if it exists
 				const listName = tab.querySelector('h5')?.textContent || 'Unknown List';
-				const itemCount = tab.querySelector('.bi-cart-check')?.parentElement?.textContent || '0 items';
+				const itemsCountText = tab.querySelector('.header-chip span:nth-child(2)')?.textContent || '0';
 				const isActive = tab.classList.contains('active');
 
 				const card = document.createElement('div');
-				card.className = 'card mb-2 list-option';
+				card.className = 'card mb-2 list-option cursor-pointer';
+				card.onclick = () => addItemToList(listId);
 				card.innerHTML = `
 			<div class="card-body p-3">
 				<div class="d-flex justify-content-between align-items-center">
 					<div>
-						<h6 class="mb-1">
-							<i class="bi bi-list-ul me-2"></i>${listName.trim()}
+						<h6 class="mb-1 text-premium-dark" style="font-weight: 700;">
+							<i class="bi bi-list-ul me-2 text-premium-purple"></i>${listName.trim()}
 						</h6>
-						<small class="text-muted">${itemCount.trim()}</small>
-						${isActive ? '<span class="badge bg-primary">Active</span>' : ''}
+						<small class="text-muted">${itemsCountText} items</small>
 					</div>
-					<button class="btn btn-sm btn-primary" onclick="addItemToList('${listId}')">
-						<i class="bi bi-plus-circle me-1"></i>Add
-					</button>
+					<div class="text-premium-purple">
+						<i class="bi bi-plus-circle-fill fs-5"></i>
+					</div>
 				</div>
 			</div>
 		`;
-				body.appendChild(card);
+				if (body) body.appendChild(card);
 			});
 
 			modal.show();
@@ -1898,22 +2026,30 @@
 
 		// Show remove item confirmation modal
 		function showRemoveItemConfirm(btn, itemName) {
-			document.getElementById('removeItemName').textContent = itemName || 'this item';
-			document.getElementById('removeItemBtn').value = btn ? btn.closest('.item-row')?.getAttribute('data-item-id') || '' : '';
+			const itemNameEl = document.getElementById('removeItemName');
+			const itemBtnEl = document.getElementById('removeItemBtn');
+			if (itemNameEl) itemNameEl.textContent = itemName || 'this item';
+			if (itemBtnEl) itemBtnEl.value = btn ? btn.closest('.item-row')?.getAttribute('data-item-id') || '' : '';
 
 			// Store the button reference for later use
 			window.removeItemButton = btn;
 
-			const modal = new bootstrap.Modal(document.getElementById('removeItemModal'));
-			modal.show();
+			const modalEl = document.getElementById('removeItemModal');
+			if (modalEl) {
+				const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+				modal.show();
+			}
 		}
 
 		// Confirm remove item
 		function confirmRemoveItem() {
 			if (window.removeItemButton) {
 				// Hide modal first
-				const modal = bootstrap.Modal.getInstance(document.getElementById('removeItemModal'));
-				modal.hide();
+				const modalEl = document.getElementById('removeItemModal');
+				if (modalEl) {
+					const modal = bootstrap.Modal.getInstance(modalEl);
+					if (modal) modal.hide();
+				}
 
 				// Call the original removeItem function
 				removeItem(window.removeItemButton);
@@ -1923,15 +2059,21 @@
 
 		// Show export list confirmation modal
 		function showExportListConfirm() {
-			const modal = new bootstrap.Modal(document.getElementById('exportListModal'));
-			modal.show();
+			const modalEl = document.getElementById('exportListModal');
+			if (modalEl) {
+				const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+				modal.show();
+			}
 		}
 
 		// Confirm export list
 		function confirmExportList() {
 			// Hide modal first
-			const modal = bootstrap.Modal.getInstance(document.getElementById('exportListModal'));
-			modal.hide();
+			const modalEl = document.getElementById('exportListModal');
+			if (modalEl) {
+				const modal = bootstrap.Modal.getInstance(modalEl);
+				if (modal) modal.hide();
+			}
 
 			// Call the original exportList function
 			exportList();
@@ -1939,15 +2081,21 @@
 
 		// Show print list confirmation modal
 		function showPrintListConfirm() {
-			const modal = new bootstrap.Modal(document.getElementById('printListModal'));
-			modal.show();
+			const modalEl = document.getElementById('printListModal');
+			if (modalEl) {
+				const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+				modal.show();
+			}
 		}
 
 		// Confirm print list
 		function confirmPrintList() {
 			// Hide modal first
-			const modal = bootstrap.Modal.getInstance(document.getElementById('printListModal'));
-			modal.hide();
+			const modalEl = document.getElementById('printListModal');
+			if (modalEl) {
+				const modal = bootstrap.Modal.getInstance(modalEl);
+				if (modal) modal.hide();
+			}
 
 			// Call the original printList function
 			printList();

@@ -24,20 +24,208 @@ Data: Fetches store list and products by store from database
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
+    :root {
+      --premium-purple: #7c3aed;
+      --premium-indigo: #6366f1;
+      --premium-violet: #8b5cf6;
+      --premium-dark: #1e1b4b;
+    }
+
+    /* Vibrant animated gradient like Profile/Notifications */
     .hero-gradient {
-      background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+      background: linear-gradient(-45deg, #7c3aed, #6366f1, #8b5cf6, #d946ef);
+      background-size: 400% 400%;
+      animation: gradientBG 15s ease infinite;
       color: white;
       margin-top: 0;
-      padding-top: 3.5rem;
-      padding-bottom: 3rem;
+      padding-top: 8rem;
+      padding-bottom: 9rem;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 10px 40px rgba(124, 58, 237, 0.4);
+      border-radius: 0 0 50% 50% / 0 0 60px 60px;
     }
 
-    .hero-gradient h1 {
-      margin: 0 0 0.75rem 0;
+    @keyframes gradientBG {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
     }
 
-    .hero-gradient p {
-      margin: 0;
+    /* Floating shapes */
+    .bg-shape {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(5px);
+      border-radius: 20%;
+      animation: float 10s infinite ease-in-out;
+    }
+    .shape-1 { top: 10%; left: 5%; width: 80px; height: 80px; }
+    .shape-2 { top: 50%; right: 5%; width: 120px; height: 120px; border-radius: 50%; animation-delay: -2s; }
+    .shape-3 { bottom: 10%; left: 30%; width: 60px; height: 60px; animation-delay: -5s; }
+    
+    @keyframes float {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-30px) rotate(10deg); }
+    }
+
+    .hero-glass {
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(15px);
+      border-radius: 30px;
+      padding: 3rem;
+      display: inline-block;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      position: relative;
+      z-index: 1;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    }
+
+    .category-chip-row {
+      display: flex;
+      overflow-x: auto;
+      gap: 12px;
+      padding: 10px 5px;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      margin-bottom: 2rem;
+    }
+
+    .category-chip {
+      white-space: nowrap;
+      padding: 10px 24px;
+      border-radius: 50px;
+      background: white;
+      border: 1px solid #eef2f7;
+      color: #718096;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+    }
+
+    .category-chip:hover {
+      background: #f8f6ff;
+      color: #7c3aed;
+      transform: translateY(-2px);
+    }
+
+    .category-chip.active {
+      background: #7c3aed;
+      color: white;
+      border-color: #7c3aed;
+      box-shadow: 0 4px 12px rgba(124, 58, 237, 0.2);
+    }
+
+    /* Make navbar transparent over hero */
+    .navbar {
+      background: transparent !important;
+      border-bottom: none !important;
+      box-shadow: none !important;
+      width: 100%;
+      z-index: 1000;
+      transition: all 0.3s ease;
+      position: absolute;
+      top: 0;
+    }
+
+    .navbar.scrolled {
+      background: rgba(255, 255, 255, 0.9) !important;
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid #eef2f7 !important;
+      box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08) !important;
+      position: fixed;
+      top: 0;
+    }
+
+    .navbar .nav-link, .navbar .navbar-brand {
+      color: rgba(255, 255, 255, 0.9) !important;
+    }
+
+    .navbar .navbar-brand span {
+      color: white !important;
+    }
+
+    .navbar .brand-icon {
+      background: rgba(255, 255, 255, 0.2) !important;
+      backdrop-filter: blur(5px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+
+    .navbar.scrolled .nav-link, .navbar.scrolled .navbar-brand {
+      color: var(--premium-dark) !important;
+    }
+
+    .navbar.scrolled .navbar-brand span {
+      color: var(--premium-dark) !important;
+    }
+
+    .navbar.scrolled .brand-icon {
+      background: linear-gradient(135deg, var(--premium-purple), var(--premium-indigo)) !important;
+    }
+
+    .quick-stats-bar {
+      margin-top: -3.5rem;
+      position: relative;
+      z-index: 2;
+    }
+
+    .stat-card {
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      border-radius: 24px;
+      padding: 2rem 1.5rem;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-10px);
+      background: white;
+      box-shadow: 0 25px 50px -12px rgba(124, 58, 237, 0.15);
+    }
+
+    .stat-icon {
+      width: 60px;
+      height: 60px;
+      background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+      color: var(--premium-purple);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.75rem;
+      transition: transform 0.5s ease;
+    }
+
+    .stat-card:hover .stat-icon {
+      transform: rotateY(180deg);
+      background: var(--premium-purple);
+      color: white;
+    }
+
+    .stat-info .stat-value {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: #1a202c;
+      line-height: 1.2;
+    }
+
+    .stat-info .stat-label {
+      font-size: 0.85rem;
+      color: #718096;
+      font-weight: 500;
     }
 
     body {
@@ -209,64 +397,63 @@ Data: Fetches store list and products by store from database
 
 <body>
   <!-- Navigation -->
-        <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
+  <nav class="navbar navbar-expand-lg navbar-premium">
     <div class="container">
-      <a class="navbar-brand fw-bold" href="{{ url_for('main.home') }}" style="font-size: 1.5rem; color: #667eea !important;">
-        <i class="bi bi-cart-check-fill me-2"></i>Smart Grocery
+      <a class="navbar-brand d-flex align-items-center" href="{{ url_for('main.home') }}">
+        <div class="brand-icon me-3">
+          <i class="bi bi-cart-check-fill fs-5"></i>
+        </div>
+        <span>Smart<span class="brand-grocery-text">Grocery</span></span>
       </a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
         <span class="navbar-toggler-icon"></span>
       </button>
       <div class="collapse navbar-collapse" id="navbarNav">
+        {% set cart_count = shopping_list_count or 0 %}
         <ul class="navbar-nav ms-auto align-items-center">
           <li class="nav-item">
-            <a class="nav-link {% if request.endpoint == 'main.home' %}active fw-semibold{% endif %}" href="{{ url_for('main.home') }}">
-              <i class="bi bi-house-door"></i> Home
+            <a class="nav-link {% if request.endpoint == 'main.home' %}active{% endif %}" href="{{ url_for('main.home') }}">
+              <i class="bi bi-house-door me-1"></i> Home
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link {% if 'stores' in request.path %}active fw-semibold{% endif %}" href="{{ url_for('main.stores_page') }}">
-              <i class="bi bi-shop"></i> Stores
+            <a class="nav-link {% if 'stores' in request.path or request.endpoint == 'main.stores_page' %}active{% endif %}" href="{{ url_for('main.stores_page') }}">
+              <i class="bi bi-shop me-1"></i> Stores
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link {% if 'featured-deals' in request.path %}active fw-semibold{% endif %}" href="{{ url_for('main.featured_deals_page') }}">
-              <i class="bi bi-tags"></i> Deals
+            <a class="nav-link {% if 'featured-deals' in request.path or request.endpoint == 'main.featured_deals_page' %}active{% endif %}" href="{{ url_for('main.featured_deals_page') }}">
+              <i class="bi bi-tags me-1"></i> Deals
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link {% if 'compare' in request.path %}active fw-semibold{% endif %}" href="{{ url_for('main.compare_prices') }}">
-              <i class="bi bi-arrow-left-right"></i> Compare
+            <a class="nav-link {% if 'compare' in request.path or request.endpoint == 'main.compare_prices' %}active{% endif %}" href="{{ url_for('main.compare_prices') }}">
+              <i class="bi bi-arrow-left-right me-1"></i> Compare
             </a>
           </li>
-          <li class="nav-item me-lg-3">
-            <a class="nav-link d-flex align-items-center {% if 'shopping-list' in request.path %}active fw-semibold{% endif %}" href="{{ url_for('main.shopping_list') }}">
-              <div class="position-relative me-1">
-                <i class="bi bi-list-check fs-5"></i>
-                {% if (shopping_list_count or 0) > 0 %}
-                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem; min-width: 14px; height: 14px; display: flex; align-items: center; justify-content: center; transform: translate(25%, -110%) !important;">
-                  {{ shopping_list_count }}
-                </span>
-                {% endif %}
-              </div>
-              Lists
-            </a>
-          </li>
-          
-          <!-- Icon-only Menu Items -->
           <li class="nav-item">
-            <a class="nav-link nav-icon-link px-2 position-relative {% if 'notifications' in request.path %}active{% endif %}" href="{{ url_for('main.notifications_page') }}" title="Notifications">
-              <i class="bi bi-bell-fill fs-4"></i>
+            <a class="nav-link d-flex align-items-center position-relative {% if 'shopping-list' in request.path or request.endpoint == 'main.shopping_list' %}active{% endif %}" href="{{ url_for('main.shopping_list') }}">
+              <i class="bi bi-list-check me-1"></i> Lists
+              {% if (shopping_list_count or 0) > 0 %}
+              <span class="position-absolute badge rounded-pill bg-danger" style="font-size: 0.65rem; padding: 0.45em 0.7em; top: -5px; right: -10px; border: 2px solid white; box-shadow: 0 4px 10px rgba(220, 53, 69, 0.4); min-width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;">
+                {{ shopping_list_count }}
+              </span>
+              {% endif %}
+            </a>
+          </li>
+          <li class="nav-item ms-lg-1">
+            <a class="nav-link nav-icon-btn position-relative {% if 'notifications' in request.path %}active{% endif %}" href="{{ url_for('main.notifications_page') }}" aria-label="Notifications">
+              <i class="bi bi-bell fs-5"></i>
               {% if (unread_notifications_count or 0) > 0 %}
-              <span class="position-absolute badge rounded-pill bg-danger" style="font-size: 0.6rem; min-width: 14px; height: 14px; display: flex; align-items: center; justify-content: center; top: 8px; right: 2px;">
+              <span class="position-absolute badge rounded-pill bg-danger" style="font-size: 0.65rem; padding: 0.45em 0.7em; top: -5px; right: -10px; border: 2px solid white; box-shadow: 0 4px 10px rgba(220, 53, 69, 0.4); min-width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;">
                 {{ unread_notifications_count }}
               </span>
               {% endif %}
             </a>
           </li>
-          <li class="nav-item">
-            <a class="nav-link nav-icon-link px-2 {% if 'profile' in request.path %}active{% endif %}" href="{{ url_for('main.profile') }}" title="My Profile">
-              <i class="bi bi-person-circle fs-4"></i>
+          <li class="nav-item ms-lg-2">
+            <a class="nav-link nav-icon-btn nav-profile-btn {% if 'profile' in request.path %}active{% endif %}" href="{{ url_for('main.profile') }}" aria-label="User Profile">
+              <i class="bi bi-person-circle fs-5"></i>
             </a>
           </li>
         </ul>
@@ -274,16 +461,60 @@ Data: Fetches store list and products by store from database
     </div>
   </nav>
 
-  <!-- Hero Header -->
-  <section class="hero-gradient text-center py-5">
-    <div class="container">
-      <h1 class="display-4 fw-bold mb-3">Discover Local Stores</h1>
-      <p class="lead mb-0">Browse your favorite grocery stores and explore their products</p>
+  <!-- Premium Hero Section -->
+  <section class="hero-gradient text-center">
+    <div class="bg-shape shape-1"></div>
+    <div class="bg-shape shape-2"></div>
+    <div class="bg-shape shape-3"></div>
+    <div class="container hero-content">
+      <h1 class="display-3 fw-black mb-3 text-white">Discover Local Stores</h1>
+      <p class="lead mb-0 fs-4 text-white opacity-90">Browse your favorite grocery stores and explore their products</p>
     </div>
   </section>
 
+  <!-- Quick Stats & Categories Bar -->
+  <div class="container">
+    <div class="quick-stats-bar">
+      <div class="row g-4 justify-content-center">
+        <div class="col-md-4">
+          <div class="stat-card">
+            <div class="stat-icon">
+              <i class="bi bi-shop"></i>
+            </div>
+            <div class="stat-info">
+              <div class="stat-value">{{ stores|length }} Verified</div>
+              <div class="stat-label">Retail Partners</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="stat-card">
+            <div class="stat-icon">
+              <i class="bi bi-geo-alt"></i>
+            </div>
+            <div class="stat-info">
+              <div class="stat-value">Region Wide</div>
+              <div class="stat-label">Store Coverage</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="stat-card">
+            <div class="stat-icon" style="background: #fff5f5; color: #f56565;">
+              <i class="bi bi-lightning-fill"></i>
+            </div>
+            <div class="stat-info">
+              <div class="stat-value">Live Updates</div>
+              <div class="stat-label">Stock & Prices</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Search and Stores Grid -->
-  <section class="container py-5">
+  <section class="container py-5 mt-4">
     <!-- Section Header -->
     <div class="text-center mb-4">
       <h2 class="section-title">Available Stores</h2>
@@ -355,6 +586,24 @@ Data: Fetches store list and products by store from database
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+  <script>
+    window.addEventListener('scroll', function() {
+      const nav = document.querySelector('.navbar');
+      if (window.scrollY > 50) {
+        nav.classList.add('scrolled');
+      } else {
+        nav.classList.remove('scrolled');
+      }
+    });
+
+    // Initialize on load
+    document.addEventListener('DOMContentLoaded', function() {
+      const nav = document.querySelector('.navbar');
+      if (window.scrollY > 50) {
+        nav.classList.add('scrolled');
+      }
+    });
+  </script>
 </body>
 
 </html>

@@ -14,8 +14,10 @@ import jwt
 from datetime import datetime, timedelta
 from bson import Decimal128
 from models import models as m
-from models import users_model as users_model
-from utils.db import mongo
+from models.users_model import users_model
+from models.products_model import products_model
+from models.featured_deals_model import featured_deals_model
+from models.multibuy_offers_model import multibuy_offers_model
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -39,14 +41,6 @@ def _get_user_email():
     if not email and getattr(m, 'users', None):
         email = 'user1@example.com' if 'user1@example.com' in m.users else next(iter(m.users.keys()), None)
     return email
-
-
-def _has_db():
-    """
-    Check if MongoDB is available and connected.
-    Returns: Boolean indicating database availability
-    """
-    return mongo is not None and getattr(mongo, 'db', None) is not None
 
 
 def _jwt_secret():
@@ -209,26 +203,19 @@ def add_shopping_item():
     shopping_count = 0
 
     try:
-        if mongo is not None and getattr(mongo, 'db', None) is not None:
-            # If item is an object and missing a usable unit price or image, try to enrich it
+        if m.HAS_DB:
+            # If item is an object and missing a usable unit price or image, try to enrich it using Models
             try:
                 if isinstance(item, dict):
                     # prefer product id if provided
                     prod = None
                     prod_id = item.get('id') or item.get('product_id')
                     if prod_id:
-                        try:
-                            from bson import ObjectId
-                            prod = mongo.db.products.find_one({'_id': ObjectId(str(prod_id))})
-                        except Exception:
-                            prod = mongo.db.products.find_one({'id': str(prod_id)})
+                        prod = products_model.get_product_by_id(str(prod_id))
+                    
                     # fallback: try matching by name
                     if prod is None and item.get('name'):
-                        # try exact name (case-insensitive)
-                        prod = mongo.db.products.find_one({'name': {'$regex': '^' + re.escape(item.get('name')) + '$', '$options': 'i'}})
-                        # fallback to substring match if exact not found
-                        if prod is None:
-                            prod = mongo.db.products.find_one({'name': {'$regex': re.escape(item.get('name')), '$options': 'i'}})
+                        prod = products_model.get_product_by_name(item.get('name'))
 
                     # enrich from product if found
                     if prod is not None:
@@ -269,35 +256,29 @@ def add_shopping_item():
                                 item['price'] = float(unit_price)
                         # ensure the item contains the product id so server-side aggregation can group correctly
                         try:
-                            if prod.get('_id'):
-                                item['id'] = str(prod.get('_id'))
-                            elif prod.get('id'):
-                                item['id'] = str(prod.get('id'))
+                            item['id'] = str(prod.get('id') or prod.get('_id'))
                         except Exception:
                             pass
+                    
                     # If product not found or still missing image, try to enrich from deals collections
                     try:
                         if not item.get('image'):
                             deal_doc = None
-                            # Try featured_deals
-                            try:
-                                # match by product id within deal, or by deal/product name
-                                pid = item.get('id') or item.get('product_id')
-                                if pid:
-                                    deal_doc = mongo.db.featured_deals.find_one({'product_id': str(pid)})
-                                if deal_doc is None and item.get('name'):
-                                    deal_doc = mongo.db.featured_deals.find_one({'title': {'$regex': re.escape(item.get('name')), '$options': 'i'}})
-                            except Exception:
-                                deal_doc = None
-                            # Try multibuy_offers if not found
+                            # Try featured_deals using model
+                            pid = item.get('id') or item.get('product_id')
+                            if pid:
+                                deal_doc = featured_deals_model.get_deal_by_id(str(pid))
+                            if deal_doc is None and item.get('name'):
+                                deal_doc = featured_deals_model.get_deal_by_title(item.get('name'))
+                            
+                            # Try multibuy_offers if not found using model
                             if deal_doc is None:
-                                try:
-                                    pid = item.get('id') or item.get('product_id')
-                                    if pid:
-                                        deal_doc = mongo.db.multibuy_offers.find_one({'product_id': str(pid)})
-                                    if deal_doc is None and item.get('name'):
-                                        deal_doc = mongo.db.multibuy_offers.find_one({'title': {'$regex': re.escape(item.get('name')), '$options': 'i'}})
-                                except Exception:
+                                if pid:
+                                    deal_doc = multibuy_offers_model.get_offer_by_id(str(pid))
+                                if deal_doc is None and item.get('name'):
+                                    # Multibuy offers might not have title-based lookup but we can search by list if needed
+                                    # For now assume id is preferred
+                                    pass
                                     deal_doc = None
                             # Set image from deal if available
                             if deal_doc:
@@ -369,16 +350,7 @@ def remove_shopping_item():
     if not item:
         return jsonify({'error': 'no_item_provided'}), 400
     try:
-        if _has_db():
-            # Try removing plain string entries first, then objects with a `name` field
-            res = mongo.db.users.update_one({'email': email}, {'$pull': {'shopping_list': item}})
-            if getattr(res, 'modified_count', 0) > 0:
-                success = True
-            else:
-                res2 = mongo.db.users.update_one({'email': email}, {'$pull': {'shopping_list': {'name': item}}})
-                success = getattr(res2, 'modified_count', 0) > 0
-        else:
-            success = users_model.remove_from_shopping_list(email, item)
+        success = users_model.remove_from_shopping_list(email, item)
         return jsonify({'success': bool(success)})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -411,10 +383,7 @@ def update_shopping_list_api():
             to_store.append(str(it))
 
     try:
-        if _has_db():
-            mongo.db.users.update_one({'email': email}, {'$set': {'shopping_list': to_store}}, upsert=True)
-        else:
-            users_model.update_shopping_list(email, to_store)
+        users_model.update_shopping_list(email, to_store)
         return jsonify({'success': True, 'items': to_store})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -426,10 +395,7 @@ def clear_shopping_list():
     if not email:
         return jsonify({'error': 'no_user_available'}), 400
     try:
-        if _has_db():
-            mongo.db.users.update_one({'email': email}, {'$set': {'shopping_list': []}}, upsert=True)
-        else:
-            users_model.update_shopping_list(email, [])
+        users_model.update_shopping_list(email, [])
         return jsonify({'success': True})
     except Exception as e:
         return jsonify({'error': str(e)}), 500

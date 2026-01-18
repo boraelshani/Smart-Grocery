@@ -261,65 +261,64 @@ Data: Fetches from notifications collection
   </style>
 </head>
 <body>
-  <!-- Navbar (Standardized to Home version) -->
-  <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
+  <!-- Navigation -->
+  <nav class="navbar navbar-expand-lg navbar-premium">
     <div class="container">
-      <a class="navbar-brand fw-bold" href="{{ url_for('main.home') }}" style="font-size: 1.5rem; color: #667eea !important;">
-        <i class="bi bi-cart-check-fill me-2"></i>Smart Grocery
+      <a class="navbar-brand d-flex align-items-center" href="{{ url_for('main.home') }}">
+        <div class="brand-icon me-3">
+          <i class="bi bi-cart-check-fill fs-5"></i>
+        </div>
+        <span>Smart<span class="brand-grocery-text">Grocery</span></span>
       </a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
         <span class="navbar-toggler-icon"></span>
       </button>
       <div class="collapse navbar-collapse" id="navbarNav">
+        {% set cart_count = shopping_list_count or 0 %}
         <ul class="navbar-nav ms-auto align-items-center">
           <li class="nav-item">
-            <a class="nav-link {% if request.endpoint == 'main.home' %}active fw-semibold{% endif %}" href="{{ url_for('main.home') }}">
-              <i class="bi bi-house-door"></i> Home
+            <a class="nav-link {% if request.endpoint == 'main.home' %}active{% endif %}" href="{{ url_for('main.home') }}">
+              <i class="bi bi-house-door me-1"></i> Home
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link {% if 'stores' in request.path %}active fw-semibold{% endif %}" href="{{ url_for('main.stores_page') }}">
-              <i class="bi bi-shop"></i> Stores
+            <a class="nav-link {% if 'stores' in request.path or request.endpoint == 'main.stores_page' %}active{% endif %}" href="{{ url_for('main.stores_page') }}">
+              <i class="bi bi-shop me-1"></i> Stores
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link {% if 'featured-deals' in request.path %}active fw-semibold{% endif %}" href="{{ url_for('main.featured_deals_page') }}">
-              <i class="bi bi-tags"></i> Deals
+            <a class="nav-link {% if 'featured-deals' in request.path or request.endpoint == 'main.featured_deals_page' %}active{% endif %}" href="{{ url_for('main.featured_deals_page') }}">
+              <i class="bi bi-tags me-1"></i> Deals
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link {% if 'compare' in request.path %}active fw-semibold{% endif %}" href="{{ url_for('main.compare_prices') }}">
-              <i class="bi bi-arrow-left-right"></i> Compare
+            <a class="nav-link {% if 'compare' in request.path or request.endpoint == 'main.compare_prices' %}active{% endif %}" href="{{ url_for('main.compare_prices') }}">
+              <i class="bi bi-arrow-left-right me-1"></i> Compare
             </a>
           </li>
-          <li class="nav-item me-lg-3">
-            <a class="nav-link d-flex align-items-center {% if 'shopping-list' in request.path %}active fw-semibold{% endif %}" href="{{ url_for('main.shopping_list') }}">
-              <div class="position-relative me-1">
-                <i class="bi bi-list-check fs-5"></i>
-                {% if (shopping_list_count or 0) > 0 %}
-                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem; min-width: 14px; height: 14px; display: flex; align-items: center; justify-content: center; transform: translate(25%, -110%) !important;">
-                  {{ shopping_list_count }}
-                </span>
-                {% endif %}
-              </div>
-              Lists
-            </a>
-          </li>
-          
-          <!-- Icon-only Menu Items -->
           <li class="nav-item">
-            <a class="nav-link nav-icon-link px-2 position-relative {% if 'notifications' in request.path %}active{% endif %}" href="{{ url_for('main.notifications_page') }}" title="Notifications">
-              <i class="bi bi-bell-fill fs-4"></i>
+            <a class="nav-link d-flex align-items-center position-relative {% if 'shopping-list' in request.path or request.endpoint == 'main.shopping_list' %}active{% endif %}" href="{{ url_for('main.shopping_list') }}">
+              <i class="bi bi-list-check me-1"></i> Lists
+              {% if (shopping_list_count or 0) > 0 %}
+              <span class="position-absolute badge rounded-pill bg-danger" style="font-size: 0.65rem; padding: 0.45em 0.7em; top: -5px; right: -10px; border: 2px solid white; box-shadow: 0 4px 10px rgba(220, 53, 69, 0.4); min-width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;">
+                {{ shopping_list_count }}
+              </span>
+              {% endif %}
+            </a>
+          </li>
+          <li class="nav-item ms-lg-1">
+            <a class="nav-link nav-icon-btn position-relative {% if 'notifications' in request.path %}active{% endif %}" href="{{ url_for('main.notifications_page') }}" aria-label="Notifications">
+              <i class="bi bi-bell fs-5"></i>
               {% if (unread_notifications_count or 0) > 0 %}
-              <span class="position-absolute badge rounded-pill bg-danger" style="font-size: 0.6rem; min-width: 14px; height: 14px; display: flex; align-items: center; justify-content: center; top: 8px; right: 2px;">
+              <span class="position-absolute badge rounded-pill bg-danger" style="font-size: 0.65rem; padding: 0.45em 0.7em; top: -5px; right: -10px; border: 2px solid white; box-shadow: 0 4px 10px rgba(220, 53, 69, 0.4); min-width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;">
                 {{ unread_notifications_count }}
               </span>
               {% endif %}
             </a>
           </li>
-          <li class="nav-item">
-            <a class="nav-link nav-icon-link px-2 {% if 'profile' in request.path %}active{% endif %}" href="{{ url_for('main.profile') }}" title="My Profile">
-              <i class="bi bi-person-circle fs-4"></i>
+          <li class="nav-item ms-lg-2">
+            <a class="nav-link nav-icon-btn nav-profile-btn {% if 'profile' in request.path %}active{% endif %}" href="{{ url_for('main.profile') }}" aria-label="User Profile">
+              <i class="bi bi-person-circle fs-5"></i>
             </a>
           </li>
         </ul>
@@ -327,38 +326,38 @@ Data: Fetches from notifications collection
     </div>
   </nav>
 
-  <!-- Header Section (Enhanced) -->
-    <!-- Notification Header -->
-    <!-- Notification Header -->
-  <section class="notification-header text-center position-relative">
+  <!-- Premium Notifications Header -->
+  <header class="premium-hero">
     <div class="bg-shape shape-1"></div>
     <div class="bg-shape shape-2"></div>
-    <div class="bg-shape shape-3"></div>
-    <div class="container position-relative py-4">
-      <div class="row items-center">
-        <div class="col-lg-8 mx-auto">
-          <h1 class="fw-bold mb-2 display-5 text-white">Alert Center</h1>
-          <p class="lead opacity-90 mb-3 text-white" style="font-size: 1rem;">Track price drops and new deals in real-time.</p>
+    <div class="bg-shape shape-3" style="position: absolute; bottom: 10%; left: 30%; width: 60px; height: 60px; background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(5px); border-radius: 20%; animation: float 15s infinite ease-in-out; animation-delay: -5s;"></div>
+    
+    <div class="container position-relative" style="z-index: 2;">
+      <div class="row align-items-center">
+        <div class="col-lg-8 mx-auto text-center">
+          <h1 class="display-4 fw-bold mb-2">Alert Center</h1>
+          <p class="lead opacity-90 mb-3">Track price drops and new deals in real-time.</p>
           
-          <div class="row g-3 justify-content-center mt-1">
-            <div class="col-5 col-md-3">
-              <div class="p-2 bg-white bg-opacity-10 rounded-4 border border-white border-opacity-25 backdrop-blur shadow-sm">
-                <i class="bi bi-envelope-exclamation fs-4 d-block mb-1 text-white"></i>
-                <span class="d-block fs-4 fw-bold text-white">{{ unread_count }}</span>
-                <span class="small opacity-75 text-uppercase text-white tracking-wider" style="font-size: 0.65rem;">Unread</span>
+          <div class="row g-3 justify-content-center mt-3">
+            <div class="col-6 col-md-3">
+              <div class="p-3 bg-white bg-opacity-10 rounded-4 border border-white border-opacity-25 shadow-sm" style="backdrop-filter: blur(8px);">
+                <i class="bi bi-envelope-exclamation fs-3 d-block mb-1"></i>
+                <span class="d-block fs-4 fw-bold">{{ unread_count }}</span>
+                <span class="small opacity-75 text-uppercase tracking-wider" style="font-size: 0.7rem;">Unread</span>
               </div>
             </div>
-            <div class="col-5 col-md-3">
-              <div class="p-2 bg-white bg-opacity-10 rounded-4 border border-white border-opacity-25 backdrop-blur shadow-sm">
-                <i class="bi bi-archive fs-4 d-block mb-1 text-white"></i>
-                <span class="d-block fs-4 fw-bold text-white">{{ notifications|length }}</span>
-                <span class="small opacity-75 text-uppercase text-white tracking-wider" style="font-size: 0.65rem;">Total</span>
+            <div class="col-6 col-md-3">
+              <div class="p-3 bg-white bg-opacity-10 rounded-4 border border-white border-opacity-25 shadow-sm" style="backdrop-filter: blur(8px);">
+                <i class="bi bi-archive fs-3 d-block mb-1"></i>
+                <span class="d-block fs-4 fw-bold">{{ notifications|length }}</span>
+                <span class="small opacity-75 text-uppercase tracking-wider" style="font-size: 0.7rem;">Total</span>
               </div>
             </div>
           </div>
         </div>
       </div>
     </div>
+  </header>
   </section>
 
   <!-- Main Content Area -->

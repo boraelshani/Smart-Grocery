@@ -234,52 +234,37 @@ Data: Fetches all products and their store prices from database
       font-weight: 500;
     }
 
-    .category-chip-row {
-      display: flex;
-      gap: 12px;
-      overflow-x: auto;
-      padding: 8px 4px 4px;
-      scrollbar-width: none;
-    }
-
-    .category-chip-row::-webkit-scrollbar {
-      display: none;
-    }
-
-    .category-chip {
-      border: 2px solid #d6d8ff;
-      background: #f6f7ff;
-      color: #4a4e69;
-      border-radius: 999px;
-      padding: 12px 16px;
-      min-width: 120px;
-      max-width: 180px;
-      text-align: center;
-      font-weight: 600;
-      transition: all 0.2s ease;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
-      white-space: normal;
-      line-height: 1.2;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-    }
-
     .product-link {
       cursor: pointer;
     }
 
-    .category-chip:hover {
-      background: #e7e9ff;
-      transform: translateY(-1px);
+    /* Favorite button styling */
+    .btn-favorite {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: white;
+      border: none;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+      color: #ccc;
+      font-size: 1.2rem;
+      transition: all 0.2s ease;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
-    .category-chip.active {
-      background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
-      color: white;
-      border-color: transparent;
-      box-shadow: 0 6px 16px rgba(102, 126, 234, 0.3);
+    .btn-favorite:hover {
+      color: #ff6b6b;
+      transform: scale(1.1);
+    }
+
+    .btn-favorite.active {
+      color: #ff6b6b;
     }
 
     .pagination-pane {
@@ -316,13 +301,13 @@ Data: Fetches all products and their store prices from database
 
 <body>
   <!-- Navigation -->
-  <nav class="navbar navbar-expand-lg sticky-top">
+  <nav class="navbar navbar-expand-lg navbar-premium">
     <div class="container">
       <a class="navbar-brand d-flex align-items-center" href="{{ url_for('main.home') }}">
-        <div class="brand-icon me-3" style="background: linear-gradient(135deg, var(--premium-purple), var(--premium-indigo)); width: 44px; height: 44px; border-radius: 14px; display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 8px 16px -4px rgba(124, 58, 237, 0.3);">
+        <div class="brand-icon me-3">
           <i class="bi bi-cart-check-fill fs-5"></i>
         </div>
-        <span>Smart<span style="color: var(--premium-dark)">Grocery</span></span>
+        <span>Smart<span class="brand-grocery-text">Grocery</span></span>
       </a>
       <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
         <span class="navbar-toggler-icon"></span>
@@ -331,42 +316,47 @@ Data: Fetches all products and their store prices from database
         {% set cart_count = shopping_list_count or 0 %}
         <ul class="navbar-nav ms-auto align-items-center">
           <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('main.home') }}">
+            <a class="nav-link {% if request.endpoint == 'main.home' %}active{% endif %}" href="{{ url_for('main.home') }}">
               <i class="bi bi-house-door me-1"></i> Home
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('main.stores_page') }}">
+            <a class="nav-link {% if 'stores' in request.path or request.endpoint == 'main.stores_page' %}active{% endif %}" href="{{ url_for('main.stores_page') }}">
               <i class="bi bi-shop me-1"></i> Stores
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('main.featured_deals_page') }}">
+            <a class="nav-link {% if 'featured-deals' in request.path or request.endpoint == 'main.featured_deals_page' %}active{% endif %}" href="{{ url_for('main.featured_deals_page') }}">
               <i class="bi bi-tags me-1"></i> Deals
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link active" href="{{ url_for('main.compare_prices') }}">
+            <a class="nav-link {% if 'compare' in request.path or request.endpoint == 'main.compare_prices' %}active{% endif %}" href="{{ url_for('main.compare_prices') }}">
               <i class="bi bi-arrow-left-right me-1"></i> Compare
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link d-flex align-items-center" href="{{ url_for('main.shopping_list') }}">
+            <a class="nav-link d-flex align-items-center position-relative {% if 'shopping-list' in request.path or request.endpoint == 'main.shopping_list' %}active{% endif %}" href="{{ url_for('main.shopping_list') }}">
               <i class="bi bi-list-check me-1"></i> Lists
-              {% if cart_count > 0 %}
-              <span class="ms-1 badge rounded-pill bg-danger" style="font-size: 0.7rem; padding: 0.4em 0.6em;">
-                {{ cart_count }}
+              {% if (shopping_list_count or 0) > 0 %}
+              <span class="position-absolute badge rounded-pill bg-danger" style="font-size: 0.65rem; padding: 0.45em 0.7em; top: -5px; right: -10px; border: 2px solid white; box-shadow: 0 4px 10px rgba(220, 53, 69, 0.4); min-width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;">
+                {{ shopping_list_count }}
               </span>
               {% endif %}
             </a>
           </li>
           <li class="nav-item ms-lg-1">
-            <a class="nav-link nav-icon-btn" href="{{ url_for('main.notifications_page') }}" aria-label="Notifications">
+            <a class="nav-link nav-icon-btn position-relative {% if 'notifications' in request.path %}active{% endif %}" href="{{ url_for('main.notifications_page') }}" aria-label="Notifications">
               <i class="bi bi-bell fs-5"></i>
+              {% if (unread_notifications_count or 0) > 0 %}
+              <span class="position-absolute badge rounded-pill bg-danger" style="font-size: 0.65rem; padding: 0.45em 0.7em; top: -5px; right: -10px; border: 2px solid white; box-shadow: 0 4px 10px rgba(220, 53, 69, 0.4); min-width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;">
+                {{ unread_notifications_count }}
+              </span>
+              {% endif %}
             </a>
           </li>
           <li class="nav-item ms-lg-2">
-            <a class="nav-link nav-icon-btn nav-profile-btn" href="{{ url_for('main.profile') }}" aria-label="User Profile">
+            <a class="nav-link nav-icon-btn nav-profile-btn {% if 'profile' in request.path %}active{% endif %}" href="{{ url_for('main.profile') }}" aria-label="User Profile">
               <i class="bi bi-person-circle fs-5"></i>
             </a>
           </li>
@@ -375,15 +365,19 @@ Data: Fetches all products and their store prices from database
     </div>
   </nav>
 
-  <section class="hero-section text-center">
-    <div class="container">
-      <h1 class="display-4 fw-bold mb-3">
+  <header class="premium-hero">
+    <div class="bg-shape shape-1"></div>
+    <div class="bg-shape shape-2"></div>
+    <div class="bg-shape shape-3" style="position: absolute; bottom: 10%; left: 30%; width: 60px; height: 60px; background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(5px); border-radius: 20%; animation: float 10s infinite ease-in-out; animation-delay: -5s;"></div>
+    
+    <div class="container position-relative text-center text-white" style="z-index: 2;">
+      <h1 class="display-4 fw-bold mb-3 text-white">
         <i class="bi bi-graph-up-arrow"></i> Compare Prices
       </h1>
-      <p class="lead mb-0">Find the best deals across all nearby stores</p>
-      <p class="opacity-75"><i class="bi bi-check-circle"></i> Save money on every purchase</p>
+      <p class="lead mb-0 text-white">Find the best deals across all nearby stores</p>
+      <p class="opacity-75 text-white"><i class="bi bi-check-circle"></i> Save money on every purchase</p>
     </div>
-  </section>
+  </header>
 
   <section class="container py-4">
     <!-- Search row with filter button -->
@@ -415,10 +409,11 @@ Data: Fetches all products and their store prices from database
                 <select id="category-filter" class="form-select">
                   <option value="">All Categories</option>
                   {% set cats = category_options if category_options is defined else [] %}
-                  {% for cat in cats %}
-                  {% set val = cat|lower %}
+                  {% for cat_obj in cats %}
+                  {% set cat_name = cat_obj.name if cat_obj is mapping else cat_obj %}
+                  {% set val = cat_name|lower %}
                   <option value="{{ val }}" {% if category_filter and val==category_filter|lower %}selected{% endif %}>
-                    {{ cat }}</option>
+                    {{ cat_name }}</option>
                   {% endfor %}
                 </select>
               </div>
@@ -483,11 +478,12 @@ Data: Fetches all products and their store prices from database
         {% set cats = category_options if category_options is defined else [] %}
         <button type="button" class="category-chip {% if not category_filter %}active{% endif %}" data-category-chip=""
           data-category-label="All">All</button>
-        {% for cat in cats %}
-        {% set slug = cat|lower %}
+        {% for cat_obj in cats %}
+        {% set cat_name = cat_obj.name if cat_obj is mapping else cat_obj %}
+        {% set slug = cat_name|lower %}
         <button type="button"
           class="category-chip {% if category_filter and slug==category_filter|lower %}active{% endif %}"
-          data-category-chip="{{ slug }}" data-category-label="{{ cat }}">{{ cat }}</button>
+          data-category-chip="{{ slug }}" data-category-label="{{ cat_name }}">{{ cat_name }}</button>
         {% endfor %}
       </div>
 
@@ -530,6 +526,10 @@ Data: Fetches all products and their store prices from database
                   <i class="bi bi-tag-fill"></i> €{{ (p.get('cheapest') and p.get('cheapest').get('price')) or
                   p.get('price','N/A') }}
                 </span>
+                <button class="btn-favorite {{ 'active' if p.get('is_favorited') else '' }}" style="z-index: 10;"
+                  onclick="toggleFavorite(event, '{{ p.get('id') or p.get('_id') }}', this)" title="Add to favorites">
+                  <i class="bi {{ 'bi-heart-fill' if p.get('is_favorited') else 'bi-heart' }}"></i>
+                </button>
               </div>
             </a>
             <div class="card-body pb-0" style="background-color: #f8f9fa;">
@@ -552,7 +552,7 @@ Data: Fetches all products and their store prices from database
                   <div class="d-flex justify-content-between align-items-center gap-1">
                     <div class="d-flex align-items-center gap-2 flex-grow-1" style="min-width:0;">
                       <img
-                        src="{{ prefer_processed(s.get('image') or s.get('logo') or s.get('store_image') or url_for('static', filename='placeholder.svg')) }}"
+                        src="{{ prefer_processed(s.get('logo') or s.get('store_image') or url_for('static', filename='placeholder.svg')) }}"
                         alt="{{ s.get('store') or s.get('name') }}"
                         style="width: 24px; height: 24px; object-fit: contain; border-radius: 4px; background: white; padding: 2px; border: 1px solid #eee;"
                         onerror="this.src='{{ url_for('static', filename='placeholder.svg') }}'">
@@ -594,9 +594,14 @@ Data: Fetches all products and their store prices from database
                   <button type="button" class="btn btn-premium btn-premium-add w-100"
                     data-name="{{ p.get('name') or p.get('title','') }}" data-id="{{ p.get('id') }}"
                     data-price="{{ (p.get('cheapest') and p.get('cheapest').get('price')) or p.get('price','N/A') }}"
+                    data-initial-price="{{ (p.get('cheapest') and p.get('cheapest').get('price')) or p.get('price','N/A') }}"
+                    data-original-price="{{ p.original_price or '' }}"
                     data-image="{{ prefer_processed(p.get('image') or (p.get('images') and p.get('images')[0]) or url_for('static', filename='placeholder.svg')) }}"
                     data-store=""
-                    onclick="event.stopPropagation(); window.showListSelector(this);">
+                    data-offer-json='{{ p.offer|tojson|forceescape if p.offer else "" }}'
+                    data-offer-type="{{ p.offer_type or '' }}"
+                    data-offer-x="{{ p.offer_x or '' }}"
+                    data-offer-y="{{ p.offer_y or '' }}">
                     <i class="bi bi-cart-plus-fill"></i>Add to List
                   </button>
                   <a href="{{ url_for('main.product_detail', product_id=p.get('id')) }}"

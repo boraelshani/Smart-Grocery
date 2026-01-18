@@ -71,6 +71,9 @@ class StoresModel:
                 d['id'] = str(d['_id'])  # Convert MongoDB ID to string
         return docs
 
+    def get_store_count(self) -> int:
+        return self.db.stores.count_documents({})
+
     def get_store_by_name(self, name: str) -> Optional[dict]:
         # LOOKUP STORE by name (used when viewing store products)
         if not name:
@@ -124,6 +127,9 @@ def list_stores() -> List[dict]:
 
 def get_store_by_name(name: str) -> Optional[dict]:
     return stores_model.get_store_by_name(name)
+
+def get_store_count() -> int:
+    return stores_model.get_store_count()
 
 def insert_store(doc: dict):
     return stores_model.insert_store(doc)

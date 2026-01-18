@@ -1,24 +1,33 @@
 from flask import render_template, jsonify, session, request, current_app, url_for, redirect
 from . import main_bp
 from models import models as m
+from models.products_model import products_model
+from models.stores_model import stores_model
+from models.featured_deals_model import featured_deals_model
+from models.multibuy_offers_model import multibuy_offers_model
+from models.favorites_model import favorites_model
+from models.notifications_model import notifications_model
+from models.quantity_discounts_model import quantity_discounts_model
 from bson.decimal128 import Decimal128
 import json
 import os
 import random
-try:
-    from utils.db import mongo
-    HAS_DB = True
-except Exception:
-    mongo = None
-    HAS_DB = False
 import re
 
 # ═══════════════════════════════════════════════════════════════════════════
-# DATABASE CONNECTION & HELPER FUNCTIONS
+# CONSTANTS
 # ═══════════════════════════════════════════════════════════════════════════
 
-# Cached fallback client to avoid creating a new MongoClient on every request
-_FALLBACK_CLIENT = None
+# Standard category list provided by user for consistent filtering across pages
+STANDARD_CATEGORIES = [
+    "Produce", "Pantry", "Dairy", "Meat", "Frozen", 
+    "Bakery", "Baby food", "Snacks", "Fast Food & To Go", 
+    "Household", "Beverages"
+]
+
+# ═══════════════════════════════════════════════════════════════════════════
+# HELPER FUNCTIONS
+# ═══════════════════════════════════════════════════════════════════════════
 
 
 def load_featured_deals_fallback():
@@ -46,48 +55,6 @@ def _get_user_email():
     if not email and getattr(m, 'users', None):
         email = 'user1@example.com' if 'user1@example.com' in m.users else next(iter(m.users.keys()), None)
     return email
-
-
-def _has_db():
-    """
-    Check if MongoDB connection is available and ready to use.
-    Returns: Boolean indicating database availability
-    """
-    return HAS_DB and mongo is not None and getattr(mongo, 'db', None) is not None
-
-
-def get_db():
-    """
-    Get a working PyMongo database instance.
-    
-    Strategy:
-    1. Try to use Flask-PyMongo's mongo instance (production)
-    2. Fallback to creating direct MongoClient connection (development/testing)
-    3. Return None if all connections fail
-    
-    Returns: PyMongo database instance or None
-    """
-    if _has_db():
-        return mongo.db
-    
-    # Fallback: create direct MongoClient
-    try:
-        from pymongo import MongoClient
-        import certifi
-        
-        global _FALLBACK_CLIENT
-        if _FALLBACK_CLIENT is None:
-            uri = current_app.config.get('MONGO_URI') or os.environ.get('MONGO_URI')
-            if uri and uri.startswith('mongodb+srv://'):
-                _FALLBACK_CLIENT = MongoClient(uri, tls=True, tlsCAFile=certifi.where(), serverSelectionTimeoutMS=2000)
-            else:
-                _FALLBACK_CLIENT = MongoClient(uri, serverSelectionTimeoutMS=2000)
-        
-        dbname = current_app.config.get('MONGO_DBNAME') or 'smart_grocery'
-        return _FALLBACK_CLIENT[dbname]
-    except Exception as e:
-        print(f'ERROR: get_db() failed: {e}')
-        return None
 
 
 def sanitize_mongo_doc(doc):
@@ -121,6 +88,108 @@ def sanitize_mongo_doc(doc):
     return doc
 
 
+def _attach_offers_to_products(products):
+    """
+    Helper to attach multibuy and quantity discount metadata to a list of products.
+    """
+    if not products:
+        return products
+        
+    try:
+        from bson import ObjectId
+        # Get all active multibuy offers using Model
+        mb_offers = multibuy_offers_model.list_active_offers()
+        # Get all active quantity discounts using Model
+        q_discounts = quantity_discounts_model.list_active_discounts()
+        
+        # Map by product_id for fast lookup
+        mb_map = {}
+        for o in mb_offers:
+            pid = str(o.get('product_id'))
+            if pid: mb_map[pid] = o
+            
+        qd_map = {}
+        for q in q_discounts:
+            pid = str(q.get('product_id'))
+            if pid: qd_map[pid] = q
+            
+        for p in products:
+            pid = str(p.get('id') or p.get('_id'))
+            
+            # Extract basic offer info if available directly (featured deals)
+            ox_raw = p.get('buy_quantity') or p.get('multibuy_buy') or ''
+            oy_raw = p.get('free_quantity') or p.get('multibuy_free') or ''
+            
+            # If already has offer info object, extract details
+            if p.get('offer'):
+                offer_obj = p.get('offer') if isinstance(p.get('offer'), dict) else None
+                if offer_obj:
+                    p['offer_type'] = offer_obj.get('type') or p.get('offer_type', '')
+                    p['offer_x'] = offer_obj.get('x') or ox_raw
+                    p['offer_y'] = offer_obj.get('y') or oy_raw
+            
+            # Refine offer_x/y if missing but raw fields exist
+            if not p.get('offer_x'): p['offer_x'] = ox_raw
+            if not p.get('offer_y'): p['offer_y'] = oy_raw
+            if not p.get('offer_type') and p.get('offer_x') and p.get('offer_y'):
+                p['offer_type'] = 'buyXgetY'
+
+            # Look in mb_offers collection if no offer_x yet
+            if not p.get('offer_x') and pid in mb_map:
+                offer = mb_map[pid]
+                if 'offer' not in p: p['offer'] = offer
+                p['offer_type'] = offer.get('type') or 'buyXgetY'
+                ox = offer.get('x') or offer.get('buy_quantity') or offer.get('multibuy_buy') or 0
+                oy = offer.get('y') or offer.get('free_quantity') or offer.get('multibuy_free') or 0
+                p['offer_x'] = ox
+                p['offer_y'] = oy
+                
+                # IMPORTANT: Capture the base original price for the multibuy calculation
+                if offer.get('original_price'):
+                    p['original_price'] = offer.get('original_price')
+                elif offer.get('price'): # fallback if original_price missing
+                    p['original_price'] = offer.get('price')
+            
+            # Set discount label if we have x/y
+            if p.get('offer_x') and p.get('offer_y') and not p.get('discount_label'):
+                p['discount_label'] = f"{p['offer_x']}+{p['offer_y']} FREE"
+
+            # Look in qd_map (if not already found in mb)
+            if not p.get('offer_type') and pid in qd_map:
+                qd = qd_map[pid]
+                p['offer'] = qd
+                p['offer_type'] = 'quantity_discount'
+                if not p.get('discount_label'):
+                    p['discount_label'] = "VOLUME DEAL"
+                if qd.get('original_price'):
+                    p['original_price'] = qd.get('original_price')
+                
+    except Exception as e:
+        print(f"Error attaching offers to products: {e}")
+        
+    return products
+
+
+def _mark_list_metadata(items, fav_ids=None):
+    """
+    Universal marker function to attach offers and favorites to a list of product items.
+    """
+    if not items:
+        return items
+        
+    # 1. Attach offer metadata using Model-based helper
+    _attach_offers_to_products(items)
+    
+    # 2. Mark favorites if fav_ids provided
+    if fav_ids is not None:
+        for item in items:
+            if isinstance(item, dict):
+                item_id = str(item.get('id') or item.get('_id', ''))
+                item['is_favorited'] = item_id in fav_ids
+    
+    return items
+
+
 @main_bp.route('/')
 def home():
     # If the user is not signed in, show the entry page prompting Log In / Sign Up
@@ -128,9 +197,22 @@ def home():
     if not user_email:
         return render_template('entry.html')
 
-    # Get user join date for "NEW" badge logic
+    # Initialize all potential template variables to empty defaults
+    stores = []
+    products = []
+    featured_deals = []
+    popular_products = []
+    store_products = []
+    recommended_products = []
+    favorites = []
+    total_deals_count = 0
+    total_product_count = 0
+    chosen_store_name = None
+    max_savings = 25
+    using_fallback = False
     user_join_date = None
-    db = get_db()
+
+    # Get user join date for "NEW" badge logic
     if user_email:
         try:
             from models.users_model import get_user_by_email
@@ -140,135 +222,111 @@ def home():
         except:
             pass
 
-    # Load stores/products/deals from MongoDB when available, otherwise use in-memory mocks
-    using_fallback = False
-    db = get_db()
-    if db is not None:
-        try:
-            stores = list(db.stores.find({}))
-            products = list(db.products.find({}))
+    # Load stores/products/deals from Models
+    try:
+        stores = stores_model.list_stores()
+        products = products_model.list_products()
+        
+        # Count total deals from both collections using Models
+        total_deals_count = featured_deals_model.get_deals_count() + multibuy_offers_model.get_offers_count()
+        
+        # Fetch both featured deals and multibuy offers using Models
+        featured_deals_list = featured_deals_model.list_featured_deals()
+        multibuy_offers_list = multibuy_offers_model.list_active_offers()
+        
+        # Separate multi-buy deals from regular discount deals
+        multibuy_deals = []
+        regular_deals = []
+        
+        # Check featured_deals_list for multi-buy vs regular
+        for deal in featured_deals_list:
+            offer_obj = deal.get('offer') if isinstance(deal.get('offer'), dict) else None
+            offer_str = deal.get('offer', '') if isinstance(deal.get('offer'), str) else ''
+            offer_x = offer_obj.get('x') if offer_obj else (deal.get('buy_quantity') or deal.get('multibuy_buy') or '')
+            offer_y = offer_obj.get('y') if offer_obj else (deal.get('free_quantity') or deal.get('multibuy_free') or '')
+            offer_type = offer_obj.get('type') if offer_obj else ('buyXgetY' if offer_x and offer_y else '')
+            is_multibuy = (offer_type == 'buyXgetY') or (offer_str and ('buy' in offer_str.lower() and ('get' in offer_str.lower() or 'free' in offer_str.lower() or '+' in offer_str)))
             
-            # Count total deals from both collections
-            total_deals_count = db.featured_deals.count_documents({}) + db.multibuy_offers.count_documents({})
-            
-            # Fetch both featured deals and multibuy offers
-            featured_deals_list = list(db.featured_deals.find({}))
-            multibuy_offers_list = list(db.multibuy_offers.find({}))
-            
-            # Separate multi-buy deals from regular discount deals
-            multibuy_deals = []
-            regular_deals = []
-            
-            # Check featured_deals_list for multi-buy vs regular
-            for deal in featured_deals_list:
-                offer_obj = deal.get('offer') if isinstance(deal.get('offer'), dict) else None
-                offer_str = deal.get('offer', '') if isinstance(deal.get('offer'), str) else ''
-                offer_x = offer_obj.get('x') if offer_obj else (deal.get('buy_quantity') or deal.get('multibuy_buy') or '')
-                offer_y = offer_obj.get('y') if offer_obj else (deal.get('free_quantity') or deal.get('multibuy_free') or '')
-                offer_type = offer_obj.get('type') if offer_obj else ('buyXgetY' if offer_x and offer_y else '')
-                is_multibuy = (offer_type == 'buyXgetY') or (offer_str and ('buy' in offer_str.lower() and ('get' in offer_str.lower() or 'free' in offer_str.lower() or '+' in offer_str)))
-                
-                if is_multibuy:
-                    multibuy_deals.append(deal)
-                else:
-                    regular_deals.append(deal)
-            
-            # Add all multibuy_offers to multibuy_deals
-            multibuy_deals.extend(multibuy_offers_list)
-            
-            # Ensure at least 5 multibuy and 5 regular deals
-            import random
-            selected_multibuy = multibuy_deals[:5] if len(multibuy_deals) >= 5 else multibuy_deals
-            selected_regular = regular_deals[:5] if len(regular_deals) >= 5 else regular_deals
-            
-            # Combine and fill remaining with any other deals
-            featured_deals = selected_multibuy + selected_regular
-            
-            # Add more deals to reach 20 total
-            remaining_deals = [d for d in (multibuy_deals + regular_deals) if d not in featured_deals]
-            if remaining_deals:
-                featured_deals.extend(remaining_deals[:max(0, 20 - len(featured_deals))])
-            
-            # If no featured deals in DB, use JSON fallback
-            if not featured_deals:
-                using_fallback = True
-                featured_deals = load_featured_deals_fallback()
-                total_deals_count = len(featured_deals)
-        except Exception as e:
-            print(f'ERROR in home route: {e}')
-            stores = products = []
+            if is_multibuy:
+                multibuy_deals.append(deal)
+            else:
+                regular_deals.append(deal)
+        
+        # Add all multibuy_offers to multibuy_deals
+        multibuy_deals.extend(multibuy_offers_list)
+        
+        # Ensure at least 5 multibuy and 5 regular deals
+        import random
+        selected_multibuy = multibuy_deals[:5] if len(multibuy_deals) >= 5 else multibuy_deals
+        selected_regular = regular_deals[:5] if len(regular_deals) >= 5 else regular_deals
+        
+        # Combine and fill remaining with any other deals
+        featured_deals = selected_multibuy + selected_regular
+        
+        # Add more deals to reach 20 total
+        remaining_deals = [d for d in (multibuy_deals + regular_deals) if d not in featured_deals]
+        if remaining_deals:
+            featured_deals.extend(remaining_deals[:max(0, 20 - len(featured_deals))])
+        
+        # If no deals found, use JSON fallback
+        if not featured_deals:
             using_fallback = True
             featured_deals = load_featured_deals_fallback()
             total_deals_count = len(featured_deals)
-        
-        # Set total_deals_count right before conversion if not already set
-        if 'total_deals_count' not in locals() or total_deals_count == 0:
-            if db is not None:
-                try:
-                    total_deals_count = db.featured_deals.count_documents({}) + db.multibuy_offers.count_documents({})
-                except:
-                    total_deals_count = len(featured_deals) if featured_deals else 0
-            else:
-                total_deals_count = len(featured_deals) if featured_deals else 0
-        
-        # Sanitize all document lists for templates
-        stores = sanitize_mongo_doc(stores)
-        products = sanitize_mongo_doc(products)
-        featured_deals = sanitize_mongo_doc(featured_deals)
-        
-        # Filter featured deals based on user join date if requested
-        if user_join_date:
-            from datetime import datetime
-            # Helper to parse dates from Mongo/JSON strings if needed
-            def get_date(d):
-                dt = d.get('created_at')
-                if isinstance(dt, str):
-                    try: return datetime.fromisoformat(dt)
-                    except: return None
-                return dt
             
-            # Filter notification-like "posts" (featured deals)
-            featured_deals = [d for d in featured_deals if not get_date(d) or get_date(d) >= user_join_date]
-
-        # Check favorites for user
-        fav_ids = set()
-        if user_email:
-            try:
-                from models.favorites_model import get_user_favorites
-                user_favs = get_user_favorites(user_email)
-                fav_ids = {str(f.get('product_id')) for f in user_favs}
-            except Exception as e:
-                print(f"Error loading favorites for home page: {e}")
-        
-        # Mark favorited items
-        for p in products:
-            p['is_favorited'] = str(p.get('id') or p.get('_id', '')) in fav_ids
-        for d in featured_deals:
-            d['is_favorited'] = str(d.get('id') or d.get('_id', '')) in fav_ids
-    else:
+    except Exception as e:
+        print(f'ERROR in home route: {e}')
         using_fallback = True
-        print('WARNING: Using in-memory fallback data for home page (DB unavailable)')
-        stores = getattr(m, 'stores', [])
-        products = getattr(m, 'products', [])
         featured_deals = load_featured_deals_fallback()
         total_deals_count = len(featured_deals)
+    
+    # Filter featured deals based on user join date if requested
+    if user_join_date:
+        from datetime import datetime
+        # Helper to parse dates from Mongo/JSON strings if needed
+        def get_date(d):
+            dt = d.get('created_at')
+            if isinstance(dt, str):
+                try: return datetime.fromisoformat(dt)
+                except: return None
+            return dt
+        
+        # Filter notification-like "posts" (featured deals)
+        featured_deals = [d for d in featured_deals if not get_date(d) or get_date(d) >= user_join_date]
 
-    # Pull user preferences (preferred stores) and set up featured store section
-    preferred_stores = []
-    store_products = []
-    chosen_store_name = None
+    # Check favorites for user using Model
+    fav_ids = set()
     if user_email:
         try:
-            if db is not None:
-                user_doc = mongo.db.users.find_one({'email': user_email}, {'preferences': 1, 'preferred_stores': 1})
-                if user_doc:
-                    prefs_obj = user_doc.get('preferences') or {}
-                    preferred_stores = prefs_obj.get('preferred_stores') or user_doc.get('preferred_stores') or []
-            else:
-                mock_user = getattr(m, 'users', {}).get(user_email) or next(iter(getattr(m, 'users', {}).values()), {})
-                if mock_user:
-                    prefs_obj = mock_user.get('preferences') or {}
-                    preferred_stores = prefs_obj.get('preferred_stores') or mock_user.get('preferred_stores') or []
+            user_favs = favorites_model.get_user_favorites(user_email)
+            fav_ids = {str(f.get('product_id')) for f in user_favs}
+        except Exception as e:
+            print(f"Error loading favorites for home page: {e}")
+    
+    # Mark favorited items
+    for p in products:
+        p['is_favorited'] = str(p.get('id') or p.get('_id', '')) in fav_ids
+    for d in featured_deals:
+        d['is_favorited'] = str(d.get('id') or d.get('_id', '')) in fav_ids
+
+    # Fetch popular products using Model
+    try:
+        popular_products = products_model.get_popular_products(limit=12)
+        for p in popular_products:
+            p['is_favorited'] = str(p.get('id') or p.get('_id', '')) in fav_ids
+    except Exception as e:
+        print(f"Error fetching popular products: {e}")
+        popular_products = products[:12] if products else []
+
+    # Pull user preferences (preferred stores)
+    preferred_stores = []
+    if user_email:
+        try:
+            from models.users_model import get_user_by_email
+            user_doc = get_user_by_email(user_email)
+            if user_doc:
+                prefs_obj = user_doc.get('preferences') or {}
+                preferred_stores = prefs_obj.get('preferred_stores') or user_doc.get('preferred_stores') or []
         except Exception:
             preferred_stores = []
 
@@ -318,31 +376,16 @@ def home():
         name = store.get('name') or store.get('store') or ''
         norm = _norm_store(name)
         
-        # Count actual products for this store (match the store_products_page logic)
+        # Count actual products for this store using Models
         store_product_count = 0
-        if db is not None:
-            try:
-                regex = {'$regex': re.escape(name), '$options': 'i'}
-                # Count products
-                product_count = db.products.count_documents({
-                    '$or': [
-                        {'stores': {'$elemMatch': {'$or': [{'store': regex}, {'name': regex}]}}},
-                        {'store': regex}
-                    ]
-                })
-                # Count featured deals
-                deal_count = db.featured_deals.count_documents({
-                    '$or': [
-                        {'store': regex},
-                        {'source': regex}
-                    ]
-                })
-                store_product_count = product_count + deal_count
-            except Exception as e:
-                print(f'WARNING: Error counting products for {name}: {e}')
-                store_product_count = store_counts.get(norm, 0)
-        else:
-            store_product_count = store_counts.get(norm, store.get('product_count', 0))
+        try:
+            # Count products and deals using Models instead of direct DB calls
+            product_count = products_model.count_by_store(name)
+            deal_count = featured_deals_model.count_by_store(name)
+            store_product_count = product_count + deal_count
+        except Exception as e:
+            print(f'WARNING: Error counting products for {name}: {e}')
+            store_product_count = store_counts.get(norm, 0)
         
         store['product_count'] = store_product_count
 
@@ -447,159 +490,67 @@ def home():
     # Round to nearest integer
     max_savings = int(round(max_savings)) if max_savings > 0 else 25
 
-    # Load user favorites to power the liked products section
-    favorites = []
-    recommended_products = []
-    if db is not None:
+    # Load user favorites and recommendations using Models
+    try:
+        favorites = favorites_model.get_user_favorites(user_email)
+        # Normalize id to string for template usage
+        for fav in favorites:
+            if isinstance(fav, dict):
+                if not fav.get('id') and fav.get('product_id'):
+                    fav['id'] = str(fav['product_id'])
+                if not fav.get('name') and fav.get('product_name'):
+                    fav['name'] = fav.get('product_name')
+                if not fav.get('image') and fav.get('product_image'):
+                    fav['image'] = fav.get('product_image')
+        
+        # Compute recommendations using Model method
         try:
-            from models import favorites_model
-            favorites = favorites_model.get_user_favorites(user_email)
-            # Normalize id to string for template usage
-            for fav in favorites:
-                if isinstance(fav, dict):
-                    if not fav.get('id') and fav.get('product_id'):
-                        fav['id'] = str(fav['product_id'])
-                    if not fav.get('name') and fav.get('product_name'):
-                        fav['name'] = fav.get('product_name')
-                    if not fav.get('image') and fav.get('product_image'):
-                        fav['image'] = fav.get('product_image')
-            # Compute recommendations based on liked products and shopping list items (shop or category)
-            try:
-                from collections import Counter
-                from models.users_model import get_user_lists
+            from models.users_model import get_user_lists
+            
+            # Collect shops and categories from favorites and shopping lists
+            favorite_shops = [fav.get('store') for fav in favorites if fav.get('store')]
+            favorite_categories = [fav.get('category') for fav in favorites if fav.get('category')]
+            
+            list_shops = []
+            list_categories = []
+            lists_data = get_user_lists(user_email) or {}
+            for lst in (lists_data.get('lists', []) or []):
+                for item in (lst.get('items', []) or []):
+                    if isinstance(item, dict):
+                        if item.get('store'): list_shops.append(item.get('store'))
+                        if item.get('category'): list_categories.append(item.get('category'))
+            
+            all_shops = favorite_shops + list_shops
+            all_categories = favorite_categories + list_categories
+            
+            # Use ProductsModel to get recommendations
+            recommended_products = products_model.get_recommendations(all_shops, all_categories)
                 
-                # Collect shops and categories from favorites and all shopping lists
-                favorite_shops = []
-                favorite_categories = []
-                list_shops = []
-                list_categories = []
-                
-                # Favorites: extract shop and category
-                for fav in (favorites or []):
-                    if fav.get('store'):
-                        favorite_shops.append(fav.get('store'))
-                    if fav.get('category'):
-                        favorite_categories.append(fav.get('category'))
-                
-                # Shopping lists: extract shop and category from all items in all lists
-                lists_data = get_user_lists(user_email) or {}
-                lists = lists_data.get('lists', []) or []
-                for lst in lists:
-                    for item in lst.get('items', []) or []:
-                        if isinstance(item, dict):
-                            if item.get('store'):
-                                list_shops.append(item.get('store'))
-                            if item.get('category'):
-                                list_categories.append(item.get('category'))
-                
-                # Combine shops and categories (prioritize favorites)
-                all_shops = favorite_shops + list_shops
-                all_categories = favorite_categories + list_categories
-                
-                recommended_products = []
-                target_total = 12
-                
-                if all_shops or all_categories:
-                    # Try to find products from liked shops or categories
-                    seen_ids = set()
-                    
-                    # First, get products from preferred shops
-                    for shop in all_shops:
-                        if len(recommended_products) >= target_total:
-                            break
-                        try:
-                            if db is not None:
-                                shop_products = list(db.products.find({
-                                    '$or': [
-                                        {'store': {'$regex': re.escape(shop), '$options': 'i'}},
-                                        {'stores': {'$elemMatch': {'store': {'$regex': re.escape(shop), '$options': 'i'}}}}
-                                    ]
-                                }).limit(3))
-                            else:
-                                shop_products = [p for p in products if 
-                                    (p.get('store') and shop.lower() in p.get('store').lower()) or
-                                    any(s.get('store') and shop.lower() in s.get('store').lower() for s in p.get('stores', []))][:3]
-                            
-                            for p in shop_products:
-                                pid = str(p.get('id') or p.get('_id'))
-                                if pid not in seen_ids:
-                                    if p.get('_id'):
-                                        p['id'] = str(p['_id'])
-                                    recommended_products.append(p)
-                                    seen_ids.add(pid)
-                                    if len(recommended_products) >= target_total:
-                                        break
-                        except Exception:
-                            pass
-                    
-                    # Then, get products from preferred categories
-                    for cat in all_categories:
-                        if len(recommended_products) >= target_total:
-                            break
-                        try:
-                            if db is not None:
-                                cat_products = list(db.products.find({'category': {'$regex': re.escape(cat), '$options': 'i'}}).limit(3))
-                            else:
-                                cat_products = [p for p in products if p.get('category') and cat.lower() in p.get('category').lower()][:3]
-                            
-                            for p in cat_products:
-                                pid = str(p.get('id') or p.get('_id'))
-                                if pid not in seen_ids:
-                                    if p.get('_id'):
-                                        p['id'] = str(p['_id'])
-                                    recommended_products.append(p)
-                                    seen_ids.add(pid)
-                                    if len(recommended_products) >= target_total:
-                                        break
-                        except Exception:
-                            pass
-                
-                # If we still don't have enough recommendations, fill with random products
-                if len(recommended_products) < target_total:
-                    seen_ids = set(str(p.get('id') or p.get('_id')) for p in recommended_products if isinstance(p, dict))
-                    for p in products:
-                        pid = str(p.get('id') or p.get('_id'))
-                        if pid not in seen_ids:
-                            recommended_products.append(p)
-                            if len(recommended_products) >= target_total:
-                                break
-                
-                # If still empty (no products at all), use defaults
-                if not recommended_products:
-                    recommended_products = products[:target_total]
-                    
-            except Exception as e:
-                print(f'WARNING: Failed to compute recommendations: {e}')
-                recommended_products = products[:12]
         except Exception as e:
-            print(f'WARNING: Failed to load favorites: {e}')
+            print(f'WARNING: Failed to compute recommendations: {e}')
+            recommended_products = products[:12]
+    except Exception as e:
+        print(f'WARNING: Failed to load favorites: {e}')
 
     # Ensure all product lists are marked with is_favorited status
     if user_email:
         try:
-            from models.favorites_model import get_user_favorites
-            user_favs = get_user_favorites(user_email)
-            fav_ids = {str(f.get('product_id')) for f in user_favs}
+            fav_ids = {str(f.get('product_id')) for f in favorites}
             
-            # Universal marker function to avoid repetition
-            def mark_list(items):
-                if not items: return
-                for item in items:
-                    if isinstance(item, dict):
-                        item_id = str(item.get('id') or item.get('_id', ''))
-                        item['is_favorited'] = item_id in fav_ids
-            
-            mark_list(products)
-            mark_list(featured_deals)
-            mark_list(store_products)
-            mark_list(recommended_products)
+            _mark_list_metadata(products, fav_ids)
+            _mark_list_metadata(featured_deals, fav_ids)
+            _mark_list_metadata(store_products, fav_ids)
+            _mark_list_metadata(recommended_products, fav_ids)
+            _mark_list_metadata(popular_products, fav_ids)
         except Exception as e:
+            print(f"Error marking metadata in home route: {e}")
             print(f"Error marking favorites on home page: {e}")
 
     return render_template('home.html', 
                          stores=stores, 
                          products=products, 
                          featured_deals=featured_deals,
+                         popular_products=popular_products,
                          total_deals_count=total_deals_count,
                          favorites=favorites,
                          recommended_products=recommended_products,
@@ -613,117 +564,82 @@ def home():
 @main_bp.route('/stores')
 def stores_page():
     using_fallback = False
-    db = get_db()
-    if db is not None:
-        try:
-            stores = list(db.stores.find({}))
-            for s in stores:
-                if '_id' in s:
-                    s['id'] = str(s['_id'])
-                
-                # Count products for this store
-                store_name = s.get('name', '')
-                regex = {'$regex': re.escape(store_name), '$options': 'i'}
-                
-                # Count in products collection
-                product_count = db.products.count_documents({
-                    '$or': [
-                        {'stores': {'$elemMatch': {'$or': [{'store': regex}, {'name': regex}]}}},
-                        {'store': regex}
-                    ]
-                })
-                
-                # Also count in featured_deals collection
-                deals_count = db.featured_deals.count_documents({
-                    'store': regex
-                })
-                
-                s['product_count'] = product_count + deals_count
-        except Exception as e:
-            print(f"Error fetching stores with counts: {e}")
-            using_fallback = True
-            stores = getattr(m, 'stores', [])
-    else:
-        using_fallback = True
-        print('WARNING: Using in-memory fallback data for stores page (DB unavailable)')
-        stores = getattr(m, 'stores', [])
-    return render_template('stores.html', stores=stores, using_fallback=using_fallback)
+    try:
+        stores = stores_model.list_stores()
+        for s in stores:
+            # Count products for this store using Models
+            store_name = s.get('name', '')
+            
+            # Count in products and featured_deals collections
+            product_count = products_model.count_by_store(store_name)
+            deals_count = featured_deals_model.count_by_store(store_name)
+            
+            s['product_count'] = product_count + deals_count
+    except Exception as e:
+        print(f"Error fetching stores with counts: {e}")
+    # Get standard category options for chips/filters
+    category_options = [{"name": cat} for cat in STANDARD_CATEGORIES]
+
+    return render_template('stores.html', stores=stores, using_fallback=using_fallback, category_options=category_options)
 
 @main_bp.route('/stores/<store_name>')
 def store_products_page(store_name):
     """Display all products for a specific store."""
-    db = get_db()
     products = []
     store_info = None
     
-    if db is not None:
-        try:
-            # Get store info
-            store_info = db.stores.find_one({'name': {'$regex': f'^{re.escape(store_name)}$', '$options': 'i'}})
-            if store_info and '_id' in store_info:
-                store_info['id'] = str(store_info['_id'])
-            
-            # Get products for this store
-            regex = {'$regex': re.escape(store_name), '$options': 'i'}
-            prod_cursor = db.products.find({
-                '$or': [
-                    {'stores': {'$elemMatch': {'$or': [{'store': regex}, {'name': regex}]}}},
-                    {'store': regex}
-                ]
-            })
-            
-            for prod in prod_cursor:
-                if '_id' in prod:
-                    prod['id'] = str(prod['_id'])
-                # Extract matched store data
-                matched_stores = [s for s in (prod.get('stores') or []) 
-                                if (s.get('store') or '').lower() == store_name.lower()]
-                if matched_stores:
-                    prod['store_price'] = matched_stores[0].get('price')
-                    prod['store_image'] = matched_stores[0].get('image') or prod.get('image')
-                    # Extract URL from store entry if available
-                    if matched_stores[0].get('url'):
-                        prod['url'] = matched_stores[0].get('url')
-                else:
-                    prod['store_price'] = prod.get('price')
-                    prod['store_image'] = prod.get('image')
-                products.append(prod)
-            
-            # Also get featured deals for this store
-            deals_cursor = db.featured_deals.find({
-                '$or': [
-                    {'store': regex},
-                    {'source': regex}
-                ]
-            })
-            
-            for deal in deals_cursor:
-                if '_id' in deal:
-                    deal['id'] = str(deal['_id'])
-                # Use deal's name field as 'name' for consistency
-                if 'title' in deal and 'name' not in deal:
-                    deal['name'] = deal['title']
-                # Set store-specific price and image
-                deal['store_price'] = deal.get('price')
-                deal['store_image'] = deal.get('image')
-                products.append(deal)
+    try:
+        # Get store info using Model
+        store_info = stores_model.get_store_by_name(store_name)
+        
+        # Get products for this store using Model
+        prod_docs = products_model.find_by_store(store_name)
+        
+        for prod in prod_docs:
+            # Extract matched store data
+            matched_stores = [s for s in (prod.get('stores') or []) 
+                            if (s.get('store') or '').lower() == store_name.lower()]
+            if matched_stores:
+                prod['store_price'] = matched_stores[0].get('price')
+                prod['store_image'] = matched_stores[0].get('image') or prod.get('image')
+                # Extract URL from store entry if available
+                if matched_stores[0].get('url'):
+                    prod['url'] = matched_stores[0].get('url')
+            else:
+                prod['store_price'] = prod.get('price')
+                prod['store_image'] = prod.get('image')
+            products.append(prod)
+        
+        # Also get featured deals for this store using Model
+        deals_docs = featured_deals_model.find_by_store(store_name)
+        
+        for deal in deals_docs:
+            # Use deal's name field as 'name' for consistency
+            if 'title' in deal and 'name' not in deal:
+                deal['name'] = deal['title']
+            # Set store-specific price and image
+            deal['store_price'] = deal.get('price')
+            deal['store_image'] = deal.get('image')
+            products.append(deal)
 
-            # Check favorites for user
-            user_email = session.get('user')
-            fav_ids = set()
-            if user_email:
-                try:
-                    from models.favorites_model import get_user_favorites
-                    user_favs = get_user_favorites(user_email)
-                    fav_ids = {str(f.get('product_id')) for f in user_favs}
-                except Exception as e:
-                    print(f"Error loading favorites for store products: {e}")
-            
-            for p in products:
-                p['is_favorited'] = str(p.get('id') or p.get('_id', '')) in fav_ids
+        # Check favorites for user using Model
+        user_email = session.get('user')
+        fav_ids = set()
+        if user_email:
+            try:
+                user_favs = favorites_model.get_user_favorites(user_email)
+                fav_ids = {str(f.get('product_id')) for f in user_favs}
+            except Exception as e:
+                print(f"Error loading favorites for store products: {e}")
+        
+        for p in products:
+            p['is_favorited'] = str(p.get('id') or p.get('_id', '')) in fav_ids
+        
+        # Attach offers and additional metadata using Models
+        _mark_list_metadata(products, fav_ids)
 
-        except Exception as e:
-            print(f'ERROR loading products for {store_name}: {e}')
+    except Exception as e:
+        print(f'ERROR loading products for {store_name}: {e}')
 
     # Fallback to in-memory data and JSON deals when DB is unavailable or returned nothing
     try:
@@ -771,11 +687,15 @@ def store_products_page(store_name):
         if 'is_favorited' not in p:
             p['is_favorited'] = str(p.get('id') or p.get('_id', '')) in fav_ids
     
+    # Get standard category options for filters
+    category_options = [{"name": cat} for cat in STANDARD_CATEGORIES]
+    
     return render_template('store_products.html', 
                          store_name=store_name, 
                          store=store_info,
                          products=products,
-                         product_count=len(products))
+                         product_count=len(products),
+                         category_options=category_options)
 
 @main_bp.route('/featured-deals')
 def featured_deals_page():
@@ -793,116 +713,82 @@ def featured_deals_page():
     user_email = session.get('user')
     
     deals = []
-    db = get_db()
-    
-    if db is not None:
-        try:
-            # Build query
-            query = {}
-            if category_filter:
-                import re as _re
-                query['category'] = {'$regex': f"^{_re.escape(category_filter)}$", '$options': 'i'}
-            
-            if search_query:
-                import re as _re
-                search_regex = {'$regex': _re.escape(search_query), '$options': 'i'}
-                query['$or'] = [
-                    {'title': search_regex},
-                    {'name': search_regex},
-                    {'store': search_regex},
-                    {'category': search_regex},
-                    {'description': search_regex}
-                ]
+    category_options = []
+    fav_ids = set()
 
-            # Fetch deals from both collections and sanitize
-            featured_deals_list = [sanitize_mongo_doc(d) for d in db.featured_deals.find(query)]
-            multibuy_offers_list = [sanitize_mongo_doc(m) for m in db.multibuy_offers.find(query)]
-            
-            # Combine both lists
-            deals = featured_deals_list + multibuy_offers_list
-            
-            # Check favorites for user
-            fav_ids = set()
-            if user_email:
-                try:
-                    from models.favorites_model import get_user_favorites
-                    user_favs = get_user_favorites(user_email)
-                    fav_ids = {str(f.get('product_id')) for f in user_favs}
-                except Exception as e:
-                    print(f"Error loading favorites for deals page: {e}")
-            
-            for deal in deals:
-                deal['is_favorited'] = str(deal.get('id') or deal.get('_id', '')) in fav_ids
-            
-            # Notifications logic (modified)
-            if user_email and deals:
-                try:
-                    from models.notifications_model import create_notification, notifications_model
-                    
-                    # Auto-delete notifications older than 7 days
-                    notifications_model.cleanup_old_notifications(7)
-
-                    user = db.users.find_one({'email': user_email})
-                    if user:
-                        current_deal_ids = [str(d.get('id') or d.get('_id')) for d in deals if d.get('id') or d.get('_id')]
-                        
-                        if 'seen_deals' not in user:
-                            # First time or migration: Mark current deals as seen WITHOUT notifying
-                            # This prevents spamming 50+ notifications for existing deals
-                            db.users.update_one({'email': user_email}, {'$set': {'seen_deals': current_deal_ids}})
-                        else:
-                            seen_deals = set(user.get('seen_deals', []))
-                            new_deal_ids = []
-                            for deal in deals:
-                                deal_id = str(deal.get('id') or deal.get('_id'))
-                                if deal_id and deal_id not in seen_deals:
-                                    deal_title = deal.get('title') or deal.get('name', 'New Deal')
-                                    store_name = deal.get('store', '')
-                                    create_notification({
-                                        'user_email': user_email,
-                                        'type': 'new_deal',
-                                        'title': 'New Deal Available!',
-                                        'message': f'{deal_title}{" at " + store_name if store_name else ""}',
-                                        'deal_id': deal_id,
-                                        'store_name': store_name,
-                                        'action_url': f'/featured-deal/{deal_id}',
-                                        'priority': 'normal'
-                                    })
-                                    new_deal_ids.append(deal_id)
-                            
-                            if new_deal_ids:
-                                # Update seen list with current state
-                                db.users.update_one({'email': user_email}, {'$set': {'seen_deals': current_deal_ids}})
-                except Exception as e:
-                    print(f'WARNING: Failed notifications: {e}')
-            
-            if not deals and not query:
-                using_fallback = True
-                deals = load_featured_deals_fallback()
-                # Mark favorites for fallback deals
-                for deal in deals:
-                    deal['is_favorited'] = str(deal.get('id') or deal.get('_id', '')) in fav_ids
-        except Exception as e:
-            print(f'WARNING: MongoDB query failed for deals: {e}')
-            using_fallback = True
-            deals = load_featured_deals_fallback()
-            # Mark favorites for fallback deals
-            if user_email:
-                for deal in deals:
-                    deal['is_favorited'] = str(deal.get('id') or deal.get('_id', '')) in fav_ids
-    else:
+    # 1. Fetch Deals
+    try:
+        featured_deals_list = featured_deals_model.list_featured_deals()
+        multibuy_offers_list = multibuy_offers_model.list_active_offers()
+        deals = featured_deals_list + multibuy_offers_list
+    except Exception as e:
+        print(f'WARNING: Model query failed for deals: {e}')
         using_fallback = True
         deals = load_featured_deals_fallback()
-        # Mark favorites for fallback deals
-        if user_email:
-            try:
-                from models.favorites_model import get_user_favorites
-                user_favs = get_user_favorites(user_email)
-                fav_ids = {str(f.get('product_id')) for f in user_favs}
-                for deal in deals:
-                    deal['is_favorited'] = str(deal.get('id') or deal.get('_id', '')) in fav_ids
-            except:
-                pass
+
+    # 2. Get category options (Sync with compare page - use specific standard categories)
+    try:
+        cat_counts = products_model.get_category_counts()
+        category_options = [{"name": cat, "count": cat_counts.get(cat, 0)} for cat in STANDARD_CATEGORIES]
+    except Exception as e:
+        print(f"Error getting categories for deals: {e}")
+        category_options = []
+
+    # 3. Filter Deals
+    if category_filter:
+        deals = [d for d in deals if category_filter.lower() in (d.get('category') or '').lower()]
+    
+    if search_query:
+        sq = search_query.lower()
+        deals = [d for d in deals if sq in (d.get('title') or d.get('name') or '').lower() or 
+                sq in (d.get('store') or '').lower() or 
+                sq in (d.get('category') or '').lower() or
+                sq in (d.get('description') or '').lower()]
+
+    # 4. Load Favorites
+    if user_email:
+        try:
+            user_favs = favorites_model.get_user_favorites(user_email)
+            fav_ids = {str(f.get('product_id')) for f in user_favs}
+        except Exception as e:
+            print(f"Error loading favorites for deals page: {e}")
+    
+    # 5. Attach Metadata
+    _mark_list_metadata(deals, fav_ids)
+    
+    # 6. Notifications logic
+    if user_email and deals and not using_fallback:
+        try:
+            notifications_model.cleanup_old_notifications(7)
+            from models.users_model import get_user_by_email, update_user
+            user = get_user_by_email(user_email)
+            if user:
+                current_deal_ids = [str(d.get('id') or d.get('_id')) for d in deals]
+                if 'seen_deals' not in user:
+                    update_user(user_email, {'seen_deals': current_deal_ids})
+                else:
+                    seen_deals = set(user.get('seen_deals', []))
+                    new_deal_ids = []
+                    for deal in deals:
+                        deal_id = str(deal.get('id') or deal.get('_id'))
+                        if deal_id and deal_id not in seen_deals:
+                            deal_title = deal.get('title') or deal.get('name', 'New Deal')
+                            store_name = deal.get('store', '')
+                            notifications_model.create_notification({
+                                'user_email': user_email,
+                                'type': 'new_deal',
+                                'title': 'New Deal Available!',
+                                'message': f'{deal_title}{" at " + store_name if store_name else ""}',
+                                'deal_id': deal_id,
+                                'store_name': store_name,
+                                'action_url': f'/featured-deal/{deal_id}',
+                                'priority': 'normal'
+                            })
+                            new_deal_ids.append(deal_id)
+                    if new_deal_ids:
+                        update_user(user_email, {'seen_deals': current_deal_ids})
+        except Exception as e:
+            print(f'WARNING: Failed notifications: {e}')
     
     # Sort deals by discount percentage (highest first)
     def get_sort_key(deal):
@@ -943,13 +829,13 @@ def featured_deals_page():
                           showing_start=showing_start,
                           showing_end=showing_end,
                           category_filter=category_filter,
+                          category_options=category_options,
                           search_query=search_query,
                           using_fallback=using_fallback)
 
 @main_bp.route('/compare-prices')
 def compare_prices():
     """Render compare page with server-side pagination (30 per page) and category filter."""
-    using_fallback = False
     per_page = 30
     try:
         page = int(request.args.get('page', 1))
@@ -965,165 +851,93 @@ def compare_prices():
     products = []
     deals = []
     stores = []
-    db = get_db()
     category_options = []
 
-    if db is not None:
-        try:
-            query = {}
-            if category_filter:
-                import re as _re
-                query['category'] = {'$regex': f"^{_re.escape(category_filter)}$", '$options': 'i'}
-            
-            if search_query:
-                import re as _re
-                # Search in product name, title, category, or store
-                search_regex = {'$regex': _re.escape(search_query), '$options': 'i'}
-                
-                # Search products
-                product_query = dict(query)
-                product_query['$or'] = [
-                    {'name': search_regex},
-                    {'title': search_regex},
-                    {'category': search_regex},
-                    {'store': search_regex}
-                ]
-                
-                # Search deals (featured_deals and multibuy_offers)
-                deal_query = {
-                    '$or': [
-                        {'title': search_regex},
-                        {'name': search_regex},
-                        {'store': search_regex},
-                        {'category': search_regex}
-                    ]
-                }
-                
-                # Search stores
-                store_query = {
-                    '$or': [
-                        {'name': search_regex},
-                        {'description': search_regex}
-                    ]
-                }
-                
-                # Fetch deals
-                featured_deals_list = list(db.featured_deals.find(deal_query))
-                multibuy_offers_list = list(db.multibuy_offers.find(deal_query))
-                deals = featured_deals_list + multibuy_offers_list
-                for d in deals:
-                    if '_id' in d:
-                        d['id'] = str(d['_id'])
-                        del d['_id']
-                
-                # Fetch stores
-                stores = list(db.stores.find(store_query))
-                for s in stores:
-                    if '_id' in s:
-                        s['id'] = str(s['_id'])
-                        del s['_id']
-            else:
-                product_query = query
-
-            total_products = int(db.products.count_documents(product_query if search_query else query))
-            total_pages = (total_products + per_page - 1) // per_page if total_products else 1
-            page = min(page, total_pages) if total_products else 1
-            skip_amount = (page - 1) * per_page
-            cursor = db.products.find(product_query if search_query else query).skip(skip_amount).limit(per_page)
-            products = [sanitize_mongo_doc(p) for p in cursor]
-            
-            # Enrich products with real store images/logos from the stores collection
-            db_stores = []
-            try:
-                db_stores = list(db.stores.find({}, {'name': 1, 'store': 1, 'logo': 1, 'image': 1, 'store_image': 1}))
-            except Exception:
-                db_stores = []
-                
-            def find_store_logo_and_image(store_name, db_stores):
-                norm = lambda n: (n or '').strip().lower()
-                for s in db_stores:
-                    if norm(s.get('name')) == norm(store_name) or norm(s.get('store')) == norm(store_name):
-                        # Return logo, and fallback image field
-                        return s.get('logo'), s.get('image') or s.get('store_image')
-                return None, None
-                
-            for p in products:
-                for s in (p.get('stores') or []):
-                    store_name = s.get('store') or s.get('store_name') or s.get('name')
-                    logo, image = find_store_logo_and_image(store_name, db_stores)
-                    if logo:
-                        s['logo'] = logo
-                    if image:
-                        s['image'] = image  # Standardize on 'image' as requested by user
-                        s['store_image'] = image
-                        
-            # Handle is_favorited status for products
-            user_email = session.get('user')
-            fav_ids = set()
-            if user_email:
-                try:
-                    from models.favorites_model import get_user_favorites
-                    user_favs = get_user_favorites(user_email)
-                    fav_ids = {str(f.get('product_id')) for f in user_favs}
-                except Exception as e:
-                    print(f"Error loading favorites for compare page: {e}")
-            
-            for p in products:
-                p['is_favorited'] = str(p.get('id') or p.get('_id', '')) in fav_ids
-                
-            # Since sanitize_mongo_doc converts _id to id, we don't need additional loop
-            # products = list(cursor)
-            # for p in products:
-            #     if '_id' in p:
-            #         p['id'] = str(p['_id'])
-            try:
-                from collections import Counter
-                all_prods = list(db.products.find({}, {'category': 1}))
-                cat_counts = Counter(p.get('category') for p in all_prods if p.get('category'))
-                category_options = sorted(cat_counts.keys(), key=lambda c: (-cat_counts[c], c.lower()))
-            except Exception:
-                category_options = []
-        except Exception:
-            using_fallback = True
-            products = getattr(m, 'products', [])
-            # Apply search filter on fallback data
-            if search_query:
-                search_lower = search_query.lower()
-                products = [p for p in products if 
-                    search_lower in (p.get('name') or '').lower() or
-                    search_lower in (p.get('title') or '').lower() or
-                    search_lower in (p.get('category') or '').lower() or
-                    search_lower in (p.get('store') or '').lower()]
-            total_products = len(products)
-            total_pages = (total_products + per_page - 1) // per_page if total_products else 1
-    else:
-        using_fallback = True
-        products = getattr(m, 'products', [])
-        # Apply search filter on fallback data
+    try:
+        query = {}
+        if category_filter:
+            query['category'] = {'$regex': f"^{re.escape(category_filter)}$", '$options': 'i'}
+        
+        product_query = dict(query)
         if search_query:
-            search_lower = search_query.lower()
-            products = [p for p in products if 
-                search_lower in (p.get('name') or '').lower() or
-                search_lower in (p.get('title') or '').lower() or
-                search_lower in (p.get('category') or '').lower() or
-                search_lower in (p.get('store') or '').lower()]
-        total_products = len(products)
+            search_regex = {'$regex': re.escape(search_query), '$options': 'i'}
+            product_query['$or'] = [
+                {'name': search_regex},
+                {'title': search_regex},
+                {'category': search_regex},
+                {'store': search_regex}
+            ]
+        
+        # New simplified logic using Models
+        total_products = products_model.count_products(product_query)
         total_pages = (total_products + per_page - 1) // per_page if total_products else 1
+        page = min(page, total_pages) if total_products else 1
+        skip_amount = (page - 1) * per_page
+        
+        products = products_model.list_products(
+            query=product_query,
+            skip=skip_amount,
+            limit=per_page
+        )
+        
+        # Enrich products with real store images/logos from the stores model
+        db_stores = stores_model.list_stores()
+            
+        def find_store_logo_and_image(store_name, db_stores):
+            norm = lambda n: (n or '').strip().lower()
+            for s in db_stores:
+                if norm(s.get('name')) == norm(store_name) or norm(s.get('store')) == norm(store_name):
+                    return s.get('logo'), s.get('image') or s.get('store_image')
+            return None, None
+            
+        for p in products:
+            product_img = p.get('image') or (p.get('images')[0] if p.get('images') else None)
+            for s in (p.get('stores') or []):
+                store_name = s.get('store') or s.get('store_name') or s.get('name')
+                logo, img = find_store_logo_and_image(store_name, db_stores)
+                
+                # Attach real store logos/images
+                if logo: s['logo'] = logo
+                if img: s['store_image'] = img
+                
+                # If the store entry's 'image' is actually just the product image, clear it
+                # to avoid it being used as a store logo in the frontend
+                if s.get('image') and s.get('image') == product_img:
+                    s['image'] = None
 
-    # Enrich fallback products with is_favorited status
-    if products and any('is_favorited' not in p for p in products):
+        # Mark favorites and attach offers using the marking helper
         user_email = session.get('user')
         fav_ids = set()
         if user_email:
             try:
-                from models.favorites_model import get_user_favorites
-                user_favs = get_user_favorites(user_email)
+                user_favs = favorites_model.get_user_favorites(user_email)
                 fav_ids = {str(f.get('product_id')) for f in user_favs}
-            except Exception:
+            except Exception as e:
+                print(f"Error loading favorites for compare page: {e}")
+        
+        _mark_list_metadata(products, fav_ids)
+
+        # Get category options for filter using specific standard categories
+        cat_counts = products_model.get_category_counts()
+        category_options = [{"name": cat, "count": cat_counts.get(cat, 0)} for cat in STANDARD_CATEGORIES]
+
+        # Search result deals/stores if search query provided
+        if search_query:
+            try:
+                all_deals = featured_deals_model.list_featured_deals() + multibuy_offers_model.list_active_offers()
+                deals = [d for d in all_deals if search_query.lower() in (d.get('title') or d.get('name') or '').lower() or search_query.lower() in (d.get('store') or '').lower()]
+                
+                all_stores = stores_model.list_stores()
+                stores = [s for s in all_stores if search_query.lower() in (s.get('name') or '').lower() or search_query.lower() in (s.get('description') or '').lower()]
+            except:
                 pass
-        for p in products:
-            if 'is_favorited' not in p:
-                p['is_favorited'] = str(p.get('id') or p.get('_id', '')) in fav_ids
+
+    except Exception as e:
+        print(f'ERROR in compare_prices route: {e}')
+        # Minimal fallback
+        products = getattr(m, 'products', [])[:30]
+        total_products = len(products)
+        total_pages = 1
 
     has_prev = page > 1
     has_next = page < total_pages
@@ -1135,7 +949,7 @@ def compare_prices():
         products=products,
         deals=deals,
         stores=stores,
-        using_fallback=using_fallback,
+        using_fallback=(len(products) == 0 or total_products == 0),
         page=page,
         per_page=per_page,
         total_products=total_products,
@@ -1151,32 +965,20 @@ def compare_prices():
 
 @main_bp.route('/product/<product_id>')
 def product_detail(product_id):
-    db = get_db()
     product = None
     requested_store = request.args.get('store')
     
-    # Check database first (MongoDB)
-    if db is not None:
-        try:
-            from bson import ObjectId
-            # Try to find by ObjectId first
-            try:
-                product = db.products.find_one({'_id': ObjectId(product_id)})
-            except:
-                # If not a valid ObjectId, try as string id
-                product = db.products.find_one({'id': product_id})
+    # Check database first using Models
+    try:
+        # Try finding in products collection
+        product = products_model.get_product_by_id(product_id)
+        
+        # If not found, try featured_deals collection
+        if not product:
+            product = featured_deals_model.get_deal_by_id(product_id)
             
-            # Also check featured_deals collection in MongoDB
-            if not product:
-                try:
-                    product = db.featured_deals.find_one({'_id': ObjectId(product_id)})
-                except:
-                    product = db.featured_deals.find_one({'id': product_id})
-            
-            if product and '_id' in product:
-                product['id'] = str(product['_id'])
-        except Exception as e:
-            print(f'Error fetching product from MongoDB: {e}')
+    except Exception as e:
+        print(f'Error fetching product using Models: {e}')
     
 
     # If not found in database, fall back to JSON featured deals
@@ -1198,6 +1000,9 @@ def product_detail(product_id):
     if not product:
         return render_template('404.html'), 404
 
+    # Attach any active multibuy/quantity offers to the single product
+    _attach_offers_to_products([product])
+
     # Ensure a minimal stores array exists for featured deals or products without stores
     if not product.get('stores'):
         store_name = product.get('store') or product.get('source') or 'Store'
@@ -1210,12 +1015,8 @@ def product_detail(product_id):
     
     # Enrich product stores with real store images/logos from the stores collection
     stores_list = product.get('stores') or []
-    db_stores = []
-    if db is not None:
-        try:
-            db_stores = list(db.stores.find({}, {'name': 1, 'store': 1, 'logo': 1, 'image': 1, 'store_image': 1}))
-        except Exception:
-            db_stores = []
+    db_stores = stores_model.list_stores()
+    
     def find_store_logo_and_image(store_name, db_stores):
         norm = lambda n: (n or '').strip().lower()
         for s in db_stores:
@@ -1257,7 +1058,7 @@ def product_detail(product_id):
     # Check if favorited
     is_favorited = False
     user_email = session.get('user')
-    if user_email and db is not None:
+    if user_email:
         try:
             from models.favorites_model import is_favorited as check_fav
             is_favorited = check_fav(user_email, str(product.get('id') or product.get('_id', '')))
@@ -1270,40 +1071,31 @@ def product_detail(product_id):
 @main_bp.route('/featured-deal/<deal_id>')
 def featured_deal_detail(deal_id):
     """Display a single featured deal with store link."""
-    db = get_db()
     deal = None
 
-    if db is not None:
-        try:
-            from bson import ObjectId
-            try:
-                # Try to find in featured_deals first
-                deal = db.featured_deals.find_one({'_id': ObjectId(deal_id)})
-                
-                # If not found, search in multibuy_offers
-                if not deal:
-                    deal = db.multibuy_offers.find_one({'_id': ObjectId(deal_id)})
-            except Exception:
-                # Try with string ID
-                deal = db.featured_deals.find_one({'id': deal_id})
-                if not deal:
-                    deal = db.multibuy_offers.find_one({'id': deal_id})
+    try:
+        # Try to find in featured_deals first using Model
+        deal = featured_deals_model.get_deal_by_id(deal_id)
+        
+        # If not found, search in multibuy_offers using Model
+        if not deal:
+            deal = multibuy_offers_model.get_offer_by_id(deal_id)
             
-            if deal and '_id' in deal:
-                deal['id'] = str(deal['_id'])
+        if deal:
+            # Attach any active multibuy/quantity offers using Model-based helper
+            _attach_offers_to_products([deal])
             
-            # Check if favorited
+            # Check if favorited using Model
             is_favorited = False
             user_email = session.get('user')
-            if user_email and deal:
+            if user_email:
                 try:
-                    from models.favorites_model import is_favorited as check_fav
-                    is_favorited = check_fav(user_email, str(deal.get('id') or deal.get('_id', '')))
+                    is_favorited = favorites_model.is_favorited(user_email, str(deal.get('id')))
                     deal['is_favorited'] = is_favorited
                 except Exception as e:
                     print(f"Error checking favorites for featured_deal_detail: {e}")
-        except Exception as e:
-            print(f'ERROR loading featured deal {deal_id}: {e}')
+    except Exception as e:
+        print(f'ERROR loading featured deal {deal_id}: {e}')
 
     if deal is None:
         all_deals = load_featured_deals_fallback()
@@ -1321,41 +1113,21 @@ def featured_deal_detail(deal_id):
 @main_bp.route('/product-info/<product_id>')
 def product_info(product_id):
     """Simple product info page showing just description and unit"""
-    db = get_db()
     product = None
     
     # Get store-specific information from query parameters
     store_name = request.args.get('store_name', '')
     store_price = request.args.get('store_price', '')
     
-    # Check database for product
-    if db is not None:
-        try:
-            from bson import ObjectId
-            # Try to find by ObjectId first
-            try:
-                product = db.products.find_one({'_id': ObjectId(product_id)})
-            except:
-                # If not a valid ObjectId, try as string id
-                product = db.products.find_one({'id': product_id})
-            
-            if product and '_id' in product:
-                product['id'] = str(product['_id'])
-        except Exception as e:
-            print(f'Error fetching product from MongoDB: {e}')
-
-    # Also allow featured deals when hitting /product-info directly
-    if db is not None and not product:
-        try:
-            from bson import ObjectId
-            try:
-                product = db.featured_deals.find_one({'_id': ObjectId(product_id)})
-            except Exception:
-                product = db.featured_deals.find_one({'id': product_id})
-            if product and '_id' in product:
-                product['id'] = str(product['_id'])
-        except Exception as e:
-            print(f'Error fetching featured deal for product-info: {e}')
+    # Check database for product using Model
+    try:
+        product = products_model.get_product_by_id(product_id)
+        
+        # If not found, try featured_deals collection using Model
+        if not product:
+            product = featured_deals_model.get_deal_by_id(product_id)
+    except Exception as e:
+        print(f'Error fetching product using Models for product-info: {e}')
     
     # Fallback to in-memory data and JSON deals
     if not product:
@@ -1380,13 +1152,12 @@ def product_info(product_id):
     if not product:
         return render_template('404.html'), 404
     
-    # Check if favorited
+    # Check if favorited using Model
     is_favorited = False
     user_email = session.get('user')
-    if user_email and db is not None:
+    if user_email:
         try:
-            from models.favorites_model import is_favorited as check_fav
-            is_favorited = check_fav(user_email, str(product.get('id') or product.get('_id', '')))
+            is_favorited = favorites_model.is_favorited(user_email, str(product.get('id')))
         except Exception as e:
             print(f"Error checking favorites for product_info: {e}")
     
@@ -1395,12 +1166,11 @@ def product_info(product_id):
 @main_bp.route('/shopping-list')
 def shopping_list():
     user_email = session.get('user')
-    db = get_db()
 
-    # Auto-enrich existing items with missing images (one-time backfill)
-    if user_email and db is not None:
+    # Auto-enrich existing items with missing images using models
+    if user_email:
         try:
-            from models.users_model import get_user_lists
+            from models.users_model import get_user_lists, update_user
             lists_data = get_user_lists(user_email) or {'lists': [], 'active_list_id': None}
             all_user_lists = lists_data.get('lists', [])
             needs_update = False
@@ -1409,14 +1179,11 @@ def shopping_list():
                 list_items = lst.get('items', [])
                 for item in list_items:
                     if isinstance(item, dict) and not item.get('image'):
-                        # Item is missing image, try to enrich it
+                        # Item is missing image, try to enrich it using models
                         item_name = item.get('name')
                         if item_name:
-                            prod = None
                             try:
-                                prod = db.products.find_one({'name': {'$regex': '^' + re.escape(item_name) + '$', '$options': 'i'}})
-                                if not prod:
-                                    prod = db.products.find_one({'name': {'$regex': re.escape(item_name), '$options': 'i'}})
+                                prod = products_model.get_product_by_name(item_name)
                             except Exception:
                                 prod = None
 
@@ -1430,7 +1197,7 @@ def shopping_list():
 
             if needs_update:
                 try:
-                    db.users.update_one({'email': user_email}, {'$set': {'shopping_lists': all_user_lists}})
+                    update_user(user_email, {'shopping_lists': all_user_lists})
                 except Exception as e:
                     print(f'Error updating lists with images: {e}')
         except Exception as e:
@@ -1448,13 +1215,12 @@ def shopping_list():
         session['last_viewed_list_count'] = total
         session.modified = True
 
-    # Get user data
-    if db is not None and user_email:
+    # Get user data using model
+    user_data = {}
+    if user_email:
         try:
-            user = db.users.find_one({'email': user_email})
-            if user and '_id' in user:
-                user['id'] = str(user['_id'])
-            user_data = user or {}
+            from models.users_model import get_user_by_email
+            user_data = get_user_by_email(user_email) or {}
         except Exception:
             user_data = getattr(m, 'users', {}).get('user1@example.com', {})
     else:
@@ -1477,6 +1243,15 @@ def shopping_list():
                 all_lists = lists_data.get('lists', [])
 
         # Now enrich all lists (including the potentially newly created one)
+        # First, mark items in active list as seen
+        requested_list_id = request.args.get('list_id') or lists_data.get('active_list_id')
+        if user_email and requested_list_id:
+            from models.users_model import mark_items_as_seen
+            mark_items_as_seen(user_email, requested_list_id)
+            # Refresh lists to reflect cleared 'is_new' status
+            lists_data = get_user_lists(user_email)
+            all_lists = lists_data.get('lists', [])
+
         for lst in all_lists:
             if 'items' in lst:
                 lst['list_items'] = lst.pop('items')
@@ -1501,6 +1276,18 @@ def shopping_list():
                              price = float(price)
                          except Exception:
                              price = 0.0
+
+                    # Apply effective price calculation for multibuy
+                    offer = item.get('offer')
+                    if offer and isinstance(offer, dict) and offer.get('type') == 'buyXgetY':
+                        try:
+                            ox = int(offer.get('x') or 0)
+                            oy = int(offer.get('y') or 0)
+                            if ox and oy:
+                                price = (ox * price) / (ox + oy)
+                        except Exception:
+                            pass
+
                     total += price * int(qty)
             lst['estimated_total'] = f'€{total:.2f}'
             lst['completed'] = [item for item in items if isinstance(item, dict) and (item.get('purchased') or item.get('completed'))]
@@ -1518,18 +1305,8 @@ def shopping_list():
         # Build items list with price/store information for the template
         shopping_entries = active_list.get('list_items', active_list.get('items', [])) if active_list else []
 
-        # load products to try to find prices
-        db = get_db()
-        if db is not None:
-            try:
-                products = list(db.products.find({}))
-                for p in products:
-                    if '_id' in p:
-                        p['id'] = str(p['_id'])
-            except Exception:
-                products = getattr(m, 'products', [])
-        else:
-            products = getattr(m, 'products', [])
+        # load products to try to find prices using model
+        products = products_model.list_products()
 
         def find_product_by_name(name):
             if not name:
@@ -1727,7 +1504,6 @@ def delete_notification(notification_id):
 @main_bp.route('/profile', methods=['GET', 'POST'])
 def profile():
     user_email = _get_user_email()
-    db = get_db()
     
     if request.method == 'POST' and user_email:
         name = request.form.get('name')
@@ -1748,88 +1524,74 @@ def profile():
         from models.users_model import update_user_profile
         update_user_profile(user_email, update_data)
         
-        # Add system notification for profile update
-        from models.notifications_model import NotificationsModel
-        nm = NotificationsModel()
-        nm.create_system_notification(
-            user_email, 
-            "Profile Updated", 
-            "Your profile details have been successfully updated.",
-            priority="normal"
-        )
+        # Add system notification for profile update using Model
+        try:
+            notifications_model.create_system_notification(
+                user_email, 
+                "Profile Updated", 
+                "Your profile details have been successfully updated.",
+                priority="normal"
+            )
+        except:
+            pass
         
         return redirect(url_for('main.profile'))
 
     user_data = {}
     stores_list = []
-    category_options = []
 
-    if db is not None and user_email:
-        user = db.users.find_one({'email': user_email})
-        if user:
-            if '_id' in user:
-                user['id'] = str(user['_id'])
-            user_data = user
-        else:
-            # If not in DB, check mock data
-            user_data = getattr(m, 'users', {}).get(user_email, {})
-
-        # Load favorites from the normalized favorites collection
-        from models import favorites_model
-        favorites = favorites_model.get_user_favorites(user_email)
-        
-        # Normalize favorites data for template
-        for fav in favorites:
-            if isinstance(fav, dict):
-                if not fav.get('id') and fav.get('product_id'):
-                    fav['id'] = str(fav['product_id'])
-                if not fav.get('name') and fav.get('product_name'):
-                    fav['name'] = fav.get('product_name')
-                if not fav.get('image') and fav.get('product_image'):
-                    fav['image'] = fav.get('product_image')
-        
-        # Add favorites to user_data
-        user_data['favorites'] = favorites
-        
-        # Initialize recent_views if not present
-        if 'recent_views' not in user_data:
-            user_data['recent_views'] = []
-
+    if user_email:
         try:
-            # Use a more descriptive variable for the template
-            stores_cursor = db.stores.find({}, {'name': 1, 'image': 1, 'logo': 1}).limit(200)
+            from models.users_model import get_user_by_email
+            user = get_user_by_email(user_email)
+            if user:
+                user_data = user
+            else:
+                user_data = getattr(m, 'users', {}).get(user_email, {})
+
+            # Load favorites using Model
+            from models import favorites_model
+            favorites = favorites_model.get_user_favorites(user_email)
+            
+            # Normalize favorites data
+            for fav in favorites:
+                if isinstance(fav, dict):
+                    if not fav.get('id') and fav.get('product_id'):
+                        fav['id'] = str(fav['product_id'])
+                    if not fav.get('name') and fav.get('product_name'):
+                        fav['name'] = fav.get('product_name')
+                    if not fav.get('image') and fav.get('product_image'):
+                        fav['image'] = fav.get('product_image')
+            
+            user_data['favorites'] = favorites
+            
+            if 'recent_views' not in user_data:
+                user_data['recent_views'] = []
+
+            # Load stores list using Model
+            all_stores = stores_model.list_stores()
             seen_names = set()
-            for s in stores_cursor:
+            for s in all_stores:
                 name = s.get('name')
                 if name and name not in seen_names:
                     seen_names.add(name)
                     stores_list.append({
                         'name': name,
-                        'id': str(s['_id']),
+                        'id': s.get('id'),
                         'image': s.get('image') or s.get('logo'),
-                        # Simplified count for profile view
-                        'count': db.products.count_documents({'store': name})
+                        # Simplified count for profile view using Model
+                        'count': products_model.count_by_store(name)
                     })
             stores_list.sort(key=lambda x: x['name'])
-        except Exception:
-            pass
             
-        try:
-            from collections import Counter
-            all_prods = list(db.products.find({}, {'category': 1}))
-            cat_counts = Counter(p.get('category') for p in all_prods if p.get('category'))
-            category_options = sorted(cat_counts.keys(), key=lambda c: (-cat_counts[c], c.lower()))
-        except Exception:
-            pass
-    elif user_email:
-        # Fallback when no DB but we have a user
-        user_data = getattr(m, 'users', {}).get(user_email, {})
-        stores_list = [{'name': s.get('name'), 'count': 0} for s in getattr(m, 'stores', []) if s.get('name')]
-        from collections import Counter
-        cat_counts = Counter(p.get('category') for p in getattr(m, 'products', []) if p.get('category'))
-        category_options = sorted(cat_counts.keys(), key=lambda c: (-cat_counts[c], c.lower()))
-
-    return render_template('profile.html', user_data=user_data, stores=stores_list, category_options=category_options)
+            # Load specific standard category options
+            category_options = STANDARD_CATEGORIES
+            
+        except Exception as e:
+            print(f"Error in profile route: {e}")
+            user_data = getattr(m, 'users', {}).get(user_email, {})
+            stores_list = []
+            category_options = []
 
     return render_template('profile.html', user_data=user_data, stores=stores_list, category_options=category_options)
 
@@ -1841,23 +1603,21 @@ def update_stores():
     if not user_email:
         return redirect(url_for('auth.login'))
         
-    db = get_db()
-    if db is not None:
-        selected_stores = request.form.getlist('stores')
-        db.users.update_one(
-            {'email': user_email},
-            {'$set': {'preferred_stores': selected_stores}}
-        )
-        
-        # Add system notification
-        from models.notifications_model import NotificationsModel
-        nm = NotificationsModel()
-        nm.create_system_notification(
+    selected_stores = request.form.getlist('stores')
+    from models.users_model import update_user
+    update_user(user_email, {'preferred_stores': selected_stores})
+    
+    # Add system notification
+    try:
+        notifications_model.create_system_notification(
             user_email, 
             "Preferences Updated", 
             f"You have updated your preferred stores to: {', '.join(selected_stores) if selected_stores else 'None'}",
             priority="normal"
         )
+    except:
+        pass
+        
     return redirect(url_for('main.profile'))
 
 
@@ -1868,55 +1628,33 @@ def update_categories():
     if not user_email:
         return redirect(url_for('auth.login'))
         
-    db = get_db()
-    if db is not None:
-        selected_categories = request.form.getlist('categories')
-        db.users.update_one(
-            {'email': user_email},
-            {'$set': {'preferred_categories': selected_categories}}
-        )
-        
-        # Add system notification
-        from models.notifications_model import NotificationsModel
-        nm = NotificationsModel()
-        nm.create_system_notification(
+    selected_categories = request.form.getlist('categories')
+    from models.users_model import update_user
+    update_user(user_email, {'preferred_categories': selected_categories})
+    
+    # Add system notification
+    try:
+        notifications_model.create_system_notification(
             user_email, 
             "Preferences Updated", 
             f"You have updated your preferred categories to include {len(selected_categories)} items.",
             priority="normal"
         )
-    return redirect(url_for('main.profile'))
+    except:
+        pass
+        
     return redirect(url_for('main.profile'))
 
 
 @main_bp.route('/admin/status')
 def admin_status():
     """Return JSON with collection counts so you can verify DB connectivity."""
-    collections = ['products', 'stores', 'featured_deals', 'multibuy_offers', 'users']
-    counts = {}
-    # Prefer directly opening a MongoClient with the app-configured URI so we reliably
-    # query the intended Atlas cluster (avoids any Flask-PyMongo initialization quirks).
     try:
-        from pymongo import MongoClient
-        import certifi
-        uri = current_app.config.get('MONGO_URI')
-        dbname = current_app.config.get('MONGO_DBNAME') or 'smart_grocery'
-        if isinstance(uri, str) and uri.startswith('mongodb+srv://'):
-            client = MongoClient(uri, tls=True, tlsCAFile=certifi.where(), serverSelectionTimeoutMS=5000)
-        else:
-            client = MongoClient(uri, serverSelectionTimeoutMS=5000)
-        db = client[dbname]
-        for c in collections:
-            counts[c] = int(db[c].count_documents({}))
+        from models.models import get_db_info
+        info = get_db_info()
+        return jsonify({'db': info.get('collections', {})})
     except Exception as e:
-        # fallback to in-memory mock data
-        print('WARNING: admin_status could not query MongoDB directly:', e)
-        counts['products'] = len(getattr(m, 'products', []))
-        counts['stores'] = len(getattr(m, 'stores', []))
-        counts['featured_deals'] = len(getattr(m, 'featured_deals', []))
-        counts['users'] = len(getattr(m, 'users', {}))
-
-    return jsonify({'db': counts})
+        return jsonify({'error': str(e)}), 500
 
 
 @main_bp.route('/api/search-products')
@@ -1930,11 +1668,10 @@ def api_search_products():
 
     results = []
     try:
-        if _has_db():
-            # case-insensitive regex search on 'name' field
-            regex = {'$regex': q, '$options': 'i'}
-            cursor = mongo.db.products.find({'name': regex}).limit(50)
-            for d in cursor:
+        if m.HAS_DB:
+            # Use model for search
+            products = products_model.search_by_name(q, limit=50)
+            for d in products:
                 # only include products that look like valid, usable product docs
                 def _has_price(prod):
                     if prod is None: return False
@@ -1980,19 +1717,13 @@ def api_get_product():
     if not pid and not name:
         return jsonify({'item': None}), 400
     try:
-        if HAS_DB and mongo is not None and getattr(mongo, 'db', None) is not None:
-            query = None
+        if m.HAS_DB:
+            doc = None
             if pid:
-                try:
-                    from bson import ObjectId
-                    query = {'_id': ObjectId(str(pid))}
-                except Exception:
-                    # treat as plain id string match on 'id' or 'sku'
-                    query = {'id': str(pid)}
+                doc = products_model.get_product_by_id(str(pid))
             else:
-                # case-insensitive name match
-                query = {'name': {'$regex': name, '$options': 'i'}}
-            doc = mongo.db.products.find_one(query)
+                doc = products_model.get_product_by_name(str(name))
+            
             if not doc:
                 return jsonify({'item': None}), 404
             return jsonify({'item': sanitize_mongo_doc(doc)})
@@ -2009,23 +1740,9 @@ def api_get_product():
 
 @main_bp.route('/api/categories')
 def api_get_categories():
-    """Return all unique categories from products, sorted by frequency."""
+    """Return specific standard categories provided by user."""
     try:
-        db = get_db()
-        if db is not None:
-            try:
-                from collections import Counter
-                all_prods = list(db.products.find({}, {'category': 1}))
-                cat_counts = Counter(p.get('category') for p in all_prods if p.get('category'))
-                categories = sorted(cat_counts.keys(), key=lambda c: (-cat_counts[c], c.lower()))
-                return jsonify({'categories': categories}), 200
-            except Exception as e:
-                print(f'WARNING: Failed to fetch categories from DB: {e}')
-        # Fallback to in-memory data
-        from collections import Counter
-        cat_counts = Counter(p.get('category') for p in getattr(m, 'products', []) if p.get('category'))
-        categories = sorted(cat_counts.keys(), key=lambda c: (-cat_counts[c], c.lower()))
-        return jsonify({'categories': categories}), 200
+        return jsonify({'categories': STANDARD_CATEGORIES}), 200
     except Exception as e:
         print(f'ERROR in api_get_categories: {e}')
         return jsonify({'categories': [], 'error': str(e)}), 500
@@ -2058,9 +1775,9 @@ def api_get_stores():
                 'distance': s.get('distance'),
                 'deals': deals_count
             }
-        if HAS_DB and mongo is not None and getattr(mongo, 'db', None) is not None:
-            cursor = mongo.db.stores.find({}).limit(500)
-            for s in cursor:
+        if m.HAS_DB:
+            stores = stores_model.list_stores()[:500]
+            for s in stores:
                 out.append(shape_store(sanitize_mongo_doc(s)))
         else:
             for s in getattr(m, 'stores', []):
@@ -2133,22 +1850,12 @@ def api_get_store_products(store_name):
         return shaped
 
     products = []
-    db = get_db()
     try:
-        if db is not None:
-            # match contains (not anchored) to be tolerant of casing/spacing
-            regex = {'$regex': re.escape(store_query), '$options': 'i'}
-            prod_cursor = db.products.find({
-                '$or': [
-                    {'stores': {'$elemMatch': {'$or': [{'store': regex}, {'name': regex}]}}},
-                    {'store': regex}
-                ]
-            })
-            products = [_shape_product(p) for p in prod_cursor]
-            # if DB query returns nothing, allow fallback to in-memory products as a safety net
-            if not products:
-                products = [_shape_product(p) for p in getattr(m, 'products', []) if any(_match_store_entry(s) for s in (p.get('stores') or [])) or (isinstance(p.get('store'), str) and p.get('store', '').lower() == store_lc)]
-        else:
+        # Using model to find products by store
+        products = [_shape_product(p) for p in products_model.find_by_store(store_query)]
+        
+        # if Model returns nothing, allow fallback to in-memory products as a safety net
+        if not products:
             products = [_shape_product(p) for p in getattr(m, 'products', []) if any(_match_store_entry(s) for s in (p.get('stores') or [])) or (isinstance(p.get('store'), str) and p.get('store', '').lower() == store_lc)]
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -2174,25 +1881,15 @@ def api_claim_deal():
     email = _get_user_email()
 
     try:
-        # attempt to find deal document (DB or fallback)
+        # attempt to find deal document using models
         deal_doc = None
-        if _has_db():
-            from bson import ObjectId
-            query = None
-            try:
-                query = {'_id': ObjectId(str(deal_id))}
-            except Exception:
-                query = {'title': str(deal_id)}
-            
+        if m.HAS_DB:
             # Search in featured_deals first
-            deal_doc = mongo.db.featured_deals.find_one(query)
+            deal_doc = featured_deals_model.get_deal_by_id(str(deal_id))
             
             # If not found in featured_deals, search in multibuy_offers
             if not deal_doc:
-                deal_doc = mongo.db.multibuy_offers.find_one(query)
-            
-            if deal_doc and '_id' in deal_doc:
-                deal_doc['id'] = str(deal_doc['_id'])
+                deal_doc = multibuy_offers_model.get_offer_by_id(str(deal_id))
         else:
             # fallback to in-memory list
             for d in getattr(m, 'featured_deals', []):
@@ -2318,10 +2015,6 @@ def toggle_favorite():
         if not product_id:
             return jsonify({'error': 'Product ID required'}), 400
         
-        db = get_db()
-        if db is None:
-            return jsonify({'error': 'Database not available'}), 500
-        
         from models import favorites_model
         
         # Check if product is already in favorites
@@ -2336,43 +2029,12 @@ def toggle_favorite():
                 return jsonify({'error': 'Failed to remove favorite'}), 500
         else:
             # Add to favorites
-            # Get product details from products, featured_deals, or multibuy_offers
-            product = None
-            try:
-                from bson import ObjectId
-                
-                # Try to find in products collection
-                try:
-                    product = db.products.find_one({'_id': ObjectId(product_id)})
-                except:
-                    pass
-                
-                if not product:
-                    product = db.products.find_one({'id': product_id})
-                
-                # If not found in products, check featured_deals
-                if not product:
-                    try:
-                        product = db.featured_deals.find_one({'_id': ObjectId(product_id)})
-                    except:
-                        pass
-                
-                if not product:
-                    product = db.featured_deals.find_one({'id': product_id})
-                
-                # If still not found, check multibuy_offers
-                if not product:
-                    try:
-                        product = db.multibuy_offers.find_one({'_id': ObjectId(product_id)})
-                    except:
-                        pass
-                
-                if not product:
-                    product = db.multibuy_offers.find_one({'id': product_id})
-                    
-            except Exception as e:
-                print(f'ERROR searching for product {product_id}: {e}')
-                return jsonify({'error': f'Product search failed: {str(e)}'}), 500
+            # Get product details using models
+            product = products_model.get_product_by_id(product_id)
+            if not product:
+                product = featured_deals_model.get_deal_by_id(product_id)
+            if not product:
+                product = multibuy_offers_model.get_offer_by_id(product_id)
             
             if not product:
                 print(f'ERROR: Product not found with id {product_id}')
@@ -2418,10 +2080,6 @@ def check_favorite(product_id=None):
         
         user_email = session.get('user')
         if not user_email:
-            return jsonify({'is_favorite': False})
-        
-        db = get_db()
-        if db is None:
             return jsonify({'is_favorite': False})
         
         from models import favorites_model
@@ -2527,9 +2185,6 @@ def save_preferences():
             return jsonify({'error': 'Not logged in'}), 401
         
         data = request.get_json() or {}
-        db = get_db()
-        if db is None:
-            return jsonify({'error': 'Database not available'}), 500
         
         update_doc = {}
         
@@ -2547,10 +2202,8 @@ def save_preferences():
         if not update_doc:
             return jsonify({'success': True, 'message': 'No changes provided'})
             
-        db.users.update_one(
-            {'email': user_email},
-            {'$set': update_doc}
-        )
+        from models.users_model import update_user
+        update_user(user_email, update_doc)
         
         return jsonify({'success': True, 'updated_fields': list(update_doc.keys())})
     
@@ -2704,6 +2357,21 @@ def update_list_items_api():
             return jsonify({'success': False, 'error': 'No active list'}), 400
         
         success = update_list_items(user_email, active_list_id, items)
+        return jsonify({'success': success})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@main_bp.route('/api/list/mark-seen/<list_id>', methods=['POST'])
+def mark_list_seen(list_id):
+    """Clear the 'is_new' flag for all items in the specified list"""
+    try:
+        user_email = session.get('user')
+        if not user_email:
+            return jsonify({'success': False, 'error': 'Not authenticated'}), 401
+        
+        from models.users_model import mark_items_as_seen
+        success = mark_items_as_seen(user_email, list_id)
         return jsonify({'success': success})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -2911,19 +2579,9 @@ def get_list_items_api(list_id):
         if not target_list:
             return jsonify({'success': False, 'error': 'List not found'}), 404
         
-        # Enrich items with product images (and fallback placeholder)
+        # Enrich items with product images (and fallback placeholder) using Model
         raw_items = target_list.get('items', [])
-
-        db = get_db()
-        products = []
-        if db is not None:
-            try:
-                products = list(db.products.find({}))
-                for p in products:
-                    if '_id' in p:
-                        p['id'] = str(p['_id'])
-            except Exception:
-                products = []
+        products = products_model.list_products()
 
         def find_product_by_name(name):
             if not name:

@@ -65,11 +65,12 @@ Shown at route: /
       font-weight: 900;
       margin-bottom: 1.5rem;
       letter-spacing: -0.04em;
-      line-height: 1.1;
+      line-height: 1.3;
       background: linear-gradient(to bottom, #ffffff, #e0e7ff);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       animation: fadeInDown 0.8s ease-out;
+      padding-bottom: 0.2rem;
     }
 
     @keyframes fadeInDown {
@@ -301,6 +302,23 @@ Shown at route: /
       border-color: var(--premium-purple);
     }
 
+    .discount-badge {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      display: inline-block;
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      color: white;
+      padding: 6px 14px;
+      border-radius: 14px;
+      font-size: 0.75rem;
+      font-weight: 850;
+      z-index: 6;
+      box-shadow: 0 8px 16px -4px rgba(245, 87, 108, 0.4);
+      width: fit-content;
+      white-space: nowrap;
+    }
+
     .card-image-wrapper {
       width: 100%;
       height: 240px;
@@ -338,6 +356,25 @@ Shown at route: /
       font-weight: 800;
       color: var(--premium-dark);
       margin-bottom: 0.75rem;
+    }
+
+    .product-price {
+      font-size: 1.5rem;
+      font-weight: 850;
+      color: var(--premium-purple);
+      letter-spacing: -1px;
+      margin-bottom: 1rem !important;
+      line-height: 1;
+      display: flex;
+      align-items: baseline;
+    }
+
+    .product-price small {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #64748b;
+      margin-left: 4px;
+      letter-spacing: 0;
     }
 
     .product-description-clamp {
@@ -528,13 +565,13 @@ Shown at route: /
 </head>
 <body>
   <!-- Navigation -->
-  <nav class="navbar navbar-expand-lg sticky-top">
+  <nav class="navbar navbar-expand-lg navbar-premium">
     <div class="container">
       <a class="navbar-brand d-flex align-items-center" href="{{ url_for('main.home') }}">
-        <div class="brand-icon me-3" style="background: linear-gradient(135deg, var(--premium-purple), var(--premium-indigo)); width: 44px; height: 44px; border-radius: 14px; display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 8px 16px -4px rgba(124, 58, 237, 0.3);">
+        <div class="brand-icon me-3">
           <i class="bi bi-cart-check-fill fs-5"></i>
         </div>
-        <span>Smart<span style="color: var(--premium-dark)">Grocery</span></span>
+        <span>Smart<span class="brand-grocery-text">Grocery</span></span>
       </a>
       <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
         <span class="navbar-toggler-icon"></span>
@@ -543,42 +580,47 @@ Shown at route: /
         {% set cart_count = shopping_list_count or 0 %}
         <ul class="navbar-nav ms-auto align-items-center">
           <li class="nav-item">
-            <a class="nav-link active" href="{{ url_for('main.home') }}">
+            <a class="nav-link {% if request.endpoint == 'main.home' %}active{% endif %}" href="{{ url_for('main.home') }}">
               <i class="bi bi-house-door me-1"></i> Home
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('main.stores_page') }}">
+            <a class="nav-link {% if 'stores' in request.path or request.endpoint == 'main.stores_page' %}active{% endif %}" href="{{ url_for('main.stores_page') }}">
               <i class="bi bi-shop me-1"></i> Stores
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('main.featured_deals_page') }}">
+            <a class="nav-link {% if 'featured-deals' in request.path or request.endpoint == 'main.featured_deals_page' %}active{% endif %}" href="{{ url_for('main.featured_deals_page') }}">
               <i class="bi bi-tags me-1"></i> Deals
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('main.compare_prices') }}">
+            <a class="nav-link {% if 'compare' in request.path or request.endpoint == 'main.compare_prices' %}active{% endif %}" href="{{ url_for('main.compare_prices') }}">
               <i class="bi bi-arrow-left-right me-1"></i> Compare
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link d-flex align-items-center" href="{{ url_for('main.shopping_list') }}">
+            <a class="nav-link d-flex align-items-center position-relative {% if 'shopping-list' in request.path or request.endpoint == 'main.shopping_list' %}active{% endif %}" href="{{ url_for('main.shopping_list') }}">
               <i class="bi bi-list-check me-1"></i> Lists
-              {% if cart_count > 0 %}
-              <span class="ms-1 badge rounded-pill bg-danger" style="font-size: 0.7rem; padding: 0.4em 0.6em;">
-                {{ cart_count }}
+              {% if (shopping_list_count or 0) > 0 %}
+              <span class="position-absolute badge rounded-pill bg-danger" style="font-size: 0.65rem; padding: 0.45em 0.7em; top: -5px; right: -10px; border: 2px solid white; box-shadow: 0 4px 10px rgba(220, 53, 69, 0.4); min-width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;">
+                {{ shopping_list_count }}
               </span>
               {% endif %}
             </a>
           </li>
           <li class="nav-item ms-lg-1">
-            <a class="nav-link nav-icon-btn" href="{{ url_for('main.notifications_page') }}" aria-label="Notifications">
+            <a class="nav-link nav-icon-btn position-relative {% if 'notifications' in request.path %}active{% endif %}" href="{{ url_for('main.notifications_page') }}" aria-label="Notifications">
               <i class="bi bi-bell fs-5"></i>
+              {% if (unread_notifications_count or 0) > 0 %}
+              <span class="position-absolute badge rounded-pill bg-danger" style="font-size: 0.65rem; padding: 0.45em 0.7em; top: -5px; right: -10px; border: 2px solid white; box-shadow: 0 4px 10px rgba(220, 53, 69, 0.4); min-width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;">
+                {{ unread_notifications_count }}
+              </span>
+              {% endif %}
             </a>
           </li>
           <li class="nav-item ms-lg-2">
-            <a class="nav-link nav-icon-btn nav-profile-btn" href="{{ url_for('main.profile') }}" aria-label="User Profile">
+            <a class="nav-link nav-icon-btn nav-profile-btn {% if 'profile' in request.path %}active{% endif %}" href="{{ url_for('main.profile') }}" aria-label="User Profile">
               <i class="bi bi-person-circle fs-5"></i>
             </a>
           </li>
@@ -587,16 +629,17 @@ Shown at route: /
     </div>
   </nav>
 
-  <!-- Hero Section -->
-  <section class="hero-section">
-    <div class="container hero-content text-center">
-      <div class="badge bg-white bg-opacity-10 text-white px-3 py-2 rounded-pill mb-4 border border-white border-opacity-20" style="backdrop-filter: blur(10px);">
-        <i class="bi bi-stars me-2"></i>AI-Powered Savings Multiplier
-      </div>
-      <h1 class="hero-title">Shop Smarter,<br>Save Bigger.</h1>
-      <p class="hero-subtitle">The ultimate destination to track prices, find exclusive coupons, and coordinate your grocery trips across all major retailers.</p>
+  <!-- Unified Premium Hero Section -->
+  <header class="premium-hero">
+    <div class="bg-shape shape-1"></div>
+    <div class="bg-shape shape-2"></div>
+    <div class="bg-shape shape-3"></div>
+    
+    <div class="container text-center position-relative" style="z-index: 2;">
+      <h1 class="display-3 fw-bold mb-3">Shop Smarter,<br>Save Bigger.</h1>
+      <p class="lead mx-auto mb-5 opacity-90" style="max-width: 700px;">The ultimate destination to track prices, find exclusive coupons, and coordinate your grocery trips across all major retailers.</p>
       
-      <div class="search-box">
+      <div class="search-box mx-auto">
         <i class="bi bi-search ms-3 text-muted fs-5"></i>
         <input type="text" placeholder="Search brands, products, or stores..." id="hero-search">
         <button onclick="handleHeroSearch()" class="me-1">
@@ -606,9 +649,17 @@ Shown at route: /
 
       <div class="mt-5 d-flex justify-content-center gap-4 flex-wrap opacity-75">
         <div class="d-flex align-items-center text-white small">
-          <i class="bi bi-check-circle-fill me-2 text-info"></i> No hidden fees
+          <i class="bi bi-check-circle-fill me-2 text-info"></i> Real-time Tracking
         </div>
         <div class="d-flex align-items-center text-white small">
+          <i class="bi bi-check-circle-fill me-2 text-info"></i> Exclusive Coupons
+        </div>
+        <div class="d-flex align-items-center text-white small">
+          <i class="bi bi-check-circle-fill me-2 text-info"></i> Shared Lists
+        </div>
+      </div>
+    </div>
+  </header>
           <i class="bi bi-check-circle-fill me-2 text-info"></i> Real-time updates
         </div>
         <div class="d-flex align-items-center text-white small">
@@ -655,8 +706,8 @@ Shown at route: /
             <div class="stat-icon">
               <i class="bi bi-piggy-bank-fill"></i>
             </div>
-            <div class="stat-number" data-target="{{ max_savings }}">0</div>
-            <div class="stat-label">% Max Savings</div>
+            <div class="stat-number" data-target="{{ max_savings }}">0%</div>
+            <div class="stat-label">Max Savings</div>
           </div>
         </div>
       </div>
@@ -758,8 +809,8 @@ Shown at route: /
               <div class="product-store text-muted small mb-1">
                 <i class="bi bi-diagram-3 me-1"></i>Available at {{ product.get('stores')|length }} stores
               </div>
-              <div class="product-price text-premium-purple mb-3">
-                €{{ "%.2f"|format(min_price) }}{% if min_price != max_price %} - <small class="text-muted">€{{ "%.2f"|format(max_price) }}</small>{% endif %}
+              <div class="product-price">
+                €{{ "%.2f"|format(min_price) }}{% if min_price != max_price %} - <small>€{{ "%.2f"|format(max_price) }}</small>{% endif %}
               </div>
               {% endif %}
               {% endif %}
@@ -781,6 +832,170 @@ Shown at route: /
       </div>
     </div>
   </section>
+
+  <!-- Flash Deals Section -->
+  {% if featured_deals and featured_deals|length > 0 %}
+  <section class="content-section" style="background: #fbfcfe;">
+    <div class="container">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title"><i class="bi bi-lightning-fill text-warning me-2"></i>Flash Deals</h2>
+          <p class="section-subtitle">Real-time limited offers with maximum savings</p>
+        </div>
+        <a href="{{ url_for('main.featured_deals_page') }}" class="view-all-btn">
+          View All Deals <i class="bi bi-arrow-right ms-1"></i>
+        </a>
+      </div>
+      <div class="scroll-container">
+        <button class="scroll-arrow left" onclick="scrollSection('deals', 'left')" aria-label="Scroll left">
+          <i class="bi bi-chevron-left"></i>
+        </button>
+        <div class="scroll-wrapper d-flex flex-nowrap" id="deals-scroll" style="overflow-x: auto; gap: 24px; scrollbar-width: none; -ms-overflow-style: none;">
+          {% for deal in featured_deals[:12] %}
+          {% set deal_id = deal.get('id') or deal.get('_id') %}
+          {% set offer_obj = deal.get('offer') if deal.get('offer') is mapping else None %}
+          {% set offer_x = offer_obj.x if offer_obj is not none else (deal.get('buy_quantity') or deal.get('multibuy_buy') or '') %}
+          {% set offer_y = offer_obj.y if offer_obj is not none else (deal.get('free_quantity') or deal.get('multibuy_free') or '') %}
+          {% set offer_type = offer_obj.type if offer_obj is not none else ('buyXgetY' if (offer_x and offer_y) else '') %}
+          
+          <div class="product-card-horizontal premium-outline-hover" style="min-width: 320px;">
+            {% if deal.get('discount_label') or deal.get('discount_percent') %}
+            <div class="discount-badge">
+              {{ deal.get('discount_label') or (deal.get('discount_percent') ~ '% OFF') }}
+            </div>
+            {% endif %}
+            <button class="btn-favorite {{ 'active' if deal.get('is_favorited') else '' }}" 
+                    data-product-id="{{ deal_id }}" 
+                    onclick="toggleFavorite(event, '{{ deal_id }}', this)"
+                    aria-label="Add to favorites">
+              <i class="bi {{ 'bi-heart-fill' if deal.get('is_favorited') else 'bi-heart' }}"></i>
+            </button>
+            <div class="card-image-wrapper" onclick="window.location='{{ url_for('main.featured_deal_detail', deal_id=deal_id) }}'" style="cursor: pointer;">
+              <img src="{{ deal.get('image') or 'https://via.placeholder.com/280x200' }}" alt="{{ deal.get('title') or deal.get('name') }}">
+            </div>
+            <div class="product-card-body">
+              <div class="product-name product-description-clamp">{{ deal.get('title') or deal.get('name', 'Premium Deal') }}</div>
+              
+              <div class="product-store text-muted small mb-1">
+                <i class="bi bi-shop me-1"></i>{{ deal.get('store') or deal.get('source', 'Partner Store') }}
+              </div>
+              <div class="product-price">
+                €{{ deal.get('price', '0.00') }}
+                {% if deal.get('original_price') %}
+                <small class="text-decoration-line-through ms-2" style="font-size: 0.85rem; color: #adb5bd;">€{{ deal.get('original_price') }}</small>
+                {% endif %}
+              </div>
+              <div class="d-grid gap-2">
+                <button type="button" class="btn btn-premium-action w-100" 
+                        data-id="{{ deal_id }}" 
+                        data-name="{{ deal.get('title') or deal.get('name') }}" 
+                        data-price="{{ deal.get('price') }}"
+                        data-original-price="{{ deal.get('original_price') or '' }}"
+                        data-image="{{ deal.get('image') or 'https://via.placeholder.com/280x200' }}"
+                        data-store="{{ deal.get('store') or deal.get('source', 'Partner') }}"
+                        data-offer-json='{{ offer_obj|tojson|forceescape if offer_obj is not none else "" }}'
+                        data-offer-type="{{ offer_type }}"
+                        data-offer-x="{{ offer_x }}"
+                        data-offer-y="{{ offer_y }}">
+                  <i class="bi bi-plus-circle me-1"></i> Add to List
+                </button>
+                <a href="{{ url_for('main.featured_deal_detail', deal_id=deal_id) }}" class="btn btn-premium btn-premium-view btn-sm w-100">
+                  <i class="bi bi-info-circle me-1"></i> View Details
+                </a>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        <button class="scroll-arrow right" onclick="scrollSection('deals', 'right')" aria-label="Scroll right">
+          <i class="bi bi-chevron-right"></i>
+        </button>
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+  <!-- Most Popular Section -->
+  {% if popular_products and popular_products|length > 0 %}
+  <section class="content-section">
+    <div class="container">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title"><i class="bi bi-fire text-danger me-2"></i>Popular Right Now</h2>
+          <p class="section-subtitle">The community's most-tracked and hottest items this week</p>
+        </div>
+        <a href="{{ url_for('main.compare_prices') }}?sort=popular" class="view-all-btn">
+          Explore Trending <i class="bi bi-arrow-right ms-1"></i>
+        </a>
+      </div>
+      <div class="scroll-container">
+        <button class="scroll-arrow left" onclick="scrollSection('popular', 'left')" aria-label="Scroll left">
+          <i class="bi bi-chevron-left"></i>
+        </button>
+        <div class="scroll-wrapper d-flex flex-nowrap" id="popular-scroll" style="overflow-x: auto; gap: 24px; scrollbar-width: none; -ms-overflow-style: none;">
+          {% for product in popular_products %}
+          {% set pid = product.get('id') or product.get('_id') %}
+          {% set store_data = (product.get('stores') or [{}])[0] %}
+          {% set store_name = product.get('store') or store_data.get('store') or 'Multiple Stores' %}
+          {% set offer_obj = product.get('offer') if product.get('offer') is mapping else None %}
+          {% set offer_x = offer_obj.x if offer_obj is not none else (product.get('buy_quantity') or product.get('multibuy_buy') or '') %}
+          {% set offer_y = offer_obj.y if offer_obj is not none else (product.get('free_quantity') or product.get('multibuy_free') or '') %}
+          {% set offer_type = offer_obj.type if offer_obj is not none else ('buyXgetY' if (offer_x and offer_y) else '') %}
+          
+          <div class="product-card-horizontal premium-outline-hover" style="min-width: 320px;">
+            {% if product.get('discount_label') or product.get('discount_percent') %}
+            <div class="discount-badge">
+              {{ product.get('discount_label') or (product.get('discount_percent') ~ '% OFF') }}
+            </div>
+            {% endif %}
+            <button class="btn-favorite {{ 'active' if product.get('is_favorited') else '' }}" 
+                    data-product-id="{{ pid }}" 
+                    onclick="toggleFavorite(event, '{{ pid }}', this)"
+                    aria-label="Add to favorites">
+              <i class="bi {{ 'bi-heart-fill' if product.get('is_favorited') else 'bi-heart' }}"></i>
+            </button>
+            <div class="card-image-wrapper" {% if pid %}onclick="window.location='{{ url_for('main.product_detail', product_id=pid) }}'"{% endif %} style="cursor: {% if pid %}pointer{% else %}default{% endif %};">
+              <img src="{{ product.get('image') or 'https://via.placeholder.com/280x200' }}" alt="{{ product.get('name') }}">
+            </div>
+            <div class="product-card-body">
+              <div class="product-name product-description-clamp">{{ product.get('name', 'Popular Item') }}</div>
+              
+              <div class="product-store text-muted small mb-1">
+                <i class="bi bi-shop me-1"></i>{{ store_name }}
+              </div>
+              <div class="product-price">
+                €{{ '%.2f'|format((product.price or store_data.get('price') or 0)|float) }}
+              </div>
+
+              <div class="d-grid gap-2 mt-auto">
+                <button type="button" class="btn btn-premium-action w-100" 
+                        data-id="{{ pid }}" 
+                        data-name="{{ product.name }}" 
+                        data-price="{{ product.price or store_data.get('price') or '0.00' }}"
+                        data-original-price="{{ product.original_price or '' }}"
+                        data-image="{{ product.image or 'https://via.placeholder.com/280x200' }}"
+                        data-store="{{ store_name }}"
+                        data-offer-json='{{ offer_obj|tojson|forceescape if offer_obj is not none else "" }}'
+                        data-offer-type="{{ offer_type }}"
+                        data-offer-x="{{ offer_x }}"
+                        data-offer-y="{{ offer_y }}">
+                  <i class="bi bi-plus-circle me-1"></i> Add to List
+                </button>
+                <a href="{{ url_for('main.product_detail', product_id=pid) }}" class="btn btn-premium btn-premium-view btn-sm w-100" onclick="event.stopPropagation();">
+                  <i class="bi bi-eye me-1"></i> Details
+                </a>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        <button class="scroll-arrow right" onclick="scrollSection('popular', 'right')" aria-label="Scroll right">
+          <i class="bi bi-chevron-right"></i>
+        </button>
+      </div>
+    </div>
+  </section>
+  {% endif %}
 
   <!-- Popular Stores Section -->
   <section class="content-section">
@@ -841,13 +1056,23 @@ Shown at route: /
         <div class="scroll-wrapper d-flex flex-nowrap" id="store-products-scroll" style="overflow-x: auto; gap: 24px; scrollbar-width: none; -ms-overflow-style: none;">
           {% for product in store_products %}
           {% set detail_url = url_for('main.product_info', product_id=product.id, store_name=store_name, store_price=product.price or '', store_image=product.image or '', store_url=product.url or '') %}
-          <div class="product-card-horizontal premium-outline-hover" {% if product.id %}onclick="window.location='{{ detail_url }}'"{% endif %} style="cursor: {% if product.id %}pointer{% else %}default{% endif %}; min-width: 320px;">
+          {% set offer_obj = product.get('offer') if product.get('offer') is mapping else None %}
+          {% set offer_x = offer_obj.x if offer_obj is not none else (product.get('buy_quantity') or product.get('multibuy_buy') or '') %}
+          {% set offer_y = offer_obj.y if offer_obj is not none else (product.get('free_quantity') or product.get('multibuy_free') or '') %}
+          {% set offer_type = offer_obj.type if offer_obj is not none else ('buyXgetY' if (offer_x and offer_y) else '') %}
+          
+          <div class="product-card-horizontal premium-outline-hover" style="min-width: 320px;">
+            {% if product.get('discount_label') or product.get('discount_percent') %}
+            <div class="discount-badge">
+              {{ product.get('discount_label') or (product.get('discount_percent') ~ '% OFF') }}
+            </div>
+            {% endif %}
             <button class="btn-favorite {{ 'active' if product.get('is_favorited') else '' }}" 
                     onclick="toggleFavorite(event, '{{ product.id }}', this)"
                     aria-label="Add to favorites">
               <i class="bi {{ 'bi-heart-fill' if product.get('is_favorited') else 'bi-heart' }}"></i>
             </button>
-            <div class="card-image-wrapper">
+            <div class="card-image-wrapper" {% if product.id %}onclick="window.location='{{ detail_url }}'"{% endif %} style="cursor: {% if product.id %}pointer{% else %}default{% endif %};">
               <img src="{{ product.image or url_for('static', filename='placeholder.svg') }}" alt="{{ product.name }}">
             </div>
             <div class="product-card-body">
@@ -855,16 +1080,20 @@ Shown at route: /
               <div class="product-store text-muted small mb-1">
                 <i class="bi bi-shop me-1"></i>{{ store_name }}
               </div>
-              <div class="product-price text-premium-purple mb-3">€{{ '%.2f'|format((product.price or 0)|float) }}</div>
+              <div class="product-price">€{{ '%.2f'|format((product.price or 0)|float) }}</div>
               
               <div class="d-grid gap-2">
-                <button type="button" class="btn btn-premium-purple w-100" 
+                <button type="button" class="btn btn-premium-action w-100" 
                         data-name="{{ product.name }}"
                         data-price="{{ product.price or '0.00' }}"
+                        data-original-price="{{ product.original_price or '' }}"
                         data-image="{{ product.image or url_for('static', filename='placeholder.svg') }}"
                         data-store="{{ store_name }}"
                         data-id="{{ product.id }}"
-                        onclick="event.stopPropagation(); window.showListSelector(this);">
+                        data-offer-json='{{ offer_obj|tojson|forceescape if offer_obj is not none else "" }}'
+                        data-offer-type="{{ offer_type }}"
+                        data-offer-x="{{ offer_x }}"
+                        data-offer-y="{{ offer_y }}">
                   <i class="bi bi-plus-circle me-1"></i> Add to List
                 </button>
                 {% if product.id %}
@@ -908,7 +1137,17 @@ Shown at route: /
           {% set pid = product.get('id') or product.get('_id') %}
           {% set store_name = store_data.get('store') or store_data.get('store_name') or 'Partner' %}
           {% set detail_url = url_for('main.product_info', product_id=pid, store_name=store_name, store_price=store_data.get('price') or product.get('best_price') or product.get('price') or '0.00', store_image=product.get('image') or '', store_url=store_data.get('url') or product.get('url') or '') %}
+          {% set offer_obj = product.get('offer') if product.get('offer') is mapping else None %}
+          {% set offer_x = offer_obj.x if offer_obj is not none else (product.get('buy_quantity') or product.get('multibuy_buy') or '') %}
+          {% set offer_y = offer_obj.y if offer_obj is not none else (product.get('free_quantity') or product.get('multibuy_free') or '') %}
+          {% set offer_type = offer_obj.type if offer_obj is not none else ('buyXgetY' if (offer_x and offer_y) else '') %}
+          
           <div class="product-card-horizontal premium-outline-hover" {% if pid %}onclick="window.location='{{ detail_url }}'"{% endif %} style="cursor: {% if pid %}pointer{% else %}default{% endif %}; min-width: 320px;">
+            {% if product.get('discount_label') or product.get('discount_percent') %}
+            <div class="discount-badge">
+              {{ product.get('discount_label') or (product.get('discount_percent') ~ '% OFF') }}
+            </div>
+            {% endif %}
             <button class="btn-favorite {{ 'active' if product.get('is_favorited') else '' }}" 
                     data-product-id="{{ pid }}" 
                     onclick="toggleFavorite(event, '{{ pid }}', this)"
@@ -923,16 +1162,20 @@ Shown at route: /
               <div class="product-store text-muted small mb-1">
                 <i class="bi bi-shop me-1"></i>{{ store_name }}
               </div>
-              <div class="product-price text-premium-purple mb-3">€{{ store_data.get('price') or product.get('best_price') or product.get('price') or '0.00' }}</div>
+              <div class="product-price">€{{ store_data.get('price') or product.get('best_price') or product.get('price') or '0.00' }}</div>
               
               <div class="d-grid gap-2">
-                <button type="button" class="btn btn-premium-purple w-100"
+                <button type="button" class="btn btn-premium-action w-100"
                         data-name="{{ product.get('name', 'Product') }}"
                         data-price="{{ store_data.get('price') or product.get('best_price') or product.get('price') or '0.00' }}"
+                        data-original-price="{{ product.original_price or '' }}"
                         data-image="{{ product.get('image') or url_for('static', filename='placeholder.svg') }}"
                         data-store="{{ store_name }}"
                         data-id="{{ pid }}"
-                        onclick="event.stopPropagation(); window.showListSelector(this);">
+                        data-offer-json='{{ offer_obj|tojson|forceescape if offer_obj is not none else "" }}'
+                        data-offer-type="{{ offer_type }}"
+                        data-offer-x="{{ offer_x }}"
+                        data-offer-y="{{ offer_y }}">
                   <i class="bi bi-plus-circle me-1"></i> Add to List
                 </button>
                 <a href="{{ detail_url }}" class="btn btn-premium btn-premium-view btn-sm w-100" onclick="event.stopPropagation();">
@@ -1094,14 +1337,17 @@ Shown at route: /
       counters.forEach(counter => {
         const updateCount = () => {
           const target = +counter.getAttribute('data-target');
-          const count = +counter.innerText;
+          const currentText = counter.innerText;
+          const hasPercent = currentText.includes('%');
+          const count = parseFloat(currentText) || 0;
           const inc = target / speed;
 
           if (count < target) {
-            counter.innerText = Math.ceil(count + inc);
+            const nextCount = Math.ceil(count + inc);
+            counter.innerText = hasPercent ? nextCount + '%' : nextCount;
             setTimeout(updateCount, 1);
           } else {
-            counter.innerText = target;
+            counter.innerText = hasPercent ? target + '%' : target;
           }
         };
         updateCount();

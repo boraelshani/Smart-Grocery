@@ -62,12 +62,55 @@ class FeaturedDealsModel:
                 except Exception:
                     self.db = self._client['smart_grocery']
 
+    def get_deal_by_id(self, deal_id: str) -> Optional[dict]:
+        from bson import ObjectId
+        try:
+            doc = self.db.featured_deals.find_one({'_id': ObjectId(deal_id)})
+            if doc and '_id' in doc:
+                doc['id'] = str(doc['_id'])
+            return doc
+        except Exception:
+            # Fallback to searching by id field if it's a string
+            doc = self.db.featured_deals.find_one({'id': deal_id})
+            if not doc:
+                doc = self.db.featured_deals.find_one({'title': deal_id})
+            if doc and '_id' in doc:
+                doc['id'] = str(doc['_id'])
+            return doc
+
     def list_featured_deals(self) -> List[dict]:
         # GET ALL DEALS: Return all featured sales
         docs = list(self.db.featured_deals.find({}))
         for d in docs:
             if '_id' in d:
                 d['id'] = str(d['_id'])  # Convert MongoDB ID to string
+        return docs
+
+    def get_deals_count(self) -> int:
+        return self.db.featured_deals.count_documents({})
+
+    def count_by_store(self, store_name: str) -> int:
+        import re
+        regex = {'$regex': re.escape(store_name), '$options': 'i'}
+        return self.db.featured_deals.count_documents({
+            '$or': [
+                {'store': regex},
+                {'source': regex}
+            ]
+        })
+
+    def find_by_store(self, store_name: str) -> List[dict]:
+        import re
+        regex = {'$regex': re.escape(store_name), '$options': 'i'}
+        docs = list(self.db.featured_deals.find({
+            '$or': [
+                {'store': regex},
+                {'source': regex}
+            ]
+        }))
+        for d in docs:
+            if '_id' in d:
+                d['id'] = str(d['_id'])
         return docs
 
     def get_deal_by_title(self, title: str) -> Optional[dict]:
@@ -153,6 +196,9 @@ featured_deals_model = FeaturedDealsModel()
 
 def list_featured_deals() -> List[dict]:
     return featured_deals_model.list_featured_deals()
+
+def get_deals_count() -> int:
+    return featured_deals_model.get_deals_count()
 
 def get_deal_by_title(title: str) -> Optional[dict]:
     return featured_deals_model.get_deal_by_title(title)

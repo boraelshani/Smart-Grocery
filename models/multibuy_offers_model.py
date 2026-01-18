@@ -75,6 +75,9 @@ class MultibuyOffersModel:
                 d['id'] = str(d['_id'])
         return docs
 
+    def get_offers_count(self) -> int:
+        return self.db.multibuy_offers.count_documents({'active': True})
+
     def get_offer_by_id(self, offer_id: str) -> Optional[dict]:
         """Get specific offer by ID"""
         try:
@@ -210,6 +213,9 @@ multibuy_offers_model = MultibuyOffersModel()
 # Convenience functions
 def list_active_offers() -> List[dict]:
     return multibuy_offers_model.list_active_offers()
+
+def get_offers_count() -> int:
+    return multibuy_offers_model.get_offers_count()
 
 def get_offer_by_id(offer_id: str) -> Optional[dict]:
     return multibuy_offers_model.get_offer_by_id(offer_id)

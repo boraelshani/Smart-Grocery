@@ -28,13 +28,13 @@ Validates: Email and password against database with hashed passwords
 <body>
 
 <!-- Navbar -->
-<nav class="navbar navbar-expand-lg sticky-top">
+<nav class="navbar navbar-expand-lg navbar-premium">
   <div class="container">
     <a class="navbar-brand d-flex align-items-center" href="{{ url_for('main.home') }}">
-      <div class="brand-icon me-3" style="background: linear-gradient(135deg, var(--premium-purple), var(--premium-indigo)); width: 44px; height: 44px; border-radius: 14px; display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 8px 16px -4px rgba(124, 58, 237, 0.3);">
+      <div class="brand-icon me-3">
         <i class="bi bi-cart-check-fill fs-5"></i>
       </div>
-      <span>Smart<span style="color: var(--premium-dark)">Grocery</span></span>
+      <span>Smart<span class="brand-grocery-text">Grocery</span></span>
     </a>
     <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
       <span class="navbar-toggler-icon"></span>
@@ -63,16 +63,13 @@ Validates: Email and password against database with hashed passwords
           </a>
         </li>
         <li class="nav-item">
-          <a class="nav-link d-flex align-items-center" href="{{ url_for('main.shopping_list') }}">
-            <div class="position-relative me-1">
-              <i class="bi bi-list-check fs-5"></i>
-              {% if (shopping_list_count or 0) > 0 %}
-              <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem; min-width: 14px; height: 14px; display: flex; align-items: center; justify-content: center; transform: translate(25%, -180%) !important;">
-                {{ shopping_list_count }}
-              </span>
-              {% endif %}
-            </div>
-            Lists
+          <a class="nav-link d-flex align-items-center position-relative" href="{{ url_for('main.shopping_list') }}">
+            <i class="bi bi-list-check me-1"></i> Lists
+            {% if (shopping_list_count or 0) > 0 %}
+            <span class="position-absolute badge rounded-pill bg-danger" style="font-size: 0.65rem; padding: 0.45em 0.7em; top: -5px; right: -10px; border: 2px solid white; box-shadow: 0 4px 10px rgba(220, 53, 69, 0.4); min-width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;">
+              {{ shopping_list_count }}
+            </span>
+            {% endif %}
           </a>
         </li>
         <li class="nav-item ms-lg-1">
@@ -80,7 +77,7 @@ Validates: Email and password against database with hashed passwords
             <div class="position-relative">
               <i class="bi bi-bell fs-5"></i>
               {% if (unread_notifications_count or 0) > 0 %}
-              <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem; min-width: 14px; height: 14px; display: flex; align-items: center; justify-content: center; transform: translate(25%, -180%) !important;">
+              <span class="position-absolute badge rounded-pill bg-danger" style="font-size: 0.65rem; padding: 0.45em 0.7em; top: -5px; right: -10px; border: 2px solid white; box-shadow: 0 4px 10px rgba(220, 53, 69, 0.4); min-width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;">
                 {{ unread_notifications_count }}
               </span>
               {% endif %}
