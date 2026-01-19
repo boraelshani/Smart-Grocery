@@ -1569,22 +1569,6 @@
 					}
 				});
 		}
-					if (data.success) {
-						showNotification('List deleted', 'success');
-						setTimeout(() => window.location.reload(), 300);
-					} else {
-						showNotification('Could not delete list', 'danger');
-					}
-				})
-				.catch(() => showNotification('Error deleting list', 'danger'))
-				.finally(() => {
-					const modalEl = document.getElementById('deleteListModal');
-					if (modalEl) {
-						const inst = bootstrap.Modal.getInstance(modalEl);
-						if (inst) inst.hide();
-					}
-				});
-		}
 
 		// Duplicate list
 		function duplicateList(listId) {

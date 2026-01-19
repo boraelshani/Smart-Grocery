@@ -1094,17 +1094,24 @@ function setupClaimButtons() {
 
 // Global function to handle add to cart button clicks
 window.handleAddToCart = async function (event, name, price, image, store) {
-  event.stopPropagation();
-  event.preventDefault();
+  if (event) {
+    event.stopPropagation();
+    if (event.preventDefault) event.preventDefault();
+  }
 
-  const item = { name, price, store, image };
-  const priceVal = formatPrice(price);
-  if (!isNaN(priceVal) && priceVal > 0) item.price_val = priceVal;
+  // Support both (event, name, price, image, store) and (event, element)
+  let item;
+  if (name instanceof HTMLElement) {
+    item = name; // Let addItemToShoppingList/showListSelector handle the element
+  } else {
+    item = { name, price, store, image };
+    const priceVal = formatPrice(price);
+    if (!isNaN(priceVal) && priceVal > 0) item.price_val = priceVal;
+  }
 
   try {
     const res = await addItemToShoppingList(item);
     if (res && res.deferred) {
-      // List selector will be shown, don't show additional notification
       return;
     }
     if (res && (res.success || res.success === true)) {
@@ -1117,7 +1124,7 @@ window.handleAddToCart = async function (event, name, price, image, store) {
     }
   } catch (err) {
     console.error('Error adding to cart:', err);
-    showNotification('Server error adding item', 'danger');
+    showNotification('Error adding to list. Are you logged in?', 'danger');
   }
 };
 
@@ -1696,25 +1703,38 @@ const cart = new CartCounter();
 // Toggle favorite product
 async function toggleFavorite(event, productId, buttonElement) {
   if (event) {
-    event.preventDefault();
-    event.stopPropagation();
+    if (event.preventDefault) event.preventDefault();
+    if (event.stopPropagation) event.stopPropagation();
   }
+
+  let finalId = productId;
+  let targetBtn = buttonElement;
+
+  if (productId instanceof HTMLElement) {
+    targetBtn = productId;
+    finalId = targetBtn.getAttribute('data-product-id') || targetBtn.getAttribute('data-id');
+  } else if (!buttonElement && typeof productId === 'string') {
+    // If only one param is passed and it's a string, it's the ID.
+    // We try to find the button if possible, but the old behavior was (event, id, btn)
+  }
+  
+  if (!finalId) return;
   
   try {
     const response = await fetch('/api/toggle-favorite', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ product_id: productId })
+      body: JSON.stringify({ product_id: finalId })
     });
 
     if (response.ok) {
       const data = await response.json();
 
-      if (buttonElement) {
-        const btn = typeof buttonElement === 'string' ? document.querySelector(buttonElement) : buttonElement;
+      if (targetBtn) {
+        const btn = typeof targetBtn === 'string' ? document.querySelector(targetBtn) : targetBtn;
         if (btn) {
           // Set active state based on server response
-          if (data.is_favorite || data.action === 'added') {
+          if (data.is_favorite || data.action === 'added' || data.status === 'added') {
             btn.classList.add('active');
           } else {
             btn.classList.remove('active');
@@ -1733,7 +1753,7 @@ async function toggleFavorite(event, productId, buttonElement) {
           }
 
           // If on profile page and removing favorite, animate removal
-          if (data && data.action === 'removed') {
+          if (data && (data.action === 'removed' || data.status === 'removed')) {
             const card = btn.closest('.favorite-card');
             if (card) {
               card.style.transition = 'all 0.25s ease';
@@ -1741,6 +1761,18 @@ async function toggleFavorite(event, productId, buttonElement) {
               card.style.transform = 'translateX(-10px)';
               setTimeout(() => {
                 card.remove();
+              }, 250);
+            }
+          }
+        }
+      }
+    } else {
+      showNotification('Please login to favorite products', 'warning');
+    }
+  } catch (error) {
+    console.error('Error toggling favorite:', error);
+  }
+}
 
                 // Check if there are any favorite cards left
                 const favoritesList = document.getElementById('favorites-list');

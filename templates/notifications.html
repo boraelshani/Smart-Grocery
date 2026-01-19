@@ -335,22 +335,22 @@ Data: Fetches from notifications collection
     <div class="container position-relative" style="z-index: 2;">
       <div class="row align-items-center">
         <div class="col-lg-8 mx-auto text-center">
-          <h1 class="display-4 fw-bold mb-2">Alert Center</h1>
-          <p class="lead opacity-90 mb-3">Track price drops and new deals in real-time.</p>
+          <h1 class="display-4 fw-bold mb-2 text-white">Notifications</h1>
+          <p class="lead opacity-90 mb-3 text-white">Track price drops and new deals in real-time.</p>
           
           <div class="row g-3 justify-content-center mt-3">
             <div class="col-6 col-md-3">
-              <div class="p-3 bg-white bg-opacity-10 rounded-4 border border-white border-opacity-25 shadow-sm" style="backdrop-filter: blur(8px);">
+              <div class="p-3 bg-white bg-opacity-10 rounded-4 border border-white border-opacity-25 shadow-sm text-white" style="backdrop-filter: blur(8px);">
                 <i class="bi bi-envelope-exclamation fs-3 d-block mb-1"></i>
-                <span class="d-block fs-4 fw-bold">{{ unread_count }}</span>
-                <span class="small opacity-75 text-uppercase tracking-wider" style="font-size: 0.7rem;">Unread</span>
+                <span class="d-block fs-4 fw-bold text-white">{{ unread_count }}</span>
+                <span class="small opacity-75 text-uppercase tracking-wider text-white" style="font-size: 0.7rem;">Unread</span>
               </div>
             </div>
             <div class="col-6 col-md-3">
-              <div class="p-3 bg-white bg-opacity-10 rounded-4 border border-white border-opacity-25 shadow-sm" style="backdrop-filter: blur(8px);">
+              <div class="p-3 bg-white bg-opacity-10 rounded-4 border border-white border-opacity-25 shadow-sm text-white" style="backdrop-filter: blur(8px);">
                 <i class="bi bi-archive fs-3 d-block mb-1"></i>
-                <span class="d-block fs-4 fw-bold">{{ notifications|length }}</span>
-                <span class="small opacity-75 text-uppercase tracking-wider" style="font-size: 0.7rem;">Total</span>
+                <span class="d-block fs-4 fw-bold text-white">{{ notifications|length }}</span>
+                <span class="small opacity-75 text-uppercase tracking-wider text-white" style="font-size: 0.7rem;">Total</span>
               </div>
             </div>
           </div>

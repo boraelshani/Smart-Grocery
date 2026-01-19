@@ -23,43 +23,72 @@ Used: When clicking on a product in a specific store's listing
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <style>
     body {
-      background: #f3f4f6;
+      background: linear-gradient(-45deg, #7c3aed, #6366f1, #8b5cf6, #d946ef);
+      background-size: 400% 400%;
+      animation: gradientBG 15s ease infinite;
+      background-attachment: fixed;
+      min-height: 100vh;
+      color: white;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.05), transparent 40%),
+                  radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.05), transparent 40%);
+      pointer-events: none;
+      z-index: -1;
     }
 
     .product-hero {
-      background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+      background: transparent;
       color: white;
-      padding: 3rem 0 3.5rem;
+      padding: 6.5rem 0 3.5rem;
       position: relative;
-      overflow: hidden;
-      border-bottom-left-radius: 24px;
-      border-bottom-right-radius: 24px;
     }
 
-    .product-hero::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.08), transparent 45%),
-        radial-gradient(circle at 80% 0%, rgba(255, 255, 255, 0.07), transparent 40%);
+    @keyframes gradientBG {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .bg-shape {
+      position: fixed;
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+      border-radius: 20%;
+      animation: float 10s infinite ease-in-out;
+      z-index: -1;
       pointer-events: none;
     }
 
+    .shape-1 { top: 15%; left: 5%; width: 120px; height: 120px; }
+    .shape-2 { top: 45%; right: 8%; width: 180px; height: 180px; border-radius: 50%; animation-delay: -2s; }
+    .shape-3 { bottom: 15%; left: 10%; width: 100px; height: 100px; animation-delay: -5s; }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-30px) rotate(10deg); }
+    }
+
     .glass-card {
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid rgba(255, 255, 255, 0.25);
-      border-radius: 18px;
-      box-shadow: 0 14px 36px rgba(0, 0, 0, 0.18);
-      backdrop-filter: blur(6px);
+      background: rgba(15, 23, 42, 0.7); /* Dark Slate Glass */
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 215, 0, 0.2);
+      border-radius: 20px;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
     }
 
     .product-image-container {
-      background: #ffffff;
-      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 20px;
       padding: 1.5rem;
-      box-shadow: 0 12px 26px rgba(0, 0, 0, 0.12);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.2);
     }
 
     .product-image {
@@ -73,18 +102,27 @@ Used: When clicking on a product in a specific store's listing
 
     .meta-chips .badge {
       font-weight: 700;
+      background: rgba(255, 255, 255, 0.1) !important;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: white !important;
     }
 
     .price {
-      font-size: 2.2rem;
+      font-size: 2.8rem;
       font-weight: 900;
+      color: #fbbf24; /* Amber Gold */
+      text-shadow: 0 2px 10px rgba(0,0,0,0.2);
     }
 
     .desc-card {
-      background: #ffffff;
-      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 20px;
       padding: 1.5rem;
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+      box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+      color: white;
     }
 
     .pill-btn {
@@ -150,12 +188,12 @@ Used: When clicking on a product in a specific store's listing
         {% set cart_count = shopping_list_count or 0 %}
         <ul class="navbar-nav ms-auto align-items-center">
           <li class="nav-item">
-            <a class="nav-link {% if request.endpoint == 'main.home' %}active{% endif %}" href="{{ url_for('main.home') }}">
+            <a class="nav-link {% if request.endpoint == 'main.home' or (request.endpoint == 'main.product_info' and not store_name) %}active{% endif %}" href="{{ url_for('main.home') }}">
               <i class="bi bi-house-door me-1"></i> Home
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link {% if 'stores' in request.path or request.endpoint == 'main.stores_page' %}active{% endif %}" href="{{ url_for('main.stores_page') }}">
+            <a class="nav-link {% if 'stores' in request.path or request.endpoint == 'main.stores_page' or (request.endpoint == 'main.product_info' and store_name) %}active{% endif %}" href="{{ url_for('main.stores_page') }}">
               <i class="bi bi-shop me-1"></i> Stores
             </a>
           </li>
@@ -200,10 +238,13 @@ Used: When clicking on a product in a specific store's listing
   </nav>
 
   <!-- Product Header -->
-  <section class="product-hero py-5">
+  <section class="product-hero">
+    <div class="bg-shape shape-1"></div>
+    <div class="bg-shape shape-2"></div>
+    <div class="bg-shape shape-3"></div>
     <div class="container position-relative" style="z-index: 1;">
       <div class="d-flex justify-content-start mb-3">
-        <button onclick="history.back()" class="btn btn-light btn-sm shadow-sm">
+        <button onclick="history.back()" class="btn btn-glass btn-sm shadow-sm" style="background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: white; backdrop-filter: blur(5px);">
           <i class="bi bi-arrow-left"></i> Back
         </button>
       </div>
@@ -296,8 +337,8 @@ Used: When clicking on a product in a specific store's listing
   <section class="py-4"></section>
 
   <!-- Footer -->
-  <footer class="text-center py-4 bg-light border-top mt-5">
-    <p class="mb-0 text-muted">&copy; 2025 Smart Grocery Team</p>
+  <footer class="text-center py-4">
+    <p class="mb-0 text-white-50">&copy; 2025 Smart Grocery Team</p>
   </footer>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

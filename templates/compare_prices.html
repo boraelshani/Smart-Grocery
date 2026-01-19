@@ -526,8 +526,9 @@ Data: Fetches all products and their store prices from database
                   <i class="bi bi-tag-fill"></i> €{{ (p.get('cheapest') and p.get('cheapest').get('price')) or
                   p.get('price','N/A') }}
                 </span>
-                <button class="btn-favorite {{ 'active' if p.get('is_favorited') else '' }}" style="z-index: 10;"
-                  onclick="toggleFavorite(event, '{{ p.get('id') or p.get('_id') }}', this)" title="Add to favorites">
+                <button type="button" class="btn-favorite {{ 'active' if p.get('is_favorited') else '' }}" style="z-index: 10;"
+                  data-product-id="{{ p.get('id') or p.get('_id') }}"
+                  onclick="toggleFavorite(event, this)" title="Add to favorites">
                   <i class="bi {{ 'bi-heart-fill' if p.get('is_favorited') else 'bi-heart' }}"></i>
                 </button>
               </div>
@@ -592,16 +593,17 @@ Data: Fetches all products and their store prices from database
                 {% endif %}
                 <div class="d-flex flex-column gap-2">
                   <button type="button" class="btn btn-premium btn-premium-add w-100"
-                    data-name="{{ p.get('name') or p.get('title','') }}" data-id="{{ p.get('id') }}"
-                    data-price="{{ (p.get('cheapest') and p.get('cheapest').get('price')) or p.get('price','N/A') }}"
-                    data-initial-price="{{ (p.get('cheapest') and p.get('cheapest').get('price')) or p.get('price','N/A') }}"
-                    data-original-price="{{ p.original_price or '' }}"
-                    data-image="{{ prefer_processed(p.get('image') or (p.get('images') and p.get('images')[0]) or url_for('static', filename='placeholder.svg')) }}"
+                    data-name="{{ p.get('name') or p.get('title','')|e }}" data-id="{{ p.get('id') }}"
+                    data-price="{{ (p.get('cheapest') and p.get('cheapest').get('price')) or p.get('price','N/A')|e }}"
+                    data-initial-price="{{ (p.get('cheapest') and p.get('cheapest').get('price')) or p.get('price','N/A')|e }}"
+                    data-original-price="{{ p.original_price|e if p.original_price else '' }}"
+                    data-image="{{ prefer_processed(p.get('image') or (p.get('images') and p.get('images')[0]) or url_for('static', filename='placeholder.svg'))|e }}"
                     data-store=""
                     data-offer-json='{{ p.offer|tojson|forceescape if p.offer else "" }}'
                     data-offer-type="{{ p.offer_type or '' }}"
                     data-offer-x="{{ p.offer_x or '' }}"
-                    data-offer-y="{{ p.offer_y or '' }}">
+                    data-offer-y="{{ p.offer_y or '' }}"
+                    onclick="event.stopPropagation(); handleAddToCart(event, this);">
                     <i class="bi bi-cart-plus-fill"></i>Add to List
                   </button>
                   <a href="{{ url_for('main.product_detail', product_id=p.get('id')) }}"

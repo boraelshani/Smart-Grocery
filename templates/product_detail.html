@@ -25,27 +25,58 @@ Data: Fetches single product details from database
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
     body {
-      background: #f3f4f6;
+      background: linear-gradient(-45deg, #7c3aed, #6366f1, #8b5cf6, #d946ef);
+      background-size: 400% 400%;
+      animation: gradientBG 15s ease infinite;
+      background-attachment: fixed;
+      min-height: 100vh;
     }
 
-    /* Hero Section with Gradient */
-    .product-detail-hero {
-      background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
-      color: white;
-      padding: 3rem 0 3.5rem;
-      border-bottom-left-radius: 24px;
-      border-bottom-right-radius: 24px;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .product-detail-hero::after {
+    /* Fixed overlay for the whole page to unify top/bottom */
+    body::before {
       content: '';
-      position: absolute;
+      position: fixed;
       inset: 0;
-      background: radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.08), transparent 45%),
-        radial-gradient(circle at 80% 0%, rgba(255, 255, 255, 0.07), transparent 40%);
+      background: radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.05), transparent 40%),
+                  radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.05), transparent 40%);
       pointer-events: none;
+      z-index: -1;
+    }
+
+    /* Hero Section - now truly unified */
+    .product-detail-hero {
+      background: transparent;
+      color: white;
+      padding: 6.5rem 0 3.5rem;
+      position: relative;
+      /* removed overflow hidden to allow shapes to flow */
+    }
+
+    @keyframes gradientBG {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .bg-shape {
+      position: fixed;
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+      border-radius: 20%;
+      animation: float 10s infinite ease-in-out;
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    .shape-1 { top: 15%; left: 5%; width: 120px; height: 120px; }
+    .shape-2 { top: 45%; right: 8%; width: 180px; height: 180px; border-radius: 50%; animation-delay: -2s; }
+    .shape-3 { bottom: 15%; left: 10%; width: 100px; height: 100px; animation-delay: -5s; }
+    .shape-4 { bottom: 25%; right: 20%; width: 80px; height: 80px; border-radius: 30%; animation-delay: -3s; }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-30px) rotate(10deg); }
     }
 
     /* Breadcrumb Styling */
@@ -84,10 +115,10 @@ Data: Fetches single product details from database
 
     /* Image Container */
     .image-card {
-      background: #ffffff;
-      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 20px;
       padding: 1.25rem;
-      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.2);
       position: relative;
     }
 
@@ -95,9 +126,26 @@ Data: Fetches single product details from database
       width: 100%;
       height: 420px;
       object-fit: contain;
-      background: #fff;
+      background: transparent;
       border-radius: 16px;
       padding: 18px;
+    }
+
+    .btn-action-back {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: white;
+      padding: 0.6rem 1.2rem;
+      border-radius: 12px;
+      font-weight: 600;
+      backdrop-filter: blur(5px);
+      transition: all 0.3s;
+    }
+
+    .btn-action-back:hover {
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      transform: translateX(-5px);
     }
 
     /* Favorite Button */
@@ -133,12 +181,15 @@ Data: Fetches single product details from database
 
     /* Price Display */
     .price-display-card {
-      background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
-      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.15); /* Lighter Glass instead of Dark Slate */
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 255, 255, 0.3); /* Soft White Border */
+      border-radius: 20px;
       padding: 1.75rem;
       color: white;
       margin-bottom: 1.5rem;
-      box-shadow: 0 12px 35px rgba(124, 58, 237, 0.25);
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
       position: relative;
       overflow: hidden;
     }
@@ -147,7 +198,8 @@ Data: Fetches single product details from database
       content: '';
       position: absolute;
       inset: 0;
-      background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.15), transparent 60%);
+      background: radial-gradient(circle at top right, rgba(255, 255, 255, 0.2), transparent 70%);
+      pointer-events: none;
     }
 
     .price-display-content {
@@ -158,38 +210,52 @@ Data: Fetches single product details from database
     .price-label {
       font-size: 0.85rem;
       text-transform: uppercase;
-      letter-spacing: 1px;
+      letter-spacing: 1.5px;
+      color: #ffffff; /* Simple White for elegance */
       opacity: 0.9;
-      font-weight: 600;
+      font-weight: 700;
       margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
     }
 
     .price {
-      font-size: 2.4rem;
+      font-size: 2.8rem;
       font-weight: 900;
       line-height: 1;
       margin-bottom: 0.5rem;
+      color: #ffffff;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.1);
     }
 
     .store-name {
-      font-size: 1.05rem;
-      opacity: 0.92;
+      font-size: 1.1rem;
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .store-name strong {
+      color: #ffffff;
     }
 
     /* Info Card */
     .info-card {
-      background: white;
-      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 20px;
       padding: 1.75rem;
-      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+      box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
       margin-bottom: 1.25rem;
+      color: white;
     }
 
     /* Section Titles */
     .section-title {
-      font-size: 1.2rem;
+      font-size: 1.25rem;
       font-weight: 700;
-      color: #2d3748;
+      color: #ffffff;
       margin-bottom: 1rem;
       display: flex;
       align-items: center;
@@ -197,16 +263,30 @@ Data: Fetches single product details from database
     }
 
     .section-title i {
-      color: #7c3aed;
+      color: #e9d5ff;
     }
 
     /* Meta Badges */
     .meta-chips .badge {
       font-weight: 700;
       padding: 0.5rem 1rem;
-      border-radius: 12px;
+      border-radius: 10px;
       margin-right: 0.5rem;
       margin-bottom: 0.5rem;
+      background: rgba(255, 255, 255, 0.1) !important;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: white !important;
+    }
+
+    /* Footer styling */
+    footer {
+      background: transparent !important;
+      border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+      color: rgba(255, 255, 255, 0.6) !important;
+    }
+
+    .text-muted {
+      color: rgba(255, 255, 255, 0.7) !important;
     }
 
     /* Store Selection Grid */
@@ -225,32 +305,47 @@ Data: Fetches single product details from database
 
     /* Store Cards */
     .store-card {
-      background: white;
-      border: 2px solid #e9ecef;
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(4px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
       border-radius: 14px;
       padding: 1.25rem;
       cursor: pointer;
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       position: relative;
       overflow: hidden;
+      color: white;
     }
 
     .store-card:hover {
-      border-color: #7c3aed;
-      box-shadow: 0 8px 25px rgba(102, 126, 234, 0.15);
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.3);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
       transform: translateY(-3px);
     }
 
     .store-card.selected:not(.btn-go-store) {
-      border-color: #7c3aed;
-      background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+      border-color: #ffffff; 
+      background: rgba(255, 255, 255, 0.05); /* Same as normal or very slight diff */
       color: white;
-      box-shadow: 0 12px 35px rgba(102, 126, 234, 0.4);
+      box-shadow: 0 0 20px rgba(255, 255, 255, 0.4);
+      transform: translateY(-5px);
     }
 
-    .store-card.selected .card-store-name,
+    .store-card.selected .card-store-name {
+      color: #ffffff !important;
+    }
+
     .store-card.selected .card-price {
-      color: white !important;
+      color: #ffffff !important;
+      text-shadow: 0 0 15px rgba(255, 255, 255, 0.4);
+    }
+
+    .store-card.selected .store-logo {
+      border: 3px solid #7c3aed; /* Stronger purple border on logo for selection */
+      background: white;
+      transform: scale(1.1);
+      box-shadow: 0 0 15px rgba(124, 58, 237, 0.4);
     }
 
     .store-card-content {
@@ -264,16 +359,16 @@ Data: Fetches single product details from database
       height: 60px;
       border-radius: 12px;
       object-fit: contain;
-      background: #f8f9fa;
+      background: white;
       padding: 8px;
       margin: 0 auto 0.75rem;
       display: block;
-      border: 2px solid #e9ecef;
+      border: 2px solid rgba(255, 255, 255, 0.2);
     }
 
     .store-card.selected .store-logo {
-      border-color: rgba(255, 255, 255, 0.3);
-      background: rgba(255, 255, 255, 0.15);
+      border-color: rgba(255, 255, 255, 0.5);
+      background: rgba(255, 255, 255, 0.9);
     }
 
     .store-card .card-store-name {
@@ -284,16 +379,13 @@ Data: Fetches single product details from database
       overflow: hidden;
       text-overflow: ellipsis;
       padding: 0 0.25rem;
-    }
-
-    .store-card.selected .card-store-name {
       color: white;
     }
 
     .store-card .card-price {
       font-size: 1.6rem;
       font-weight: 900;
-      color: #7c3aed;
+      color: #e9d5ff;
     }
 
     .store-card.selected .card-price {
@@ -363,10 +455,10 @@ Data: Fetches single product details from database
 
 <body>
   <!-- Navigation -->
-  <nav class="navbar navbar-expand-lg sticky-top">
+  <nav class="navbar navbar-expand-lg navbar-premium">
     <div class="container">
       <a class="navbar-brand d-flex align-items-center" href="{{ url_for('main.home') }}">
-        <div class="brand-icon me-3" style="background: linear-gradient(135deg, var(--premium-purple), var(--premium-indigo)); width: 44px; height: 44px; border-radius: 14px; display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 8px 16px -4px rgba(124, 58, 237, 0.3);">
+        <div class="brand-icon me-3">
           <i class="bi bi-cart-check-fill fs-5"></i>
         </div>
         <span>Smart<span class="brand-grocery-text">Grocery</span></span>
@@ -393,7 +485,7 @@ Data: Fetches single product details from database
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link {% if 'compare' in request.path or request.endpoint == 'main.compare_prices' %}active{% endif %}" href="{{ url_for('main.compare_prices') }}">
+            <a class="nav-link {% if 'compare' in request.path or request.endpoint == 'main.compare_prices' or request.endpoint == 'main.product_detail' %}active{% endif %}" href="{{ url_for('main.compare_prices') }}">
               <i class="bi bi-arrow-left-right me-1"></i> Compare
             </a>
           </li>
@@ -428,10 +520,14 @@ Data: Fetches single product details from database
   </nav>
 
   <!-- Hero Section -->
-  <section class="product-detail-hero py-5">
+  <section class="product-detail-hero">
+    <div class="bg-shape shape-1"></div>
+    <div class="bg-shape shape-2"></div>
+    <div class="bg-shape shape-3"></div>
+    <div class="bg-shape shape-4"></div>
     <div class="container position-relative" style="z-index: 1;">
       <div class="d-flex justify-content-start mb-3">
-        <a href="{{ url_for('main.compare_prices') }}" class="btn btn-light btn-sm shadow-sm">
+        <a href="{{ url_for('main.compare_prices') }}" class="btn btn-action-back btn-sm shadow-sm">
           <i class="bi bi-arrow-left"></i> Back to Products
         </a>
       </div>
@@ -572,7 +668,7 @@ Data: Fetches single product details from database
                   {% if store.get('url') %}
                   <a href="{{ store.get('url') }}" target="_blank" rel="noopener noreferrer"
                     class="btn btn-sm btn-go-store w-100 py-2 d-flex align-items-center justify-content-center gap-2"
-                    style="background: #f0f0ff; border-radius: 8px; color: #7c3aed; border: 1px solid #dadaff; font-weight: 600; font-size: 0.85rem;">
+                    style="background: rgba(255, 255, 255, 0.1); border-radius: 8px; color: white; border: 1px solid rgba(255, 255, 255, 0.3); font-weight: 600; font-size: 0.85rem;">
                     <i class="bi bi-box-arrow-up-right"></i> Visit Store
                   </a>
                   {% endif %}
@@ -600,8 +696,8 @@ Data: Fetches single product details from database
   </section>
 
   <!-- Footer -->
-  <footer class="text-center py-4 bg-light border-top">
-    <p class="mb-0 text-muted">&copy; 2025 Smart Grocery Team</p>
+  <footer class="text-center py-4">
+    <p class="mb-0 text-white-50">&copy; 2025 Smart Grocery Team</p>
   </footer>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

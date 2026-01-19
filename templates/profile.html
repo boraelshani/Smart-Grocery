@@ -994,6 +994,49 @@ Requires: User must be logged in
             </div>
         </div>
 
+        <!-- Favorites Section Card -->
+        <div class="fun-card mt-4">
+             <div class="fun-card-header">
+                <h4 class="fun-card-title">
+                    <i class="bi bi-heart-fill text-danger"></i> My Favorites
+                </h4>
+                <span class="badge bg-danger rounded-pill">{{ user_data.favorites|length if user_data.favorites else 0 }} Items</span>
+            </div>
+            <div class="fun-card-body">
+                {% if user_data.favorites %}
+                    <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-3">
+                        {% for fav in user_data.favorites %}
+                            <div class="col">
+                                <div class="favorite-mini-card">
+                                    <div class="fav-img-container">
+                                        <img src="{{ fav.image or url_for('static', filename='placeholder.svg') }}" alt="{{ fav.name }}">
+                                    </div>
+                                    <div class="fav-mini-details">
+                                        <h6 class="text-truncate mb-1">{{ fav.name }}</h6>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span class="fw-bold text-primary">€{{ fav.price or '0.00' }}</span>
+                                            <button class="btn btn-sm btn-outline-danger border-0 p-1" onclick="toggleFavorite(event, '{{ fav.id }}', this)">
+                                                <i class="bi bi-heart-fill"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <div class="mb-3">
+                            <i class="bi bi-heart text-muted display-4"></i>
+                        </div>
+                        <h5 class="text-muted">No favorites yet</h5>
+                        <p class="small text-muted mb-4">Save products you love to see them here.</p>
+                        <a href="{{ url_for('main.home') }}" class="btn btn-sm btn-outline-primary rounded-pill px-4">Browse Products</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
         <!-- Store Preferences Card -->
         <div class="fun-card">
              <div class="fun-card-header">
