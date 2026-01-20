@@ -347,13 +347,23 @@ def create_shopping_list(email: str, list_name: str) -> Optional[str]:
             )
             if result.modified_count > 0 or result.upserted_id:
                 return new_list['id']
+            # If user doesn't exist in DB, create them
+            if result.matched_count == 0:
+                 flask_mongo.db.users.insert_one({
+                     'email': email,
+                     'shopping_lists': [new_list],
+                     'active_list_id': new_list['id']
+                 })
+                 return new_list['id']
         except Exception as e:
             print(f'Error creating list: {e}')
             return None
     
     # Mock fallback
-    u = mock_models.users.get(email)
-    if u:
+    if mock_models:
+        if email not in mock_models.users:
+            mock_models.users[email] = {'email': email, 'shopping_lists': []}
+        u = mock_models.users[email]
         u.setdefault('shopping_lists', []).append(new_list)
         return new_list['id']
     return None
@@ -376,12 +386,13 @@ def rename_shopping_list(email: str, list_id: str, new_name: str) -> bool:
             return False
     
     # Mock fallback
-    u = mock_models.users.get(email)
-    if u:
-        for lst in u.get('shopping_lists', []):
-            if lst.get('id') == list_id:
-                lst['name'] = new_name.strip()
-                return True
+    if mock_models and hasattr(mock_models, 'users'):
+        u = mock_models.users.get(email)
+        if u:
+            for lst in u.get('shopping_lists', []):
+                if lst.get('id') == list_id:
+                    lst['name'] = new_name.strip()
+                    return True
     return False
 
 
@@ -398,6 +409,8 @@ def delete_shopping_list(email: str, list_id: str) -> bool:
             )
             # If deleted list was active, set active to first remaining list
             user = flask_mongo.db.users.find_one({'email': email})
+            # Since we just pulled the list, it won't be in shopping_lists.
+            # But active_list_id might still point to it.
             if user and user.get('active_list_id') == list_id:
                 remaining_lists = user.get('shopping_lists', [])
                 new_active = remaining_lists[0]['id'] if remaining_lists else None
@@ -407,17 +420,20 @@ def delete_shopping_list(email: str, list_id: str) -> bool:
                 )
             return result.modified_count > 0
         except Exception as e:
+            import traceback
+            traceback.print_exc()
             print(f'Error deleting list: {e}')
             return False
     
     # Mock fallback
-    u = mock_models.users.get(email)
-    if u:
-        lists = u.get('shopping_lists', [])
-        u['shopping_lists'] = [lst for lst in lists if lst.get('id') != list_id]
-        if u.get('active_list_id') == list_id:
-            u['active_list_id'] = u['shopping_lists'][0]['id'] if u['shopping_lists'] else None
-        return True
+    if mock_models and hasattr(mock_models, 'users'):
+        u = mock_models.users.get(email)
+        if u:
+            lists = u.get('shopping_lists', [])
+            u['shopping_lists'] = [lst for lst in lists if lst.get('id') != list_id]
+            if u.get('active_list_id') == list_id:
+                u['active_list_id'] = u['shopping_lists'][0]['id'] if u['shopping_lists'] else None
+            return True
     return False
 
 
@@ -438,10 +454,11 @@ def set_active_list(email: str, list_id: str) -> bool:
             return False
     
     # Mock fallback
-    u = mock_models.users.get(email)
-    if u:
-        u['active_list_id'] = list_id
-        return True
+    if mock_models and hasattr(mock_models, 'users'):
+        u = mock_models.users.get(email)
+        if u:
+            u['active_list_id'] = list_id
+            return True
     return False
 
 
@@ -458,16 +475,19 @@ def update_list_items(email: str, list_id: str, items: list) -> bool:
             )
             return result.modified_count > 0
         except Exception as e:
+            import traceback
+            traceback.print_exc()
             print(f'Error updating list items: {e}')
             return False
     
     # Mock fallback
-    u = mock_models.users.get(email)
-    if u:
-        for lst in u.get('shopping_lists', []):
-            if lst.get('id') == list_id:
-                lst['items'] = items
-                return True
+    if mock_models and hasattr(mock_models, 'users'):
+        u = mock_models.users.get(email)
+        if u:
+            for lst in u.get('shopping_lists', []):
+                if lst.get('id') == list_id:
+                    lst['items'] = items
+                    return True
     return False
 
 
@@ -585,42 +605,43 @@ def add_item_to_list(email: str, list_id: str, item) -> bool:
             return False
     
     # Mock fallback
-    u = mock_models.users.get(email)
-    if u:
-        for lst in u.get('shopping_lists', []):
-            if lst.get('id') == list_id:
-                items = lst.setdefault('items', [])
-                existing_idx = None
+    if mock_models and hasattr(mock_models, 'users'):
+        u = mock_models.users.get(email)
+        if u:
+            for lst in u.get('shopping_lists', []):
+                if lst.get('id') == list_id:
+                    items = lst.setdefault('items', [])
+                    existing_idx = None
 
-                has_multibuy_offer = False  # buyXgetY handled via effective pricing; allow merge
+                    has_multibuy_offer = False  # buyXgetY handled via effective pricing; allow merge
 
-                if not has_multibuy_offer:
-                    for idx, existing in enumerate(items):
-                        if _normalize_name_store(existing) == target_key:
-                            existing_idx = idx
-                            break
+                    if not has_multibuy_offer:
+                        for idx, existing in enumerate(items):
+                            if _normalize_name_store(existing) == target_key:
+                                existing_idx = idx
+                                break
 
-                if existing_idx is not None:
-                    existing_item = items[existing_idx]
-                    merged_item = existing_item.copy() if isinstance(existing_item, dict) else {'name': str(existing_item)}
-                    merged_item['qty'] = _coerce_qty(existing_item) + _coerce_qty(item_obj)
-                    merged_item['is_new'] = True
-                    if not merged_item.get('store') and item_obj.get('store'):
-                        merged_item['store'] = item_obj.get('store')
-                    if not merged_item.get('image') and item_obj.get('image'):
-                        merged_item['image'] = item_obj.get('image')
-                    if price_val is not None:
-                        if merged_item.get('price_val') in (None, '', 0):
-                            merged_item['price_val'] = price_val
-                        if merged_item.get('price') in (None, '', 0):
-                            merged_item['price'] = price_val
-                    items[existing_idx] = merged_item
+                    if existing_idx is not None:
+                        existing_item = items[existing_idx]
+                        merged_item = existing_item.copy() if isinstance(existing_item, dict) else {'name': str(existing_item)}
+                        merged_item['qty'] = _coerce_qty(existing_item) + _coerce_qty(item_obj)
+                        merged_item['is_new'] = True
+                        if not merged_item.get('store') and item_obj.get('store'):
+                            merged_item['store'] = item_obj.get('store')
+                        if not merged_item.get('image') and item_obj.get('image'):
+                            merged_item['image'] = item_obj.get('image')
+                        if price_val is not None:
+                            if merged_item.get('price_val') in (None, '', 0):
+                                merged_item['price_val'] = price_val
+                            if merged_item.get('price') in (None, '', 0):
+                                merged_item['price'] = price_val
+                        items[existing_idx] = merged_item
+                        return True
+
+                    # Item doesn't exist - add it or multibuy should stay separate
+                    item_obj['is_new'] = True
+                    items.append(item_obj)
                     return True
-
-                # Item doesn't exist - add it or multibuy should stay separate
-                item_obj['is_new'] = True
-                items.append(item_obj)
-                return True
     return False
 
 

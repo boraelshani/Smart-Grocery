@@ -106,6 +106,109 @@ class MultibuyOffersModel:
                 d['id'] = str(d['_id'])
         return docs
 
+    def attach_offers_to_products(self, products: List[dict]) -> List[dict]:
+        """
+        Attach multibuy and quantity discount metadata to a list of products.
+        """
+        if not products:
+            return products
+            
+        try:
+            # Get all active multibuy offers
+            mb_offers = self.list_active_offers()
+            
+            # Get all active quantity discounts (lazy load to avoid circular import issues if any)
+            from models.quantity_discounts_model import quantity_discounts_model
+            q_discounts = quantity_discounts_model.list_active_discounts()
+            
+            # Map by product_id AND product_name for fast lookup
+            mb_map_id = {}
+            mb_map_name = {}
+            
+            for o in mb_offers:
+                pid = str(o.get('product_id'))
+                if pid: mb_map_id[pid] = o
+                
+                pname = o.get('product_name')
+                if pname: mb_map_name[pname.lower().strip()] = o
+                
+            qd_map = {}
+            for q in q_discounts:
+                pid = str(q.get('product_id'))
+                if pid: qd_map[pid] = q
+                
+            for p in products:
+                pid = str(p.get('id') or p.get('_id') or '')
+                pname = str(p.get('name') or '').lower().strip()
+                
+                # Extract basic offer info if available directly (featured deals)
+                ox_raw = p.get('buy_quantity') or p.get('multibuy_buy') or ''
+                oy_raw = p.get('free_quantity') or p.get('multibuy_free') or ''
+                
+                # If already has offer info object, extract details
+                if p.get('offer'):
+                    offer_obj = p.get('offer') if isinstance(p.get('offer'), dict) else None
+                    if offer_obj:
+                        p['offer_type'] = offer_obj.get('type') or p.get('offer_type', '')
+                        p['offer_x'] = offer_obj.get('x') or ox_raw
+                        p['offer_y'] = offer_obj.get('y') or oy_raw
+                
+                # Refine offer_x/y if missing but raw fields exist
+                if not p.get('offer_x'): p['offer_x'] = ox_raw
+                if not p.get('offer_y'): p['offer_y'] = oy_raw
+                if not p.get('offer_type') and p.get('offer_x') and p.get('offer_y'):
+                    p['offer_type'] = 'buyXgetY'
+
+                # Look in mb_offers collection if no offer_x yet
+                # Try ID first, then Name
+                offer = None
+                if not p.get('offer_x'):
+                    if pid in mb_map_id:
+                        offer = mb_map_id[pid]
+                    elif pname in mb_map_name:
+                        offer = mb_map_name[pname]
+
+                if offer:
+                    # Ensure the offer object itself has the type set, so templates can see it inside 'offer'
+                    if not offer.get('type'):
+                        offer['type'] = 'buyXgetY'
+                        
+                    if 'offer' not in p: p['offer'] = offer
+                    p['offer_type'] = offer.get('type')
+                    ox = offer.get('x') or offer.get('buy_quantity') or offer.get('multibuy_buy') or 0
+                    oy = offer.get('y') or offer.get('free_quantity') or offer.get('multibuy_free') or 0
+                    p['offer_x'] = ox
+                    p['offer_y'] = oy
+                    
+                    # IMPORTANT: Capture the base original price for the multibuy calculation
+                    if offer.get('original_price'):
+                        p['original_price'] = offer.get('original_price')
+                    elif offer.get('price'): # fallback if original_price missing
+                        p['original_price'] = offer.get('price')
+
+                    # Ensure these raw fields are set for template compatibility
+                    p['buy_quantity'] = ox
+                    p['free_quantity'] = oy
+                
+                # Set discount label if we have x/y
+                if p.get('offer_x') and p.get('offer_y') and not p.get('discount_label'):
+                    p['discount_label'] = f"{p['offer_x']}+{p['offer_y']} FREE"
+
+                # Look in qd_map (if not already found in mb)
+                if not p.get('offer_type') and pid in qd_map:
+                    qd = qd_map[pid]
+                    p['offer'] = qd
+                    p['offer_type'] = 'quantity_discount'
+                    if not p.get('discount_label'):
+                        p['discount_label'] = "VOLUME DEAL"
+                    if qd.get('original_price'):
+                        p['original_price'] = qd.get('original_price')
+                    
+        except Exception as e:
+            print(f"Error attaching offers to products: {e}")
+            
+        return products
+
     def get_offers_by_store(self, store_name: str) -> List[dict]:
         """Get all active offers for a specific store"""
         now = datetime.utcnow()

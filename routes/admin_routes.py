@@ -101,24 +101,30 @@ def add_or_update_product():
             
             # BROADCAST: New Product Alert using Model
             notifications_model.broadcast_notification({
-                'type': 'system',
+                'type': 'deal_alert', # Changed from 'system' to enable rich card
                 'title': f"New Product: {set_doc.get('name')}",
-                'message': f"A new product has been added to our catalog: {set_doc.get('name')} for only €{set_doc.get('price_val', 0):.2f}!",
+                'message': f"Available now! {set_doc.get('name')} has been added to our catalog.",
                 'product_id': product_id,
-                'priority': 'normal'
+                'priority': 'normal',
+                # redundant data for rich card immediate rendering
+                'product_name': set_doc.get('name'),
+                'product_image': set_doc.get('image'),
+                'price': set_doc.get('price_val'), 
+                'store_name': 'New Arrival'
             })
         elif old_price and set_doc.get('price_val') and float(set_doc.get('price_val')) < float(old_price):
             # BROADCAST: Price Drop Alert
-            from models.notifications_model import NotificationsModel
-            nm = NotificationsModel()
-            nm.broadcast_notification({
+            notifications_model.broadcast_notification({
                 'type': 'price_drop',
                 'title': f"Price Drop: {set_doc.get('name')}",
-                'message': f"Price fell from €{old_price:.2f} to €{set_doc.get('price_val'):.2f}! Save money today.",
+                'message': f"Great news! The price dropped by €{float(old_price) - float(set_doc.get('price_val')):.2f}.",
                 'product_id': product_id,
                 'priority': 'high',
+                'price': set_doc.get('price_val'),
                 'old_price': old_price,
-                'price': set_doc.get('price_val')
+                # redundant data for rich card immediate rendering
+                'product_name': set_doc.get('name'),
+                'product_image': set_doc.get('image')
             })
 
         return jsonify({'status': 'ok', 'action': action, 'id': product_id}), 201 if action == 'created' else 200

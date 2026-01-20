@@ -226,6 +226,27 @@ Requires: User must be logged in
       transform: scale(1.1) rotate(15deg);
     }
 
+    /* Favorites Delete Button Hover Effect */
+    .delete-fav-btn {
+      width: 36px !important;
+      height: 36px !important;
+      border-radius: 50% !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      opacity: 0.7;
+      transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      background-color: white !important;
+      color: #dc3545 !important; /* Bootstrap danger red */
+    }
+
+    .delete-fav-btn:hover {
+      background-color: #f1f5f9 !important; /* Light gray background */
+      opacity: 1;
+      transform: scale(1.1);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
+    }
+
     /* Avatar Picker Grid */
     .avatar-grid {
       display: grid !important;
@@ -694,6 +715,80 @@ Requires: User must be logged in
       color: #6366f1;
     }
 
+    /* Improved Profile Info Fields */
+    .info-field-glass {
+        display: flex;
+        align-items: center;
+        background: #f8fafc;
+        border: 1px solid #f1f5f9;
+        border-radius: 20px;
+        padding: 15px 20px;
+        gap: 18px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        height: 100%;
+        text-decoration: none; /* Ensure it works for anchors */
+        color: inherit;
+    }
+    
+    .info-field-glass:hover {
+        background: #ffffff;
+        border-color: #7c3aed; /* Pop of color on hover */
+        box-shadow: 0 10px 25px rgba(124, 58, 237, 0.08); /* Colored shadow */
+        transform: translateY(-3px);
+    }
+    
+    .info-field-glass .icon-wrapper {
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+        background: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--premium-purple);
+        font-size: 1.35rem;
+        box-shadow: 0 4px 12px rgba(124, 58, 237, 0.1);
+        flex-shrink: 0;
+        transition: all 0.3s ease;
+    }
+    
+    .info-field-glass:hover .icon-wrapper {
+        /* background: var(--premium-purple); Removed as per user request */
+        /* color: white; Removed as per user request */
+        transform: scale(1.1);
+    }
+    
+    .info-field-glass .text-content {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        overflow: hidden;
+    }
+    
+    .info-field-glass .label {
+        font-size: 0.7rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        color: #94a3b8;
+        letter-spacing: 0.5px;
+        margin-bottom: 4px;
+    }
+    
+    .info-field-glass .value {
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: #1e293b;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .info-field-glass .value.empty {
+        color: #cbd5e1;
+        font-weight: 500;
+        font-style: italic;
+    }
+
     /* Standard Card Neo */
     .card-neo {
       border: none;
@@ -956,38 +1051,54 @@ Requires: User must be logged in
                 <h4 class="fun-card-title">
                     <i class="bi bi-gear-fill text-primary"></i> Account Settings
                 </h4>
-                <button class="btn btn-edit-profile rounded-pill shadow-sm" data-bs-toggle="modal" data-bs-target="#profileModal">
+                <button class="btn btn-premium-primary rounded-pill py-2 px-4 shadow-sm" data-bs-toggle="modal" data-bs-target="#profileModal" style="font-size: 0.9rem;">
                   <i class="bi bi-pencil-square me-2"></i>Edit Profile
                 </button>
             </div>
             <div class="fun-card-body">
                 <div class="row g-4">
                     <div class="col-md-6">
-                        <label class="form-label text-muted fw-bold small">FULL NAME</label>
-                        <div class="input-group">
-                            <span class="input-group-text bg-light border-0"><i class="bi bi-person"></i></span>
-                            <input type="text" class="form-control bg-light border-0 fw-bold" value="{{ user_data.name }}" readonly>
+                        <div class="info-field-glass">
+                            <div class="icon-wrapper"><i class="bi bi-person-fill"></i></div>
+                            <div class="text-content">
+                                <span class="label">Full Name</span>
+                                <span class="value">{{ user_data.name }}</span>
+                            </div>
                         </div>
                     </div>
                     <div class="col-md-6">
-                         <label class="form-label text-muted fw-bold small">EMAIL ADDRESS</label>
-                        <div class="input-group">
-                            <span class="input-group-text bg-light border-0"><i class="bi bi-envelope"></i></span>
-                            <input type="text" class="form-control bg-light border-0 fw-bold" value="{{ user_data.email }}" readonly>
+                        <div class="info-field-glass">
+                            <div class="icon-wrapper"><i class="bi bi-envelope-fill"></i></div>
+                            <div class="text-content">
+                                <span class="label">Email Address</span>
+                                <span class="value">{{ user_data.email }}</span>
+                            </div>
                         </div>
                     </div>
                     <div class="col-md-6">
-                         <label class="form-label text-muted fw-bold small">PHONE NUMBER</label>
-                        <div class="input-group">
-                            <span class="input-group-text bg-light border-0"><i class="bi bi-telephone"></i></span>
-                            <input type="text" class="form-control bg-light border-0 fw-bold" value="{{ user_data.phone if user_data.phone else '' }}" placeholder="No phone set" readonly>
+                        <div class="info-field-glass">
+                             <div class="icon-wrapper"><i class="bi bi-telephone-fill"></i></div>
+                             <div class="text-content">
+                                 <span class="label">Phone Number</span>
+                                 {% if user_data.phone %}
+                                    <span class="value">{{ user_data.phone }}</span>
+                                 {% else %}
+                                    <span class="value empty">No phone number set</span>
+                                 {% endif %}
+                             </div>
                         </div>
                     </div>
                      <div class="col-md-6">
-                         <label class="form-label text-muted fw-bold small">DELIVERY ADDRESS</label>
-                        <div class="input-group">
-                            <span class="input-group-text bg-light border-0"><i class="bi bi-geo-alt"></i></span>
-                            <input type="text" class="form-control bg-light border-0" value="{{ user_data.address if user_data.address else '' }}" placeholder="No address set" readonly>
+                        <div class="info-field-glass">
+                             <div class="icon-wrapper"><i class="bi bi-geo-alt-fill"></i></div>
+                             <div class="text-content">
+                                 <span class="label">Delivery Address</span>
+                                 {% if user_data.address %}
+                                    <span class="value">{{ user_data.address }}</span>
+                                 {% else %}
+                                    <span class="value empty">No address set</span>
+                                 {% endif %}
+                             </div>
                         </div>
                     </div>
                 </div>
@@ -1004,22 +1115,50 @@ Requires: User must be logged in
             </div>
             <div class="fun-card-body">
                 {% if user_data.favorites %}
-                    <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-3">
+                    <div class="row row-cols-1 row-cols-md-2 g-4">
                         {% for fav in user_data.favorites %}
                             <div class="col">
-                                <div class="favorite-mini-card">
-                                    <div class="fav-img-container">
-                                        <img src="{{ fav.image or url_for('static', filename='placeholder.svg') }}" alt="{{ fav.name }}">
-                                    </div>
-                                    <div class="fav-mini-details">
-                                        <h6 class="text-truncate mb-1">{{ fav.name }}</h6>
-                                        <div class="d-flex justify-content-between align-items-center">
-                                            <span class="fw-bold text-primary">€{{ fav.price or '0.00' }}</span>
-                                            <button class="btn btn-sm btn-outline-danger border-0 p-1" onclick="toggleFavorite(event, '{{ fav.id }}', this)">
-                                                <i class="bi bi-heart-fill"></i>
-                                            </button>
+                                <div class="position-relative h-100 group">
+                                    {% set view_url = url_for('main.product_info', product_id=fav.id, store_name=fav.store, store_price=fav.best_price or fav.price) %}
+                                    
+                                    <!-- Delete Button (Top Right) -->
+                                    <button class="btn btn-light shadow-sm position-absolute top-0 end-0 m-3 z-3 border-0 delete-fav-btn" 
+                                            onclick="removeProfileFavorite(event, '{{ fav.id }}', this)"
+                                            title="Remove from favorites">
+                                        <i class="bi bi-trash-fill"></i>
+                                    </button>
+                                    
+                                    <a href="{{ view_url }}" class="info-field-glass p-3 h-100 align-items-center text-decoration-none">
+                                        <div class="icon-wrapper" style="width: 80px; height: 80px; padding: 10px;">
+                                            <img src="{{ fav.image or url_for('static', filename='placeholder.svg') }}" 
+                                                 alt="{{ fav.name }}" 
+                                                 style="width: 100%; height: 100%; object-fit: contain;">
                                         </div>
-                                    </div>
+                                        <div class="text-content flex-grow-1 ps-2 overflow-hidden pe-4">
+                                            <div class="d-flex justify-content-between align-items-start mb-1">
+                                                 <h6 class="fw-bold text-dark text-truncate mb-0" style="font-size: 1.1rem; max-width: 90%;" title="{{ fav.name }}">{{ fav.name }}</h6>
+                                            </div>
+                                            
+                                            <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+                                                {% if fav.category %}
+                                                    <span class="badge bg-light text-muted border" style="font-size: 0.6rem;">{{ fav.category }}</span>
+                                                {% endif %}
+                                                {% if fav.store %}
+                                                    <span class="badge bg-white text-primary border shadow-sm d-flex align-items-center gap-1 rounded-pill px-2">
+                                                        <i class="bi bi-shop"></i> {{ fav.store }}
+                                                    </span>
+                                                {% endif %}
+                                            </div>
+
+                                            <div class="mt-1">
+                                                {% if fav.best_price %}
+                                                    <span class="fw-bold text-primary fs-5">€{{ fav.best_price }}</span>
+                                                {% elif fav.price %}
+                                                     <span class="fw-bold text-primary fs-5">€{{ fav.price }}</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </a>
                                 </div>
                             </div>
                         {% endfor %}
@@ -1390,6 +1529,72 @@ Requires: User must be logged in
       } catch (err) {
         console.error('Failed to update categories:', err);
       }
+    }
+
+    // Delete Favorite Function
+    async function removeProfileFavorite(event, productId, btn) {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+
+        try {
+           const response = await fetch('/api/toggle-favorite', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ product_id: productId })
+            });
+
+            const data = await response.json();
+
+            // If action was 'removed' or successful
+            if (response.ok && (data.action === 'removed' || data.success)) {
+                
+                // Animate removal
+                const col = btn.closest('.col');
+                if (col) {
+                    col.style.transition = 'all 0.3s ease';
+                    col.style.opacity = '0';
+                    col.style.transform = 'scale(0.9)';
+                    
+                    setTimeout(() => {
+                        col.remove();
+                        // Update the Favorites count badge
+                        const badge = document.querySelector('.fun-card .bg-danger.rounded-pill');
+                        if (badge) {
+                            const currentText = badge.textContent.trim();
+                            const match = currentText.match(/(\d+)/);
+                            if (match) {
+                                const count = Math.max(0, parseInt(match[1]) - 1);
+                                badge.textContent = count + ' Items';
+                                
+                                // Clean up if empty
+                                if (count === 0) {
+                                    // Optional: reload or show 'No favorites' message if desired
+                                    // location.reload(); 
+                                }
+                            }
+                        }
+                    }, 300);
+                }
+                
+                if (typeof showNotification === 'function') {
+                    showNotification('Removed from favorites', 'info');
+                }
+            } else {
+                 if (typeof showNotification === 'function') {
+                    showNotification(data.error || 'Could not remove favorite', 'danger');
+                }
+            }
+
+        } catch (e) {
+            console.error(e);
+            if (typeof showNotification === 'function') {
+                showNotification('Connection error', 'danger');
+            }
+        }
     }
 
     // Robustness: Re-apply the value when the profile modal is shown or form submitted

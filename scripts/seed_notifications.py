@@ -4,6 +4,7 @@ from datetime import datetime
 from pymongo import MongoClient
 from bson import ObjectId
 from dotenv import load_dotenv
+import certifi
 
 # Add project root to path
 sys.path.append(os.getcwd())
@@ -11,8 +12,11 @@ sys.path.append(os.getcwd())
 load_dotenv()
 
 def migrate_and_seed_notifications():
+    if not os.environ.get('SSL_CERT_FILE'):
+        os.environ['SSL_CERT_FILE'] = certifi.where()
+
     mongo_uri = os.getenv('MONGO_URI')
-    client = MongoClient(mongo_uri)
+    client = MongoClient(mongo_uri, tlsCAFile=certifi.where())
     db = client.get_database()
     
     # 1. Migrate existing notification types to match template IDs

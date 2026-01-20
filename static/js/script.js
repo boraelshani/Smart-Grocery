@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupCompareFilters();
   setupPaginationSmoothTransition();
   setupLogoutConfirmation();
+  setupStoreSelection();
 
   // Always hide product modal on page load (prevents unwanted popup on back)
   const productModalEl = document.getElementById('productModal');
@@ -160,83 +161,88 @@ function setupCompareHandlers() {
 
 // Client-side filters, search and sorting for the Compare page
 // Store selection mechanic for compare page
-document.addEventListener('click', function (e) {
-  // If clicking the redirection button, don't trigger selection
-  if (e.target.closest('.btn-go-store')) {
-    e.stopPropagation();
-    return;
-  }
+function setupStoreSelection() {
+  document.addEventListener('click', function (e) {
+    // If clicking the redirection button, don't trigger selection
+    if (e.target.closest('.btn-go-store')) {
+      e.stopPropagation();
+      return;
+    }
 
-  const storeItem = e.target.closest('.store-item');
-  if (storeItem) {
-    const productCard = storeItem.closest('.product-card') || storeItem.closest('.card');
-    if (productCard) {
-      const isAlreadySelected = storeItem.classList.contains('selected');
+    const storeItem = e.target.closest('.store-item');
+    if (storeItem) {
+      const productCard = storeItem.closest('.product-card') || storeItem.closest('.card');
+      if (productCard) {
+        const isAlreadySelected = storeItem.classList.contains('selected');
 
-      // GLOBAL RESET: Deselect ANY store-item on the entire page first
-      document.querySelectorAll('.store-item.selected').forEach(selectedItem => {
-        if (selectedItem === storeItem) return; // Skip current if we're just toggling
+        // GLOBAL RESET: Deselect ANY store-item on the entire page first
+        try {
+          document.querySelectorAll('.store-item.selected').forEach(selectedItem => {
+            if (selectedItem === storeItem) return; // Skip current if we're just toggling
 
-        const otherCard = selectedItem.closest('.product-card') || selectedItem.closest('.card');
-        selectedItem.classList.remove('selected');
+            const otherCard = selectedItem.closest('.product-card') || selectedItem.closest('.card');
+            selectedItem.classList.remove('selected');
 
-        if (otherCard) {
-          const otherAddBtn = otherCard.querySelector('.btn-premium-add');
-          const otherPriceBadge = otherCard.querySelector('.price-badge');
+            if (otherCard) {
+              const otherAddBtn = otherCard.querySelector('.btn-premium-add');
+              const otherPriceBadge = otherCard.querySelector('.price-badge');
 
-          if (otherAddBtn) {
-            otherAddBtn.dataset.price = otherAddBtn.getAttribute('data-initial-price') || '';
-            otherAddBtn.dataset.store = '';
+              if (otherAddBtn) {
+                otherAddBtn.dataset.price = otherAddBtn.getAttribute('data-initial-price') || '';
+                otherAddBtn.dataset.store = '';
+              }
+              if (otherPriceBadge) {
+                const initialPrice = otherAddBtn ? otherAddBtn.getAttribute('data-initial-price') : '';
+                if (initialPrice) {
+                  const inner = otherPriceBadge.querySelector('i') ? '<i class="bi bi-tag-fill"></i> ' : '';
+                  otherPriceBadge.innerHTML = inner + '€' + initialPrice;
+                }
+              }
+            }
+          });
+        } catch (err) { console.error('Error in global store reset', err); }
+
+        // Local Card Reset (standard toggle behavior)
+        const allLocalStoreItems = productCard.querySelectorAll('.store-item');
+        allLocalStoreItems.forEach(item => item.classList.remove('selected'));
+
+        const addBtn = productCard.querySelector('.btn-premium-add');
+        const priceBadge = productCard.querySelector('.price-badge');
+
+        if (isAlreadySelected) {
+          // Deselect current
+          if (addBtn) {
+            addBtn.dataset.price = addBtn.getAttribute('data-initial-price') || '';
+            addBtn.dataset.store = '';
           }
-          if (otherPriceBadge) {
-            const initialPrice = otherAddBtn ? otherAddBtn.getAttribute('data-initial-price') : '';
+          if (priceBadge) {
+            const initialPrice = addBtn ? addBtn.getAttribute('data-initial-price') : '';
             if (initialPrice) {
-              const inner = otherPriceBadge.querySelector('i') ? '<i class="bi bi-tag-fill"></i> ' : '';
-              otherPriceBadge.innerHTML = inner + '€' + initialPrice;
+              const inner = priceBadge.querySelector('i') ? '<i class="bi bi-tag-fill"></i> ' : '';
+              priceBadge.innerHTML = inner + '€' + initialPrice;
             }
           }
-        }
-      });
-
-      // Local Card Reset (standard toggle behavior)
-      const allLocalStoreItems = productCard.querySelectorAll('.store-item');
-      allLocalStoreItems.forEach(item => item.classList.remove('selected'));
-
-      const addBtn = productCard.querySelector('.btn-premium-add');
-      const priceBadge = productCard.querySelector('.price-badge');
-
-      if (isAlreadySelected) {
-        // Deselect current
-        if (addBtn) {
-          addBtn.dataset.price = addBtn.getAttribute('data-initial-price') || '';
-          addBtn.dataset.store = '';
-        }
-        if (priceBadge) {
-          const initialPrice = addBtn ? addBtn.getAttribute('data-initial-price') : '';
-          if (initialPrice) {
+        } else {
+          // Select new
+          storeItem.classList.add('selected');
+          if (addBtn) {
+            addBtn.dataset.price = storeItem.dataset.storePrice;
+            addBtn.dataset.store = storeItem.dataset.storeName;
+          }
+          if (priceBadge) {
             const inner = priceBadge.querySelector('i') ? '<i class="bi bi-tag-fill"></i> ' : '';
-            priceBadge.innerHTML = inner + '€' + initialPrice;
+            priceBadge.innerHTML = inner + '€' + storeItem.dataset.storePrice;
+            priceBadge.style.transform = 'scale(1.1)';
+            setTimeout(() => { priceBadge.style.transform = 'scale(1)'; }, 200);
           }
         }
-      } else {
-        // Select new
-        storeItem.classList.add('selected');
-        if (addBtn) {
-          addBtn.dataset.price = storeItem.dataset.storePrice;
-          addBtn.dataset.store = storeItem.dataset.storeName;
-        }
-        if (priceBadge) {
-          const inner = priceBadge.querySelector('i') ? '<i class="bi bi-tag-fill"></i> ' : '';
-          priceBadge.innerHTML = inner + '€' + storeItem.dataset.storePrice;
-          priceBadge.style.transform = 'scale(1.1)';
-          setTimeout(() => { priceBadge.style.transform = 'scale(1)'; }, 200);
-        }
       }
+      e.preventDefault();
+      e.stopPropagation();
     }
-    e.preventDefault();
-    e.stopPropagation();
-  }
-});
+  });
+}
+
 function setupCompareFilters() {
   const productsRow = document.getElementById('products-grid') || document.querySelector('section.container .row.g-4');
   if (!productsRow) return;
@@ -938,6 +944,12 @@ window.showListSelector = async function (item) {
     // Show modal
     const modalEl = document.getElementById('globalListSelectorModal');
     if (modalEl) {
+      // Check if bootstrap is available
+      if (typeof bootstrap === 'undefined' || !bootstrap.Modal) {
+        console.warn('Bootstrap Modal not available, falling back to direct add');
+        return apiPostJson('/api/list/add-item', { item });
+      }
+      
       let modal = bootstrap.Modal.getInstance(modalEl);
       if (!modal) {
         modal = new bootstrap.Modal(modalEl);
@@ -946,7 +958,18 @@ window.showListSelector = async function (item) {
     }
   } catch (err) {
     console.error('Error showing list selector:', err);
-    showNotification('Error loading shopping lists', 'danger');
+    // Fallback: add to active list directly
+    try {
+      if (pendingItemToAdd) {
+        const fallbackRes = await apiPostJson('/api/list/add-item', { item: pendingItemToAdd });
+        if (fallbackRes && (fallbackRes.success === true || fallbackRes.success)) {
+           showNotification('Added to shopping list', 'success');
+           refreshShoppingListUI();
+        } else {
+           showNotification('Error adding to shopping list', 'danger');
+        }
+      }
+    } catch(e) {}
   }
 };
 
@@ -1007,6 +1030,118 @@ async function addItemToShoppingList(item) {
     return { success: false, error: 'request_failed' };
   }
 }
+
+// Toggle Favorite
+window.toggleFavorite = async function(event, arg1, arg2) {
+  if (event) {
+    event.stopPropagation();
+    event.preventDefault();
+  }
+
+  let btn, productId;
+  // Handle different call signatures
+  // 1. toggleFavorite(event, this) -> arg1 is element
+  // 2. toggleFavorite(event, '123', this) -> arg1 is id, arg2 is element
+  if (arg1 instanceof HTMLElement) {
+    btn = arg1;
+    productId = btn.getAttribute('data-product-id') || btn.getAttribute('data-id');
+  } else {
+    productId = arg1;
+    btn = arg2;
+  }
+
+  if (!productId || !btn) {
+    console.error('Missing product ID or button element', { productId, btn });
+    showNotification('Error: Cannot toggle favorite', 'danger');
+    return;
+  }
+
+  // Optimistic UI update
+  const heartIcon = btn.querySelector('i');
+  const wasActive = btn.classList.contains('active');
+  
+  if (wasActive) {
+    btn.classList.remove('active');
+    if (heartIcon) {
+      heartIcon.classList.remove('bi-heart-fill');
+      heartIcon.classList.add('bi-heart');
+    }
+  } else {
+    btn.classList.add('active');
+    if (heartIcon) {
+      heartIcon.classList.remove('bi-heart');
+      heartIcon.classList.add('bi-heart-fill');
+    }
+    
+    // Add animation effect
+    btn.style.transform = 'scale(1.2)';
+    setTimeout(() => {
+      btn.style.transform = 'scale(1)';
+    }, 200);
+  }
+
+  try {
+    const response = await fetch('/api/toggle-favorite', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ product_id: productId })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to toggle favorite');
+    }
+
+    // Server confirmed, update UI if needed (e.g. show notification)
+    if (data.action === 'added') {
+      showNotification('Added to favorites', 'success');
+    } else {
+      showNotification('Removed from favorites', 'info');
+    }
+    
+    // Sync other buttons for same product
+    document.querySelectorAll(`.btn-favorite[data-product-id="${productId}"], .btn-favorite[data-id="${productId}"]`).forEach(otherBtn => {
+      if (otherBtn === btn) return;
+      if (data.is_favorite) {
+        otherBtn.classList.add('active');
+        const icon = otherBtn.querySelector('i');
+        if (icon) {
+          icon.classList.remove('bi-heart');
+          icon.classList.add('bi-heart-fill');
+        }
+      } else {
+        otherBtn.classList.remove('active');
+        const icon = otherBtn.querySelector('i');
+        if (icon) {
+          icon.classList.remove('bi-heart-fill');
+          icon.classList.add('bi-heart');
+        }
+      }
+    });
+
+  } catch (err) {
+    console.error('Error toggling favorite:', err);
+    showNotification('Error updating favorites. Are you logged in?', 'danger');
+    
+    // Revert UI on error
+    if (wasActive) {
+      btn.classList.add('active');
+      if (heartIcon) {
+        heartIcon.classList.remove('bi-heart');
+        heartIcon.classList.add('bi-heart-fill');
+      }
+    } else {
+      btn.classList.remove('active');
+      if (heartIcon) {
+        heartIcon.classList.remove('bi-heart-fill');
+        heartIcon.classList.add('bi-heart');
+      }
+    }
+  }
+};
 
 // Escape HTML to safely insert into innerHTML
 function escapeHtml(unsafe) {
@@ -1266,12 +1401,13 @@ function setupProductModalHandlers() {
     // Add to List button in search results or elsewhere (including Compare Page)
     if (target.classList && (target.classList.contains('add-to-list-btn') || target.closest('.add-to-list-btn') ||
       target.classList.contains('btn-premium-add') || target.closest('.btn-premium-add') ||
+      target.classList.contains('btn-premium-action') || target.closest('.btn-premium-action') ||
       target.classList.contains('btn-premium-hero-add') || target.closest('.btn-premium-hero-add'))) {
       e.stopPropagation(); // Stop redirection
       e.preventDefault();
 
       const btn = target.classList.contains('add-to-list-btn') ? target :
-        (target.closest('.add-to-list-btn') || target.closest('.btn-premium-add') || target);
+        (target.closest('.add-to-list-btn') || target.closest('.btn-premium-add') || target.closest('.btn-premium-action') || target);
       const name = btn.getAttribute('data-name') || btn.getAttribute('data-title') || 'Item';
       const offerJson = btn.getAttribute('data-offer-json') || '';
       const offerType = btn.getAttribute('data-offer-type') || '';
@@ -1700,113 +1836,7 @@ class CartCounter {
 }
 const cart = new CartCounter();
 
-// Toggle favorite product
-async function toggleFavorite(event, productId, buttonElement) {
-  if (event) {
-    if (event.preventDefault) event.preventDefault();
-    if (event.stopPropagation) event.stopPropagation();
-  }
-
-  let finalId = productId;
-  let targetBtn = buttonElement;
-
-  if (productId instanceof HTMLElement) {
-    targetBtn = productId;
-    finalId = targetBtn.getAttribute('data-product-id') || targetBtn.getAttribute('data-id');
-  } else if (!buttonElement && typeof productId === 'string') {
-    // If only one param is passed and it's a string, it's the ID.
-    // We try to find the button if possible, but the old behavior was (event, id, btn)
-  }
-  
-  if (!finalId) return;
-  
-  try {
-    const response = await fetch('/api/toggle-favorite', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ product_id: finalId })
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-
-      if (targetBtn) {
-        const btn = typeof targetBtn === 'string' ? document.querySelector(targetBtn) : targetBtn;
-        if (btn) {
-          // Set active state based on server response
-          if (data.is_favorite || data.action === 'added' || data.status === 'added') {
-            btn.classList.add('active');
-          } else {
-            btn.classList.remove('active');
-          }
-
-          // Update icon
-          const icon = btn.querySelector('i');
-          if (icon) {
-            if (btn.classList.contains('active')) {
-              icon.classList.remove('bi-heart');
-              icon.classList.add('bi-heart-fill');
-            } else {
-              icon.classList.remove('bi-heart-fill');
-              icon.classList.add('bi-heart');
-            }
-          }
-
-          // If on profile page and removing favorite, animate removal
-          if (data && (data.action === 'removed' || data.status === 'removed')) {
-            const card = btn.closest('.favorite-card');
-            if (card) {
-              card.style.transition = 'all 0.25s ease';
-              card.style.opacity = '0';
-              card.style.transform = 'translateX(-10px)';
-              setTimeout(() => {
-                card.remove();
-              }, 250);
-            }
-          }
-        }
-      }
-    } else {
-      showNotification('Please login to favorite products', 'warning');
-    }
-  } catch (error) {
-    console.error('Error toggling favorite:', error);
-  }
-}
-
-                // Check if there are any favorite cards left
-                const favoritesList = document.getElementById('favorites-list');
-                const remainingCards = document.querySelectorAll('.favorite-card').length;
-
-                if (remainingCards === 0 && favoritesList) {
-                  // Show empty state message
-                  favoritesList.innerHTML = `
-                    <div class="text-center empty-favorites">
-                      <i class="bi bi-heart display-6 text-muted"></i>
-                      <h6 class="mt-2 mb-1 text-muted">No favorites yet</h6>
-                      <p class="text-muted mb-2">Start adding products to see them here.</p>
-                      <a href="/compare-prices" class="btn btn-primary btn-sm"><i class="bi bi-search"></i> Browse Products</a>
-                    </div>
-                  `;
-                }
-              }, 250);
-            }
-          }
-        }
-      }
-
-      showNotification(
-        data && data.action === 'added' ? 'Added to favorites!' : 'Removed from favorites',
-        'success'
-      );
-    } else {
-      showNotification('Failed to update favorite', 'danger');
-    }
-  } catch (error) {
-    console.error('Error toggling favorite:', error);
-    showNotification('Error updating favorite', 'danger');
-  }
-}
+// Legacy toggleFavorite removed (duplicate)
 
 // Alias for home page compatibility
 const favoriteProduct = (event, productId) => {
@@ -1818,8 +1848,8 @@ const favoriteProduct = (event, productId) => {
   if (typeof quickFavorite !== 'undefined') {
     quickFavorite(event, productId, btn);
   } else if (btn) {
-    toggleFavorite(event, productId, btn);
+    if (window.toggleFavorite) window.toggleFavorite(event, productId, btn);
   }
 };
 
-window.smartGrocery = { showNotification, formatPrice, cart, toggleFavorite };
+window.smartGrocery = { showNotification, formatPrice, cart, toggleFavorite: window.toggleFavorite };

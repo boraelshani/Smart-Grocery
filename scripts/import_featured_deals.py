@@ -6,12 +6,16 @@ import sys
 import os
 from pymongo import MongoClient
 from dotenv import load_dotenv
+import certifi
 
 # Load environment variables
 load_dotenv()
 
 def import_featured_deals():
     """Import featured deals from JSON file to MongoDB"""
+    
+    if not os.environ.get('SSL_CERT_FILE'):
+        os.environ['SSL_CERT_FILE'] = certifi.where()
     
     # Read the JSON file
     json_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'featured_deals.json')
@@ -28,7 +32,7 @@ def import_featured_deals():
             print("Error: MONGO_URI not found in environment variables")
             return
         
-        client = MongoClient(mongo_uri)
+        client = MongoClient(mongo_uri, tlsCAFile=certifi.where())
         db = client.get_database()  # Use default database from URI
         
         # Clear existing featured deals
@@ -46,24 +50,63 @@ def import_featured_deals():
             print(f"Inserted {len(result.inserted_ids)} featured deals into MongoDB")
             print("Featured deals successfully imported!")
 
-            # Add a broadcast notification
-            print("Sending broadcast notification...")
+            # Add broadcast notifications for the new deals
+            print("Sending broadcast notifications for new deals...")
             try:
                 # Add project root to sys.path to import models
                 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+                # Ensure Env is loaded for Models
+                if not os.environ.get('MONGO_URI'):
+                   from dotenv import load_dotenv
+                   load_dotenv()
+                   
                 from models.notifications_model import NotificationsModel
                 nm = NotificationsModel()
-                # We can't use the singleton because we are in a script, 
-                # but the class constructor should handle it.
-                nm.broadcast_notification({
-                    'type': 'deal_alert',
-                    'title': "Deals Updated!",
-                    'message': f"We've just added {len(deals)} new featured deals! Check them out in the Deals section.",
-                    'priority': 'high'
-                })
-                print("Broadcast notification sent.")
+                
+                # Notify users about the top 3-5 most exciting deals (e.g. highest discount)
+                # Ensure we have the full deal objects with IDs
+                # We need to re-fetch the inserted deals to get their generated _ids if they weren't provided
+                
+                inserted_deals = list(db.featured_deals.find().sort('created_at', -1).limit(5))
+                count = 0
+                
+                for deal in inserted_deals:
+                     # Calculate discount label if missing
+                    discount_label = deal.get('discount_label')
+                    if not discount_label and deal.get('offer'):
+                         discount_label = deal.get('offer')
+                    if not discount_label and deal.get('original_price') and deal.get('price'):
+                         try:
+                             pct = int((1 - (deal['price'] / deal['original_price'])) * 100)
+                             discount_label = f"{pct}% OFF"
+                         except:
+                             discount_label = "Great Deal"
+
+                    # Create rich notification data
+                    notification_data = {
+                        'type': 'deal_alert',
+                        'title': f"New Deal: {deal.get('title')}",
+                        'message': f"Don't miss out! {deal.get('description', 'Check out this amazing offer.')}",
+                        'priority': 'high',
+                        'deal_id': str(deal['_id']), # CRITICAL for Rich Card
+                        # Pass these to be redundant/safe but deal_id lookup will handle most
+                        'product_name': deal.get('title'),
+                        'store_name': deal.get('store'),
+                        'offer_name': discount_label,
+                        'product_image': deal.get('image'),
+                        'price': deal.get('price'),
+                        'old_price': deal.get('original_price')
+                    }
+                    
+                    nm.broadcast_notification(notification_data)
+                    count += 1
+                    print(f"Sent notification for deal: {deal.get('title')}")
+
+                print(f"Broadcasted {count} specific deal alerts.")
             except Exception as e:
                 print(f"Could not send broadcast: {e}")
+                import traceback
+                traceback.print_exc()
         else:
             print("No deals to import")
             

@@ -23,72 +23,167 @@ Used: When clicking on a product in a specific store's listing
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
     body {
-      background: linear-gradient(-45deg, #7c3aed, #6366f1, #8b5cf6, #d946ef);
-      background-size: 400% 400%;
-      animation: gradientBG 15s ease infinite;
-      background-attachment: fixed;
-      min-height: 100vh;
-      color: white;
-    }
-
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background: radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.05), transparent 40%),
-                  radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.05), transparent 40%);
-      pointer-events: none;
-      z-index: -1;
+      background: #ffffff;
     }
 
     .product-hero {
-      background: transparent;
+      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #8b5cf6 100%);
       color: white;
-      padding: 6.5rem 0 3.5rem;
+      padding: 8.5rem 0 4rem; /* Increased top padding for absolute navbar */
       position: relative;
+      overflow: hidden;
+      border-bottom-left-radius: 50px;
+      border-bottom-right-radius: 50px;
     }
 
-    @keyframes gradientBG {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
-    }
-
-    .bg-shape {
-      position: fixed;
-      background: rgba(255, 255, 255, 0.05);
-      backdrop-filter: blur(5px);
-      -webkit-backdrop-filter: blur(5px);
-      border-radius: 20%;
-      animation: float 10s infinite ease-in-out;
-      z-index: -1;
+    .product-hero::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: 
+        radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.1), transparent 40%),
+        radial-gradient(circle at 80% 70%, rgba(255, 255, 255, 0.1), transparent 40%);
       pointer-events: none;
     }
 
-    .shape-1 { top: 15%; left: 5%; width: 120px; height: 120px; }
-    .shape-2 { top: 45%; right: 8%; width: 180px; height: 180px; border-radius: 50%; animation-delay: -2s; }
-    .shape-3 { bottom: 15%; left: 10%; width: 100px; height: 100px; animation-delay: -5s; }
+    /* Improved Back Button */
+    .btn-glass-back {
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: white;
+      font-weight: 600;
+      padding: 0.6rem 1.2rem;
+      border-radius: 16px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    
+    .btn-glass-back:hover {
+      background: rgba(255, 255, 255, 0.25);
+      color: white;
+      transform: translateX(-4px);
+    }
 
-    @keyframes float {
-      0%, 100% { transform: translateY(0) rotate(0deg); }
-      50% { transform: translateY(-30px) rotate(10deg); }
+    /* Page-Specific Navbar Overrides for "Live" Look */
+    .navbar {
+      position: fixed !important;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+      background: transparent !important;
+      border-bottom: none !important;
+      box-shadow: none !important;
+      transition: all 0.3s ease;
+    }
+
+    .navbar.scrolled {
+      background: rgba(124, 58, 237, 0.95) !important; /* Premium Purple with opacity */
+      backdrop-filter: blur(10px);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1) !important;
+    }
+    
+    /* Force Brand Text White on Scroll */
+    .navbar.scrolled .navbar-brand,
+    .navbar.scrolled .navbar-brand span,
+    .navbar.scrolled .brand-grocery-text,
+    .navbar.scrolled .nav-link,
+    .navbar.scrolled .nav-link i {
+      color: #ffffff !important;
+    }
+
+    /* Fix hover disappearing text */
+    .navbar.scrolled .nav-link:hover,
+    .navbar.scrolled .nav-link:hover i {
+      color: #ffffff !important;
+      opacity: 0.8 !important;
+    }
+
+    .navbar-brand, .navbar-brand i, .nav-link, .nav-link i {
+      color: rgba(255, 255, 255, 0.95) !important;
+    }
+
+    .nav-link.active {
+      color: white !important;
+      font-weight: 700;
+    }
+
+    .nav-link:hover {
+      color: white !important;
+    }
+    
+    .navbar-toggler-icon {
+      filter: invert(1);
+    }
+    
+    .navbar .badge {
+      border-color: transparent !important;
+    }
+
+    /* Breadcrumb Styling AND Hover */
+    .breadcrumb {
+      margin-bottom: 0.75rem;
+    }
+
+    .breadcrumb a {
+      color: white;
+      text-decoration: none;
+    }
+    
+    .breadcrumb a:hover {
+      text-decoration: underline !important;
+    }
+
+    .breadcrumb-item+.breadcrumb-item::before {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .category-badge {
+      display: inline-block;
+      background: rgba(255, 255, 255, 0.15);
+      color: white;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-weight: 700;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+    }
+
+    .bg-white-glass {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .btn-glass-soft-outline {
+      border: 2px solid rgba(255, 255, 255, 0.5);
+      background: transparent;
+      color: white;
+      transition: all 0.3s ease;
+    }
+    .btn-glass-soft-outline:hover {
+      background: rgba(255, 255, 255, 0.2);
+      border-color: rgba(255, 255, 255, 0.8);
+      color: white;
     }
 
     .glass-card {
-      background: rgba(15, 23, 42, 0.7); /* Dark Slate Glass */
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 215, 0, 0.2);
-      border-radius: 20px;
-      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 18px;
+      box-shadow: 0 14px 36px rgba(0, 0, 0, 0.18);
+      backdrop-filter: blur(6px);
     }
 
-    .product-image-container {
-      background: rgba(255, 255, 255, 0.95);
-      border-radius: 20px;
-      padding: 1.5rem;
-      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.2);
+    .image-card {
+      background: #ffffff;
+      border-radius: 18px;
+      padding: 1.25rem;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12);
     }
 
     .product-image {
@@ -96,51 +191,23 @@ Used: When clicking on a product in a specific store's listing
       height: 420px;
       object-fit: contain;
       background: #ffffff;
-      border-radius: 12px;
       padding: 12px;
     }
 
     .meta-chips .badge {
       font-weight: 700;
-      background: rgba(255, 255, 255, 0.1) !important;
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      color: white !important;
     }
 
     .price {
-      font-size: 2.8rem;
+      font-size: 2.4rem;
       font-weight: 900;
-      color: #fbbf24; /* Amber Gold */
-      text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+      line-height: 1;
     }
-
-    .desc-card {
-      background: rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      border-radius: 20px;
-      padding: 1.5rem;
-      box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
-      color: white;
-    }
-
-    .pill-btn {
-      border: none;
-      border-radius: 999px;
-      padding: 0.85rem 1.4rem;
-      font-weight: 700;
-      box-shadow: 0 10px 24px rgba(124, 58, 237, 0.25);
-      background: linear-gradient(135deg, #a78bfa, #7c3aed);
-      color: #ffffff;
-      letter-spacing: 0.2px;
-      transition: all 0.2s ease;
-    }
-
-    .pill-btn:hover {
-      background: linear-gradient(135deg, #7c3aed, #5b21b6);
-      box-shadow: 0 12px 28px rgba(91, 33, 182, 0.32);
-      transform: translateY(-1px);
+    
+    .deal-badge-lg {
+        font-size: 1rem;
+        padding: 0.45rem 0.9rem;
+        border-radius: 999px;
     }
 
     .text-soft-white {
@@ -151,22 +218,28 @@ Used: When clicking on a product in a specific store's listing
       color: rgba(255, 255, 255, 0.7);
     }
 
-    .btn-favorite {
-      background: none;
-      border: none;
-      color: rgba(255, 255, 255, 0.7);
-      font-size: 1.8rem;
-      transition: all 0.2s ease;
-      padding: 0.25rem;
+    /* Floating Favorite Button on Image */
+    .favorite-btn-floating {
+        position: absolute;
+        top: 1.5rem;
+        right: 1.5rem;
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        border: none;
+        background: #fff;
+        color: #ff5e62; /* Red-ish color */
+        font-size: 1.5rem;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.2s;
+        z-index: 10;
     }
-
-    .btn-favorite:hover {
-      color: #ff6b6b;
-      transform: scale(1.15);
-    }
-
-    .btn-favorite.active {
-      color: #ff6b6b;
+    .favorite-btn-floating:hover {
+        transform: scale(1.1);
+        color: #ff3333;
     }
   </style>
 </head>
@@ -188,12 +261,12 @@ Used: When clicking on a product in a specific store's listing
         {% set cart_count = shopping_list_count or 0 %}
         <ul class="navbar-nav ms-auto align-items-center">
           <li class="nav-item">
-            <a class="nav-link {% if request.endpoint == 'main.home' or (request.endpoint == 'main.product_info' and not store_name) %}active{% endif %}" href="{{ url_for('main.home') }}">
+            <a class="nav-link {% if request.endpoint == 'main.home' %}active{% endif %}" href="{{ url_for('main.home') }}">
               <i class="bi bi-house-door me-1"></i> Home
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link {% if 'stores' in request.path or request.endpoint == 'main.stores_page' or (request.endpoint == 'main.product_info' and store_name) %}active{% endif %}" href="{{ url_for('main.stores_page') }}">
+            <a class="nav-link {% if 'stores' in request.path or request.endpoint == 'main.stores_page' %}active{% endif %}" href="{{ url_for('main.stores_page') }}">
               <i class="bi bi-shop me-1"></i> Stores
             </a>
           </li>
@@ -239,94 +312,110 @@ Used: When clicking on a product in a specific store's listing
 
   <!-- Product Header -->
   <section class="product-hero">
-    <div class="bg-shape shape-1"></div>
-    <div class="bg-shape shape-2"></div>
-    <div class="bg-shape shape-3"></div>
     <div class="container position-relative" style="z-index: 1;">
       <div class="d-flex justify-content-start mb-3">
-        <button onclick="history.back()" class="btn btn-glass btn-sm shadow-sm" style="background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: white; backdrop-filter: blur(5px);">
+        <button onclick="history.back()" class="btn-glass-back">
           <i class="bi bi-arrow-left"></i> Back
         </button>
       </div>
-      <div class="row align-items-center g-4">
-        <div class="col-lg-7">
-          <div class="d-flex justify-content-between align-items-start mb-2">
-            <div>
-              <h1 class="display-5 fw-bold text-white mb-2">{{ product.get('name') or product.get('title', 'Product') }}
-              </h1>
-              {% if product.get('category') %}
-              <span class="badge bg-white text-primary fw-semibold"><i class="bi bi-tag"></i> {{ product.get('category')
-                }}</span>
+
+      <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+          {% set trail = product.get('category_path') if product.get('category_path') else [] %}
+          {% if not trail and product.get('category') %}
+          {% set trail = ['Products', product.get('category')] %}
+          {% endif %}
+          <li class="breadcrumb-item"><a href="{{ url_for('main.home') }}" class="text-white">Home</a></li>
+          <li class="breadcrumb-item"><a href="{{ url_for('main.compare_prices') }}" class="text-white">Products</a></li>
+          {% if trail %}
+            {% for crumb in trail %}
+              {% if crumb != 'Products' %}
+                 <li class="breadcrumb-item"><a href="{{ url_for('main.compare_prices', category=crumb) }}" class="text-white">{{ crumb }}</a></li>
               {% endif %}
-            </div>
-            <button class="btn btn-favorite btn-lg {{ 'active' if is_favorited else '' }}"
-              onclick="toggleFavorite(event, '{{ product.get('_id') or product.get('id') }}', this)"><i
-                class="bi {{ 'bi-heart-fill' if is_favorited else 'bi-heart' }}"></i></button>
-          </div>
-          <div class="glass-card mt-3 p-4">
-            <div class="d-flex justify-content-between flex-wrap gap-3 align-items-start">
+            {% endfor %}
+          {% elif product.get('category') %}
+             <li class="breadcrumb-item"><a href="{{ url_for('main.compare_prices', category=product.get('category')) }}" class="text-white">{{ product.get('category') }}</a></li>
+          {% endif %}
+          <li class="breadcrumb-item active text-white" aria-current="page">{{ product.get('name') }}</li>
+        </ol>
+      </nav>
+
+      <div class="mb-4">
+        <h1 class="display-4 fw-bold text-white mb-2">{{ product.get('name') or product.get('title', 'Product') }}</h1>
+        {% if product.get('category') %}
+        <span class="category-badge mt-1">{{ product.get('category') }}</span>
+        {% endif %}
+      </div>
+
+      <div class="row g-4">
+        <!-- Deal Info Column -->
+        <div class="col-lg-6 order-2 order-lg-1">
+          <div class="glass-card p-4">
+        
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 border-bottom border-white-50 pb-3 mb-3">
               <div>
-                <div class="text-uppercase small fw-semibold text-white-75 mb-1"><i class="bi bi-currency-euro"></i>
-                  Price{% if store_name %} at {{ store_name }}{% endif %}</div>
-                <div class="price">€{{ store_price or product.get('price') or 'N/A' }}</div>
+                <div class="text-uppercase small fw-bold text-white-50 mb-1"><i class="bi bi-shop"></i> Price{% if store_name %} at {{ store_name }}{% endif %}</div>
+                <div class="price text-white">€{{ store_price or product.get('price') or 'N/A' }}</div>
               </div>
             </div>
-            <div class="d-flex flex-wrap gap-2 mt-3 meta-chips">
-              {% if product.get('unit') %}
-              <span class="badge bg-white text-primary fw-semibold"><i class="bi bi-box"></i> {{ product.get('unit')
-                }}</span>
-              {% endif %}
-              {% if product.get('category') %}
-              <span class="badge bg-white text-primary fw-semibold"><i class="bi bi-tag"></i> {{ product.get('category')
-                }}</span>
-              {% endif %}
+
+            <!-- Meta Chips -->
+            <div class="d-flex flex-wrap gap-2 mb-4">
+               {% if product.get('unit') %}
+                 <span class="badge bg-white-glass text-white border border-white-50"><i class="bi bi-box2 me-1"></i> {{ product.get('unit') }}</span>
+               {% endif %}
+               {% if product.get('category') %}
+                 <span class="badge bg-white-glass text-white border border-white-50"><i class="bi bi-tag me-1"></i> {{ product.get('category') }}</span>
+               {% endif %}
             </div>
-          </div>
-          <div class="mt-3 text-soft-white">
-            <div class="fw-semibold text-white mb-1"><i class="bi bi-file-text"></i> Description</div>
-            <div class="text-soft-white">
-              {% if product.get('description') %}
-              {{ product.get('description') }}
-              {% else %}
-              <span class="text-soft-white-muted">No description available.</span>
-              {% endif %}
+
+            <div class="mb-4">
+              <div class="fw-bold text-white mb-2"><i class="bi bi-file-text me-2"></i>Description</div>
+              <div class="text-white opacity-75">
+                {% if product.get('description') %}
+                {{ product.get('description') }}
+                {% else %}
+                No description available for this product.
+                {% endif %}
+              </div>
             </div>
-          </div>
-          <div class="mt-3 text-soft-white">
-            <div class="fw-semibold text-white mb-1"><i class="bi bi-box"></i> Unit / Size</div>
-            <div class="text-soft-white">
-              {% if product.get('unit') %}
-              {{ product.get('unit') }}
-              {% else %}
-              <span class="text-soft-white-muted">No unit information available.</span>
-              {% endif %}
+
+            <div class="mb-4">
+               <div class="fw-bold text-white mb-2"><i class="bi bi-box2 me-2"></i>Unit / Size</div>
+               <div class="text-white opacity-75">
+                  {{ product.get('unit') or 'Standard' }}
+               </div>
             </div>
-          </div>
-          <div class="mt-4 d-flex gap-2">
-            {% set btn_img = request.args.get('store_image') or product.get('store_image') or product.get('image') or ''
-            %}
-            <button type="button" class="btn btn-premium-action flex-fill"
-              data-name="{{ product.get('name') or product.get('title', 'Product') }}"
-              data-price="{{ store_price or product.get('price') or '' }}" data-image="{{ btn_img }}"
-              data-store="{{ store_name }}"
-              onclick="window.showListSelector(this);">
-              <i class="bi bi-cart-plus-fill me-2"></i>Add to List
-            </button>
-            {% set target_url = request.args.get('store_url') or product.get('url') or product.get('link') or product.get('product_url') %}
-            {% if target_url %}
-            <a href="{{ target_url }}" target="_blank" rel="noopener noreferrer"
-              class="btn btn-premium btn-premium-view flex-fill">
-              <i class="bi bi-box-arrow-up-right"></i> Go to Store
-            </a>
-            {% endif %}
+
+            <div class="d-flex flex-row gap-3">
+               {% set btn_img = request.args.get('store_image') or product.get('store_image') or product.get('image') or '' %}
+              <button type="button" class="btn btn-light fw-bold flex-fill py-3 shadow-lg" style="color: #7c3aed;"
+                data-name="{{ product.get('name') or product.get('title', 'Product') }}"
+                data-price="{{ store_price or product.get('price') or '' }}" data-image="{{ btn_img }}"
+                data-store="{{ store_name }}"
+                onclick="window.showListSelector(this);">
+                <i class="bi bi-cart-plus-fill me-2"></i> Add to List
+              </button>
+              
+              {% set target_url = request.args.get('store_url') or product.get('url') or product.get('link') or product.get('product_url') or product.get('store_url') or '#' %}
+              <a href="{{ target_url }}" {% if target_url != '#' %}target="_blank" rel="noopener noreferrer"{% endif %}
+                class="btn btn-glass-soft-outline fw-bold flex-fill py-3 {% if target_url == '#' %}disabled{% endif %}">
+                <i class="bi bi-box-arrow-up-right me-2"></i> Go to Store
+              </a>
+            </div>
           </div>
         </div>
-        <div class="col-lg-5">
-          <div class="product-image-container">
-            {% set img_url = request.args.get('store_image') or product.get('store_image') or product.get('image') or
-            'https://via.placeholder.com/420?text=No+Image' %}
-            <img src="{{ img_url }}" alt="{{ product.get('name') or product.get('title', 'Product') }}"
-              class="product-image" onerror="this.src='https://via.placeholder.com/420?text=No+Image'">
+
+        <!-- Image Column -->
+        <div class="col-lg-6 order-1 order-lg-2">
+          <div class="image-card position-relative bg-white p-5 rounded-4 shadow-lg h-100 d-flex align-items-center justify-content-center">
+            <button class="favorite-btn-floating" 
+                    onclick="toggleFavorite(event, '{{ product.get('_id') or product.get('id') }}', this)">
+              <i class="bi {{ 'bi-heart-fill' if is_favorited else 'bi-heart' }}"></i>
+            </button>
+            {% set img_url = request.args.get('store_image') or product.get('store_image') or product.get('image') or 'https://via.placeholder.com/420?text=No+Image' %}
+            <img src="{{ img_url }}"
+              alt="{{ product.get('name') or product.get('title', 'Product') }}" class="img-fluid" style="max-height: 400px; object-fit: contain;" onerror="this.src='https://via.placeholder.com/420?text=No+Image'">
           </div>
         </div>
       </div>
@@ -337,12 +426,26 @@ Used: When clicking on a product in a specific store's listing
   <section class="py-4"></section>
 
   <!-- Footer -->
-  <footer class="text-center py-4">
-    <p class="mb-0 text-white-50">&copy; 2025 Smart Grocery Team</p>
+  <footer class="text-center py-4 bg-light border-top mt-5">
+    <p class="mb-0 text-muted">&copy; 2025 Smart Grocery Team</p>
   </footer>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const navbar = document.querySelector('.navbar');
+      if(navbar) {
+        window.addEventListener('scroll', () => {
+          if (window.scrollY > 50) {
+            navbar.classList.add('scrolled');
+          } else {
+            navbar.classList.remove('scrolled');
+          }
+        });
+      }
+    });
+  </script>
 
   <!-- Global List Selector Modal -->
   <div class="modal fade" id="globalListSelectorModal" tabindex="-1" aria-labelledby="globalListSelectorModalLabel"

@@ -4,14 +4,11 @@ SIGNUP PAGE (User Registration)
 ═══════════════════════════════════════════════════════════════════════════
 Purpose: New user account creation form
 Features:
-- Name input field
-- Email input field
-- Password input field
-- Form validation: Email format, password strength, duplicate email check
-- Error messages for validation failures
-- Link to login page for existing users
+- Premium Glassmorphism UI
+- Name/Email/Password inputs
+- Validation feedback
+- Authentication flow consistent with Entry/Login
 Route: POST /signup
-Creates: New user account with hashed password stored in MongoDB
 ═══════════════════════════════════════════════════════════════════════════
 -->
 <!DOCTYPE html>
@@ -22,114 +19,213 @@ Creates: New user account with hashed password stored in MongoDB
 <title>Smart Grocery | Sign Up</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<style>
+    body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #8b5cf6 100%);
+      position: relative;
+      overflow-x: hidden;
+    }
 
+    /* Background Pattern - Consistent with Entry */
+    .bg-pattern {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background-image: radial-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+      background-size: 30px 30px;
+      opacity: 0.3;
+      z-index: 0;
+    }
+
+    /* Floating Shapes */
+    .shape {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(5px);
+      border-radius: 50%;
+      z-index: 0;
+      animation: float 20s infinite ease-in-out;
+    }
+    .shape-1 { width: 300px; height: 300px; top: -100px; right: -50px; }
+    .shape-2 { width: 200px; height: 200px; bottom: 50px; left: -50px; animation-delay: -5s; }
+    
+    @keyframes float {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-20px) rotate(10deg); }
+    }
+
+    /* Auth Card */
+    .auth-card {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 24px;
+      padding: 3rem;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+      position: relative;
+      z-index: 10;
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      width: 100%;
+      max-width: 450px;
+    }
+
+    .brand-header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .brand-icon {
+      width: 60px;
+      height: 60px;
+      background: linear-gradient(135deg, #7c3aed, #4f46e5);
+      border-radius: 16px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 1.8rem;
+      box-shadow: 0 10px 20px rgba(124, 58, 237, 0.3);
+      margin-bottom: 1rem;
+      transform: rotate(-5deg);
+    }
+
+    /* Form Inputs */
+    .form-floating > .form-control {
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      padding-left: 1rem;
+    }
+
+    .form-floating > .form-control:focus {
+      border-color: #7c3aed;
+      box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.1);
+    }
+    
+    .form-floating > label {
+      padding-left: 1rem;
+      color: #64748b;
+    }
+
+    .btn-submit {
+      background: #7c3aed;
+      border: none;
+      border-radius: 12px;
+      padding: 1rem;
+      font-weight: 600;
+      font-size: 1.1rem;
+      color: white;
+      transition: all 0.2s;
+    }
+    
+    .btn-submit:hover {
+      background: #6d28d9; 
+      transform: translateY(-2px);
+      box-shadow: 0 8px 16px rgba(124, 58, 237, 0.3);
+      color: white;
+    }
+
+    .auth-links {
+      text-align: center;
+      margin-top: 1.5rem;
+    }
+
+    .auth-links a {
+      color: #7c3aed;
+      text-decoration: none;
+      font-weight: 600;
+      transition: color 0.2s;
+    }
+    
+    .auth-links a:hover {
+      color: #5b21b6;
+      text-decoration: underline;
+    }
+
+    .back-link {
+        position: absolute;
+        top: 2rem;
+        left: 2rem;
+        color: rgba(255,255,255,0.8);
+        text-decoration: none;
+        font-weight: 500;
+        z-index: 20;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+    }
+    .back-link:hover {
+        color: white;
+        transform: translateX(-3px);
+    }
+</style>
 </head>
-<body>
+<body class="d-flex align-items-center justify-content-center">
 
-<!-- Navbar -->
-<nav class="navbar navbar-expand-lg navbar-premium">
-  <div class="container">
-    <a class="navbar-brand d-flex align-items-center" href="{{ url_for('main.home') }}">
-      <div class="brand-icon me-3">
-        <i class="bi bi-cart-check-fill fs-5"></i>
+  <div class="bg-pattern"></div>
+  <div class="shape shape-1"></div>
+  <div class="shape shape-2"></div>
+
+  <a href="{{ url_for('main.home') }}" class="back-link">
+    <i class="bi bi-arrow-left"></i> Back
+  </a>
+
+  <div class="container d-flex justify-content-center px-3">
+    <div class="auth-card">
+      <div class="brand-header">
+        <div class="brand-icon">
+          <i class="bi bi-person-plus-fill"></i>
+        </div>
+        <h2 class="fw-bold text-dark">Create Account</h2>
+        <p class="text-muted">Start saving on groceries today</p>
       </div>
-      <span>Smart<span class="brand-grocery-text">Grocery</span></span>
-    </a>
-    <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="navbarNav">
-      {% set cart_count = shopping_list_count or 0 %}
-      <ul class="navbar-nav ms-auto align-items-center">
-        <li class="nav-item">
-          <a class="nav-link" href="{{ url_for('main.home') }}">
-            <i class="bi bi-house-door me-1"></i> Home
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="{{ url_for('main.stores_page') }}">
-            <i class="bi bi-shop me-1"></i> Stores
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="{{ url_for('main.featured_deals_page') }}">
-            <i class="bi bi-tags me-1"></i> Deals
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="{{ url_for('main.compare_prices') }}">
-            <i class="bi bi-arrow-left-right me-1"></i> Compare
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link d-flex align-items-center position-relative" href="{{ url_for('main.shopping_list') }}">
-            <i class="bi bi-list-check me-1"></i> Lists
-            {% if (shopping_list_count or 0) > 0 %}
-            <span class="position-absolute badge rounded-pill bg-danger" style="font-size: 0.65rem; padding: 0.45em 0.7em; top: -5px; right: -10px; border: 2px solid white; box-shadow: 0 4px 10px rgba(220, 53, 69, 0.4); min-width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;">
-              {{ shopping_list_count }}
-            </span>
-            {% endif %}
-          </a>
-        </li>
-        <li class="nav-item ms-lg-1">
-          <a class="nav-link nav-icon-btn d-flex align-items-center" href="{{ url_for('main.notifications_page') }}" aria-label="Notifications">
-            <div class="position-relative">
-              <i class="bi bi-bell fs-5"></i>
-              {% if (unread_notifications_count or 0) > 0 %}
-              <span class="position-absolute badge rounded-pill bg-danger" style="font-size: 0.65rem; padding: 0.45em 0.7em; top: -5px; right: -10px; border: 2px solid white; box-shadow: 0 4px 10px rgba(220, 53, 69, 0.4); min-width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;">
-                {{ unread_notifications_count }}
-              </span>
+
+      <!-- Flash Messages -->
+	  {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }} border-0 shadow-sm rounded-3 mb-4 d-flex align-items-center">
+              {% if category == 'success' %}
+                <i class="bi bi-check-circle-fill me-2 fs-5"></i>
+              {% else %}
+                <i class="bi bi-exclamation-circle-fill me-2 fs-5"></i>
               {% endif %}
+              {{ message }}
             </div>
-          </a>
-        </li>
-        <li class="nav-item ms-lg-2">
-          <a class="nav-link nav-icon-btn nav-profile-btn" href="{{ url_for('main.profile') }}" aria-label="User Profile">
-            <i class="bi bi-person-circle fs-5"></i>
-          </a>
-        </li>
-      </ul>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <form method="POST" action="{{ url_for('auth.signup') }}">
+		<div class="form-floating mb-3">
+		  <input type="text" class="form-control" id="name" name="name" placeholder="John Doe" required>
+		  <label for="name">Full Name</label>
+        </div>
+
+        <div class="form-floating mb-3">
+          <input type="email" class="form-control" id="email" name="email" placeholder="name@example.com" required>
+          <label for="email">Email address</label>
+        </div>
+        
+        <div class="form-floating mb-4">
+          <input type="password" class="form-control" id="password" name="password" placeholder="Password" required>
+          <label for="password">Password</label>
+        </div>
+
+        <button type="submit" class="btn btn-submit w-100 mb-3">
+          Sign Up
+        </button>
+
+        <div class="auth-links">
+          <p class="mb-0 text-muted">Already have an account? 
+            <a href="{{ url_for('auth.login') }}">Log in</a>
+          </p>
+        </div>
+      </form>
     </div>
   </div>
-</nav>
 
-<!-- Sign Up Form -->
-<section class="container py-5">
-<div class="row justify-content-center">
-<div class="col-md-5">
-<div class="card shadow-sm">
-<div class="card-body">
-<h2 class="card-title mb-4 text-center">Sign Up</h2>
-<form method="post" action="{{ url_for('auth.signup') }}">
-<div class="mb-3">
-<label for="name" class="form-label">Full Name</label>
-<input type="text" class="form-control" id="name" name="name" placeholder="Enter full name" required>
-</div>
-<div class="mb-3">
-<label for="email" class="form-label">Email address</label>
-<input type="email" class="form-control" id="email" name="email" placeholder="Enter email" required>
-</div>
-<div class="mb-3">
-<label for="password" class="form-label">Password</label>
-<input type="password" class="form-control" id="password" name="password" placeholder="Password" required>
-</div>
-<button type="submit" class="btn btn-primary w-100">Sign Up</button>
-</form>
-<p class="text-center mt-3">
-Already have an account? <a href="{{ url_for('auth.login') }}">Login</a>
-</p>
-</div>
-</div>
-</div>
-</div>
-</section>
-
-<footer class="text-center py-4 bg-light border-top">
-<p class="mb-0 text-muted">&copy; 2025 Smart Grocery Team</p>
-</footer>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

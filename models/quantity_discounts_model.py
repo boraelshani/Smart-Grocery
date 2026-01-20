@@ -65,6 +65,16 @@ class QuantityDiscountsModel:
                 d['id'] = str(d['_id'])
         return docs
 
+    def get_discount_by_id(self, discount_id: str) -> Optional[dict]:
+        """Get specific discount by ID"""
+        try:
+            doc = self.db.quantity_discounts.find_one({'_id': ObjectId(discount_id)})
+            if doc and '_id' in doc:
+                doc['id'] = str(doc['_id'])
+            return doc
+        except Exception:
+            return None
+
     def get_discount_by_product(self, product_id: str) -> Optional[dict]:
         """Get quantity discount config for a product"""
         try:
@@ -239,6 +249,9 @@ quantity_discounts_model = QuantityDiscountsModel()
 # Convenience functions
 def list_active_discounts() -> List[dict]:
     return quantity_discounts_model.list_active_discounts()
+
+def get_discount_by_id(discount_id: str) -> Optional[dict]:
+    return quantity_discounts_model.get_discount_by_id(discount_id)
 
 def get_discount_by_product(product_id: str) -> Optional[dict]:
     return quantity_discounts_model.get_discount_by_product(product_id)

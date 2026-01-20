@@ -395,6 +395,37 @@
 			transform: translateY(-2px);
 			box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 		}
+		
+		/* Vital Fix: Ensure Modals are always on top */
+		.modal-backdrop {
+			z-index: 1050 !important;
+		}
+		.modal {
+			z-index: 1060 !important;
+		}
+
+		/* Safe Premium Button Style (Does not trigger JS Add-To-List) */
+		.btn-premium-style {
+			background: #7c3aed !important;
+			color: white !important;
+			border: none !important;
+			border-radius: 12px !important;
+			padding: 10px 18px !important;
+			font-weight: 700 !important;
+			font-size: 0.95rem !important;
+			transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+			display: flex !important;
+			align-items: center !important;
+			justify-content: center !important;
+			gap: 8px !important;
+			box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3) !important;
+		}
+
+		.btn-premium-style:hover {
+			background: #6d28d9 !important;
+			transform: translateY(-2px) scale(1.02) !important;
+			box-shadow: 0 10px 20px rgba(124, 58, 237, 0.4) !important;
+		}
 	</style>
 </head>
 
@@ -476,7 +507,7 @@
           <h1 class="display-5 fw-800 mb-1" style="font-weight: 800;">My Shopping Lists</h1>
           <p class="lead opacity-90 mb-0">Organize your trips and optimize your budget.</p>
         </div>
-        <button class="btn btn-premium-action shadow-lg" 
+        <button class="btn btn-premium-style shadow-lg" 
             style="background: white !important; color: #7c3aed !important; border: none !important; font-size: 1.1rem; padding: 12px 28px !important;"
             data-bs-toggle="modal" data-bs-target="#createListModal">
           <i class="bi bi-plus-circle-fill me-2"></i>Create New List
@@ -588,11 +619,11 @@
 						</div>
 					</div>
 					<div class="d-flex gap-2 align-items-center">
-						<a href="{{ url_for('main.compare_prices') }}" class="btn btn-premium-purple btn-premium-action">
+						<a href="{{ url_for('main.compare_prices') }}" class="btn btn-premium-purple btn-premium-style">
 							<i class="bi bi-plus-lg me-2"></i>Add Items
 						</a>
 						<div class="dropdown">
-							<button class="btn btn-outline-secondary btn-premium-action" data-bs-toggle="dropdown">
+							<button class="btn btn-outline-secondary btn-premium-style" data-bs-toggle="dropdown">
 								<i class="bi bi-three-dots"></i>
 							</button>
 							<ul class="dropdown-menu dropdown-menu-end rounded-4 shadow-lg border-0 p-2">
@@ -640,17 +671,37 @@
 					{% set unit = (it.price_val if it.price_val is defined else (raw_price|float if raw_price is defined
 					else 0.0)) %}
 					{% set qty = (it.qty if it.qty is defined else 1) %}
+					
+					{# Robust offer extraction - look everywhere #}
 					{% set offer_obj = it.offer if it.offer is mapping else None %}
-					{% set offer_x = offer_obj.x if offer_obj is not none else (it.multibuy_buy if it.multibuy_buy is
-					defined else '') %}
-					{% set offer_y = offer_obj.y if offer_obj is not none else (it.multibuy_free if it.multibuy_free is
-					defined else '') %}
+					
+					{% set offer_x = '' %}
+					{% if offer_obj is not none and offer_obj.x is defined %}
+						{% set offer_x = offer_obj.x %}
+					{% elif it.offer_x is defined %}
+						{% set offer_x = it.offer_x %}
+					{% elif it.multibuy_buy is defined %}
+						{% set offer_x = it.multibuy_buy %}
+					{% elif it.buy_quantity is defined %}
+						{% set offer_x = it.buy_quantity %}
+					{% endif %}
+
+					{% set offer_y = '' %}
+					{% if offer_obj is not none and offer_obj.y is defined %}
+						{% set offer_y = offer_obj.y %}
+					{% elif it.offer_y is defined %}
+						{% set offer_y = it.offer_y %}
+					{% elif it.multibuy_free is defined %}
+						{% set offer_y = it.multibuy_free %}
+					{% elif it.free_quantity is defined %}
+						{% set offer_y = it.free_quantity %}
+					{% endif %}
 
 					<div class="item-row d-flex align-items-center gap-3 {{ 'completed' if purchased }}" draggable="true"
 						data-item-id="{{ item_id }}" data-name="{{ name }}" data-price="{{ raw_price }}"
 						data-qty="{{ qty }}" data-store="{{ store }}" data-image="{{ img }}"
 						data-offer-json='{{ offer_obj|tojson|forceescape if offer_obj is not none else "" }}'
-						data-offer-type="{{ offer_obj.type if offer_obj is not none else ('buyXgetY' if offer_x and offer_y else '') }}"
+						data-offer-type="{{ (offer_obj.type if offer_obj is not none and offer_obj.type) or ('buyXgetY' if offer_x and offer_y else '') }}"
 						data-offer-x="{{ offer_x }}" data-offer-y="{{ offer_y }}">
 						
 						<!-- Premium Checkbox Wrapper -->
@@ -728,7 +779,7 @@
 					</div>
 					<h4 class="fw-700 text-premium-dark">Your list is empty</h4>
 					<p class="mb-4">Start your smart shopping journey by adding products here.</p>
-					<a href="{{ url_for('main.compare_prices') }}" class="btn btn-premium-purple btn-premium-action px-5">
+					<a href="{{ url_for('main.compare_prices') }}" class="btn btn-premium-purple btn-premium-style px-5">
 						<i class="bi bi-search me-2"></i>Explore Products
 					</a>
 				</div>
@@ -956,8 +1007,34 @@
 	<script src="{{ url_for('static', filename='js/script.js') }}?v={{ range(1, 99999) | random }}"></script>
 
 	<script>
+		// Helper to safely reload page by cleaning up modals first
+		function safeReload() {
+			// Hide all open modals
+			document.querySelectorAll('.modal.show').forEach(el => {
+				const modal = bootstrap.Modal.getInstance(el);
+				if (modal) modal.hide();
+			});
+			
+			// Force remove backdrops and body locks
+			document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+			document.body.classList.remove('modal-open');
+			document.body.style.overflow = '';
+			document.body.style.paddingRight = '';
+
+			// Reload with brief delay to ensure UI updates
+			setTimeout(() => {
+				window.location.reload();
+			}, 50);
+		}
+
 		// Initialize totals on page load
 		document.addEventListener('DOMContentLoaded', () => {
+			// CRITICAL FIX: Move all modals to body to strictly prevent z-index/stacking context issues
+			// This fixes the "frozen" state where backdrops cover the modal
+			document.querySelectorAll('.modal').forEach(modal => {
+				document.body.appendChild(modal);
+			});
+
 			// Update all item row prices to account for multi-buy discounts
 			document.querySelectorAll('.item-row').forEach(row => {
 				const priceEl = row.querySelector('.item-price');
@@ -973,14 +1050,34 @@
 		// Compute totals
 		// Helper: effective unit price for buy X get Y offers
 		function parseOffer(row) {
-			const offerJson = row.getAttribute('data-offer-json');
-			if (offerJson) {
-				try { const obj = JSON.parse(offerJson); if (obj && obj.type) return obj; } catch (e) { }
-			}
+			// First, prioritise explicit data attributes which we know are populated correctly by Jinja
 			const type = row.getAttribute('data-offer-type') || '';
 			const ox = parseInt(row.getAttribute('data-offer-x') || '0', 10) || 0;
 			const oy = parseInt(row.getAttribute('data-offer-y') || '0', 10) || 0;
-			if (type === 'buyXgetY' && ox && oy) return { type: 'buyXgetY', x: ox, y: oy };
+			
+			// If we have explicit X and Y, assume 2+1 style deal even if type is missing/weird
+			if (ox > 0 && oy > 0) {
+				return { type: 'buyXgetY', x: ox, y: oy };
+			}
+			
+			// Fallback to JSON
+			const offerJson = row.getAttribute('data-offer-json');
+			if (offerJson) {
+				try { 
+					const obj = JSON.parse(offerJson); 
+					if (obj) {
+						// Normalize keys if possible
+						const jx = parseInt(obj.x || obj.buy_quantity || 0, 10);
+						const jy = parseInt(obj.y || obj.free_quantity || 0, 10);
+						if (jx > 0 && jy > 0) {
+							return { type: 'buyXgetY', x: jx, y: jy };
+						}
+						if (obj.type) return obj;
+					}
+				} catch (e) { }
+			}
+
+			// Fallback to regex on string description
 			const offerStr = row.getAttribute('data-offer') || '';
 			const m = offerStr.match(/(\d+)\s*\+\s*(\d+)/);
 			if (m) return { type: 'buyXgetY', x: parseInt(m[1], 10) || 0, y: parseInt(m[2], 10) || 0 };
@@ -1271,9 +1368,11 @@
 						</div>
 						<h4 class="fw-700 text-premium-dark">Your list is empty</h4>
 						<p class="mb-4">Start your smart shopping journey by adding products here.</p>
-						<a href="/compare-prices" class="btn btn-premium-purple btn-premium-action px-5">
-							<i class="bi bi-search me-2"></i>Explore Products
-						</a>
+						<div class="d-flex justify-content-center">
+							<a href="/compare-prices" class="btn btn-premium-purple btn-premium-style px-5" style="max-width: 300px;">
+								<i class="bi bi-search me-2"></i>Explore Products
+							</a>
+						</div>
 					</div>
 				`;
 				// Reset summary counts but allow computeTotals to handle it
@@ -1431,22 +1530,23 @@
 				})
 				.then(data => {
 					if (data.success) {
-						// Success!
-						window.location.reload();
+						safeReload();
 					} else {
 						throw new Error(data.error || 'Failed to create list');
 					}
 				})
 				.catch(err => {
 					console.error('Error creating list:', err);
-					if (btn) {
-						btn.disabled = false;
-						btn.innerHTML = originalText;
-					}
 					if (typeof showNotification === 'function') {
 						showNotification(err.message || 'A server error occurred', 'danger');
 					} else {
 						alert(err.message || 'A server error occurred');
+					}
+				})
+				.finally(() => {
+					if (btn) {
+						btn.disabled = false;
+						btn.innerHTML = originalText;
 					}
 				});
 		}
@@ -1456,7 +1556,11 @@
 			const renameIdEl = document.getElementById('rename-list-id');
 			const renameNameEl = document.getElementById('rename-list-name');
 			if (renameIdEl) renameIdEl.value = listId;
-			if (renameNameEl) renameNameEl.value = currentName;
+			if (renameNameEl) {
+				renameNameEl.value = currentName;
+				// Store original name for comparison
+				renameNameEl.dataset.originalName = currentName;
+			}
 			
 			const modalEl = document.getElementById('renameListModal');
 			if (modalEl) {
@@ -1467,7 +1571,19 @@
 
 		function confirmRename() {
 			const listId = document.getElementById('rename-list-id').value;
-			const newName = document.getElementById('rename-list-name').value.trim();
+			const nameInput = document.getElementById('rename-list-name');
+			const newName = nameInput.value.trim();
+			const originalName = nameInput.dataset.originalName;
+
+			// If no change, simply close the modal without reloading
+			if (newName === originalName) {
+				const modalEl = document.getElementById('renameListModal');
+				if (modalEl) {
+					const modal = bootstrap.Modal.getInstance(modalEl);
+					if (modal) modal.hide();
+				}
+				return;
+			}
 
 			if (!newName) {
 				if (typeof showNotification === 'function') {
@@ -1494,19 +1610,21 @@
 				.then(r => r.json())
 				.then(data => {
 					if (data.success) {
-						window.location.reload();
+						safeReload();
 					} else {
 						throw new Error(data.error || 'Failed to rename list');
 					}
 				})
 				.catch(err => {
 					console.error('Error renaming list:', err);
+					if (typeof showNotification === 'function') {
+						showNotification(err.message || 'Error updating list', 'danger');
+					}
+				})
+				.finally(() => {
 					if (btn) {
 						btn.disabled = false;
 						btn.innerHTML = originalText;
-					}
-					if (typeof showNotification === 'function') {
-						showNotification(err.message || 'Error updating list', 'danger');
 					}
 				});
 		}
@@ -1553,19 +1671,21 @@
 				.then(r => r.json())
 				.then(data => {
 					if (data.success) {
-						window.location.reload();
+						safeReload();
 					} else {
 						throw new Error(data.error || 'Failed to delete list');
 					}
 				})
 				.catch(err => {
 					console.error('Error deleting list:', err);
+					if (typeof showNotification === 'function') {
+						showNotification(err.message || 'Error deleting list', 'danger');
+					}
+				})
+				.finally(() => {
 					if (btn) {
 						btn.disabled = false;
 						btn.innerHTML = originalText;
-					}
-					if (typeof showNotification === 'function') {
-						showNotification(err.message || 'Error deleting list', 'danger');
 					}
 				});
 		}
@@ -1731,11 +1851,12 @@
 
 		// Confirm clear all items
 		function confirmClearAll() {
-			// Hide modal
-			const modalEl = document.getElementById('clearAllModal');
-			if (modalEl) {
-				const modal = bootstrap.Modal.getInstance(modalEl);
-				if (modal) modal.hide();
+			// Find button to show loading
+			const btn = document.querySelector('#clearAllModal .btn-danger');
+			const originalText = btn ? btn.innerHTML : 'Clear Items';
+			if (btn) {
+				btn.disabled = true;
+				btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Clearing...';
 			}
 
 			fetch('/api/list/clear-all', {
@@ -1746,7 +1867,7 @@
 				.then(data => {
 					if (data.success) {
 						showNotification('All items cleared from list', 'success');
-						setTimeout(() => window.location.reload(), 500);
+						safeReload();
 					} else {
 						showNotification('Failed to clear all items', 'danger');
 					}
@@ -1754,6 +1875,12 @@
 				.catch(err => {
 					console.error('Error clearing list:', err);
 					showNotification('Error clearing list', 'danger');
+				})
+				.finally(() => {
+					if (btn) {
+						btn.disabled = false;
+						btn.innerHTML = originalText;
+					}
 				});
 		}
 
@@ -1999,8 +2126,7 @@
 				.then(res => {
 					if (res && res.success) {
 						showNotification(`${pendingItemToAdd.name} added to list`, 'success');
-						bootstrap.Modal.getInstance(document.getElementById('listSelectorModal')).hide();
-						window.location.reload();
+						safeReload();
 					} else {
 						showNotification(res?.error || 'Could not add item', 'danger');
 					}

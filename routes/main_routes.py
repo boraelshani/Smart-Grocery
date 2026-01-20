@@ -91,83 +91,9 @@ def sanitize_mongo_doc(doc):
 def _attach_offers_to_products(products):
     """
     Helper to attach multibuy and quantity discount metadata to a list of products.
+    Delegates completely to the multibuy_offers_model.
     """
-    if not products:
-        return products
-        
-    try:
-        from bson import ObjectId
-        # Get all active multibuy offers using Model
-        mb_offers = multibuy_offers_model.list_active_offers()
-        # Get all active quantity discounts using Model
-        q_discounts = quantity_discounts_model.list_active_discounts()
-        
-        # Map by product_id for fast lookup
-        mb_map = {}
-        for o in mb_offers:
-            pid = str(o.get('product_id'))
-            if pid: mb_map[pid] = o
-            
-        qd_map = {}
-        for q in q_discounts:
-            pid = str(q.get('product_id'))
-            if pid: qd_map[pid] = q
-            
-        for p in products:
-            pid = str(p.get('id') or p.get('_id'))
-            
-            # Extract basic offer info if available directly (featured deals)
-            ox_raw = p.get('buy_quantity') or p.get('multibuy_buy') or ''
-            oy_raw = p.get('free_quantity') or p.get('multibuy_free') or ''
-            
-            # If already has offer info object, extract details
-            if p.get('offer'):
-                offer_obj = p.get('offer') if isinstance(p.get('offer'), dict) else None
-                if offer_obj:
-                    p['offer_type'] = offer_obj.get('type') or p.get('offer_type', '')
-                    p['offer_x'] = offer_obj.get('x') or ox_raw
-                    p['offer_y'] = offer_obj.get('y') or oy_raw
-            
-            # Refine offer_x/y if missing but raw fields exist
-            if not p.get('offer_x'): p['offer_x'] = ox_raw
-            if not p.get('offer_y'): p['offer_y'] = oy_raw
-            if not p.get('offer_type') and p.get('offer_x') and p.get('offer_y'):
-                p['offer_type'] = 'buyXgetY'
-
-            # Look in mb_offers collection if no offer_x yet
-            if not p.get('offer_x') and pid in mb_map:
-                offer = mb_map[pid]
-                if 'offer' not in p: p['offer'] = offer
-                p['offer_type'] = offer.get('type') or 'buyXgetY'
-                ox = offer.get('x') or offer.get('buy_quantity') or offer.get('multibuy_buy') or 0
-                oy = offer.get('y') or offer.get('free_quantity') or offer.get('multibuy_free') or 0
-                p['offer_x'] = ox
-                p['offer_y'] = oy
-                
-                # IMPORTANT: Capture the base original price for the multibuy calculation
-                if offer.get('original_price'):
-                    p['original_price'] = offer.get('original_price')
-                elif offer.get('price'): # fallback if original_price missing
-                    p['original_price'] = offer.get('price')
-            
-            # Set discount label if we have x/y
-            if p.get('offer_x') and p.get('offer_y') and not p.get('discount_label'):
-                p['discount_label'] = f"{p['offer_x']}+{p['offer_y']} FREE"
-
-            # Look in qd_map (if not already found in mb)
-            if not p.get('offer_type') and pid in qd_map:
-                qd = qd_map[pid]
-                p['offer'] = qd
-                p['offer_type'] = 'quantity_discount'
-                if not p.get('discount_label'):
-                    p['discount_label'] = "VOLUME DEAL"
-                if qd.get('original_price'):
-                    p['original_price'] = qd.get('original_price')
-                
-    except Exception as e:
-        print(f"Error attaching offers to products: {e}")
-        
-    return products
+    return multibuy_offers_model.attach_offers_to_products(products)
 
 
 def _mark_list_metadata(items, fav_ids=None):
@@ -546,6 +472,15 @@ def home():
             print(f"Error marking metadata in home route: {e}")
             print(f"Error marking favorites on home page: {e}")
 
+    # Sanitize all data for template rendering to prevent ObjectId errors
+    stores = sanitize_mongo_doc(stores)
+    products = sanitize_mongo_doc(products)
+    featured_deals = sanitize_mongo_doc(featured_deals)
+    popular_products = sanitize_mongo_doc(popular_products)
+    recommended_products = sanitize_mongo_doc(recommended_products)
+    store_products = sanitize_mongo_doc(store_products)
+    favorites = sanitize_mongo_doc(favorites)
+
     return render_template('home.html', 
                          stores=stores, 
                          products=products, 
@@ -579,6 +514,9 @@ def stores_page():
         print(f"Error fetching stores with counts: {e}")
     # Get standard category options for chips/filters
     category_options = [{"name": cat} for cat in STANDARD_CATEGORIES]
+    
+    # Sanitize stores data
+    stores = sanitize_mongo_doc(stores)
 
     return render_template('stores.html', stores=stores, using_fallback=using_fallback, category_options=category_options)
 
@@ -689,6 +627,10 @@ def store_products_page(store_name):
     
     # Get standard category options for filters
     category_options = [{"name": cat} for cat in STANDARD_CATEGORIES]
+    
+    # Sanitize data for template
+    products = sanitize_mongo_doc(products)
+    store_info = sanitize_mongo_doc(store_info)
     
     return render_template('store_products.html', 
                          store_name=store_name, 
@@ -1082,6 +1024,34 @@ def featured_deal_detail(deal_id):
             deal = multibuy_offers_model.get_offer_by_id(deal_id)
             
         if deal:
+            # If deal is linked to a product but missing URL, try to fetch it from the product
+            if (not deal.get('url') and not deal.get('link') and not deal.get('product_url') and not deal.get('store_url')):
+                 product_id = deal.get('product_id')
+                 if product_id:
+                     try:
+                         prod = products_model.get_product_by_id(str(product_id))
+                         if prod:
+                             # Try to find URL for the specific store
+                             deal_store = deal.get('store') or deal.get('source')
+                             found_url = None
+                             
+                             if deal_store and prod.get('stores'):
+                                 for s in prod.get('stores', []):
+                                     s_name = s.get('store') or s.get('name')
+                                     if s_name and deal_store.lower() in s_name.lower():
+                                         found_url = s.get('url') or s.get('link') or s.get('product_url')
+                                         break
+                             
+                             # If not found for specific store, use any available URL
+                             if not found_url and prod.get('stores'):
+                                 first_store = prod.get('stores')[0]
+                                 found_url = first_store.get('url') or first_store.get('link') or first_store.get('product_url')
+                             
+                             if found_url:
+                                 deal['url'] = found_url
+                     except Exception as e:
+                         print(f"Error fetching product url for deal: {e}")
+
             # Attach any active multibuy/quantity offers using Model-based helper
             _attach_offers_to_products([deal])
             
@@ -1090,8 +1060,8 @@ def featured_deal_detail(deal_id):
             user_email = session.get('user')
             if user_email:
                 try:
-                    is_favorited = favorites_model.is_favorited(user_email, str(deal.get('id')))
-                    deal['is_favorited'] = is_favorited
+                    product_id = str(deal.get('_id') or deal.get('id'))
+                    is_favorited = favorites_model.is_favorited(user_email, product_id)
                 except Exception as e:
                     print(f"Error checking favorites for featured_deal_detail: {e}")
     except Exception as e:
@@ -1103,11 +1073,21 @@ def featured_deal_detail(deal_id):
             if str(d.get('id')) == str(deal_id) or str(d.get('_id', '')) == str(deal_id):
                 deal = d
                 break
+        
+        # Check favorite status for fallback data
+        if deal:
+            user_email = session.get('user')
+            if user_email:
+                try:
+                    product_id = str(deal.get('_id') or deal.get('id'))
+                    is_favorited = favorites_model.is_favorited(user_email, product_id) 
+                except:
+                    pass
 
     if deal is None:
         return render_template('404.html'), 404
 
-    return render_template('featured_deal_detail.html', deal=deal)
+    return render_template('featured_deal_detail.html', deal=deal, is_favorited=is_favorited)
 
 
 @main_bp.route('/product-info/<product_id>')
@@ -1126,6 +1106,40 @@ def product_info(product_id):
         # If not found, try featured_deals collection using Model
         if not product:
             product = featured_deals_model.get_deal_by_id(product_id)
+
+        # If still not found, try multibuy_offers collection using Model
+        if not product:
+            product = multibuy_offers_model.get_offer_by_id(product_id)
+
+        # If still not found, try quantity_discounts collection using Model
+        if not product:
+            try:
+                product = quantity_discounts_model.get_discount_by_id(product_id)
+            except Exception:
+                pass
+        
+        # If found in specialized collections (multibuy/discount) but missing details, 
+        # try to fetch parent product to fill in gaps (name, image, etc.)
+        if product and (not product.get('name') or not product.get('image')):
+            parent_id = product.get('product_id') or product.get('product_parent_id')
+            if parent_id:
+                try:
+                    # Handle ObjectId if necessary
+                    if not isinstance(parent_id, str):
+                        parent_id = str(parent_id)
+                        
+                    parent_product = products_model.get_product_by_id(parent_id)
+                    if parent_product:
+                        # Merge parent data into the discount object
+                        # We keep the discount object's id so the favorite context matches
+                        for k, v in parent_product.items():
+                            if k == 'id' or k == '_id':
+                                continue # Don't overwrite the discount's ID
+                            if k not in product or not product[k]:
+                                 product[k] = v
+                except Exception as e:
+                    print(f"Error fetching parent product {parent_id} for {product_id}: {e}")
+
     except Exception as e:
         print(f'Error fetching product using Models for product-info: {e}')
     
@@ -1255,8 +1269,15 @@ def shopping_list():
         for lst in all_lists:
             if 'items' in lst:
                 lst['list_items'] = lst.pop('items')
-            total = 0.0
+            
+            # Enrich items with fresh offer data
             items = lst.get('list_items') or []
+            # Make sure items are dicts before processing
+            valid_items = [i for i in items if isinstance(i, dict)]
+            if valid_items:
+                 _attach_offers_to_products(valid_items)
+
+            total = 0.0
             completed_count = 0
             for item in items:
                 if isinstance(item, dict):
@@ -1279,16 +1300,27 @@ def shopping_list():
 
                     # Apply effective price calculation for multibuy
                     offer = item.get('offer')
+                    effective_price = price * int(qty) # Default to normal price
+
                     if offer and isinstance(offer, dict) and offer.get('type') == 'buyXgetY':
                         try:
                             ox = int(offer.get('x') or 0)
                             oy = int(offer.get('y') or 0)
+                            quantity = int(qty)
+                            
                             if ox and oy:
-                                price = (ox * price) / (ox + oy)
+                                cycle = ox + oy
+                                full_cycles = quantity // cycle
+                                remainder = quantity % cycle
+                                
+                                # Pay for 'ox' items in each full cycle
+                                # Pay for remainder items (capped at 'ox')
+                                payable_qty = (full_cycles * ox) + min(remainder, ox)
+                                effective_price = payable_qty * price
                         except Exception:
                             pass
-
-                    total += price * int(qty)
+                    
+                    total += effective_price
             lst['estimated_total'] = f'€{total:.2f}'
             lst['completed'] = [item for item in items if isinstance(item, dict) and (item.get('purchased') or item.get('completed'))]
         
@@ -1301,6 +1333,11 @@ def shopping_list():
                 active_list = next((lst for lst in all_lists if lst.get('id') == active_list_id), all_lists[0])
             else:
                 active_list = all_lists[0]
+
+        # Sanitize lists for template to avoid ObjectId issues
+        all_lists = sanitize_mongo_doc(all_lists)
+        if active_list:
+            active_list = sanitize_mongo_doc(active_list)
 
         # Build items list with price/store information for the template
         shopping_entries = active_list.get('list_items', active_list.get('items', [])) if active_list else []

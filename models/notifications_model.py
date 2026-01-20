@@ -135,9 +135,16 @@ class NotificationsModel:
         try:
             user = self.db.users.find_one({'email': user_email}, {'created_at': 1})
             if user and user.get('created_at'):
-                query['created_at'] = {'$gte': user['created_at']}
+                # Ensure we also respect the 7 day limit even if cleanup hasn't run
+                seven_days_ago = datetime.utcnow() - timedelta(days=7)
+                limit_date = max(user['created_at'], seven_days_ago) # Use whichever is more recent
+                query['created_at'] = {'$gte': limit_date}
+            else:
+                 # If no user creation date, just use 7 days ago
+                 query['created_at'] = {'$gte': datetime.utcnow() - timedelta(days=7)}
         except Exception as e:
             print(f"Error fetching user join date for notification filtering: {e}")
+            query['created_at'] = {'$gte': datetime.utcnow() - timedelta(days=7)}
         
         notifications = list(self.db.notifications.find(query)
                            .sort('created_at', -1)
@@ -146,23 +153,76 @@ class NotificationsModel:
         for n in notifications:
             if '_id' in n:
                 n['id'] = str(n['_id'])
-            if n.get('product_id'):
+            
+            # --- Enhanced Product/Deal Lookup ---
+            
+            # 1. Try Deal Lookup First
+            deal = None
+            if n.get('deal_id'):
                 try:
-                    product = self.db.products.find_one({'_id': ObjectId(n['product_id'])})
-                    if not product and 'name' in n.get('title', ''):
-                        # fallback search by name if ID fails
-                        product = self.db.products.find_one({'name': {'$regex': n.get('title',''), '$options': 'i'}})
-                    
-                    if product:
-                        n['product_name'] = product.get('name')
-                        n['product_image'] = product.get('image') or product.get('images', [None])[0]
-                        n['price'] = product.get('price_val') or product.get('price')
-                        if not n.get('store_name'):
-                            stores = product.get('stores', [])
-                            if stores and isinstance(stores, list):
-                                n['store_name'] = stores[0].get('store')
+                    d_id = n['deal_id']
+                    query_id = ObjectId(d_id) if ObjectId.is_valid(d_id) else d_id
+                    deal = self.db.featured_deals.find_one({'_id': query_id})
                 except Exception:
                     pass
+            
+            # Fallback: Search Deal by Title if ID missing (for seeded data)
+            if not deal and n.get('type') in ['deal_alert', 'deal', 'new_deal'] and n.get('title'):
+                try:
+                    clean_title = n['title'].replace('New Deal:', '').strip()
+                    if clean_title:
+                        deal = self.db.featured_deals.find_one({'title': {'$regex': clean_title, '$options': 'i'}}) 
+                        # Also try matching 'name' field just in case
+                        if not deal:
+                            deal = self.db.featured_deals.find_one({'name': {'$regex': clean_title, '$options': 'i'}})
+                except Exception:
+                    pass
+
+            if deal:
+                n['product_name'] = deal.get('title') or deal.get('name')
+                n['product_image'] = deal.get('image')
+                n['price'] = deal.get('price')
+                n['old_price'] = deal.get('original_price')
+                n['store_name'] = deal.get('store')
+                n['offer_name'] = deal.get('discount_label') or deal.get('offer')
+                
+                # IMPORTANT: Set these so the template renders the card!
+                if not n.get('deal_id'):
+                    n['deal_id'] = str(deal['_id'])
+                if deal.get('product_id') and not n.get('product_id'):
+                    n['product_id'] = str(deal['product_id'])
+
+            # 2. If Product Info still missing, try Product Lookup
+
+            # 2. If Product Info still missing, try Product Lookup
+            if (not n.get('product_name') or not n.get('product_image')) and n.get('product_id'):
+                try:
+                    p_id = n['product_id']
+                    query_id = ObjectId(p_id) if ObjectId.is_valid(p_id) else p_id
+                    product = self.db.products.find_one({'_id': query_id})
+                    
+                    # Fallback: Search by name from notification title/message if ID failed
+                    # e.g. "Price Drop: Milk 1L" -> search "Milk 1L"
+                    if not product and n.get('title'):
+                        clean_title = n['title'].replace('New Deal:', '').replace('Price Drop:', '').strip()
+                        if clean_title:
+                             product = self.db.products.find_one({'name': {'$regex': clean_title, '$options': 'i'}})
+
+                    if product:
+                        if not n.get('product_name'):
+                            n['product_name'] = product.get('name')
+                        if not n.get('product_image'):
+                            n['product_image'] = product.get('image') or (product.get('images')[0] if product.get('images') else None)
+                        if not n.get('price'):
+                            n['price'] = product.get('price_val') or product.get('price')
+                        if not n.get('store_name'):
+                            stores = product.get('stores', [])
+                            if stores and isinstance(stores, list) and len(stores) > 0:
+                                n['store_name'] = stores[0].get('store')
+                except Exception as e:
+                    # print(f"Product lookup failed: {e}")
+                    pass
+            
             n['product_id'] = str(n.get('product_id')) if n.get('product_id') else None
         
         return notifications
@@ -311,6 +371,18 @@ class NotificationsModel:
         except Exception as e:
             print(f"Error broadcasting notification: {e}")
         return count
+
+    def cleanup_old_notifications(self, days: int = 7) -> int:
+        """Delete notifications older than specified days"""
+        try:
+            cutoff_date = datetime.utcnow() - timedelta(days=days)
+            result = self.db.notifications.delete_many({
+                'created_at': {'$lt': cutoff_date}
+            })
+            return result.deleted_count
+        except Exception as e:
+            print(f"Error in cleanup_old_notifications: {e}")
+            return 0
 
     def close_connection(self):
         if self._client:
