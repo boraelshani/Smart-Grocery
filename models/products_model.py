@@ -48,7 +48,12 @@ class ProductsModel:
             self.db = flask_mongo.db
             self._client = None
         else:
-            self._client = MongoClient(mongo_uri)
+            try:
+                import certifi
+                self._client = MongoClient(mongo_uri, tlsCAFile=certifi.where())
+            except (ImportError, TypeError):
+                self._client = MongoClient(mongo_uri)
+                
             if database_name:
                 self.db = self._client[database_name]
             else:
@@ -73,6 +78,20 @@ class ProductsModel:
             if '_id' in d:
                 d['id'] = str(d['_id'])  # Convert MongoDB ID to string for frontend
         return docs
+
+    def get_latest_products(self, limit: int = 10) -> List[dict]:
+        """Get the latest products added to the database"""
+        try:
+            # Sort by _id descending (approximate creation time for ObjectId)
+            cursor = self.db.products.find({}).sort('_id', -1).limit(limit)
+            docs = list(cursor)
+            for d in docs:
+                if '_id' in d:
+                    d['id'] = str(d['_id'])
+            return docs
+        except Exception as e:
+            print(f"Error fetching latest products: {e}")
+            return []
 
     def count_products(self, query: Optional[dict] = None) -> int:
         # COUNT PRODUCTS matching query

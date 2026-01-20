@@ -65,6 +65,15 @@ class QuantityDiscountsModel:
                 d['id'] = str(d['_id'])
         return docs
 
+    def get_latest_discounts(self, limit: int = 3) -> List[dict]:
+        """Get the latest quantity discounts added to the database"""
+        cursor = self.db.quantity_discounts.find({'active': True}).sort('_id', -1).limit(limit)
+        docs = list(cursor)
+        for d in docs:
+            if '_id' in d:
+                d['id'] = str(d['_id'])
+        return docs
+
     def get_discount_by_id(self, discount_id: str) -> Optional[dict]:
         """Get specific discount by ID"""
         try:

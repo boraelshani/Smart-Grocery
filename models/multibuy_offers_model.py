@@ -78,6 +78,15 @@ class MultibuyOffersModel:
     def get_offers_count(self) -> int:
         return self.db.multibuy_offers.count_documents({'active': True})
 
+    def get_latest_offers(self, limit: int = 5) -> List[dict]:
+        """Get the latest multibuy offers added to the database"""
+        cursor = self.db.multibuy_offers.find({'active': True}).sort('_id', -1).limit(limit)
+        docs = list(cursor)
+        for d in docs:
+            if '_id' in d:
+                d['id'] = str(d['_id'])
+        return docs
+
     def get_offer_by_id(self, offer_id: str) -> Optional[dict]:
         """Get specific offer by ID"""
         try:

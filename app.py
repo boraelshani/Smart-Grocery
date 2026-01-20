@@ -144,6 +144,36 @@ def inject_navbar_data():
             from models.notifications_model import get_unread_count
             unread_notifications_count = get_unread_count(email)
             
+            # --- Dynamic Notifications Count Fix ---
+            try:
+                from models.users_model import get_user_by_email
+                from models.featured_deals_model import featured_deals_model
+                from models.multibuy_offers_model import multibuy_offers_model
+                from models.quantity_discounts_model import quantity_discounts_model
+                
+                user = get_user_by_email(email)
+                read_ids = set(user.get('read_dynamic_notifications', [])) if user else set()
+                
+                # 1. Price Drops (10)
+                fds = featured_deals_model.get_latest_deals(limit=10)
+                for d in fds:
+                    if f"suggestion_fd_{str(d.get('_id'))}" not in read_ids:
+                        unread_notifications_count += 1
+                        
+                # 2. Multibuy (5)
+                mbs = multibuy_offers_model.get_latest_offers(limit=5)
+                for m in mbs:
+                    if f"suggestion_multi_{str(m.get('_id'))}" not in read_ids:
+                        unread_notifications_count += 1
+                        
+                # 3. Quantity (3)
+                qds = quantity_discounts_model.get_latest_discounts(limit=3)
+                for q in qds:
+                     if f"suggestion_qty_{str(q.get('_id'))}" not in read_ids:
+                        unread_notifications_count += 1
+            except Exception as e:
+                print(f"Error calculating dynamic unread count: {e}")
+            
             # 2. Calculate Shopping List Count (New items only)
             from models.users_model import get_user_lists
             data = get_user_lists(email) or {}

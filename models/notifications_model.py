@@ -232,9 +232,14 @@ class NotificationsModel:
         if not user_email:
             return 0
         
+        # Filter out types that we are now injecting dynamically to avoid duplicates/ghost counts
+        # This fixes the "50 unread vs 18 shown" issue
+        ignored_types = ['deal_alert', 'new_deal', 'price_drop']
+        
         query = {
             'user_email': user_email,
-            'read': False
+            'read': False,
+            'type': {'$nin': ignored_types}
         }
 
         # Filter: Only count notifications created AFTER the user joined

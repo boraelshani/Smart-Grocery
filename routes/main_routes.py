@@ -1023,7 +1023,57 @@ def featured_deal_detail(deal_id):
         if not deal:
             deal = multibuy_offers_model.get_offer_by_id(deal_id)
             
+        # If still not found, search in quantity_discounts using Model
+        if not deal:
+            deal = quantity_discounts_model.get_discount_by_id(deal_id)
+            
         if deal:
+            # ------------------------------------------------------------------
+            # NORMALIZE DEAL OBJECT 
+            # Ensure consistent fields (title, price, image) for the template
+            # regardless of whether it came from featured_deals, multibuy, or quantity_discounts
+            # ------------------------------------------------------------------
+            
+            # 1. Normalize Title/Name
+            if not deal.get('title'):
+                deal['title'] = deal.get('product_name') or deal.get('name') or "Special Offer"
+            
+            # 2. Normalize Price
+            if deal.get('price') is None:
+                deal['price'] = deal.get('base_price') or deal.get('new_price')
+            
+            # 3. Normalize Original Price (if applicable)
+            if deal.get('original_price') is None:
+                deal['original_price'] = deal.get('old_price')
+
+            # 4. Normalize Image (Ensure it exists)
+            # If image missing, try to fetch from linked product
+            if not deal.get('image') and deal.get('product_id'):
+                try:
+                    p = products_model.get_product_by_id(str(deal['product_id']))
+                    if p:
+                        deal['image'] = p.get('image') or p.get('image_url')
+                        # Also backfill other missing info from product if needed
+                        if not deal.get('category'): deal['category'] = p.get('category')
+                        if not deal.get('unit'): deal['unit'] = p.get('unit')
+                except:
+                    pass
+
+            # 5. Construct Offer Label for Quantity Discounts if missing
+            if not deal.get('offer') and not deal.get('discount_label'):
+                if deal.get('discount_tiers'): # Quantity Discount
+                    tiers = deal.get('discount_tiers')
+                    if tiers and len(tiers) > 0:
+                        first = tiers[0]
+                        qty = first.get('quantity') or first.get('min_qty')
+                        disc = first.get('discount') or first.get('discount_percentage') or first.get('discount_percent')
+                        if qty and disc:
+                            deal['offer'] = f"Buy {qty}+ Save {disc}%"
+                            deal['discount_label'] = f"Save {disc}%"
+                elif deal.get('buy_quantity') and deal.get('free_quantity'): # Multibuy
+                     deal['discount_label'] = f"{deal['buy_quantity']}+{deal['free_quantity']}"
+                     deal['offer'] = f"Buy {deal['buy_quantity']} Get {deal['free_quantity']} Free"
+
             # If deal is linked to a product but missing URL, try to fetch it from the product
             if (not deal.get('url') and not deal.get('link') and not deal.get('product_url') and not deal.get('store_url')):
                  product_id = deal.get('product_id')
@@ -1469,13 +1519,34 @@ def shopping_list():
                     'store': store_from_entry or store_name,
                     'qty': qty,
                     'purchased': purchased,
-                    'image': image_val or ''
+                    'image': image_val or '',
+                    'offer': entry.get('offer') if isinstance(entry, dict) else None
                 }
 
         for k, v in agg.items():
             unit = float(v.get('price_val') or 0.0)
             qty = int(v.get('qty') or 1)
             total = unit * qty
+
+            # Apply effective price calculation for multibuy
+            offer = v.get('offer')
+            if offer and isinstance(offer, dict) and offer.get('type') == 'buyXgetY':
+                try:
+                    ox = int(offer.get('x') or 0)
+                    oy = int(offer.get('y') or 0)
+                    
+                    if ox > 0 and oy > 0:
+                        cycle = ox + oy
+                        full_cycles = qty // cycle
+                        remainder = qty % cycle
+                        
+                        # Pay for 'ox' items in each full cycle
+                        # Pay for remainder items (capped at 'ox')
+                        payable_qty = (full_cycles * ox) + min(remainder, ox)
+                        total = payable_qty * unit
+                except Exception:
+                    pass
+
             v['price'] = f"€{total:.2f}"
             items.append(v)
             
@@ -1499,6 +1570,7 @@ def notifications_page():
         return redirect(url_for('auth.login'))
     
     from models.notifications_model import get_user_notifications, get_unread_count, notifications_model
+    from datetime import datetime
     
     # Clean up old notifications (older than 7 days) whenever page is visited
     try:
@@ -1506,9 +1578,163 @@ def notifications_page():
     except Exception as e:
         print(f"Error cleaning up notifications: {e}")
     
-    # Get all notifications
-    notifications = get_user_notifications(user_email, unread_only=False, limit=100)
-    unread_count = get_unread_count(user_email)
+    # Get all notifications (Limit persistent history to 20 to keep view clean)
+    # Filter out persistent 'deal_alert', 'new_deal', 'price_drop' notifications to avoid duplicates 
+    # and strictly enforce the limit of 10 deals.
+    persistent_notifications = get_user_notifications(user_email, unread_only=False, limit=50)
+    ignored_types = ['deal_alert', 'new_deal', 'price_drop']
+    
+    # Filter for display
+    notifications = [n for n in persistent_notifications if n.get('type') not in ignored_types]
+    
+    # Calculate initial unread count just from the notifications WE ARE SHOWING from DB
+    current_unread_count = len([n for n in notifications if not n.get('read')])
+
+    # ------------------------------------------------------------------
+    # DYNAMIC NOTIFICATIONS INJECTION (Requested Feature)
+    # Inject latest items from db using Model methods
+    # ------------------------------------------------------------------
+    try:
+        # Helper to normalize dates for sorting
+        def get_naive_date(d):
+            if d is None: return datetime.min
+            if d.tzinfo is not None:
+                return d.replace(tzinfo=None)
+            return d
+
+        # 1. Price Drops / New Deals: 10 Latest Featured Deals
+        # Switched back to 'featured_deals' as user confirmed real data is present.
+        latest_deals_drop = featured_deals_model.get_latest_deals(limit=10)
+        
+        for d in latest_deals_drop:
+            d_id = str(d.get('id') or d.get('_id'))
+            
+            # Construct sensible offer text
+            offer_text = d.get('discount_label') or d.get('offer') or d.get('offer_text')
+            if not offer_text and d.get('discount_percent'):
+                offer_text = f"{d.get('discount_percent')}% OFF"
+            
+            n = {
+                'id': f"suggestion_fd_{d_id}",
+                # CHANGED to 'price_drop' as requested to appear in Price Drops section
+                'type': 'price_drop', 
+                'title': f"Price Drop: {d.get('title') or d.get('product_name') or d.get('name')}",
+                'message': d.get('description') or "Check out this amazing offer available now!",
+                'created_at': get_naive_date(d.get('_id').generation_time),
+                # CHANGED to unread (read=False) as requested
+                'read': False,
+                'deal_id': d_id,
+                'product_name': d.get('title') or d.get('product_name') or d.get('name'),
+                'product_image': d.get('image') or d.get('image_url'),
+                'store_name': d.get('store'),
+                'price': d.get('price') or d.get('new_price'),
+                'old_price': d.get('original_price') or d.get('old_price'),
+                'offer_name': offer_text,
+                'action_url': '#' 
+            }
+            notifications.append(n)
+            current_unread_count += 1
+
+        # 2. Deals: 5 Latest Multibuy Offers (as requested)
+        latest_multibuy = multibuy_offers_model.get_latest_offers(limit=5)
+    
+        for m_offer in latest_multibuy:
+            m_id = str(m_offer.get('id') or m_offer.get('_id'))
+            
+            # Construct sensible offer name "Buy X Get Y"
+            offer_text = m_offer.get('title')
+            # If title is generic or just product name, construct from quantities
+            if offer_text == "Special Offer" or not offer_text or m_offer.get('buy_quantity'):
+                buy = m_offer.get('buy_quantity') or m_offer.get('min_quantity')
+                get = m_offer.get('free_quantity')
+                if buy and get:
+                    offer_text = f"Buy {buy} Get {get} Free"
+                elif buy:
+                    offer_text = f"Buy {buy}+ Deal"
+            
+            n = {
+                'id': f"suggestion_multi_{m_id}",
+                # CHANGED to 'deal_alert' so it shows in Deals section
+                'type': 'deal_alert',
+                'title': f"Multibuy Offer",
+                'message': "Buy more, save more with this special offer!",
+                'created_at': get_naive_date(m_offer.get('_id').generation_time),
+                # CHANGED to unread
+                'read': False,
+                'deal_id': m_id,
+                'product_name': m_offer.get('title') or m_offer.get('product_name'),
+                'product_image': m_offer.get('image'),
+                'store_name': m_offer.get('store'),
+                'price': m_offer.get('price'),
+                'old_price': m_offer.get('original_price'),
+                'offer_name': offer_text,
+                'action_url': '#'
+            }
+            notifications.append(n)
+            current_unread_count += 1
+
+        # 3. Deals: 3 Latest Quantity Discounts (as requested)
+        latest_qty = quantity_discounts_model.get_latest_discounts(limit=3)
+        
+        for q_disc in latest_qty:
+            q_id = str(q_disc.get('id') or q_disc.get('_id'))
+            
+            # Construct offer text "Buy 3+ save 15%"
+            offer_text = "Bulk Savings"
+            tiers = q_disc.get('tiers') or q_disc.get('discount_tiers') or []
+            if tiers and len(tiers) > 0:
+                first = tiers[0]
+                qty = first.get('quantity') or first.get('min_qty')
+                disc = first.get('discount') or first.get('discount_percentage') or first.get('discount_percent')
+                if qty and disc:
+                    offer_text = f"Buy {qty}+ Save {disc}%"
+
+            n = {
+                'id': f"suggestion_qty_{q_id}",
+                # CHANGED to 'deal_alert' so it shows in Deals section
+                'type': 'deal_alert',
+                'title': "Quantity Discount",
+                'message': "Stock up and save with volume discounts!",
+                'created_at': get_naive_date(q_disc.get('_id').generation_time),
+                # CHANGED to unread
+                'read': False,
+                'deal_id': q_id,
+                'product_name': q_disc.get('product_name'),
+                'product_image': q_disc.get('image'),
+                'store_name': q_disc.get('store'),
+                'price': q_disc.get('base_price') or q_disc.get('price'),
+                'offer_name': offer_text,
+                'action_url': '#'
+            }
+            notifications.append(n)
+            current_unread_count += 1
+
+        # Sort combined list by date descending (Newest first)
+        notifications.sort(key=lambda x: get_naive_date(x.get('created_at')), reverse=True)
+
+    except Exception as e:
+        print(f"Error injecting dynamic notifications: {e}")
+        # Continue even if injections fail
+
+    # ------------------------------------------------------------------
+    # Apply Read Status from User Profile (Persistence for Dynamic Items)
+    # ------------------------------------------------------------------
+    try:
+        from models.users_model import get_user_by_email
+        user = get_user_by_email(user_email)
+        read_dynamic_ids = set(user.get('read_dynamic_notifications', [])) if user else set()
+        
+        # Update read status for dynamic items
+        for n in notifications:
+            if n['id'].startswith('suggestion_') and n['id'] in read_dynamic_ids:
+                n['read'] = True
+    except Exception as e:
+        print(f"Error applying read status persistence: {e}")
+
+    # Use our calculated consistent unread count instead of DB global count
+    # Re-calculate based on updated read statuses
+    current_unread_count = len([n for n in notifications if not n.get('read')])
+    unread_count = current_unread_count
     
     return render_template(
         'notifications.html',
@@ -1524,6 +1750,10 @@ def delete_notification(notification_id):
         user_email = session.get('user')
         if not user_email:
             return jsonify({'error': 'Not logged in'}), 401
+        
+        # Handle ephemeral/suggestion notifications
+        if notification_id.startswith('suggestion_'):
+            return jsonify({'success': True})
         
         from models.notifications_model import delete_notification as delete_notif
         
@@ -2168,9 +2398,33 @@ def mark_notifications_read():
         
         # Mark each notification as read
         success_count = 0
+        ids_to_mark = []
+        dynamic_ids = []
+        
+        # Filter out suggestion IDs (ephemeral)
         for nid in notification_ids:
-            if mark_as_read(nid, user_email):
-                success_count += 1
+            if str(nid).startswith('suggestion_'):
+                dynamic_ids.append(str(nid))
+            else:
+                ids_to_mark.append(nid)
+
+        # Handle Dynamic IDs: Persist to user profile
+        if dynamic_ids:
+            try:
+                from utils.db import mongo
+                mongo.db.users.update_one(
+                    {'email': user_email},
+                    {'$addToSet': {'read_dynamic_notifications': {'$each': dynamic_ids}}}
+                )
+                success_count += len(dynamic_ids)
+            except Exception as e:
+                print(f"Error saving dynamic read status: {e}")
+
+        # Handle Persistent IDs: different model call
+        if ids_to_mark:
+            for nid in ids_to_mark:
+                if mark_as_read(nid, user_email):
+                    success_count += 1
         
         return jsonify({'success': True, 'marked_count': success_count})
     
@@ -2188,7 +2442,36 @@ def mark_all_notifications_read():
         
         from models.notifications_model import notifications_model
         
-        success = notifications_model.mark_all_as_read(user_email)
+        # 1. Mark DB notifications
+        notifications_model.mark_all_as_read(user_email)
+        
+        # 2. Mark dynamic notifications
+        # Since we don't know exactly which ones are generated without re-querying,
+        # we will fetch the current "latest" IDs again and mark them all.
+        try:
+            # Re-fetch just IDs to mark them
+            dynamic_ids = []
+            
+            # Featured
+            fds = featured_deals_model.get_latest_deals(limit=10)
+            dynamic_ids.extend([f"suggestion_fd_{str(d.get('_id'))}" for d in fds])
+            
+            # Multibuy
+            mbs = multibuy_offers_model.get_latest_offers(limit=5)
+            dynamic_ids.extend([f"suggestion_multi_{str(m.get('_id'))}" for m in mbs])
+            
+            # Quantity
+            qds = quantity_discounts_model.get_latest_discounts(limit=3)
+            dynamic_ids.extend([f"suggestion_qty_{str(q.get('_id'))}" for q in qds])
+            
+            if dynamic_ids:
+                from utils.db import mongo
+                mongo.db.users.update_one(
+                    {'email': user_email},
+                    {'$addToSet': {'read_dynamic_notifications': {'$each': dynamic_ids}}}
+                )
+        except Exception as e:
+            print(f"Error marking all dynamic as read: {e}")
         
         return jsonify({'success': True})
     

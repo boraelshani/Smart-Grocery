@@ -40,12 +40,13 @@ Data: Fetches from notifications collection
       font-family: 'Plus Jakarta Sans', sans-serif;
     }
 
+
     .notification-header {
       /* Vibrant animated gradient matching Profile Page */
       background: linear-gradient(-45deg, #7c3aed, #6366f1, #8b5cf6, #d946ef);
       background-size: 400% 400%;
       animation: gradientBG 15s ease infinite;
-      padding: 6rem 0 5rem;
+      padding: 8rem 0 5rem; /* Increased top padding mainly for fixed navbar overlap */
       border-radius: 0 0 12px 12px;
       margin-bottom: -25px;
       color: white;
@@ -261,7 +262,7 @@ Data: Fetches from notifications collection
 </head>
 <body>
   <!-- Navigation -->
-  <nav class="navbar navbar-expand-lg navbar-premium">
+  <nav class="navbar navbar-expand-lg navbar-premium fixed-top">
     <div class="container">
       <a class="navbar-brand d-flex align-items-center" href="{{ url_for('main.home') }}">
         <div class="brand-icon me-3">
@@ -308,11 +309,9 @@ Data: Fetches from notifications collection
           <li class="nav-item ms-lg-1">
             <a class="nav-link nav-icon-btn position-relative {% if 'notifications' in request.path %}active{% endif %}" href="{{ url_for('main.notifications_page') }}" aria-label="Notifications">
               <i class="bi bi-bell fs-5"></i>
-              {% if (unread_notifications_count or 0) > 0 %}
-              <span class="position-absolute badge rounded-pill bg-danger" style="font-size: 0.65rem; padding: 0.45em 0.7em; top: -5px; right: -10px; border: 2px solid white; box-shadow: 0 4px 10px rgba(220, 53, 69, 0.4); min-width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;">
+              <span class="position-absolute badge rounded-pill bg-danger" id="nav-unread-badge" style="font-size: 0.65rem; padding: 0.45em 0.7em; top: -5px; right: -10px; border: 2px solid white; box-shadow: 0 4px 10px rgba(220, 53, 69, 0.4); min-width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; {% if (unread_notifications_count or 0) <= 0 %}display: none !important;{% endif %}">
                 {{ unread_notifications_count }}
               </span>
-              {% endif %}
             </a>
           </li>
           <li class="nav-item ms-lg-2">
@@ -339,7 +338,7 @@ Data: Fetches from notifications collection
             <div class="col-6 col-md-3">
               <div class="p-3 bg-white bg-opacity-10 rounded-4 border border-white border-opacity-25 shadow-sm text-white" style="backdrop-filter: blur(8px);">
                 <i class="bi bi-envelope-exclamation fs-3 d-block mb-1"></i>
-                <span class="d-block fs-4 fw-bold text-white">{{ unread_count }}</span>
+                <span class="d-block fs-4 fw-bold text-white" id="page-unread-count">{{ unread_count }}</span>
                 <span class="small opacity-75 text-uppercase tracking-wider text-white" style="font-size: 0.7rem;">Unread</span>
               </div>
             </div>
@@ -654,13 +653,33 @@ Data: Fetches from notifications collection
     }
 
     function updateUnreadCount(delta) {
-      const headerText = document.querySelector('.notification-header p');
-      if (headerText) {
-        let countText = headerText.textContent.match(/\d+/);
-        if (countText) {
-          let count = parseInt(countText[0]);
-          count = Math.max(0, count + delta);
-          headerText.textContent = `You have ${count} unread messages`;
+      // 1. Update Page Header Count
+      const pageHeaderCount = document.getElementById('page-unread-count');
+      if (pageHeaderCount) {
+        let current = parseInt(pageHeaderCount.textContent);
+        if (!isNaN(current)) {
+           let newVal = Math.max(0, current + delta);
+           pageHeaderCount.textContent = newVal;
+        }
+      }
+
+      // 2. Update Navbar Badge
+      const navBadge = document.getElementById('nav-unread-badge');
+      if (navBadge) {
+        // If badge was hidden (empty text or display:none), handle it
+        let currentText = navBadge.textContent.trim();
+        let current = parseInt(currentText);
+        if (isNaN(current)) current = 0; // fallback if it was hidden/empty
+
+        let newVal = Math.max(0, current + delta);
+        
+        navBadge.textContent = newVal;
+        
+        if (newVal > 0) {
+          navBadge.style.display = 'flex';
+          navBadge.classList.remove('d-none'); // just in case
+        } else {
+          navBadge.style.display = 'none';
         }
       }
     }

@@ -89,6 +89,18 @@ class FeaturedDealsModel:
     def get_deals_count(self) -> int:
         return self.db.featured_deals.count_documents({})
 
+    def get_latest_deals(self, limit: int = 10) -> List[dict]:
+        """
+        Get the latest featured deals added to the database.
+        Includes handling for 'created_at' if available, otherwise sorts by _id.
+        """
+        cursor = self.db.featured_deals.find({}).sort('_id', -1).limit(limit)
+        docs = list(cursor)
+        for d in docs:
+            if '_id' in d:
+                d['id'] = str(d['_id'])
+        return docs
+
     def count_by_store(self, store_name: str) -> int:
         import re
         regex = {'$regex': re.escape(store_name), '$options': 'i'}
