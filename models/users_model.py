@@ -56,26 +56,42 @@ def get_user_by_email(email: str):
     Returns:
         Dictionary with user data (includes hashed password, name, etc.) or None if not found
     """
+    # 0. INPUT VALIDATION
+    # If explicitly passed None or empty string, there's nothing to find.
     if not email:
         return None
     
-    # 1. DATABASE CHECK
-    # get_db() returns the active database connection or None
+    # 1. DATABASE CHECK (Production Mode)
+    # get_db() returns the active database connection or None if offline
     if get_db() is not None:
+        # Search the 'users' collection for a document where field 'email' matches the input
         doc = get_db().users.find_one({'email': email})
+        
+        # If no document found, return None immediately
         if not doc:
             return None
-        # Convert BSON document to standard Python dict
+        
+        # Convert BSON document (Binary JSON) to standard Python dict
+        # This makes it easier to use in the rest of the app without pymongo dependencies
         doc = dict(doc)
-        # Convert ObjectId (not JSON serializable) to string
+        
+        # Convert MongoDB's internal ObjectId (which is an object) to a simple string
+        # This is CRITICAL for JSON serialization (e.g. sending to frontend)
         if '_id' in doc:
             doc['id'] = str(doc['_id'])
+            
         return doc
         
-    # 2. FALLBACK CHECK (Mock Data)
-    # getattr defensively checks if 'mock_models' has 'users' dictionary
+    # 2. FALLBACK CHECK (Development/Mock Mode)
+    # This runs if get_db() returned None (DB offline)
+    
+    # 'getattr' safely checks if the 'mock_models' module was successfully imported
+    # and if it contains a 'users' dictionary.
     if getattr(mock_models, 'users', None) is None:
+        # No DB and no mock data available? We can't find the user.
         return None
+        
+    # Look up the user in the in-memory Python dictionary
     return mock_models.users.get(email)
 
 
@@ -173,30 +189,56 @@ def authenticate(email: str, password: str) -> bool:
     """
     Authenticate a user by email and password.
     Supports both bcrypt hashes (new users) and plain text (legacy/mock users).
+    
+    Logic Flow:
+    1. Retrieve the user document by email.
+    2. Check if a password exists in the record.
+    3. Determine if the stored password is encrypted (starts with '$2') or plain text.
+    4. Verify accordingly.
+    
+    Args:
+        email: User email.
+        password: User input password.
+        
+    Returns:
+        True if valid, False otherwise.
     """
+    # 1. RETRIEVE USER
     user = get_user_by_email(email)
+    
+    # If user not found, return False immediately
     if not user:
         print(f'[AUTH] user {email} not found')
         return False
     
+    # 2. GET STORED PASSWORD
+    # This comes from the DB (or mock)
     stored = user.get('password')
     if stored is None:
+        # User exists but has no password (maybe social login account? or bad data)
         print(f'[AUTH] user {email} has no password field')
         return False
         
+    # Ensure compatible string format to avoid bytes vs string mix-ups
     stored_str = stored.decode('utf-8', 'ignore') if isinstance(stored, (bytes, bytearray)) else str(stored)
 
-    # SECURE: Prefer bcrypt verification when stored value is a bcrypt hash
+    # 3. VERIFY CREDENTIALS
+    
+    # CASE A: ENCRYPTED PASSWORD (BCRYPT)
+    # The '$2' prefix is the standard identifier for bcrypt hashes.
     if stored_str.startswith('$2'):
         try:
+            # delegated to helper function
             ok = verify_password(password, stored_str)
             print(f'[AUTH] bcrypt verify result={ok}')
             return ok
         except Exception as e:
+            # If verification logic crashes, deny access securely.
             print(f'[AUTH] bcrypt verify failed: {e}')
 
-    # LEGACY/MOCK: Fallback to plain-text comparison
-    # Only used for accounts created before bcrypt implementation or mock data
+    # CASE B: LEGACY/MOCK PASSWORD (PLAINTEXT)
+    # This falls back to direct string comparison.
+    # Should only happen for dummy users in development.
     print(f'[AUTH] legacy compare: stored={repr(stored_str)} vs entered={repr(password)}')
     match = stored_str.strip() == str(password).strip()
     print(f'[AUTH] legacy result={match}')

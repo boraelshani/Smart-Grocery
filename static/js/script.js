@@ -3,25 +3,31 @@
 // Handles user interactions: shopping lists, favorites, filtering, search
 // ===============================================
 
+/**
+ * MAIN ENTRY POINT
+ * We use 'DOMContentLoaded' to ensure all HTML elements are loaded before running any scripts.
+ * This prevents "element not found" errors.
+ */
 document.addEventListener('DOMContentLoaded', () => {
   // INITIALIZE: Run all setup functions when page loads
-  initializeBootstrapComponents();
-  setupNavbarScroll();
-  setupSearchFunctionality();
-  setupShoppingListHandlers();
-  setupShoppingListInteractions();
-  setupClaimButtons();
-  setupProductModalHandlers();
-  setupStoreSuggestions();
-  setupProfileEditHandlers();
-  setupFeaturedDealsSearch();
-  setupCompareHandlers();
-  setupCompareFilters();
-  setupPaginationSmoothTransition();
-  setupLogoutConfirmation();
-  setupStoreSelection();
+  initializeBootstrapComponents();    // Tooltips, Popovers
+  setupNavbarScroll();                // Navbar color change on scroll
+  setupSearchFunctionality();         // Real-time search or redirect
+  setupShoppingListHandlers();        // "Add to List" buttons
+  setupShoppingListInteractions();    // Checkbox toggling within the list page
+  setupClaimButtons();                // "Claim Deal" functionality
+  setupProductModalHandlers();        // Resetting modals when closed
+  setupStoreSuggestions();            // Auto-complete in store inputs
+  setupProfileEditHandlers();         // Edit Profile form toggling
+  setupFeaturedDealsSearch();         // Search bar on Deals page
+  setupCompareHandlers();             // Sorting logic on Compare page
+  setupCompareFilters();              // Filtering logic on Compare page
+  setupPaginationSmoothTransition();  // AJAX-like page switching (optional)
+  setupLogoutConfirmation();          // Intercept logout to show confirmation modal
+  setupStoreSelection();              // Store picker (Aldi vs Tesco) on product cards
 
-  // Always hide product modal on page load (prevents unwanted popup on back)
+  // Always hide product modal on page load (prevents unwanted popup loops on creating new items)
+  // This is a safety cleanup.
   const productModalEl = document.getElementById('productModal');
   if (productModalEl) {
     const modalInstance = bootstrap.Modal.getOrCreateInstance(productModalEl);
@@ -29,7 +35,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// Hide product modal on browser back navigation (prevents unwanted popup)
+// EVENT LISTENER: BROWSER BACK BUTTON
+// Hide product modal on browser back navigation (prevents unwanted popup staying open)
 window.addEventListener('pageshow', function (event) {
   const productModalEl = document.getElementById('productModal');
   if (productModalEl) {
@@ -38,78 +45,113 @@ window.addEventListener('pageshow', function (event) {
   }
 });
 
+/**
+ * NAVBAR SCROLL EFFECT
+ * Adds a '.scrolled' CSS class to the navbar when the user scrolls down > 50px.
+ * This allows us to change transparency/shadow via CSS.
+ */
 function setupNavbarScroll() {
   const nav = document.querySelector('.navbar-premium');
-  if (!nav) return;
+  if (!nav) return; // Exit if navbar doesn't exist on this page (e.g. 404 page)
 
   const handleScroll = () => {
+    // Check vertical scroll position (Y-axis)
     if (window.scrollY > 50) {
-      nav.classList.add('scrolled');
+      nav.classList.add('scrolled'); // Add opaque background/shadow
     } else {
-      nav.classList.remove('scrolled');
+      nav.classList.remove('scrolled'); // Revert to transparent/flat
     }
   };
 
+  // Attach listener to window scroll event
   window.addEventListener('scroll', handleScroll);
-  handleScroll(); // Initial check
+  handleScroll(); // Initial check in case page loads scrolled down
 }
 
 // BOOTSTRAP: Activate tooltip popovers
+// Bootstrap 5 requires manual initialization of tooltips (hover text)
 function initializeBootstrapComponents() {
+  // Select all elements with data-bs-toggle="tooltip"
   const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+  // Create a new Tooltip instance for each
   tooltipTriggerList.map(function (tooltipTriggerEl) { return new bootstrap.Tooltip(tooltipTriggerEl); });
 }
 
+/**
+ * LOGOUT CONFIRMATION INTERCEPTOR
+ * Intercepts any click on a logout link and shows a custom confirmation modal
+ * instead of immediately navigating away.
+ */
 function setupLogoutConfirmation() {
-  // Use a capture phase listener on the document to intercept logout clicks
+  // EVENT DELEGATION / CAPTURE PHASE
+  // We listen on the 'document' for clicks, using 'true' for the capture phase.
+  // This lets us intercept the event *before* it reaches the target link.
   document.addEventListener('click', (e) => {
-    // If the click is inside our custom logout modal, let it happen naturally
+    // EXCEPTION: If the user clicks inside the modal itself (e.g. "Yes" or "No"),
+    // don't interfere. We check if the click target is a child of the modal.
     if (e.target.closest('#customLogoutModal')) {
       return;
     }
 
+    // Check if the clicked element (or its parent) is an anchor tag linking to "/logout"
     const logoutBtn = e.target.closest('a[href*="/logout"]');
     if (logoutBtn) {
-      e.preventDefault();
-      e.stopPropagation();
-      e.stopImmediatePropagation();
+      // PROACTIVELY STOP EVERYTHING
+      e.preventDefault();         // Stop the link from navigating to /logout
+      e.stopPropagation();        // Stop event bubbling up to other handlers
+      e.stopImmediatePropagation(); // Stop other listeners on this specific element
       
+      // Show our custom UI instead
       showLogoutModal(logoutBtn.href);
-      return false;
+      return false; 
     }
   }, true); 
 }
 
+/**
+ * Dynamically creates and injects the Logout Modal into the DOM if it's missing.
+ * This uses a "Lazy Load" pattern - we don't clutter the initial HTML with this modal.
+ * 
+ * @param {string} logoutUrl - The URL to go to if the user confirms "Yes".
+ */
 function showLogoutModal(logoutUrl) {
-  // Check if modal already exists
+  // Check if modal DOM element already exists
   let modalElem = document.getElementById('customLogoutModal');
+  
+  // LAZY CREATION: Only create the HTML structure the first time it's needed.
   if (!modalElem) {
+    // Template Literal with the Modal HTML
     const modalHtml = `
       <div class="modal fade" id="customLogoutModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-sm">
           <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
             <div class="modal-body text-center p-4">
               <div class="mb-3">
+                <!-- Icon -->
                 <i class="bi bi-door-open text-danger" style="font-size: 3rem;"></i>
               </div>
               <h5 class="fw-bold mb-2">Wait! Logging out?</h5>
               <p class="text-muted small mb-4">Are you sure you want to end your session?</p>
               <div class="d-grid gap-2">
+                <!-- "Yes" button acts as the original link -->
                 <a href="${logoutUrl}" class="btn btn-danger rounded-pill fw-bold py-2">Yes, Log Out</a>
+                <!-- "No" button dismisses modal -->
                 <button type="button" class="btn btn-light rounded-pill fw-semibold py-2" data-bs-dismiss="modal">Stay Logged In</button>
               </div>
             </div>
           </div>
         </div>
       </div>`;
+    // Insert at end of <body>
     document.body.insertAdjacentHTML('beforeend', modalHtml);
     modalElem = document.getElementById('customLogoutModal');
   } else {
-    // Update the URL in case it's different
+    // Update the URL in case it's different (reuse the existing modal)
     const confirmBtn = modalElem.querySelector('a.btn-danger');
     if (confirmBtn) confirmBtn.href = logoutUrl;
   }
 
+  // Use Bootstrap's JavaScript API to show the modal programmatically
   const modal = new bootstrap.Modal(modalElem);
   modal.show();
 }
@@ -117,31 +159,40 @@ function showLogoutModal(logoutUrl) {
 // Compare page: sort the rendered store list items by numeric price (client-side)
 function setupCompareHandlers() {
   document.addEventListener('click', (e) => {
+    // Check if clicked element was a Sort button
     const btn = e.target.closest('.sort-stores-btn');
     if (!btn) return;
+    
+    // Find context (specific product card)
     const card = btn.closest('.card');
     if (!card) return;
     const list = card.querySelector('.list-group');
     if (!list) return;
+
+    // Helper: Parse currency strings "$1,234.50" -> 1234.50
     const items = Array.from(list.querySelectorAll('li'));
     function parsePriceFromText(text) {
       if (!text) return Number.POSITIVE_INFINITY;
-      const m = String(text).match(/\d+[\d,.]*/);
+      const m = String(text).match(/\d+[\d,.]*/); // Regex to find numbers
       if (!m) return Number.POSITIVE_INFINITY;
-      const cleaned = m[0].replace(/,/g, '');
+      const cleaned = m[0].replace(/,/g, ''); // Remove commas
       const n = Number(cleaned);
       return isNaN(n) ? Number.POSITIVE_INFINITY : n;
     }
-    // map items to [node, price]
+    
+    // Create temporary array of objects [DOM_Node, Price_Value]
     const mapped = items.map(li => {
       const priceText = li.textContent || li.innerText || '';
       return { node: li, price: parsePriceFromText(priceText) };
     });
+    
+    // Sort array by Price (Ascending)
     mapped.sort((a, b) => a.price - b.price);
-    // clear existing list and append sorted nodes
+    
+    // Re-render: Clear existing list and append sorted nodes
     list.innerHTML = '';
     mapped.forEach((m, idx) => {
-      // add a 'Best Price' badge to the first item
+      // VISUAL ENHANCEMENT: Add 'Best Price' badge to the winner (first item)
       if (idx === 0) {
         // ensure a badge exists
         if (!m.node.querySelector('.best-price-badge')) {
@@ -152,6 +203,7 @@ function setupCompareHandlers() {
           m.node.appendChild(span);
         }
       } else {
+        // Remove badge from losers
         const existing = m.node.querySelector('.best-price-badge'); if (existing) existing.remove();
       }
       list.appendChild(m.node);
@@ -159,27 +211,34 @@ function setupCompareHandlers() {
   });
 }
 
-// Client-side filters, search and sorting for the Compare page
-// Store selection mechanic for compare page
+/**
+ * CLIENT-SIDE COMPARISON FILTERS
+ * Allows users to filter distinct store cards without page reload.
+ */
 function setupStoreSelection() {
   document.addEventListener('click', function (e) {
-    // If clicking the redirection button, don't trigger selection
+    // EXCEPTION: If clicking the "Go to Store" button (external link), 
+    // don't trigger selection logic.
     if (e.target.closest('.btn-go-store')) {
       e.stopPropagation();
       return;
     }
 
+    // Check if clicked element is a Store Option (.store-item)
     const storeItem = e.target.closest('.store-item');
     if (storeItem) {
       const productCard = storeItem.closest('.product-card') || storeItem.closest('.card');
       if (productCard) {
         const isAlreadySelected = storeItem.classList.contains('selected');
 
-        // GLOBAL RESET: Deselect ANY store-item on the entire page first
+        // 1. GLOBAL RESET (Optional UX choice)
+        // Deselect ANY store-item on the ENTIRE page before selecting this one?
+        // Currently configured to deselect others to show "Active" state clearly.
         try {
           document.querySelectorAll('.store-item.selected').forEach(selectedItem => {
             if (selectedItem === storeItem) return; // Skip current if we're just toggling
 
+            // Find other cards and reset their UI state
             const otherCard = selectedItem.closest('.product-card') || selectedItem.closest('.card');
             selectedItem.classList.remove('selected');
 
@@ -187,10 +246,13 @@ function setupStoreSelection() {
               const otherAddBtn = otherCard.querySelector('.btn-premium-add');
               const otherPriceBadge = otherCard.querySelector('.price-badge');
 
+              // Revert Button Data
               if (otherAddBtn) {
+                // Restore original (lowest) price stored in data-initial-price
                 otherAddBtn.dataset.price = otherAddBtn.getAttribute('data-initial-price') || '';
-                otherAddBtn.dataset.store = '';
+                otherAddBtn.dataset.store = ''; // Clear specific store selection
               }
+              // Revert Price Badge
               if (otherPriceBadge) {
                 const initialPrice = otherAddBtn ? otherAddBtn.getAttribute('data-initial-price') : '';
                 if (initialPrice) {
@@ -202,7 +264,8 @@ function setupStoreSelection() {
           });
         } catch (err) { console.error('Error in global store reset', err); }
 
-        // Local Card Reset (standard toggle behavior)
+        // 2. LOCAL CARD RESET
+        // Deselect other stores within THIS same card
         const allLocalStoreItems = productCard.querySelectorAll('.store-item');
         allLocalStoreItems.forEach(item => item.classList.remove('selected'));
 
@@ -210,8 +273,9 @@ function setupStoreSelection() {
         const priceBadge = productCard.querySelector('.price-badge');
         const productImage = productCard.querySelector('.product-image');
 
+        // 3. TOGGLE STATES
         if (isAlreadySelected) {
-          // Deselect current
+          // A. User clicked the same store again -> DESELECT (Revert to default)
           if (addBtn) {
             addBtn.dataset.price = addBtn.getAttribute('data-initial-price') || '';
             addBtn.dataset.store = '';
@@ -229,21 +293,25 @@ function setupStoreSelection() {
             if (originalImage) productImage.src = originalImage;
           }
         } else {
-          // Select new
+          // B. User clicked a new store -> SELECT IT
           storeItem.classList.add('selected');
+          
+          // Update "Add to List" button with selected store's price/name
           if (addBtn) {
             addBtn.dataset.price = storeItem.dataset.storePrice;
             addBtn.dataset.store = storeItem.dataset.storeName;
           }
+          // Update Price Badge with visual pop animation
           if (priceBadge) {
             const inner = priceBadge.querySelector('i') ? '<i class="bi bi-tag-fill"></i> ' : '';
             priceBadge.innerHTML = inner + '€' + storeItem.dataset.storePrice;
+            // Pop animation
             priceBadge.style.transform = 'scale(1.1)';
             setTimeout(() => { priceBadge.style.transform = 'scale(1)'; }, 200);
           }
-          // Update Image to Store-specific image
+          // Update Product Image to specific store version (if available)
           if (productImage && storeItem.dataset.image) {
-            // Only swap if it's not a generic placeholder, unless the original was also a placeholder
+            // Only swap if it's not a generic placeholder
             if (!storeItem.dataset.image.includes('placeholder.svg')) {
                productImage.src = storeItem.dataset.image;
             }
@@ -256,129 +324,190 @@ function setupStoreSelection() {
   });
 }
 
+
+/**
+ * ===============================================
+ * COMPARE PAGE: HYBRID FILTERING SYSTEM
+ * ===============================================
+ * This module handles the complex task of filtering product comparison cards.
+ * It employs a "Hybrid" strategy handling both:
+ * 1. SERVER-SIDE Query Params (e.g. ?category=dairy&page=2) -> Reloads page
+ * 2. CLIENT-SIDE DOM Filtering (e.g. Price Range, Store) -> Hides elements instantly
+ */
 function setupCompareFilters() {
   const productsRow = document.getElementById('products-grid') || document.querySelector('section.container .row.g-4');
   if (!productsRow) return;
 
+  // ----------------------
+  // INPUT REFERENCES
+  // ----------------------
   const searchInput = document.getElementById('product-search-input');
   const searchBtn = document.getElementById('product-search-btn');
-  const storeSelect = document.getElementById('store-filter');
-  const categorySelect = document.getElementById('category-filter');
-  const categoryChipsRow = document.querySelector('.category-chip-row');
+  const storeFilter = document.getElementById('store-filter'); // Dropdown
+  const categorySelect = document.getElementById('category-filter'); // Dropdown
+  const categoryChipsRow = document.querySelector('.category-chip-row'); // Horizontal scrollable chips
   const minInput = document.getElementById('min-price');
   const maxInput = document.getElementById('max-price');
   const sortSelect = document.getElementById('sort-order');
   const applyBtn = document.getElementById('apply-filters');
   const clearBtn = document.getElementById('clear-filters');
+  const activeFiltersDiv = document.getElementById('active-filters'); // Area for "Pills"
 
-  // Store all original product cards
+  // ----------------------
+  // STATE MANAGEMENT
+  // ----------------------
+  // We store a reference to every product card on initial load.
+  // This allows us to "un-hide" them later without reloading the page.
   let allProducts = [];
 
-  // collect available stores from rendered cards
+  /**
+   * INITIALIZER: SCAN DOM
+   * Scans the server-rendered HTML to build our internal index of products.
+   * Also dynamically populates the "Store" dropdown based on what's visible.
+   */
   const collectStoresAndCategories = () => {
     const productDivs = Array.from(productsRow.querySelectorAll('[data-stores]'));
     allProducts = productDivs;
-    const set = new Set();
+    const storeSet = new Set();
+    
+    // Extract available stores from JSON data attributes
     productDivs.forEach(div => {
       try {
         const stores = JSON.parse(div.getAttribute('data-stores') || '[]');
-        stores.forEach(s => { if (s && (s.store || s.name)) set.add((s.store || s.name).trim()); });
-      } catch (e) { }
+        stores.forEach(s => { 
+          if (s && (s.store || s.name)) storeSet.add((s.store || s.name).trim()); 
+        });
+      } catch (e) { console.warn('Bad JSON in data-stores', e); }
     });
-    if (storeSelect) {
-      const existing = new Set(Array.from(storeSelect.options).map(o => o.value));
-      set.forEach(name => { if (!existing.has(name)) { const opt = document.createElement('option'); opt.value = name; opt.textContent = name; storeSelect.appendChild(opt); } });
+    
+    // Add unique found stores to the filter dropdown
+    if (storeFilter) {
+      const existing = new Set(Array.from(storeFilter.options).map(o => o.value));
+      storeSet.forEach(name => { 
+        if (!existing.has(name)) { 
+          const opt = document.createElement('option'); 
+          opt.value = name; 
+          opt.textContent = name; 
+          storeFilter.appendChild(opt); 
+        } 
+      });
     }
-    // Leave categories as rendered by the server so chips stay visible and active highlighting remains.
   };
 
-  const parsePrice = (v) => { if (v === null || v === undefined || v === '') return Number.POSITIVE_INFINITY; const n = Number(String(v).toString().replace(/[^0-9.\-]/g, '')); return isNaN(n) ? Number.POSITIVE_INFINITY : n; };
+  /**
+   * HELPER: PRICE PARSER
+   * Sanitizes currency strings ("€2,300.00") into sortable numbers (2300.00).
+   */
+  const parsePrice = (v) => { 
+    if (v === null || v === undefined || v === '') return Number.POSITIVE_INFINITY; 
+    const n = Number(String(v).toString().replace(/[^0-9.\-]/g, '')); 
+    return isNaN(n) ? Number.POSITIVE_INFINITY : n; 
+  };
 
+  /**
+   * CORE LOGIC: APPLY FILTERS
+   * Iterates over all known products and checks them against ALL active criteria.
+   * This is an "AND" filter (must match Search AND Store AND Category AND Price).
+   */
   const applyFilters = () => {
+    // 1. Snapshot Input Values
     const searchVal = searchInput ? searchInput.value.trim().toLowerCase() : '';
     const activeChip = categoryChipsRow ? categoryChipsRow.querySelector('.category-chip.active') : null;
     const chipVal = activeChip ? (activeChip.dataset.categoryChip || '').trim() : '';
     const selectCategoryVal = categorySelect ? (categorySelect.value || '').trim() : '';
-    const categoryVal = chipVal || selectCategoryVal;
-    const storeVal = storeSelect ? storeSelect.value : '';
+    const categoryVal = chipVal || selectCategoryVal; // Chip wins if both present
+    const storeVal = storeFilter ? storeFilter.value : '';
     const minVal = minInput ? parseFloat(minInput.value) : NaN;
     const maxVal = maxInput ? parseFloat(maxInput.value) : NaN;
     const sortVal = sortSelect ? sortSelect.value : 'price-asc';
 
-    // determine visible products
     const visible = [];
+
+    // 2. Evaluation Loop
     allProducts.forEach(col => {
       if (!col) return;
+
+      // Extract Item Data
       const priceAttr = col.getAttribute('data-price') || '';
       const price = parsePrice(priceAttr);
       const productName = (col.getAttribute('data-name') || '').toLowerCase();
 
-      // search match
+      // TEST A: Search Text (Partial match)
       let searchMatch = true;
       if (searchVal) {
         searchMatch = productName.includes(searchVal);
       }
 
-      // store match
+      // TEST B: Store Availability
+      // Does this product exist in the selected store?
       let storeMatch = true;
       if (storeVal) {
         try {
           const stores = JSON.parse(col.getAttribute('data-stores') || '[]');
-          storeMatch = stores.some(s => { const n = (s.store || s.name || '').toString().trim(); return n.toLowerCase() === storeVal.toLowerCase(); });
+          storeMatch = stores.some(s => { 
+            const n = (s.store || s.name || '').toString().trim(); 
+            return n.toLowerCase() === storeVal.toLowerCase(); 
+          });
         } catch (e) { storeMatch = false; }
       }
 
-      // category match
+      // TEST C: Category
       let categoryMatch = true;
       if (categoryVal) {
         const cat = (col.getAttribute('data-category') || '').trim().toLowerCase();
         categoryMatch = cat === categoryVal.toLowerCase();
       }
 
-      // price range match
+      // TEST D: Price Range
       let priceMatch = true;
       if (!isNaN(minVal)) priceMatch = priceMatch && (price >= minVal);
       if (!isNaN(maxVal)) priceMatch = priceMatch && (price <= maxVal);
 
+      // 3. Visibility Toggle
       if (searchMatch && storeMatch && categoryMatch && priceMatch) {
-        col.style.display = '';
+        col.style.display = ''; // Show
         visible.push({ col, price, name: productName });
       } else {
-        col.style.display = 'none';
+        col.style.display = 'none'; // Hide
       }
     });
 
-    // sort visible columns
+    // 4. Client-Side Sorting
     if (visible.length) {
       if (sortVal === 'price-asc' || sortVal === 'price-desc') {
         visible.sort((a, b) => sortVal === 'price-asc' ? a.price - b.price : b.price - a.price);
       } else if (sortVal === 'name-asc' || sortVal === 'name-desc') {
         visible.sort((a, b) => sortVal === 'name-asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name));
       }
-      // re-append in sorted order
+      // Re-order DOM elements
       visible.forEach(v => productsRow.appendChild(v.col));
     }
 
-    // Update active filter badges
+    // 5. Update UI Badges
     updateActiveFilters(searchVal, categoryVal, storeVal, minVal, maxVal);
   };
 
-  const activeFiltersDiv = document.getElementById('active-filters');
 
+  /**
+   * UI COMPONENT: ACTIVE FILTER PILLS
+   * Renders the "Search: Milk [x]" badges at the top of the grid.
+   */
   const updateActiveFilters = (searchVal, categoryVal, storeVal, minVal, maxVal) => {
     if (!activeFiltersDiv) return;
     activeFiltersDiv.innerHTML = '';
     let hasFilters = false;
 
+    // Helper: Create Pill
     const createFilterBadge = (text, onRemove) => {
       const badge = document.createElement('span');
       badge.className = 'badge bg-primary d-flex align-items-center gap-1 p-2';
       badge.style.borderRadius = '20px';
-      badge.innerHTML = text + ' <i class="bi bi-x-circle ms-1" style="cursor:pointer;"></i>';
+      badge.innerHTML = `${text} <i class="bi bi-x-circle ms-1" style="cursor:pointer;"></i>`;
       badge.querySelector('i').onclick = onRemove;
       return badge;
     };
 
+    // Add Pill for Search
     if (searchVal) {
       hasFilters = true;
       activeFiltersDiv.appendChild(createFilterBadge('Search: ' + searchVal, () => {
@@ -386,6 +515,7 @@ function setupCompareFilters() {
       }));
     }
 
+    // Add Pill for Category
     if (categoryVal) {
       hasFilters = true;
       activeFiltersDiv.appendChild(createFilterBadge('Category: ' + categoryVal, () => {
@@ -395,13 +525,15 @@ function setupCompareFilters() {
       }));
     }
 
+    // Add Pill for Store
     if (storeVal) {
       hasFilters = true;
       activeFiltersDiv.appendChild(createFilterBadge('Store: ' + storeVal, () => {
-        if (storeSelect) { storeSelect.value = ''; applyFilters(); }
+        if (storeFilter) { storeFilter.value = ''; applyFilters(); }
       }));
     }
 
+    // Add Pill for Price
     if (!isNaN(minVal) || !isNaN(maxVal)) {
       hasFilters = true;
       let text = 'Price: ';
@@ -416,6 +548,7 @@ function setupCompareFilters() {
       }));
     }
 
+    // Show/Hide "Clear All" button
     if (hasFilters) {
       activeFiltersDiv.style.display = 'flex';
       const clearAll = document.createElement('button');
@@ -428,50 +561,65 @@ function setupCompareFilters() {
     }
   };
 
+  /**
+   * RESET HANDLER
+   * Clears all filters and restores full list.
+   */
   const clearFilters = () => {
     if (searchInput) searchInput.value = '';
-    if (storeSelect) storeSelect.value = '';
+    if (storeFilter) storeFilter.value = '';
     if (categorySelect) categorySelect.value = '';
     if (categoryChipsRow) categoryChipsRow.querySelectorAll('.category-chip').forEach(ch => ch.classList.remove('active'));
     if (minInput) minInput.value = '';
     if (maxInput) maxInput.value = '';
-    if (sortSelect) sortSelect.value = 'price-asc';
+    if (sortSelect) sortSelect.value = 'price-asc'; // Defaultsort
+    
+    // Show all
     allProducts.forEach(col => { if (col) col.style.display = ''; });
+    updateActiveFilters('', '', '', NaN, NaN); // Clear pills
   };
 
+  // ----------------------
+  // EVENT LISTENERS
+  // ----------------------
   collectStoresAndCategories();
 
-  // Helper to update URL params and reload for server-side filtering
+  // URL Parameter Helper (Server-side Reload)
   const updateParamAndReload = (key, value) => {
     const url = new URL(window.location.href);
-    if (value) {
-      url.searchParams.set(key, value);
-    } else {
-      url.searchParams.delete(key);
-    }
-    url.searchParams.set('page', '1'); // Reset to first page
+    if (value) url.searchParams.set(key, value);
+    else url.searchParams.delete(key);
+    url.searchParams.set('page', '1');
     window.location.href = url.toString();
   };
 
-  // Add search event listeners to apply filters on search
+  // Search Input: Pressing Enter actually reloads page for deep search (server-side)
+  // This varies from Client-side filter behavior above - preserving legacy hybrid behavior.
   searchInput && searchInput.addEventListener('keydown', (e) => { 
     if (e.key === 'Enter') { 
       e.preventDefault(); 
       updateParamAndReload('search', searchInput.value.trim()); 
     } 
   });
+  
+  // Search Button: Deep Search
   searchBtn && searchBtn.addEventListener('click', (e) => { 
     e.preventDefault(); 
     updateParamAndReload('search', searchInput ? searchInput.value.trim() : ''); 
   });
   
+  // Sidebar "Apply" button: Client-side Filter
   applyBtn && applyBtn.addEventListener('click', (e) => { e.preventDefault(); applyFilters(); });
+  
+  // Sidebar "Clear" button: Hybrid Clear (Check URL vs DOM)
   clearBtn && clearBtn.addEventListener('click', (e) => { 
     e.preventDefault(); 
     const url = new URL(window.location.href);
+    // If we have query params, we must reload the page to clear them
     if (url.searchParams.has('category') || url.searchParams.has('search')) {
-      window.location.href = window.location.pathname; // Clear all server filters
+      window.location.href = window.location.pathname; 
     } else {
+      // Otherwise just clear the client-side DOM filters
       clearFilters(); 
     }
   });
@@ -480,10 +628,12 @@ function setupCompareFilters() {
     updateParamAndReload('category', categorySelect.value);
   });
 
-  storeSelect && storeSelect.addEventListener('change', () => { applyFilters(); });
+  storeFilter && storeFilter.addEventListener('change', () => { applyFilters(); });
   minInput && minInput.addEventListener('change', () => { applyFilters(); });
   maxInput && maxInput.addEventListener('change', () => { applyFilters(); });
   sortSelect && sortSelect.addEventListener('change', () => { applyFilters(); });
+  
+  // Chip Click Handler
   if (categoryChipsRow) {
     categoryChipsRow.addEventListener('click', (e) => {
       const btn = e.target.closest('.category-chip');
@@ -511,12 +661,28 @@ function setupPaginationSmoothTransition() {
     });
   });
 }
+/**
+ * ===============================================
+ * HOME PAGE SEARCH: MIXED MODE
+ * ===============================================
+ * This complex function handles two different search paradigms:
+ * 1. SERVER-SIDE SEARCH (Async Fetch): Used when typing in the main input.
+ *    - Hits `/api/search-products`
+ *    - Renders entirely new HTML cards.
+ * 2. CLIENT-SIDE FILTERING (DOM Manipulation): Used when clicking "Apply Filters" sidebar.
+ *    - Iterates over existing DOM elements.
+ *    - Toggles `display: none`.
+ */
 function setupSearchFunctionality() {
+  // DOM ELEMENT REFERENCES
+  // ----------------------
   const input = document.getElementById('home-search-input');
   const btn = document.getElementById('home-search-btn');
-  const resultsSection = document.getElementById('search-results-section');
-  const resultsContainer = document.getElementById('search-results');
-  const productsGrid = document.getElementById('products-grid');
+  const resultsSection = document.getElementById('search-results-section'); // Where JSON results go
+  const resultsContainer = document.getElementById('search-results'); // The grid inside that section
+  const productsGrid = document.getElementById('products-grid'); // The original Server-Side Rendered (SSR) grid
+  
+  // Filter Inputs
   const applyFiltersBtn = document.getElementById('apply-filters');
   const clearFiltersBtn = document.getElementById('clear-filters');
   const storeFilter = document.getElementById('store-filter');
@@ -526,157 +692,294 @@ function setupSearchFunctionality() {
 
   let allProducts = [];
 
-  // collect all initial products
+  /**
+   * SNAPSHOT INITIAL STATE
+   * We grab a reference to all originally rendered product cards on page load.
+   * This allows us to "Restore" the view when filters are cleared, 
+   * rather than needing to reload the page.
+   */
   const collectAllProducts = () => {
     if (!productsGrid) return;
+    // Select all Bootstrap columns that contain cards
     allProducts = Array.from(productsGrid.querySelectorAll('[class*="col"]'));
   };
 
+  /**
+   * ASYNC SEARCH HANDLER
+   * Triggered by: Main Search Button or Enter Key
+   * Action: Fetches JSON from API -> Renders new HTML
+   */
   async function doSearch() {
     if (!input) return;
+    
+    // 1. Validation
     const q = input.value.trim();
-    if (!q) { showNotification('Please enter a search term', 'info'); return; }
+    if (!q) { 
+      showNotification('Please enter a search term', 'info'); 
+      return; 
+    }
+
     try {
+      // 2. Network Request
+      // We use 'same-origin' to ensure cookies/session info is passed if needed
       const res = await fetch(`/api/search-products?q=${encodeURIComponent(q)}`, { credentials: 'same-origin' });
       const data = await res.json().catch(() => ({}));
       const items = data.items || [];
-      // render results
+
+      // 3. Render Setup
       if (!resultsSection || !resultsContainer) return;
-      resultsContainer.innerHTML = '';
+      resultsContainer.innerHTML = ''; // Clear previous results
+
+      // 4. Empty State Handler
       if (!items.length) {
         resultsContainer.innerHTML = `<div class="col-12"><p class="text-muted">No matching products found.</p></div>`;
         resultsSection.style.display = 'block';
         return;
       }
+
+      // 5. Result Rendering Loop
+      // Converts raw JSON objects into Bootstrap Card HTML
       items.forEach(it => {
+        // Data Normalization (Handle missing fields safely)
         const title = it.name || it.title || '';
         const price = it.price || (it.cheapest && it.cheapest.price) || '';
         const img = it.image || (it.images && it.images[0]) || 'https://via.placeholder.com/300x200';
         const store = (it.stores && it.stores[0] && it.stores[0].store) || '';
         const id = it.id || title;
-        const col = document.createElement('div'); col.className = 'col-md-6 col-lg-4';
+
+        // Create Container Column
+        const col = document.createElement('div'); 
+        col.className = 'col-md-6 col-lg-4';
+
+        // Template Literal: Product Card
         col.innerHTML = `
-              <div class="card shadow-sm">
-                <img src="${img}" class="card-img-top product-thumb" alt="${title}">
-            <div class="card-body">
-              <h5 class="card-title">${title}</h5>
-              <p class="card-text mb-1">${store}</p>
-              <p class="card-text text-muted mb-2">${price}</p>
-              <div class="d-flex gap-2">
-                <button class="btn btn-sm btn-info view-details-btn" data-bs-toggle="modal" data-bs-target="#productModal" data-title="${escapeHtml(title)}" data-price="${escapeHtml(price)}" data-store="${escapeHtml(store)}" data-image="${escapeHtml(img)}">View Details</button>
-                <button class="btn btn-sm btn-primary add-to-list-btn" data-id="${escapeHtml(id)}" data-name="${escapeHtml(title)}" data-price="${escapeHtml(price)}" data-image="${escapeHtml(img)}" data-store="${escapeHtml(store)}">Add to List</button>
+          <div class="card shadow-sm h-100">
+            <!-- Product Thumbnail -->
+            <img src="${img}" class="card-img-top product-thumb" alt="${escapeHtml(title)}">
+            
+            <div class="card-body d-flex flex-column">
+              <h5 class="card-title">${escapeHtml(title)}</h5>
+              <p class="card-text mb-1 badge bg-light text-dark align-self-start border">${escapeHtml(store)}</p>
+              <p class="card-text text-primary fw-bold mb-3">${escapeHtml(price)}</p>
+              
+              <!-- Action Buttons (Push to bottom of flex container) -->
+              <div class="mt-auto d-flex gap-2">
+                <!-- View Details Modal Trigger -->
+                <button class="btn btn-sm btn-info text-white view-details-btn" 
+                        data-bs-toggle="modal" 
+                        data-bs-target="#productModal" 
+                        data-title="${escapeHtml(title)}" 
+                        data-price="${escapeHtml(price)}" 
+                        data-store="${escapeHtml(store)}" 
+                        data-image="${escapeHtml(img)}">
+                  <i class="bi bi-eye"></i> View Details
+                </button>
+                
+                <!-- Add to List Trigger -->
+                <button class="btn btn-sm btn-primary add-to-list-btn" 
+                        data-id="${escapeHtml(id)}" 
+                        data-name="${escapeHtml(title)}" 
+                        data-price="${escapeHtml(price)}" 
+                        data-image="${escapeHtml(img)}" 
+                        data-store="${escapeHtml(store)}">
+                  <i class="bi bi-plus-lg"></i> Add
+                </button>
               </div>
             </div>
           </div>
         `;
         resultsContainer.appendChild(col);
       });
+
+      // 6. View State Transition
+      // Show the dynamic results, hide the static SSR grid
       resultsSection.style.display = 'block';
       if (productsGrid) productsGrid.style.display = 'none';
-      // after rendering, attach view-details behavior and claim buttons
-      // view-details handled by setupProductModalHandlers (it binds existing elements on DOMContentLoaded), so we need to re-run attaching for newly created elements
-      // attach event for view-details and claim buttons
-      document.querySelectorAll('.view-details-btn').forEach(el => el.removeEventListener('click', noop));
-      // small rebind: call setupProductModalHandlers to rebind handlers to new elements
+
+      // 7. Event Re-binding
+      // Since we injected new HTML, previously bound event listeners (like for Modals) 
+      // might need a refresh or we need manually delegate.
+      // This helper re-scans the DOM for buttons.
       try { setupProductModalHandlers(); } catch (e) { }
+
     } catch (err) {
-      showNotification('Search failed', 'danger');
+      console.error(err);
+      showNotification('Search failed due to a network error.', 'danger');
     }
   }
 
+  /**
+   * CLIENT-SIDE FILTER HANDLER
+   * Triggered by: "Apply Filters" button in sidebar.
+   * Action: Hides DOM elements in the SSR grid based on criteria.
+   */
   const applyHomFilters = () => {
     if (!productsGrid) return;
+
+    // 1. Parse Inputs safely
     const minVal = minPrice ? parseFloat(minPrice.value) : NaN;
     const maxVal = maxPrice ? parseFloat(maxPrice.value) : NaN;
     const sortVal = sortOrder ? sortOrder.value : 'price-asc';
-    const parsePrice = (v) => { const n = Number(String(v || '').replace(/[^0-9.\-]/g, '')); return isNaN(n) ? 0 : n; };
+    
+    // Robust Price Parser (Handles currency symbols)
+    const parsePrice = (v) => { 
+      const n = Number(String(v || '').replace(/[^0-9.\-]/g, '')); 
+      return isNaN(n) ? 0 : n; 
+    };
 
-    const visible = [];
+    const visible = []; // To store items that pass all tests
+
+    // 2. Evaluation Loop
     allProducts.forEach(col => {
       if (!col) return;
       const card = col.querySelector('.card');
       if (!card) return;
+
+      // Extract Data from DOM Attributes (fast) or Text Content (slow backup)
       const priceText = card.getAttribute('data-price') || card.querySelector('[class*="price"]')?.textContent || '0';
       const price = parsePrice(priceText);
 
+      // Predicate: Does it match price range?
       let priceMatch = true;
       if (!isNaN(minVal)) priceMatch = priceMatch && (price >= minVal);
       if (!isNaN(maxVal)) priceMatch = priceMatch && (price <= maxVal);
 
+      // 3. Layout Update
       if (priceMatch) {
-        col.style.display = '';
+        col.style.display = ''; // Show
         const name = (card.getAttribute('data-name') || card.querySelector('.card-title')?.textContent || '').toLowerCase();
         visible.push({ col, price, name });
       } else {
-        col.style.display = 'none';
+        col.style.display = 'none'; // Hide
       }
     });
 
-    // sort
+    // 4. Sorting Logic
     if (visible.length) {
       if (sortVal === 'price-asc' || sortVal === 'price-desc') {
         visible.sort((a, b) => sortVal === 'price-asc' ? a.price - b.price : b.price - a.price);
       } else if (sortVal === 'name-asc' || sortVal === 'name-desc') {
         visible.sort((a, b) => sortVal === 'name-asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name));
       }
+      
+      // 5. DOM Reordering
+      // appendChild moves an existing node rather than cloning it, 
+      // preserving listeners and state.
       visible.forEach(v => productsGrid.appendChild(v.col));
     }
   };
 
+  /**
+   * RESET HANDLER
+   * Restores input fields and visual grid state to default.
+   */
   const clearHomeFilters = () => {
     if (minPrice) minPrice.value = '';
     if (maxPrice) maxPrice.value = '';
     if (sortOrder) sortOrder.value = 'price-asc';
     if (storeFilter) storeFilter.value = '';
     if (input) input.value = '';
+
+    // Show all originally cached products
     allProducts.forEach(col => { if (col) col.style.display = ''; });
+    
+    // Hide search results, show main grid
     if (resultsSection) resultsSection.style.display = 'none';
     if (productsGrid) productsGrid.style.display = '';
   };
 
+  // ----------------------
+  // EVENT BINDING
+  // ----------------------
+  // Run startup routine
   collectAllProducts();
+
+  // Bind Search Actions
   if (btn) btn.addEventListener('click', doSearch);
-  if (input) input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); doSearch(); } });
-  if (applyFiltersBtn) applyFiltersBtn.addEventListener('click', (e) => { e.preventDefault(); applyHomFilters(); });
-  if (clearFiltersBtn) clearFiltersBtn.addEventListener('click', (e) => { e.preventDefault(); clearHomeFilters(); });
+  if (input) input.addEventListener('keydown', (e) => { 
+    if (e.key === 'Enter') { 
+      e.preventDefault(); 
+      doSearch(); 
+    } 
+  });
+
+  // Bind Sidebar Actions
+  if (applyFiltersBtn) applyFiltersBtn.addEventListener('click', (e) => { 
+    e.preventDefault(); 
+    applyHomFilters(); 
+  });
+  if (clearFiltersBtn) clearFiltersBtn.addEventListener('click', (e) => { 
+    e.preventDefault(); 
+    clearHomeFilters(); 
+  });
 }
 
 function noop() { }
 
-// Store suggestions for stores page: fetch stores and show dropdown on focus/hover
+/**
+ * ===============================================
+ * STORE SUGGESTIONS / STORE FINDER LOGIC
+ * ===============================================
+ * Handles the "Stores" page interactivity:
+ * 1. Filtering the list of store buttons (Sidebar)
+ * 2. Fetching products specific to a selected store (Async)
+ * 3. Rendering those products in a grid (Dynamic HTML)
+ */
 function setupStoreSuggestions() {
-  const input = document.getElementById('stores-search-input');
-  const grid = document.getElementById('stores-grid');
-  const list = document.getElementById('store-products-list');
-  const empty = document.getElementById('store-products-empty');
-  const title = document.getElementById('store-products-title');
-  const subtitle = document.getElementById('store-products-subtitle');
-  const loading = document.getElementById('store-products-loading');
+  // DOM ELEMENT REFERENCES
+  // ----------------------
+  const input = document.getElementById('stores-search-input'); // Sidebar filter input
+  const grid = document.getElementById('stores-grid');          // Container for sidebar buttons
+  const list = document.getElementById('store-products-list');  // Main content area for products
+  const empty = document.getElementById('store-products-empty');// "No products" placeholder
+  const title = document.getElementById('store-products-title');// Header ("Aldi", "Lidl", etc)
+  const subtitle = document.getElementById('store-products-subtitle'); // Item count text
+  const loading = document.getElementById('store-products-loading');   // Spinner
+
+  // Safety Check: If we aren't on the Stores page, exit.
   if (!grid) {
-    console.log('setupStoreSuggestions: grid element not found, skipping setup');
+    // console.log('setupStoreSuggestions: grid element not found, skipping setup');
     return;
   }
 
+  // Collection of all store sidebar buttons
   const cards = Array.from(grid.querySelectorAll('.store-card-btn'));
   console.log('setupStoreSuggestions: Found', cards.length, 'store cards');
 
+  /**
+   * RENDERER: DYNAMIC HTML GENERATION
+   * Converts a list of JSON product objects into the main grid view.
+   * 
+   * @param {Array} items - List of product objects
+   * @param {string} storeName - Name of the currently active store
+   */
   const renderProducts = (items = [], storeName = '') => {
     if (!list) return;
-    list.innerHTML = '';
+    list.innerHTML = ''; // Clear previous view
+
+    // Empty State Handling
     if (!items.length) {
       if (empty) empty.style.display = 'block';
       list.style.display = 'none';
       if (subtitle) subtitle.textContent = 'No products or deals found for this store.';
       return;
     }
+
+    // Success State Handling
     if (empty) empty.style.display = 'none';
     list.style.display = '';
     if (subtitle) subtitle.textContent = `${items.length} item${items.length === 1 ? '' : 's'} from ${storeName}`;
 
+    // Item HTML Template Generator
     const toHtml = (item) => {
+      // 1. Data Normalization
       const name = item.name || item.title || 'Product';
+      
+      // Attempt to find localized price for THIS store specifically
       const price = item.price || (item.matched_stores && item.matched_stores[0] && item.matched_stores[0].price) || '';
-      // Prefer store-specific image from matched_stores, fallback to item.image
+      
+      // 2. Image Selection Logic
+      // Hierarchy: Store-specific image > Generic Item Image > Placeholder
       let img = 'https://via.placeholder.com/320x200';
       if (Array.isArray(item.matched_stores) && item.matched_stores.length && item.matched_stores[0].image) {
         img = item.matched_stores[0].image;
@@ -685,6 +988,9 @@ function setupStoreSuggestions() {
       } else if (item.images && item.images[0]) {
         img = item.images[0];
       }
+
+      // 3. Store Tags Generation
+      // Creates badges for where else this product might be found
       const storeTags = [];
       if (Array.isArray(item.matched_stores) && item.matched_stores.length) {
         item.matched_stores.forEach(s => {
@@ -695,78 +1001,129 @@ function setupStoreSuggestions() {
       } else if (item.store) {
         storeTags.push(item.store);
       }
-      const source = item.source === 'featured_deal' ? 'Featured Deal' : 'Product';
       const storeBadges = storeTags.map(t => `<span class="badge bg-light text-dark border">${escapeHtml(t)}</span>`).join(' ');
+      
+      const source = item.source === 'featured_deal' ? 'Featured Deal' : 'Product';
+      
+      // 4. Final HTML Output
       return `
-        <div class="col-md-6">
-          <div class="store-product-card h-100 d-flex flex-column">
-            <img src="${img}" alt="${escapeHtml(name)}" class="product-image">
-            <div class="p-3 d-flex flex-column flex-grow-1">
+        <div class="col-md-6 col-lg-4 mb-4">
+          <div class="store-product-card h-100 d-flex flex-column card shadow-sm border-0">
+            <!-- Product Image -->
+            <div class="position-relative">
+              <img src="${img}" alt="${escapeHtml(name)}" class="product-image w-100" style="height: 200px; object-fit: contain; padding: 1rem;">
+              <span class="position-absolute top-0 end-0 m-2 badge ${item.source === 'featured_deal' ? 'bg-success' : 'bg-primary'}">
+                ${source}
+              </span>
+            </div>
+            
+            <!-- Card Body -->
+            <div class="p-3 d-flex flex-column flex-grow-1 bg-white">
               <div class="d-flex justify-content-between align-items-start gap-2">
-                <h6 class="mb-1 fw-bold">${escapeHtml(name)}</h6>
-                <span class="badge ${item.source === 'featured_deal' ? 'bg-success' : 'bg-primary'}">${source}</span>
+                <h6 class="mb-1 fw-bold text-dark">${escapeHtml(name)}</h6>
               </div>
-              ${price ? `<div class="text-success fw-semibold mb-2">${escapeHtml(String(price))}</div>` : ''}
-              <div class="d-flex flex-wrap gap-1 mb-2">${storeBadges}</div>
-              <div class="text-muted small mt-auto">${escapeHtml(item.category || '')}</div>
+              
+              ${price ? `<div class="text-primary fw-bold fs-5 mb-2">€${escapeHtml(String(price))}</div>` : ''}
+              
+              <!-- Store Badges -->
+              <div class="d-flex flex-wrap gap-1 mb-3">${storeBadges}</div>
+              
+              <div class="mt-auto d-flex justify-content-between align-items-center">
+                <small class="text-muted">${escapeHtml(item.category || 'General')}</small>
+                <button class="btn btn-sm btn-outline-primary rounded-pill px-3">View</button>
+              </div>
             </div>
           </div>
         </div>`;
     };
 
+    // Inject all items at once for performance
     list.innerHTML = items.map(toHtml).join('');
   };
 
+  /**
+   * ASYNC DATA FETCHING
+   * Retrieves products for the clicked store.
+   * 
+   * @param {string} storeName - "Tesco", "Aldi", etc.
+   */
   const fetchStore = async (storeName) => {
     if (!storeName) return;
+    
+    // UI Loading State
     if (loading) loading.style.display = 'inline-block';
     if (empty) empty.style.display = 'none';
     if (list) list.style.display = 'none';
     if (subtitle) subtitle.textContent = 'Loading products...';
+
     try {
+      // API Call
       const res = await fetch(`/api/store/${encodeURIComponent(storeName)}/products`, { credentials: 'same-origin' });
       if (!res.ok) throw new Error('Request failed');
+      
       const data = await res.json();
       const items = [...(data.products || [])];
+      
+      // Render Results
       if (!items.length) {
         if (subtitle) subtitle.textContent = `No products found for ${storeName}`;
         if (empty) empty.style.display = 'block';
         return;
       }
       renderProducts(items, storeName);
+      
     } catch (err) {
+      console.error(err);
       renderProducts([], storeName);
       showNotification && showNotification('Could not load products for this store', 'danger');
     } finally {
+      // Cleanup Loading State
       if (loading) loading.style.display = 'none';
     }
   };
 
+  /**
+   * UI HELPER: ACTIVE STATE TOGGLE
+   * Highlights the selected sidebar button.
+   */
   const activateCard = (btn) => {
     cards.forEach(c => c.classList.remove('active'));
     if (btn) btn.classList.add('active');
   };
 
+  // ----------------------
+  // EVENT LISTENERS
+  // ----------------------
+  
+  // 1. Sidebar Selection (Delegated Event)
   grid.addEventListener('click', (e) => {
     const btn = e.target.closest('.store-card-btn');
     if (!btn) return;
+    
     e.preventDefault();
     const storeName = btn.getAttribute('data-store-name');
     console.log('Store clicked:', storeName);
+    
     if (!storeName) return;
+    
     activateCard(btn);
     if (title) title.textContent = storeName;
-    fetchStore(storeName);
+    
+    fetchStore(storeName); // Trigger load
   });
 
+  // 2. Sidebar Search/Filter Logic
   const filterGrid = (q) => {
     const query = (q || '').toLowerCase();
     let visible = 0;
+    
     cards.forEach(btn => {
       const name = (btn.getAttribute('data-store-name') || '').toLowerCase();
       const location = (btn.textContent || '').toLowerCase();
-      const col = btn.closest('.col-12');
+      // Important: We toggle the parent wrapper (.col-12) to hide the whole row gap
+      const col = btn.closest('.col-12'); 
       if (!col) return;
+
       if (!query || name.includes(query) || location.includes(query)) {
         col.style.display = '';
         visible += 1;
@@ -774,14 +1131,19 @@ function setupStoreSuggestions() {
         col.style.display = 'none';
       }
     });
+
     if (visible === 0) {
-      showNotification && showNotification('No stores found matching your search', 'info');
+      // Optional: show empty state for sidebar
     }
   };
 
+  // Bind Search Input
   input?.addEventListener('input', () => filterGrid(input.value.trim()));
-  input?.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); filterGrid(input.value.trim()); } });
+  input?.addEventListener('keydown', (e) => { 
+    if (e.key === 'Enter') { e.preventDefault(); filterGrid(input.value.trim()); } 
+  });
 
+  // 3. Initial Load: Auto-select first store
   if (cards.length) {
     cards[0].click();
   }

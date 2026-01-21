@@ -13,39 +13,50 @@ Provides styling for:
 */
 
 /* ═══════════════════════════════════════════════════════════════════════════ */
-/* RESET & BASE STYLES */
+/* RESET & BASE STYLES - Foundation for consistency across browsers */
 /* ═══════════════════════════════════════════════════════════════════════════ */
 :root {
-  --premium-purple: #7c3aed;
-  --premium-indigo: #6366f1;
-  --premium-violet: #8b5cf6;
-  --premium-dark: #1e1b4b;
-  --glass-white: rgba(255, 255, 255, 0.72);
-  --glass-border: rgba(255, 255, 255, 0.2);
+  /* 
+   * CSS VARIABLES (Custom Properties)
+   * These allow us to maintain a consistent color theme throughout the app.
+   * If we want to change the "Purple" brand color, we only change it here.
+   */
+  --premium-purple: #7c3aed;   /* Main brand color (Vibrant Violet) */
+  --premium-indigo: #6366f1;   /* Secondary accent (Indigo) */
+  --premium-violet: #8b5cf6;   /* Lighter violet for hover states */
+  --premium-dark: #1e1b4b;     /* Deep navy for text/contrast */
+  --glass-white: rgba(255, 255, 255, 0.72); /* Semi-transparent white for glassmorphism */
+  --glass-border: rgba(255, 255, 255, 0.2); /* Subtle white border for glass cards */
 }
 
+/* Universal Reset: Remove default browser padding/margin */
 * {
   margin: 0;
   padding: 0;
-  box-sizing: border-box;
+  box-sizing: border-box; /* Ensures padding doesn't increase element width */
 }
 
 body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background-color: #f8f6ff;
-  color: #333;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* System font stack for performance */
+  background-color: #f8f6ff; /* Very light purple background */
+  color: #333; /* Dark grey text reduces eye strain compared to pure black */
 }
 
 a {
-  color: #7c3aed;
-  text-decoration: none;
+  color: #7c3aed; /* Brand color links */
+  text-decoration: none; /* Remove underlines by default for a cleaner look */
 }
 
 a:hover {
-  text-decoration: underline;
+  text-decoration: underline; /* Add underline on hover for accessibility/affordance */
 }
 
-/* Hide number input spinners */
+/* 
+ * FORM ELEMENT UTILITIES
+ * Specific fixes for input behaviors
+ */
+
+/* Hide number input spinners (up/down arrows) in Webkit browsers (Chrome/Safari) */
 input::-webkit-outer-spin-button,
 input::-webkit-inner-spin-button {
   -webkit-appearance: none;
@@ -53,42 +64,55 @@ input::-webkit-inner-spin-button {
   margin: 0;
 }
 
+/* Hide number input spinners in Firefox */
 input[type=number] {
   -moz-appearance: textfield;
   appearance: textfield;
 }
 
-/* Clamping product descriptions to exactly 2 lines for visual consistency */
+/* 
+ * UTILITY CLASSES
+ * Helper classes used repeatedly in HTML templates
+ */
+
+/* 
+ * Multi-line Text Truncation 
+ * Clamps product descriptions to exactly 2 lines for visual consistency in grid cards.
+ * If text is longer, it adds "..."
+ */
 .product-description-clamp {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  min-height: 2.8em; /* Ensures consistent card height if description is short */
-  line-height: 1.4;
+  display: -webkit-box;          /* Required for line clamping */
+  -webkit-line-clamp: 2;        /* Limit to 2 lines */
+  line-clamp: 2;                /* Standard property (future support) */
+  -webkit-box-orient: vertical; /* Required for line clamping */
+  overflow: hidden;             /* Hide overflow text */
+  text-overflow: ellipsis;      /* Add "..." at the end */
+  min-height: 2.8em;            /* Reserved height = line-height (1.4) * 2 lines */
+  line-height: 1.4;             /* Space between lines */
 }
 
 .cursor-pointer {
-  cursor: pointer;
+  cursor: pointer; /* Force "hand" cursor (useful for non-button interactive elements like divs) */
 }
 
 .product-link:hover {
-  filter: brightness(0.95);
-  transition: all 0.2s ease;
+  filter: brightness(0.95);     /* Slightly darken image on hover */
+  transition: all 0.2s ease;    /* Smooth animation */
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════ */
 /* NAVIGATION BAR - Purple gradient with responsive design */
 /* ═══════════════════════════════════════════════════════════════════════════ */
-/* Modern Navbar */
+/* 
+ * Modern Navbar Styles
+ * Overrides default Bootstrap navbar styles
+ */
 .navbar {
   background: #ffffff !important;
   border-bottom: 1px solid #eef2f7 !important;
-  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08) !important; /* Soft shadow */
   padding: 0.8rem 0 !important;
-  transition: all 0.3s ease;
+  transition: all 0.3s ease; /* Animate background/size changes on scroll */
 }
 
 .navbar-brand {
@@ -97,7 +121,7 @@ input[type=number] {
   font-size: 1.5rem !important;
   letter-spacing: -0.5px !important;
   display: flex !important;
-  align-items: center !important;
+  align-items: center !important; /* Vertically center icon and text */
 }
 
 .navbar-brand i {
@@ -108,7 +132,11 @@ input[type=number] {
 /* PREMIUM NAV ICON EFFECTS & ACTIVE STATES */
 /* ═══════════════════════════════════════════════════════════════════════════ */
 
-/* Active Tab Box Indicator - Requested by user */
+/* 
+ * Active Tab Box Indicator 
+ * We use a semi-transparent white box for the active tab when the navbar is transparent (at top of page).
+ * This creates a "glass" effect against the purple hero background.
+ */
 .navbar-premium .nav-link.active {
   background: rgba(255, 255, 255, 0.15) !important;
   border: 1px solid rgba(255, 255, 255, 0.25) !important;
@@ -118,16 +146,24 @@ input[type=number] {
   padding-right: 1rem !important;
 }
 
+/* 
+ * Scrolled Active State
+ * When the user scrolls down and the navbar turns white/opaque, 
+ * we switch the active tab to a light purple background with dark purple text.
+ */
 .navbar-premium.scrolled .nav-link.active {
-  background: #f5f3ff !important;
-  border: 1px solid #7c3aed !important;
+  background: #f5f3ff !important; /* Light violet background */
+  border: 1px solid #7c3aed !important; /* Solid purple border */
   color: #7c3aed !important;
-  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.1);
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.1); /* Subtle shadow for depth */
   padding-left: 1rem !important;
   padding-right: 1rem !important;
 }
 
-/* Icon Button Active States */
+/* 
+ * Icon Button Active States 
+ * Applies similar logic to icon-only buttons (like Search or Cart).
+ */
 .navbar-premium .nav-icon-btn.active {
   background: rgba(255, 255, 255, 0.2) !important;
   border: 1px solid rgba(255, 255, 255, 0.3) !important;
@@ -142,7 +178,10 @@ input[type=number] {
   box-shadow: 0 4px 12px rgba(124, 58, 237, 0.1);
 }
 
-/* Fix Profile Icon Visibility when Active */
+/* 
+ * Profile Button Styling 
+ * The profile button often has an image or user details, so it gets special handling.
+ */
 .navbar-premium .nav-profile-btn.active {
   background: rgba(255, 255, 255, 0.2) !important;
   color: white !important;
@@ -151,13 +190,14 @@ input[type=number] {
 }
 
 .navbar-premium.scrolled .nav-profile-btn.active {
-  background: #7c3aed !important;
+  background: #7c3aed !important; /* Solid purple when scrolled */
   color: white !important;
   border: 1px solid #7c3aed !important;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(124, 58, 237, 0.2);
 }
 
+/* Standard Nav Link Hover Effects */
 .nav-icon-link {
   position: relative;
   transition: all 0.3s ease !important;
@@ -261,83 +301,143 @@ input[type=number] {
   overflow: hidden;
 }
 
+/* 
+ * LOGOUT MODAL STYLES
+ * Specific overrides for the "Are you sure?" logout confirmation modal.
+ * Uses a red/danger theme to indicate a destructive/exit action.
+ */
 .modal-confirm-logout .modal-header {
-  background: #fef2f2;
-  color: #b91c1c;
-  border: none;
+  background: #fef2f2; /* Very light red background */
+  color: #b91c1c;      /* Dark red text */
+  border: none;        /* Remove default bootstrap border */
 }
 
+/* 
+ * Circular Icon Container 
+ * Centers the door/logout icon in the modal body.
+ */
 .logout-icon-circle {
   width: 80px;
   height: 80px;
-  background: #fee2e2;
-  color: #ef4444;
-  border-radius: 50%;
+  background: #fee2e2; /* Light red circle */
+  color: #ef4444;      /* Bright red icon */
+  border-radius: 50%;  /* Perfect circle */
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 20px;
+  margin: 0 auto 20px; /* Center horizontally with bottom margin */
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════ */
+/* NAVIGATION LINKS & MOBILE MENU UTILITIES */
+/* ═══════════════════════════════════════════════════════════════════════════ */
+
+/* 
+ * Standard Navigation Links 
+ * Default styling for links in the sidebar or mobile menu 
+ * (Standard, non-premium navbar context)
+ */
 .nav-link {
-  color: #4a5568 !important;
+  color: #4a5568 !important; /* Slate gray text */
   font-weight: 600 !important;
-  padding: 0.6rem 1rem !important;
+  padding: 0.6rem 1rem !important; /* Comfortable touch target size */
   font-size: 1rem !important;
-  transition: all 0.2s ease !important;
+  transition: all 0.2s ease !important; /* Smooth hover transition */
   display: flex !important;
   align-items: center !important;
-  gap: 8px !important;
+  gap: 8px !important; /* Space between icon and text */
 }
 
+/* 
+ * Nav Link Icons 
+ * Ensures icons are slightly larger than text for visual balance 
+ */
 .nav-link i {
   font-size: 1.1rem;
 }
 
+/* 
+ * Nav Link Hover State
+ * Adds a subtle background highlight and changes text color to brand blue/purple
+ */
 .nav-link:hover {
   color: #667eea !important;
   background: rgba(102, 126, 234, 0.05) !important;
 }
 
-/* Base link active state for non-premium navbars if they still exist */
+/* 
+ * Legacy/Standard Navbar Active State
+ * Fallback for pages that might not use the .navbar-premium class yet.
+ * Ensures the active page is highlighted in blue.
+ */
 .nav-link.active:not(.navbar-premium .nav-link) {
   color: #667eea !important;
   font-weight: 700 !important;
 }
 
-/* Scroll Containers - Global Layout Fix */
+/* ═══════════════════════════════════════════════════════════════════════════ */
+/* HORIZONTAL SCROLL CONTAINERS */
+/* Used for "Featured Deals" and "Similar Products" swiping lists */
+/* ═══════════════════════════════════════════════════════════════════════════ */
+
+/* 
+ * Scroll Container Root
+ * Establishes positioning context for scroll arrows 
+ */
 .scroll-container {
   position: relative;
-  margin: 0 -15px;
+  margin: 0 -15px; /* Negative margin to pull to edges on small screens */
 }
 
+/* 
+ * Scroll Wrapper
+ * The actual scrollable element containing cards.
+ * Uses Flexbox to align items in a row.
+ */
 .scroll-wrapper {
   display: flex !important;
   flex-direction: row !important;
-  flex-wrap: nowrap !important;
-  overflow-x: auto !important;
-  gap: 24px;
-  padding: 20px 5px;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  flex-wrap: nowrap !important; /* Prevents wrapping to next line */
+  overflow-x: auto !important;  /* Enables horizontal scrolling */
+  gap: 24px;                    /* constant spacing between cards */
+  padding: 20px 5px;            /* Padding allows shadow to show without clipping */
+  scrollbar-width: none;        /* Firefox: Hide scrollbar */
+  -ms-overflow-style: none;     /* IE/Edge: Hide scrollbar */
 }
 
+/* 
+ * Hide Scrollbar for Webkit (Chrome/Safari) 
+ * Keeps the UI clean and app-like
+ */
 .scroll-wrapper::-webkit-scrollbar {
   display: none;
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════ */
+/* PRODUCT CARDS (HORIZONTAL LAYOUT) */
+/* Used inside scroll containers */
+/* ═══════════════════════════════════════════════════════════════════════════ */
+
+/* 
+ * Horizontal Product Card 
+ * Fixed width to ensure consistency in scrollable lists.
+ */
 .product-card-horizontal {
-  min-width: 320px;
+  min-width: 320px;          /* Prevents squishing */
   max-width: 320px;
   background: white;
-  border-radius: 24px;
-  border: 1px solid #f1f5f9;
+  border-radius: 24px;       /* Modern large rounded corners */
+  border: 1px solid #f1f5f9; /* Subtle border */
   display: flex !important;
   flex-direction: column !important;
-  overflow: hidden;
-  transition: all 0.3s ease;
+  overflow: hidden;          /* Clips internal content to border-radius */
+  transition: all 0.3s ease; /* Smooth hover lift effect */
 }
 
+/* 
+ * Card Image Wrapper 
+ * Centers the product image and allocates fixed space for it 
+ */
 .card-image-wrapper {
   height: 200px;
   width: 100%;
@@ -345,28 +445,49 @@ input[type=number] {
   align-items: center !important;
   justify-content: center !important;
   padding: 20px;
-  background: white;
+  background: white; /* White background behind transparent PNGs */
 }
 
+/* 
+ * Product Image Scaling
+ * Ensures image fits within wrapper without distortion 
+ */
 .card-image-wrapper img {
   max-height: 100%;
   max-width: 100%;
-  object-fit: contain;
+  object-fit: contain; /* Maintain aspect ratio */
 }
 
+/* 
+ * Card Body 
+ * Contains text and action buttons.
+ * flex-grow ensures it fills remaining height if card is stretched.
+ */
 .product-card-body {
   padding: 1.5rem;
-  background: #fbfcfe;
+  background: #fbfcfe; /* Very faint blue-white */
   flex-grow: 1;
 }
 
+/* 
+ * Product Name Typography 
+ */
 .product-name {
   font-weight: 800;
-  color: #1e1b4b;
+  color: #1e1b4b; /* Dark Navy */
   margin-bottom: 0.5rem;
   font-size: 1.1rem;
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════ */
+/* CATEGORY CARDS */
+/* Simple navigation cards for "Dairy", "Meat", etc. */
+/* ═══════════════════════════════════════════════════════════════════════════ */
+
+/* 
+ * Category Card Base 
+ * Square-ish card with centered icon and text.
+ */
 .category-card {
   min-width: 190px;
   height: 140px;
@@ -377,38 +498,63 @@ input[type=number] {
   align-items: center !important;
   justify-content: center !important;
   border: 1px solid #f1f5f9;
-  text-decoration: none;
+  text-decoration: none; /* No underline on the entire card link */
   transition: all 0.3s ease;
 }
 
+/* 
+ * Category Icon (Emoji/Bootstrap Icon) 
+ */
 .category-icon {
-  font-size: 2.5rem !important;
+  font-size: 2.5rem !important; /* Large icon */
   margin-bottom: 0.5rem;
 }
 
+/* 
+ * Category Name Label 
+ */
 .category-name {
   font-weight: 700;
   color: #1e1b4b;
 }
 
+/* 
+ * Category Card Hover Effect 
+ * Lifts the card and highlights border with brand color
+ */
 .category-card:hover {
-  background: #f5f3ff;
-  border-color: #7c3aed;
-  transform: translateY(-5px);
+  background: #f5f3ff;      /* Light purple tint */
+  border-color: #7c3aed;    /* Brand purple border */
+  transform: translateY(-5px); /* Lift up */
 }
 
+/* 
+ * Navbar Toggler (Mobile Menu Button) 
+ * Removes default browser outline for cleaner look
+ */
 .navbar-toggler:focus {
   box-shadow: none;
   outline: none;
 }
 
+/* 
+ * Navbar Toggler Icon Replacement
+ * Replaces default Bootstrap black SVG with a Purple one to match theme.
+ * Uses a Data URI for the SVG image.
+ */
 .navbar-toggler-icon {
   background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgb(124, 58, 237)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2.5' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e") !important;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════ */
 /* PREMIUM NAVBAR & SCROLL HANDLING */
+/* The main navigation bar with "Glassmorphism" effect */
 /* ═══════════════════════════════════════════════════════════════════════════ */
+
+/* 
+ * Initial Transparency State 
+ * Navbar starts transparent over the hero background 
+ */
 .navbar-premium {
   background: transparent !important;
   border-bottom: none !important;
@@ -420,15 +566,24 @@ input[type=number] {
   top: 0;
 }
 
+/* 
+ * Scrolled State (Opaque)
+ * Applied via JS when window.scrollY > 50px.
+ * Becomes white with blur and stick to top.
+ */
 .navbar-premium.scrolled {
   background: rgba(255, 255, 255, 0.9) !important;
-  backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px); /* Blur content behind navbar */
   border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08) !important;
-  position: fixed;
+  position: fixed; /* Stick to top */
   top: 0;
 }
 
+/* 
+ * Nav Text Colors (Transparent Mode) 
+ * White text to contrast against purple hero 
+ */
 .navbar-premium .nav-link, 
 .navbar-premium .navbar-brand {
   color: rgba(255, 255, 255, 0.9) !important;
@@ -443,12 +598,20 @@ input[type=number] {
   color: rgba(255, 255, 255, 0.85) !important;
 }
 
+/* 
+ * Text Colors (Scrolled/White Mode) 
+ * Switches to Purple text when background is white 
+ */
 .navbar-premium.scrolled .brand-grocery-text {
   color: #7c3aed !important;
 }
 
+/* 
+ * Brand Icon Container 
+ * The square box holding the logo icon 
+ */
 .navbar-premium .brand-icon {
-  background: rgba(255, 255, 255, 0.2) !important;
+  background: rgba(255, 255, 255, 0.2) !important; /* Glass effect */
   backdrop-filter: blur(8px);
   border: 1px solid rgba(255, 255, 255, 0.3);
   width: 44px;
@@ -461,6 +624,9 @@ input[type=number] {
   transition: all 0.3s ease;
 }
 
+/* 
+ * Nav Icon Buttons (Cart, Search, etc.) - Transparent Mode 
+ */
 .navbar-premium .nav-icon-btn {
   background: transparent !important;
   backdrop-filter: none;
@@ -468,6 +634,9 @@ input[type=number] {
   color: white !important;
 }
 
+/* 
+ * Hover Effects for Links 
+ */
 .navbar-premium .nav-link:hover {
   color: white !important;
   text-decoration: underline !important;
@@ -478,6 +647,10 @@ input[type=number] {
   text-decoration: underline !important;
 }
 
+/* 
+ * Hover Effects for Buttons 
+ * Adds a border and slight lift
+ */
 .navbar-premium .nav-icon-btn:hover,
 .navbar-premium .nav-profile-btn:hover {
   border: 1px solid rgba(255, 255, 255, 0.4) !important;
@@ -486,6 +659,10 @@ input[type=number] {
   background: transparent !important;
 }
 
+/* 
+ * Hover Effects for Buttons (Scrolled Mode) 
+ * Darker border for visibility on white 
+ */
 .navbar-premium.scrolled .nav-icon-btn:hover,
 .navbar-premium.scrolled .nav-profile-btn:hover {
   border: 1px solid rgba(124, 58, 237, 0.4) !important;
@@ -493,11 +670,18 @@ input[type=number] {
   background: transparent !important;
 }
 
+/* 
+ * Active State (Scrolled Mode) 
+ * Highlights the active button with a light background
+ */
 .navbar-premium.scrolled .nav-icon-btn.active {
   background: #f8fafc !important;
   border: 1px solid #f1f5f9;
 }
 
+/* 
+ * Profile Button Specifics 
+ */
 .navbar-premium .nav-profile-btn {
   background: transparent !important;
   color: white !important;
@@ -506,12 +690,20 @@ input[type=number] {
   transition: all 0.3s ease;
 }
 
+/* 
+ * Profile Button Active (Transparent Mode) 
+ */
 .navbar-premium .nav-profile-btn.active {
   background: rgba(255, 255, 255, 0.2) !important;
   border: 1px solid rgba(255, 255, 255, 0.3) !important;
 }
 
-/* Scrolled State Styles */
+/* ═══════════════════════════════════════════════════════════════════════════ */
+/* SCROLLED NAVBAR COLOR OVERRIDES */
+/* These rules ensure text is legible against the white navbar background */
+/* ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Revert text to dark navy */
 .navbar-premium.scrolled .nav-link, 
 .navbar-premium.scrolled .navbar-brand {
   color: #1e293b !important;
@@ -521,46 +713,64 @@ input[type=number] {
   color: #1e293b !important;
 }
 
+/* Brand icon gets a gradient background when scrolled */
 .navbar-premium.scrolled .brand-icon {
   background: linear-gradient(135deg, #7c3aed, #6366f1) !important;
   box-shadow: 0 8px 16px -4px rgba(124, 58, 237, 0.3);
 }
 
+/* Icon buttons become dark navy */
 .navbar-premium.scrolled .nav-icon-btn {
   background: transparent !important;
   border: 1px solid transparent;
   color: #1e1b4b !important;
 }
 
+/* Active icon button gets styling */
 .navbar-premium.scrolled .nav-icon-btn.active {
   background: #f8fafc !important;
   border: 1px solid #f1f5f9;
 }
 
+/* Profile button text becomes purple */
 .navbar-premium.scrolled .nav-profile-btn {
   background: transparent !important;
   color: #7c3aed !important;
   border: 1px solid transparent !important;
 }
 
+/* Profile button ACTIVE state becomes gradient */
 .navbar-premium.scrolled .nav-profile-btn.active {
   background: linear-gradient(135deg, #7c3aed, #6366f1) !important;
   color: white !important;
 }
 
+/* 
+ * UTILITY: Transparent Navbar Helper
+ * Forces transparency and removes borders/shadows.
+ * Used for specific states or overlays.
+ */
 .navbar-transparent {
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
 }
 
-/* User Profile & Icons */
+/* ═══════════════════════════════════════════════════════════════════════════ */
+/* USER PROFILE & ACTION ICONS */
+/* Styling for the square/rounded icons (Cart, Notifications) */
+/* ═══════════════════════════════════════════════════════════════════════════ */
+
+/* 
+ * Navigation Icon Base
+ * Square button with rounded corners 
+ */
 .nav-icon-btn {
   background: #f8fafc;
   border-radius: 14px;
   width: 48px;
   height: 48px;
-  display: flex;
+  display: flex !important;
   align-items: center;
   justify-content: center;
   color: #1e1b4b;
@@ -569,6 +779,10 @@ input[type=number] {
   border: 1px solid #f1f5f9;
 }
 
+/* 
+ * Navigation Icon Hover 
+ * Light lift and shadow for affordance.
+ */
 .nav-icon-btn:hover {
   background: white;
   color: #7c3aed;
@@ -577,18 +791,34 @@ input[type=number] {
   border-color: #e2e8f0;
 }
 
+/* 
+ * Profile Icon (Avatar Placeholder)
+ * Uses a gradient background to distinguish from regular icons.
+ */
 .nav-profile-btn {
   background: linear-gradient(135deg, #7c3aed, #6366f1);
   color: white !important;
   border: none;
 }
 
+/* 
+ * Profile Icon Hover 
+ * Increases scale slightly more than regular icons.
+ */
 .nav-profile-btn:hover {
   box-shadow: 0 10px 20px -5px rgba(124, 58, 237, 0.4);
-  transform: translateY(-3px) scale(1.05);
+  transform: translateY(-3px) scale(1.05); /* Zoom effect */
 }
 
-/* Search Bar Styles */
+/* ═══════════════════════════════════════════════════════════════════════════ */
+/* SEARCH BAR COMPONENTS */
+/* Used on the Stores Page and other search interaces */
+/* ═══════════════════════════════════════════════════════════════════════════ */
+
+/* 
+ * Search Container
+ * Outer wrapper with a soft violet gradient background.
+ */
 .search-container {
   background: linear-gradient(135deg, #f3e8ff, #ede9fe);
   padding: 30px 0;
@@ -596,14 +826,22 @@ input[type=number] {
   border-radius: 8px;
 }
 
+/* 
+ * Search Bar Flex Layout
+ * Centers input and button relative to each other.
+ */
 .search-bar {
   display: flex;
   gap: 10px;
   justify-content: center;
   align-items: center;
-  flex-wrap: wrap;
+  flex-wrap: wrap; /* Wraps on very small screens */
 }
 
+/* 
+ * Search Input Field 
+ * Rounded pill shape with purple border.
+ */
 .search-bar input {
   padding: 12px 20px;
   border: 2px solid #7c3aed;
@@ -614,12 +852,20 @@ input[type=number] {
   transition: all 0.3s ease;
 }
 
+/* 
+ * Search Input Focus
+ * Glow effect to indicate activity.
+ */
 .search-bar input:focus {
   outline: none;
   border-color: #6d28d9;
   box-shadow: 0 0 10px rgba(124, 58, 237, 0.3);
 }
 
+/* 
+ * Search Button 
+ * Solid purple action button.
+ */
 .search-bar button {
   padding: 12px 30px;
   background-color: #7c3aed;
@@ -631,19 +877,33 @@ input[type=number] {
   transition: all 0.3s ease;
 }
 
+/* 
+ * Search Button Hover
+ * Darkens background and lifts.
+ */
 .search-bar button:hover {
   background-color: #6d28d9;
   transform: translateY(-2px);
   box-shadow: 0 5px 15px rgba(124, 58, 237, 0.3);
 }
 
+/* 
+ * Search Button Active (Click)
+ * Removes lift effect to simulate depression.
+ */
 .search-bar button:active {
   transform: translateY(0);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════ */
-/* PREMIUM PRODUCT ACTION BUTTONS */
+/* PREMIUM ACTION BUTTONS */
+/* The main "Add to Cart" and "View Details" buttons on product cards */
 /* ═══════════════════════════════════════════════════════════════════════════ */
+
+/* 
+ * Base Premium Button 
+ * Common properties for all premium buttons (radius, transition, flex).
+ */
 .btn-premium {
   border-radius: 12px !important;
   padding: 10px 18px !important;
@@ -652,7 +912,7 @@ input[type=number] {
   align-items: center !important;
   justify-content: center !important;
   gap: 8px !important;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important; /* Springy transition */
   border: none !important;
   font-size: 0.9rem !important;
   position: relative !important;
@@ -661,7 +921,10 @@ input[type=number] {
   cursor: pointer !important;
 }
 
-/* Primary "Add to List" Style */
+/* 
+ * Primary Action: Add to List 
+ * Gradient background stands out as the primary call to action.
+ */
 .btn-premium-add {
   background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%) !important;
   color: white !important;
@@ -670,6 +933,10 @@ input[type=number] {
   padding-bottom: 13px !important;
 }
 
+/* 
+ * Add Button Hover 
+ * Increases shadow and brightness.
+ */
 .btn-premium-add:hover {
   transform: translateY(-2px) !important;
   box-shadow: 0 8px 20px rgba(124, 58, 237, 0.45) !important;
@@ -677,6 +944,10 @@ input[type=number] {
   filter: brightness(1.1) !important;
 }
 
+/* 
+ * Add Button Active
+ * Simulates press.
+ */
 .btn-premium-add:active {
   transform: translateY(0) !important;
   box-shadow: 0 4px 8px rgba(124, 58, 237, 0.2) !important;
@@ -684,20 +955,31 @@ input[type=number] {
 
 /* Variant for Purple Backgrounds */
 /* ═══════════════════════════════════════════════════════════════════════════ */
-/* CATEGORY CHIPS SYSTEM (NEW) */
+/* CATEGORY CHIPS SYSTEM */
+/* Filter pills used on Deals and Store pages (horizontal scroll) */
 /* ═══════════════════════════════════════════════════════════════════════════ */
+
+/* 
+ * Category Chip Container (Row)
+ * Horizontally scrollable container for filter buttons.
+ */
 .category-chip-row {
   display: flex;
   gap: 12px;
   overflow-x: auto;
-  padding: 8px 4px 4px;
+  padding: 8px 4px 4px; /* Padding for shadow clearance */
   scrollbar-width: none;
 }
 
+/* Hide scrollbar for cleaner look */
 .category-chip-row::-webkit-scrollbar {
   display: none;
 }
 
+/* 
+ * Individual Filter Chip 
+ * Default state: Light grey/blue background.
+ */
 .category-chip {
   border: 2px solid #d6d8ff;
   background: #f6f7ff;
@@ -716,11 +998,19 @@ input[type=number] {
   outline: none !important;
 }
 
+/* 
+ * Chip Hover State
+ * Subtle lift and background change.
+ */
 .category-chip:hover {
   background: #e7e9ff;
   transform: translateY(-1px);
 }
 
+/* 
+ * Chip Active/Selected State
+ * Vivid Gradient background to indicate selection.
+ */
 .category-chip.active {
   background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
   color: white;
@@ -728,6 +1018,11 @@ input[type=number] {
   box-shadow: 0 6px 16px rgba(102, 126, 234, 0.3);
 }
 
+/* 
+ * Hero Button Variant 
+ * Used specifically in the Hero/Banner section.
+ * White button with heavy shadow to pop against the colored background.
+ */
 .btn-premium-hero-add {
   background: white !important;
   color: #7c3aed !important;
@@ -735,6 +1030,10 @@ input[type=number] {
   border: 2px solid white !important;
 }
 
+/* 
+ * Hero Button Hover
+ * Turns slightly violet and increases shadow.
+ */
 .btn-premium-hero-add:hover {
   background: #f5f3ff !important;
   color: #6d28d9 !important;
@@ -742,10 +1041,17 @@ input[type=number] {
   box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2) !important;
 }
 
+/* 
+ * Text Colors - Brand Purple
+ */
 .text-premium-purple {
   color: #7c3aed !important;
 }
 
+/* 
+ * Solid Purple Button 
+ * General purpose primary button.
+ */
 .btn-premium-purple {
   background: #7c3aed !important;
   color: #ffffff !important;
@@ -756,6 +1062,10 @@ input[type=number] {
   padding-bottom: 13px !important;
 }
 
+/* 
+ * Solid Purple Button Hover
+ * Darkens to violet.
+ */
 .btn-premium-purple:hover {
   background: #5b21b6 !important;
   color: white !important;
@@ -763,6 +1073,11 @@ input[type=number] {
   box-shadow: 0 10px 20px -5px rgba(124, 58, 237, 0.4);
 }
 
+/* 
+ * Outline Button 
+ * Transparent background with purple border.
+ * Used for secondary actions (e.g. "View Details").
+ */
 .btn-premium-outline {
   background: transparent !important;
   color: #7c3aed !important;
@@ -772,20 +1087,31 @@ input[type=number] {
   transition: all 0.3s ease;
 }
 
+/* 
+ * Outline Button Hover
+ * Fills with solid color.
+ */
 .btn-premium-outline:hover {
   background: #7c3aed !important;
   color: #ffffff !important;
   transform: translateY(-2px);
 }
 
+/* 
+ * Soft Purple Background Utility
+ * Used for tags or light sections.
+ */
 .bg-soft-purple {
   background-color: rgba(124, 58, 237, 0.08) !important;
 }
 
-/* Secondary "View Details" Style */
+/* 
+ * View Details Button (Secondary)
+ * Grey/slate themed button for less prominent actions.
+ */
 .btn-premium-view {
-  background: #f8fafc !important;
-  color: #64748b !important;
+  background: #f8fafc !important; /* Very light grey */
+  color: #64748b !important;     /* Slate text */
   border: 1.5px solid #e2e8f0 !important;
   border-radius: 12px;
   font-weight: 600;
@@ -794,6 +1120,10 @@ input[type=number] {
   padding-bottom: 4px !important;
 }
 
+/* 
+ * View Details Button Hover
+ * Turns slate grey with white text.
+ */
 .btn-premium-view:hover {
   background: #64748b !important;
   color: white !important;
@@ -807,126 +1137,173 @@ input[type=number] {
   box-shadow: 0 2px 4px rgba(100, 116, 139, 0.05) !important;
 }
 
+/* Ensure icons inside premium buttons are sized correctly */
 .btn-premium i {
   font-size: 1.1rem !important;
 }
 
 
-/* Header Styles */
+/* 
+ * =========================================
+ * Header Component (Legacy / Landing)
+ * =========================================
+ * Standard header implementation used on non-app pages.
+ * Features a branding gradient and flexbox navigation.
+ */
 .header {
+  /* Diagonal gradient from primary purple to a deeper violet */
   background: linear-gradient(135deg, #7c3aed, #6d28d9);
-  color: white;
-  padding: 1rem 0;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  color: white; /* Force white text for contrast against purple */
+  padding: 1rem 0; /* Vertical spacing */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Subtle drop shadow for elevation */
 }
 
+/* Flex container for the header content */
 .header .container {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  justify-content: space-between; /* Push logo left, nav right */
+  align-items: center; /* Vertically center items */
 }
 
+/* Text Logo Styling */
 .header .logo {
   font-size: 1.5rem;
   font-weight: bold;
 }
 
+/* Navigation Links within Header */
 .header .nav-links a {
   color: white;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
+  padding: 0.5rem 1rem; /* Clickable area padding */
+  border-radius: 4px; /* Slight rounding for hover state */
 }
 
+/* Hover effect for header links */
 .header .nav-links a:hover {
-  background: rgba(255, 255, 255, 0.2);
-  transition: 0.3s;
+  background: rgba(255, 255, 255, 0.2); /* Semi-transparent white overlay */
+  transition: 0.3s; /* Smooth background fade */
 }
 
-/* Hero Section */
+/* 
+ * =========================================
+ * Hero Section
+ * =========================================
+ * Large promotional area at the top of landing pages.
+ * Uses a lighter pastel gradient to contrast with the dark header.
+ */
 .hero {
+  /* Very light purple/lilac gradient (135 degrees) */
   background: linear-gradient(135deg, #f3e8ff, #ede9fe);
-  padding: 80px 0;
-  text-align: center;
+  padding: 80px 0; /* Significant vertical breathing room */
+  text-align: center; /* Center all hero content */
 }
 
+/* Hero Headline */
 .hero h1 {
-  font-size: 2.5rem;
+  font-size: 2.5rem; /* Large display text */
   margin-bottom: 1rem;
-  color: #5b21b6;
+  color: #5b21b6; /* Dark violet for readability */
 }
 
+/* Hero Subtext */
 .hero p {
-  font-size: 1.2rem;
-  max-width: 800px;
-  margin: 0 auto 2rem;
-  color: #7c3aed;
+  font-size: 1.2rem; /* Slightly larger than body text */
+  max-width: 800px; /* Limit width for readability on wide screens */
+  margin: 0 auto 2rem; /* Center block horizontally */
+  color: #7c3aed; /* Primary purple brand color */
 }
 
-/* Compare Prices Section */
+/* 
+ * =========================================
+ * Compare Prices Section
+ * =========================================
+ * Layout for the price comparison tool.
+ * Features a card-like container with drop shadow.
+ */
 .compare-container {
   padding: 40px 0;
   background: #fff;
   border-radius: 10px;
-  box-shadow: 0 5px 15px rgba(124, 58, 237, 0.1);
+  box-shadow: 0 5px 15px rgba(124, 58, 237, 0.1); /* Soft purple shadow */
   margin: 20px auto;
-  max-width: 1200px;
+  max-width: 1200px; /* Constrain width on large monitors */
   width: 100%;
 }
 
+/* 
+ * Product Header Area 
+ * The top section of the comparison table/view.
+ */
 .product-header {
-  mix-blend-mode: multiply;
+  mix-blend-mode: multiply; /* Blends background with underlying colors */
   background-color: #f5f7fa;
   padding: 15px 0;
-  background: #f3e8ff;
-  border-bottom: 1px solid #e9d5ff;
+  background: #f3e8ff; /* Light purple fallback */
+  border-bottom: 1px solid #e9d5ff; /* Separator line */
 }
 
 .product-header h2 {
   font-size: 1.5rem;
-  color: #5b21b6;
+  color: #5b21b6; /* Deep violet */
   margin-bottom: 10px;
 }
 
-/* Product Table Styling */
+/* 
+ * Product Table Styling 
+ * Standard HTML table styling for price lists.
+ */
 .product-table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: collapse; /* Remove gaps between cells */
   margin: 20px 0;
-  font-size: 14px;
+  font-size: 14px; /* Compact text for data density */
 }
 
+/* Table Header & Cell Shared Styles */
 .product-table th,
 .product-table td {
-  padding: 12px;
+  padding: 12px; /* Breathing room */
   text-align: left;
-  border-bottom: 1px solid #e9d5ff;
+  border-bottom: 1px solid #e9d5ff; /* Light purple divider */
 }
 
+/* Table Header Specifics */
 .product-table th {
-  background: #e9d5ff;
+  background: #e9d5ff; /* Light purple background */
   font-weight: 600;
-  color: #5b21b6;
+  color: #5b21b6; /* Dark violet text */
 }
 
+/* Zebra Striping */
 .product-table tr:nth-child(even) {
-  background: #faf5ff;
+  background: #faf5ff; /* Very faint purple for even rows */
 }
 
-/* Cheapest Price Highlight */
+/* 
+ * Cheapest Price Highlight 
+ * Badge style applied to the lowest price in a comparison.
+ */
 .cheapest {
-  background: #7c3aed;
-  color: white;
-  padding: 5px 10px;
+  background: #7c3aed; /* Primary purple background */
+  color: white; /* High contrast text */
+  padding: 5px 10px; /* Badge shape */
   border-radius: 4px;
   font-weight: bold;
 }
 
-/* Featured Deals Section */
+/* 
+ * =========================================
+ * Featured Deals Section
+ * =========================================
+ * Grid layout for promoting special offers.
+ * Uses a light background to differentiate from the hero.
+ */
 .featured-deals {
   padding: 40px 0;
-  background: #faf5ff;
+  background: #faf5ff; /* Very light purple background */
 }
 
+/* Section Title */
 .featured-deals h2 {
   text-align: center;
   font-size: 1.8rem;
@@ -934,27 +1311,30 @@ input[type=number] {
   margin-bottom: 30px;
 }
 
+/* Individual Deal Card */
 .featured-deals .deal-card {
   margin: 20px 0;
   padding: 20px;
-  background: #fff;
+  background: #fff; /* White card on light purple bg */
   border-radius: 10px;
-  box-shadow: 0 3px 10px rgba(124, 58, 237, 0.08);
-  transition: transform 0.3s;
+  box-shadow: 0 3px 10px rgba(124, 58, 237, 0.08); /* Subtle shadow */
+  transition: transform 0.3s; /* Smooth lift on hover */
 }
 
+/* Hover Lift Effect */
 .featured-deals .deal-card:hover {
-  transform: translateY(-5px);
+  transform: translateY(-5px); /* Move up 5px */
 }
 
+/* Deal Card Image */
 .featured-deals .deal-card img {
   width: 100%;
   height: 150px;
-  object-fit: contain;
+  object-fit: contain; /* Prevent aspect ratio distortion */
   border-radius: 8px;
   margin-bottom: 15px;
-  background: white !important;
-  padding: 10px;
+  background: white !important; /* Ensure transparent PNGs look good */
+  padding: 10px; /* Internal spacing for the image */
 }
 
 /* Reusable product thumbnail matching featured-deals card images */
@@ -966,31 +1346,37 @@ input[type=number] {
   margin-bottom: 15px;
 }
 
-/* Responsive adjustments for product thumbnails */
+/* 
+ * Responsive adjustments for product thumbnails 
+ * Adjusts height based on viewport width to maintain proportions.
+ */
 @media (max-width: 768px) {
   .product-thumb {
-    height: 180px;
+    height: 180px; /* Smaller on tablets */
   }
 }
 
 @media (max-width: 480px) {
   .product-thumb {
-    height: 120px;
+    height: 120px; /* Smallest on mobile phones */
   }
 }
 
 /* Client-side white-bg blending removed — server-side processed images are preferred. */
 
-/* Ensure product card images have a fixed container so small images don't collapse layout.
-   Use `object-fit: contain` so smaller images are centered and not stretched; container size stays constant. */
+/* 
+ * Global Image Constraint Helpers
+ * Ensures product card images have a fixed container so small images don't collapse layout.
+ * Use `object-fit: contain` so smaller images are centered and not stretched; container size stays constant. 
+ */
 .card .card-img-top,
 .featured-deals .deal-card img,
 .product-card-img {
   width: 100%;
   max-height: 320px;
-  object-fit: contain !important;
-  object-position: center top;
-  background-color: #f6f6f6;
+  object-fit: contain !important; /* Crucial for preserving product shapes */
+  object-position: center top; /* Align images to the top of the container */
+  background-color: #f6f6f6; /* Light grey placeholder background */
   padding: 12px;
   display: block;
   border-radius: 8px;
@@ -1000,8 +1386,7 @@ input[type=number] {
 /* Modal product image fixed size */
 .product-modal-image {
   width: 100%;
-  height: 420px;
-  /* taller modal image for detail view */
+  height: 420px; /* taller modal image for detail view */
   object-fit: contain;
   background-color: #f6f6f6;
   border-radius: 6px;
@@ -1016,6 +1401,7 @@ input[type=number] {
   display: inline-block;
 }
 
+/* Deal Card Typography */
 .featured-deals .deal-card h3 {
   font-size: 1.2rem;
   color: #7c3aed;
@@ -1024,18 +1410,24 @@ input[type=number] {
 
 .featured-deals .deal-card p {
   font-size: 1rem;
-  color: #555;
+  color: #555; /* Medium grey for body text */
   margin-bottom: 15px;
 }
 
-/* Shopping List Styles */
+/* 
+ * =========================================
+ * Shopping List Component
+ * =========================================
+ * The main container for the user's shopping list.
+ * Designed to look like a clean paper list or card.
+ */
 .shopping-list {
   padding: 40px 0;
   background: #fff;
   border-radius: 10px;
   box-shadow: 0 5px 15px rgba(124, 58, 237, 0.1);
   margin: 20px auto;
-  max-width: 800px;
+  max-width: 800px; /* Narrower width for list readability */
 }
 
 .shopping-list h2 {
@@ -1045,19 +1437,22 @@ input[type=number] {
   margin-bottom: 30px;
 }
 
+/* 
+ * Toolbar & Controls 
+ * Flex containers for buttons like "Export", "Clear", "Print".
+ */
 .shopping-list-controls,
 .list-summary,
 .list-header,
 .list-toolbar {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: wrap; /* Allow wrapping on mobile */
   align-items: center;
-  gap: 10px;
-  /* adds space between chips/buttons */
-  row-gap: 12px;
-  /* extra vertical breathing room when wrapped */
+  gap: 10px; /* adds space between chips/buttons */
+  row-gap: 12px; /* extra vertical breathing room when wrapped */
 }
 
+/* Unified Button/Badge Sizing in Toolbar */
 .shopping-list-controls .btn,
 .shopping-list-controls .badge,
 .shopping-list-controls a,
@@ -1067,17 +1462,16 @@ input[type=number] {
 .list-toolbar .btn,
 .list-toolbar .badge,
 .list-toolbar a {
-  margin: 0;
-  /* reset any conflicting margins */
-  padding: 6px 10px;
-  /* ensure readable touch targets */
-  line-height: 1.25;
-  /* reduce vertical stacking */
-  border-radius: 8px;
-  /* soften pill appearance */
+  margin: 0; /* reset any conflicting margins */
+  padding: 6px 10px; /* ensure readable touch targets */
+  line-height: 1.25; /* reduce vertical stacking */
+  border-radius: 8px; /* soften pill appearance */
 }
 
-/* compact the small count/label badges to prevent bleeding into text */
+/* 
+ * Compact Badges 
+ * Helpers to prevent small count/label badges from bleeding layout.
+ */
 .badge,
 .chip,
 .pill {
@@ -1087,47 +1481,48 @@ input[type=number] {
   line-height: 1.2;
 }
 
+/* Remove padding from navbar pills to keep nav slim */
 .navbar .badge.rounded-pill {
   padding: 0 !important;
 }
 
-/* ensure left-justified layout on summary row */
+/* List Summary alignment (Total Price, Item Count) */
 .list-summary {
-  justify-content: flex-start;
+  justify-content: flex-start; /* Align to the left */
 }
 
-/* group action buttons as a toolbar with spacing */
+/* Toolbar spacing */
 .list-toolbar {
   margin-top: 6px;
   margin-bottom: 6px;
 }
 
-/* ensure total price chip doesn’t collide with neighbors */
+/* Price & Total Chips */
 .total-chip,
 .price-chip,
 .summary-chip {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 6px; /* Icon vs Text spacing */
   padding: 6px 10px;
 }
 
-/* controls inside each list card header */
+/* Card Header Controls (Top right of list cards) */
 .list-card .card-header .controls {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
 }
 
-/* search bar spacing within list view */
+/* Search Bar Spacing */
 .shopping-list .search,
 .shopping-list .search input {
   margin-top: 8px;
   margin-bottom: 8px;
 }
 
-/* Prevent icon buttons from overlapping text labels */
+/* Icon Button Wrapper */
 .icon-button {
   display: inline-flex;
   align-items: center;
@@ -1135,12 +1530,18 @@ input[type=number] {
   gap: 6px;
 }
 
-/* Add bottom spacing between separate list sections */
+/* Section Spacing */
 .shopping-list-section {
   margin-bottom: 16px;
 }
 
-/* Print styles: hide interactive controls on paper */
+/* 
+ * =========================================
+ * Print Layout Styles
+ * =========================================
+ * Highly specific overrides for when the user prints (Ctrl+P).
+ * Hides all UI chrome and formats the list for A4/Letter paper.
+ */
 @media print {
 
   /* HIDE ALL UI CHROME - only show content */
@@ -1184,6 +1585,7 @@ input[type=number] {
     display: none !important;
   }
 
+  /* Keep checkboxes visible for "Todo" list style printing */
   input[type="checkbox"] {
     display: inline-block !important;
     margin-right: 8px;
@@ -1215,7 +1617,7 @@ input[type=number] {
     display: block !important;
   }
 
-  /* Clean layout for print */
+  /* Clean layout for print: Remove shadows, use simple borders */
   .shopping-list,
   .list-card,
   .list-summary {
@@ -1233,7 +1635,7 @@ input[type=number] {
     background: #fff;
   }
 
-  /* Ensure items list cleanly */
+  /* Ensure items list cleanly without breaking across pages awkwardly */
   .shopping-list-item,
   .shopping-item {
     page-break-inside: avoid;
@@ -1247,28 +1649,37 @@ input[type=number] {
   }
 }
 
+/* Individual Shopping Item Row */
 .shopping-list .shopping-item {
   display: flex;
   justify-content: space-between;
   padding: 15px 0;
-  border-bottom: 1px solid #e9d5ff;
+  border-bottom: 1px solid #e9d5ff; /* Separator */
 }
 
+/* Remove border from last item */
 .shopping-list .shopping-item:last-child {
   border-bottom: none;
 }
 
+/* Item Name Text */
 .shopping-list .shopping-item .item-name {
   font-weight: 600;
   color: #5b21b6;
 }
 
+/* Item Cost Text */
 .shopping-list .shopping-item .item-cost {
   font-weight: 700;
   color: #7c3aed;
 }
 
-/* Profile Page */
+/* 
+ * =========================================
+ * User Profile Section
+ * =========================================
+ * Dedicated container for the user's dashboard.
+ */
 .profile-container {
   padding: 40px 0;
   background: #fff;
@@ -1285,25 +1696,38 @@ input[type=number] {
   margin-bottom: 30px;
 }
 
+/* 
+ * Profile Info Cards 
+ * Sub-panels within the profile for things like email, status, etc.
+ */
 .profile-container .profile-card {
   padding: 20px;
-  background: #faf5ff;
+  background: #faf5ff; /* Light purple tint */
   border-radius: 8px;
   margin: 20px 0;
-  border: 1px solid #e9d5ff;
+  border: 1px solid #e9d5ff; /* Subtle border */
 }
 
+/* Card Headings */
 .profile-container .profile-card h3 {
   margin-bottom: 10px;
   color: #7c3aed;
 }
 
+/* Card Text */
 .profile-container .profile-card p {
   margin: 5px 0;
   color: #555;
 }
 
-/* Buttons & Form Styles */
+/* 
+ * =========================================
+ * Standard Button & Form Styles
+ * =========================================
+ * Basic Bootstrap overrides for functional elements.
+ */
+
+/* Primary Action Button (Solid Purple) */
 .btn-primary {
   background: #7c3aed;
   color: white;
@@ -1311,13 +1735,14 @@ input[type=number] {
   border-radius: 5px;
   border: none;
   cursor: pointer;
-  transition: 0.3s;
+  transition: 0.3s; /* Fade on hover */
 }
 
 .btn-primary:hover {
-  background: #6d28d9;
+  background: #6d28d9; /* Darker purple on hover */
 }
 
+/* Secondary Action Button (Light Purple) */
 .btn-secondary {
   background: #a78bfa;
   color: white;
@@ -1332,28 +1757,36 @@ input[type=number] {
   background: #9f7aea;
 }
 
-/* Form Styles */
+/* 
+ * Form Input Fields 
+ * Standard styling for text inputs, tracking the purple theme.
+ */
 .form-control {
   padding: 12px;
   border: 1px solid #e9d5ff;
   border-radius: 5px;
   margin: 10px 0;
   font-size: 1rem;
-  background: #faf5ff;
+  background: #faf5ff; /* Matches other light purple wells */
 }
 
+/* Active/Focus State */
 .form-control:focus {
   outline: none;
-  border-color: #7c3aed;
-  background: white;
+  border-color: #7c3aed; /* Highlight border */
+  background: white; /* Clean white background when typing */
 }
 
-/* Responsive Design */
+/* 
+ * Responsive Breakpoints 
+ * General adjustments for tablets and smaller laptops.
+ */
 @media (max-width: 768px) {
   .hero h1 {
     font-size: 1.8rem;
   }
 
+  /* Compact table cells */
   .product-table th,
   .product-table td {
     padding: 8px;
@@ -1369,7 +1802,12 @@ input[type=number] {
   }
 }
 
-/* Footer Styles */
+/* 
+ * =========================================
+ * Site Footer
+ * =========================================
+ * Global footer with gradient background.
+ */
 .footer {
   background: linear-gradient(135deg, #7c3aed, #6d28d9);
   color: white;
@@ -1382,19 +1820,23 @@ input[type=number] {
   margin: 0;
 }
 
+/* Footer Social Icons */
 .footer .social-links a {
   color: #fff;
   margin: 0 10px;
   font-size: 1.2rem;
 }
 
-/* Store Info Card */
+/* 
+ * Store Information Card 
+ * Used in the "Stores" page to display location info.
+ */
 .store-card {
   padding: 15px;
   background: #fff;
   border-radius: 8px;
   margin: 10px 0;
-  box-shadow: 0 2px 5px rgba(124, 58, 237, 0.08);
+  box-shadow: 0 2px 5px rgba(124, 58, 237, 0.08); /* Minimal shadow */
 }
 
 .store-card h4 {
@@ -1409,12 +1851,20 @@ input[type=number] {
   margin: 5px 0;
 }
 
-/* Mobile-First Styling */
+/* 
+ * =========================================
+ * Mobile-First Responsive Adjustments
+ * =========================================
+ * Critical overrides for small screens (< 480px)
+ */
 @media (max-width: 480px) {
+
+  /* Reduce Hero Size */
   .hero h1 {
     font-size: 1.5rem;
   }
 
+  /* Reduce Padding Everywhere */
   .compare-container,
   .featured-deals,
   .shopping-list,
@@ -1422,6 +1872,7 @@ input[type=number] {
     padding: 20px;
   }
 
+  /* Compact Table Cells */
   .product-table th,
   .product-table td {
     padding: 8px;
@@ -1431,6 +1882,7 @@ input[type=number] {
     padding: 15px;
   }
 
+  /* Adjust Navigation Spacing */
   .navbar-nav {
     margin-top: 1rem;
   }
@@ -1439,6 +1891,7 @@ input[type=number] {
     padding: 0.75rem 0;
   }
 
+  /* Stack Search Bar Vertically */
   .search-bar {
     flex-direction: column;
   }
@@ -1450,21 +1903,28 @@ input[type=number] {
   }
 }
 
-/* Shopping list card styles (TSX-like look) */
+/* 
+ * =========================================
+ * Modern Card Component
+ * =========================================
+ * Used heavily in the Shopping List and newer UI sections.
+ * Mimics a React/Tailwind visual style (Clean, Shadowed, Rounded).
+ */
 .card {
   background: #fff;
   border-radius: 12px;
-  box-shadow: 0 6px 20px rgba(124, 58, 237, 0.08);
-  overflow: hidden;
-  border: 1px solid #e9d5ff;
+  box-shadow: 0 6px 20px rgba(124, 58, 237, 0.08); /* Elevated shadow */
+  overflow: hidden; /* Contains child elements */
+  border: 1px solid #e9d5ff; /* Subtle border */
 }
 
+/* Card Header with Glass-ish Gradient */
 .card-header {
   padding: 16px 20px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  background: linear-gradient(180deg, rgba(243, 232, 255, 0.9), rgba(237, 229, 254, 0.95));
+  justify-content: space-between; /* Push title left, controls right */
+  background: linear-gradient(180deg, rgba(243, 232, 255, 0.9), rgba(237, 229, 254, 0.95)); /* Very subtle vertical gradient */
 }
 
 .card-content {
@@ -1475,6 +1935,7 @@ input[type=number] {
   background: transparent;
 }
 
+/* "Add Item" Button within Cards */
 .btn-add {
   display: inline-flex;
   align-items: center;
@@ -1492,13 +1953,15 @@ input[type=number] {
   color: #fff;
 }
 
+/* List Row Layout */
 .list-rows {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 8px; /* Spacing between rows */
   padding-top: 8px;
 }
 
+/* Individual Item Row styling */
 .item-row {
   display: flex;
   align-items: center;
@@ -1511,6 +1974,7 @@ input[type=number] {
   font-weight: 600;
 }
 
+/* Ghost Button (Transparent with colored text) */
 .btn-ghost {
   background: transparent;
   border: none;
@@ -1518,39 +1982,47 @@ input[type=number] {
   cursor: pointer;
 }
 
+/* SVG Icon Coloring */
 .btn-icon svg {
   stroke: #7c3aed;
 }
 
+/* Empty State Illustration Color */
 .empty-state svg {
   stroke: #a78bfa;
 }
 
+/* Utility Text Colors */
 .text-primary {
-  color: #7c3aed;
+  color: #7c3aed; /* Brand Purple */
 }
 
 .text-muted {
-  color: #a78bfa;
+  color: #a78bfa; /* Faded Purple/Grey */
 }
 
+/* Crossed out item text (Completed items) */
 .text-decoration-line-through {
   text-decoration: line-through;
 }
 
-@media (max-width: 768px) {
-  .card {
-    margin: 0 8px;
-  }
-}
+/* 
+ * =========================================
+ * Layout Utilities
+ * =========================================
+ */
 
 @media (max-width: 768px) {
   .card {
-    margin: 0 8px;
+    margin: 0 8px; /* Add margin on mobile so cards don't touch edges */
   }
 }
 
-/* Unified Compare / Home / Featured search + button sizing */
+/* 
+ * Unified Search Row 
+ * Used in Compare / Home / Featured pages.
+ * Ensures strict sizing to prevent layout shift.
+ */
 .compare-search-row {
   --search-height: 46px;
   margin-bottom: 1.5rem;
@@ -1563,20 +2035,25 @@ input[type=number] {
   font-size: 1rem !important;
 }
 
-/* Lighter product card styles to reduce repaint cost and scrolling lag */
+/* 
+ * Lightweight Product Card 
+ * Optimized inner card style to reduce repaint cost on scroll.
+ */
 .product-card-inner {
   border: none;
   border-radius: 12px;
   background: #ffffff;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06); /* Light shadow */
   transition: box-shadow 0.15s ease;
-  will-change: transform;
+  will-change: transform; /* Hint to browser to optimize rendering */
 }
 
+/* Hover Lift */
 .product-card-inner:hover {
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
 }
 
+/* Standardized Product Image Container */
 .product-image {
   height: 240px;
   object-fit: contain;
@@ -1585,19 +2062,23 @@ input[type=number] {
   display: block;
 }
 
+/* Price Tag Overlay (Top Right) */
 .price-badge {
   position: absolute;
   top: 12px;
   right: 12px;
+  /* Pink/Purple Gradient */
   background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
   color: white;
   padding: 6px 12px;
-  border-radius: 16px;
+  border-radius: 16px; /* Pill shape */
   font-weight: 700;
   font-size: 0.95rem;
 }
 
+/* Category Tag Overlay (or inline) */
 .category-badge {
+  /* Blue/Cyan Gradient */
   background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
   color: white;
   border: none;
@@ -1606,6 +2087,7 @@ input[type=number] {
   font-size: 0.85rem;
 }
 
+/* "Add to Cart" Button Gradient */
 .btn-add-cart {
   background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
   border: none;
@@ -1615,7 +2097,10 @@ input[type=number] {
   font-weight: 600;
 }
 
-/* Reduce heavy global shadows which can cause repaint cost on scroll */
+/* 
+ * Global Shadow Reduction
+ * Overrides Bootstrap defaults to use a softer, performance-friendly shadow
+ */
 .card,
 .featured-deals .deal-card,
 .compare-container,
@@ -1624,26 +2109,32 @@ input[type=number] {
   box-shadow: 0 2px 8px rgba(124, 58, 237, 0.06) !important;
 }
 
-/* Favorite Heart Button Styles */
+/* 
+ * Favorite Button (Heart) 
+ * Interactive favorites toggle styling.
+ */
 .btn.rounded-circle i.bi-heart,
 .btn.rounded-circle i.bi-heart-fill {
   transition: all 0.2s ease;
 }
 
+/* Pulse on hover */
 .btn.rounded-circle:hover {
   transform: scale(1.1);
-  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3) !important;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3) !important; /* Red glow */
 }
 
+/* Filled heart color */
 .btn.rounded-circle i.bi-heart-fill {
   color: #dc2626 !important;
 }
 
-/* Global Favorite Button State */
+/* Active State (Is Favorite) */
 .btn-favorite.active {
   color: #ff4757 !important;
 }
 
+/* Swap empty heart for filled heart via CSS pseudo-element logic (if used) */
 .btn-favorite.active i::before {
   content: "\f415"; /* Bootstrap Icon bi-heart-fill unicode */
 }
@@ -1652,34 +2143,68 @@ input[type=number] {
   color: #ff4757 !important;
 }
 
-/* Breadcrumb link hover underline effect */
+/* Breadcrumb Navigation Links */
 .breadcrumb-link {
   text-decoration: none !important;
   transition: text-decoration 0.2s ease;
 }
 
+/* Underline on hover */
 .breadcrumb-link:hover {
   text-decoration: underline !important;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════ */
-/* LIST SELECTOR MODAL REDESIGN - PURPLE THEME */
-/* ═══════════════════════════════════════════════════════════════════════════ */
+/* 
+ * =========================================
+ * List Selector Modal Redesign (Purple Theme)
+ * =========================================
+ * Custom styling for the "Add to List" modal.
+ * Uses a deep purple gradient and card-based options.
+ */
 
-/* Modal Content Background - Strong Purple (Matches Create List Modal) */
+/* Modal Content - Strong Purple Gradient */
 #globalListSelectorModal .modal-content {
   background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
   border: 3px solid #7c3aed;
+  border-radius: 20px; /* Rounded corners */
+  overflow: hidden;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); /* Deep shadow */
 }
 
+/* Modal Body */
 #globalListSelectorModal .modal-body {
   background: transparent;
   padding: 1.5rem;
+  color: #fff; /* White text for contrast against purple */
 }
 
-/* List Tile Styling */
+/* Modal Header Refinement */
+#globalListSelectorModal .modal-header {
+  background: transparent; /* Blend with content */
+  color: white;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1); /* Subtle divider */
+  padding: 1.5rem 1.5rem 1rem;
+}
+
+/* Close Button Inversion (White X) */
+#globalListSelectorModal .modal-header .btn-close {
+  filter: brightness(0) invert(1);
+  opacity: 0.9;
+}
+
+/* Thumbnail in Modal */
+#itemThumb {
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border: 2px solid #fff;
+}
+
+/* 
+ * List Selection Tile 
+ * The clickable cards representing each shopping list.
+ */
 .list-selector-option {
-  background: #ffffff;
+  background: #fdfaff; /* Warm white/violet tint */
   border: none;
   border-radius: 16px;
   margin-bottom: 12px;
@@ -1687,23 +2212,22 @@ input[type=number] {
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
   position: relative;
   overflow: hidden;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-  /* Slightly stronger shadow for contrast */
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); /* Float effect */
 }
 
-/* Hover Effect - Deeper Purple lift */
+/* Tile Hover Effect (Lift) */
 .list-selector-option:hover {
   transform: translateY(-4px) scale(1.01);
   box-shadow: 0 12px 20px rgba(124, 58, 237, 0.12);
-  border-color: #8b5cf6;
-  /* Vivid purple */
-  background: linear-gradient(135deg, #ffffff 0%, #faf5ff 100%);
+  background: white; /* Brighten on hover */
 }
 
+/* Tile Active Effect (Press) */
 .list-selector-option:active {
   transform: translateY(-1px);
 }
 
+/* Card Body Layout */
 .list-selector-option .card-body {
   padding: 1.25rem;
   display: flex;
@@ -1711,13 +2235,12 @@ input[type=number] {
   justify-content: space-between;
 }
 
-/* Icon Container - Purple Gradient */
+/* Icon Container (Left side of tile) */
 .list-selector-icon {
   width: 48px;
   height: 48px;
   border-radius: 12px;
-  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
-  /* Deep purple gradient */
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed); /* Purple gradient */
   color: white;
   display: flex;
   align-items: center;
@@ -1728,114 +2251,58 @@ input[type=number] {
   transition: all 0.3s ease;
 }
 
+/* Icon Animation on Tile Hover */
 .list-selector-option:hover .list-selector-icon {
-  transform: scale(1.1) rotate(-5deg);
+  transform: scale(1.1) rotate(-5deg); /* Playful tilt */
   box-shadow: 0 6px 14px rgba(124, 58, 237, 0.3);
 }
 
+/* Text Container */
 .list-info {
   flex-grow: 1;
 }
 
+/* List Name */
 .list-title {
   font-weight: 700;
-  color: #4c1d95;
-  /* Dark purple text */
+  color: #4c1d95; /* Deep purple */
   font-size: 1.1rem;
   margin-bottom: 4px;
 }
 
+/* List Metadata (Item count) */
 .list-subtitle {
-  color: #6b7280;
+  color: #6b7280; /* Grey text */
   font-size: 0.9rem;
   display: flex;
   align-items: center;
   gap: 4px;
 }
 
-/* Action Button - Subtle arrow */
+/* Action Arrow (Right side) */
 .list-action-icon {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: #f3e8ff;
-  color: #7c3aed;
+  background: #f3e8ff; /* Light purple circle */
+  color: #7c3aed; /* Purple arrow */
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.2s ease;
 }
 
+/* Arrow Animation on Hover */
 .list-selector-option:hover .list-action-icon {
-  background: #7c3aed;
+  background: #7c3aed; /* Invert colors */
   color: white;
-  transform: translateX(4px);
+  transform: translateX(4px); /* Slide right */
 }
 
-/* Modal Content Background - Strong Purple (Matches Create List Modal) */
-#globalListSelectorModal .modal-content {
-  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
-  border: 3px solid #7c3aed;
-}
-
-#globalListSelectorModal .modal-body {
-  background: transparent;
-  padding: 1.5rem;
-  color: #fff;
-  /* White text for instructions */
-}
-
-/* Modal header refinement */
-#globalListSelectorModal .modal-header {
-  background: transparent;
-  /* Remove standalone background to blend with modal-content */
-  color: white;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  /* Subtle separator */
-  padding: 1.5rem 1.5rem 1rem;
-}
-
-#globalListSelectorModal .modal-header .btn-close {
-  filter: brightness(0) invert(1);
-  opacity: 0.9;
-}
-
-#globalListSelectorModal .modal-content {
-  border: none;
-  border-radius: 20px;
-  overflow: hidden;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-}
-
-#itemThumb {
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  border: 2px solid #fff;
-}
-
-/* List Tile Styling - Harmonized */
-.list-selector-option {
-  background: #fdfaff;
-  /* Very subtle warm white/violet tint */
-  border: none;
-  border-radius: 16px;
-  margin-bottom: 12px;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-  position: relative;
-  overflow: hidden;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-}
-
-/* Hover Effect - Deeper Purple lift */
-.list-selector-option:hover {
-  transform: translateY(-4px) scale(1.01);
-  box-shadow: 0 12px 20px rgba(124, 58, 237, 0.12);
-  /* border-color: #8b5cf6;  Removed border to keep it clean */
-  /* Bright white on hover for contrast */
-}
-
-/* Smooth Button Utility - Replicates List Selector feel */
+/* 
+ * Smooth Button Wrapper 
+ * Utility for buttons that need extra-smooth hover physics.
+ */
 .btn-smooth {
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
   position: relative;
@@ -1858,31 +2325,39 @@ input[type=number] {
 /* PREMIUM PAGINATION & RESULTS UI */
 /* ═══════════════════════════════════════════════════════════════════════════ */
 
-/* Results Status Bar */
+/* 
+ * =========================================
+ * Search Results Metadata
+ * =========================================
+ * Displays "Showing X results" with a clean pill style.
+ */
 .results-status-bar {
   background: #f8fafc;
   border: 1px solid #e2e8f0;
-  border-radius: 50px;
+  border-radius: 50px; /* Full pill shape */
   padding: 10px 24px;
-  display: inline-flex;
+  display: inline-flex; /* Shrink to wrap content */
   align-items: center;
   gap: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
   transition: all 0.3s ease;
 }
 
+/* Hover State */
 .results-status-bar:hover {
   border-color: #cbd5e1;
   box-shadow: 0 6px 16px rgba(124, 58, 237, 0.1);
 }
 
+/* Helper Text ("Showing results for...") */
 .results-status-text {
-  color: #64748b;
+  color: #64748b; /* Slate grey */
   font-weight: 500;
   font-size: 0.95rem;
   letter-spacing: -0.01em;
 }
 
+/* Count Badge ("45" items) */
 .results-status-count {
   background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
   color: white;
@@ -1893,7 +2368,12 @@ input[type=number] {
   box-shadow: 0 4px 8px rgba(124, 58, 237, 0.25);
 }
 
-/* Custom Pagination */
+/* 
+ * =========================================
+ * Custom Pagination Controls
+ * =========================================
+ * Replaces standard browser/Bootstrap pagination with a pill-based UI.
+ */
 .custom-pagination-container {
   display: flex;
   justify-content: center;
@@ -1901,28 +2381,31 @@ input[type=number] {
   padding-bottom: 2rem;
 }
 
+/* Pagination Container (The Pill) */
 .pagination-pills {
   display: flex;
   align-items: center;
-  gap: 8px;
-  list-style: none;
+  gap: 8px; /* Spacing between numbers */
+  list-style: none; /* Remove bullets */
   padding: 8px;
   background: #fff !important;
   border-radius: 50px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08); /* Float effect */
   border: 1px solid #f1f5f9;
   margin: 0;
 }
 
+/* Reset margin for li elements */
 .pagination-pills .page-item {
   margin: 0;
 }
 
+/* Individual Page Number Links */
 .pagination-pills .page-link {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
+  width: 44px; /* Circular hit target */
   height: 44px;
   border-radius: 50% !important;
   border: none !important;
@@ -1934,21 +2417,24 @@ input[type=number] {
   text-decoration: none;
 }
 
+/* Hover Number */
 .pagination-pills .page-link:hover {
   background: #f1f5f9 !important;
-  color: #7c3aed !important;
+  color: #7c3aed !important; /* Brand color */
   transform: translateY(-2px);
 }
 
+/* Active Page Number */
 .pagination-pills .page-item.active .page-link {
   background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%) !important;
   color: white !important;
-  box-shadow: 0 8px 16px rgba(124, 58, 237, 0.35);
+  box-shadow: 0 8px 16px rgba(124, 58, 237, 0.35); /* Glow */
   transform: scale(1.1) translateY(-2px);
 }
 
+/* "Next/Prev" Text Links */
 .pagination-pills .page-link.nav-link {
-  width: auto;
+  width: auto; /* Allow width to expand for text */
   padding: 0 20px !important;
   border-radius: 50px !important;
   font-size: 0.9rem;
@@ -1957,6 +2443,7 @@ input[type=number] {
   gap: 8px;
 }
 
+/* Disabled State */
 .pagination-pills .page-item.disabled .page-link {
   background: transparent !important;
   color: #cbd5e1 !important;
@@ -1967,7 +2454,15 @@ input[type=number] {
 .pagination-pills .page-link i {
   font-size: 1.1rem;
 }
-/* UNIFIED PREMIUM ACTION BUTTONS */
+
+/* 
+ * =========================================
+ * Premium Hero & Animation
+ * =========================================
+ * The animated gradient background seen on the Home/Landing page.
+ */
+
+/* Unified Premium Action Button */
 .btn-premium-action {
   background: #7c3aed !important;
   color: white !important;
@@ -1976,7 +2471,7 @@ input[type=number] {
   padding: 10px 18px !important;
   font-weight: 700 !important;
   font-size: 0.95rem !important;
-  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important; /* Bouncy spring */
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -1990,26 +2485,30 @@ input[type=number] {
   box-shadow: 0 10px 20px rgba(124, 58, 237, 0.4) !important;
 }
 
-/* GLOBAL PREMIUM HERO SECTION */
+/* Hero Section Container */
 .premium-hero {
+  /* Complex multi-stop gradient */
   background: linear-gradient(-45deg, #7c3aed, #6366f1, #8b5cf6, #d946ef);
-  background-size: 400% 400%;
-  animation: gradientBG 15s ease infinite;
+  background-size: 400% 400%; /* Super-sized background to allow panning */
+  animation: gradientBG 15s ease infinite; /* Panning animation */
   margin-top: 0;
   padding-top: 8rem;
   padding-bottom: 9rem;
   position: relative;
   overflow: hidden;
   box-shadow: 0 10px 40px rgba(124, 58, 237, 0.4);
+  /* Curved bottom edge */
   border-radius: 0 0 50% 50% / 0 0 60px 60px;
 }
 
+/* Background Panning Keyframes */
 @keyframes gradientBG {
   0% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
   100% { background-position: 0% 50%; }
 }
 
+/* Floating Glass Shapes in Background */
 .bg-shape {
   position: absolute;
   background: rgba(255, 255, 255, 0.1);
@@ -2018,23 +2517,31 @@ input[type=number] {
   animation: float 10s infinite ease-in-out;
 }
 
+/* Shape Positioning */
 .shape-1 { top: 10%; left: 5%; width: 80px; height: 80px; }
 .shape-2 { top: 50%; right: 5%; width: 120px; height: 120px; border-radius: 50%; animation-delay: -2s; }
 .shape-3 { bottom: 10%; left: 30%; width: 60px; height: 60px; animation-delay: -5s; }
 
+/* Large Profile Avatar Style */
 .profile-avatar-xl {
   width: 120px;
   height: 120px;
-  border: 5px solid rgba(255, 255, 255, 0.5);
+  border: 5px solid rgba(255, 255, 255, 0.5); /* Semi-transparent border */
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 }
 
+/* Floating Animation Keyframes */
 @keyframes float {
   0%, 100% { transform: translateY(0) rotate(0deg); }
   50% { transform: translateY(-30px) rotate(10deg); }
 }
 
-/* Favorites Mini Card for Profile Page */
+/* 
+ * =========================================
+ * Favorites Mini Card (Profile)
+ * =========================================
+ * Small product cards displayed in the user profile "Favorites" tab.
+ */
 .favorite-mini-card {
   background: white;
   border-radius: 16px;
@@ -2045,12 +2552,14 @@ input[type=number] {
   height: 100%;
 }
 
+/* Hover Lift */
 .favorite-mini-card:hover {
   transform: translateY(-5px);
   box-shadow: 0 12px 20px rgba(0,0,0,0.1);
   border-color: #e2e8f0;
 }
 
+/* Image Container */
 .fav-img-container {
   height: 120px;
   background: #f8fafc;
@@ -2060,12 +2569,14 @@ input[type=number] {
   justify-content: center;
 }
 
+/* Image Scaling */
 .fav-img-container img {
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
 }
 
+/* Text Details */
 .fav-mini-details {
   padding: 12px;
 }
@@ -2076,6 +2587,7 @@ input[type=number] {
   color: #1e293b;
 }
 
+/* Generic Clickable Card Helper */
 .clickable-card {
   cursor: pointer;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
@@ -2086,8 +2598,13 @@ input[type=number] {
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
 }
 
-
-/* Action Buttons Primary (Consolidated from home.html) */
+/* 
+ * =========================================
+ * Mobile Action Button (Primary)
+ * =========================================
+ * Large, touch-friendly button used on Home and Product Details.
+ * Features a "3D press" effect with a bottom shadow.
+ */
 .btn-action-primary {
   background: #7c3aed;
   color: white;
@@ -2102,13 +2619,17 @@ input[type=number] {
   justify-content: center;
   gap: 10px;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 0px #5b21b6;
+  box-shadow: 0 4px 0px #5b21b6; /* Hard shadow for "3D" depth */
 }
+
+/* Hover: Slightly lighter */
 .btn-action-primary:hover {
   transform: translateY(-2px);
   background: #8b5cf6;
   box-shadow: 0 6px 0px #5b21b6;
 }
+
+/* Active: Press down (remove shadow depth) */
 .btn-action-primary:active {
   transform: translateY(2px);
   box-shadow: 0 1px 0px #5b21b6;

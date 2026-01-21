@@ -23,6 +23,14 @@ load_dotenv()
 
 class ProductsModel:
     def __init__(self):
+        """
+        Initialize the ProductsModel using the shared database connection.
+        
+        Why 'get_db':
+        We fetch the ephemeral database connection from a utility helper
+        rather than maintaining a persistent static connection to ensure 
+        thread safety in Flask.
+        """
         # Use shared get_db to ensure we use the active Flask persistence connection
         from utils.db import get_db
         self.db = get_db()
@@ -31,32 +39,55 @@ class ProductsModel:
 
     def list_products(self, query: Optional[dict] = None, skip: int = 0, limit: int = 0) -> List[dict]:
         """
-        List products with filtering and pagination.
+        Retrieve a filtered list of products.
+        
+        Features:
+        - Query Filtering: Accepts MongoDB syntax filters (e.g. {'price': {'$lt': 5}})
+        - Pagination: Supports skipping records and limiting result set size.
+        - ID Normalization: Converts ugly '_id' ObjectIds to clean 'id' strings.
         
         Args:
-            query: MongoDB filter dictionary (default: {})
-            skip: Number of documents to skip
-            limit: Maximum documents to return
+            query: MongoDB filter dictionary (default: {} for all products)
+            skip: Number of documents to skip (for paging)
+            limit: Maximum documents to return (for paging)
+        
+        Returns:
+            List[dict]: List of clean product dictionaries.
         """
-        # GET ALL PRODUCTS from database
+        # 1. EXECUTE QUERY
+        # Start the cursor, applying the filter criteria
         cursor = self.db.products.find(query or {})
+        
+        # 2. APPLY PAGINATION
+        # Order matters! Skip first, then limit.
         if skip:
             cursor = cursor.skip(skip)
         if limit:
             cursor = cursor.limit(limit)
             
+        # 3. FETCH AND CLEAN RESULTS
+        # Iterate through the cursor to fetch actual documents from DB server
         docs = list(cursor)
         for d in docs:
+            # Helper: Add friendly 'id' field
             if '_id' in d:
                 d['id'] = str(d['_id'])  # Convert MongoDB ID to string for frontend compatibility
         return docs
 
     def get_latest_products(self, limit: int = 10) -> List[dict]:
-        """Get the latest products added to the database, sorted by insertion order (_id)."""
+        """
+        Get the most recently added products.
+        
+        Technique:
+        MongoDB ObjectIds contain a timestamp component in their first 4 bytes.
+        Sorting by '_id' descending (-1) is a highly efficient way to get 
+        "newest first" without needing a separate 'created_at' index.
+        """
         try:
             # Sort by _id descending (-1), which approximates creation time for ObjectId
             cursor = self.db.products.find({}).sort('_id', -1).limit(limit)
             docs = list(cursor)
+            # Normalize IDs
             for d in docs:
                 if '_id' in d:
                     d['id'] = str(d['_id'])
@@ -66,12 +97,20 @@ class ProductsModel:
             return []
 
     def count_products(self, query: Optional[dict] = None) -> int:
+        """
+        Count total products matching a filter.
+        Used primarily for calculating total pages in pagination logic.
+        """
         # COUNT PRODUCTS matching query (Used for pagination metadata)
         return self.db.products.count_documents(query or {})
 
     def get_popular_products(self, limit: int = 12) -> List[dict]:
         """
         Get products sorted by popularity metrics (view_count and add_to_list_count).
+        
+        Sorting Logic:
+        1. Primary Sort: 'view_count' (descending) - Most seen items
+        2. Secondary Sort: 'add_to_list_count' (descending) - Most engaged items
         """
         # GET POPULAR PRODUCTS sorted by engagement metrics
         docs = list(self.db.products.find({}).sort([('view_count', -1), ('add_to_list_count', -1)]).limit(limit))
@@ -84,10 +123,16 @@ class ProductsModel:
         """
         Calculate the number of products in each category using an aggregation pipeline.
         
+        Why Aggregation:
+        Instead of fetching all products to Python and counting them (slow, memory intensive),
+        we ask the MongoDB server to do the math and just send us the totals.
+        
         Aggregation Steps:
-        1. $match: Filter out products with no category.
-        2. $group: Group by 'category' field and count occurrences ($sum: 1).
-        3. $sort: Sort by count descending so most popular categories come first.
+        1. $match: Filter out products with no category (clean data).
+        2. $group: Group documents by their 'category' field.
+           - _id: The unique category name.
+           - count: Increment a counter by 1 for each doc in the group.
+        3. $sort: Sort the results so the biggest categories appear first.
         
         Returns:
             dict: { "Dairy": 50, "Bakery": 30, ... }
@@ -98,13 +143,22 @@ class ProductsModel:
             {"$sort": {"count": -1}}
         ]
         results = list(self.db.products.aggregate(pipeline))
-        # Transform [{_id: 'Dairy', count: 50}, ...] into {'Dairy': 50, ...}
+        
+        # Transform the raw list [{_id: 'Dairy', count: 50}, ...] 
+        # into a simple dictionary {'Dairy': 50, ...} for easier Python usage.
         return {r['_id']: r['count'] for r in results}
 
     def upsert_product(self, key: dict, set_doc: dict) -> dict:
         """
-        Update a product if it exists, or insert it if it doesn't.
-        Key is the filter to match (e.g. {'name': 'Milk'}), set_doc is the data to update.
+        Insert or Update (Upsert) a product.
+        
+        Behavior:
+        - If a document matching 'key' exists: Update it with 'set_doc'.
+        - If NO document matches: Create a new one combining 'key' and 'set_doc'.
+        
+        Args:
+            key: Filter to find the product (e.g. {'name': 'Milk, 1 Gallon'})
+            set_doc: The fields to update/set.
         """
         res = self.db.products.update_one(key, {'$set': set_doc}, upsert=True)
         return {
@@ -116,10 +170,17 @@ class ProductsModel:
     def search_by_name(self, query: str, limit: int = 50) -> List[dict]:
         """
         Search products by name using case-insensitive partial match (regex).
+        
+        Performance Note: 
+        Regex searches starting with a wildcard (like implicit .*query.*) 
+        cannot efficiently use indexes and perform full Collection Scans.
+        This is fine for small catalogs (<10k items) but requires Atlas Search for scale.
         """
         import re
         # re.escape ensures special characters in query (like + or *) don't break the regex
+        # 'i' option makes it case-insensitive (A matches a)
         regex = {'$regex': re.escape(query), '$options': 'i'}
+        
         docs = list(self.db.products.find({'name': regex}).limit(limit))
         for d in docs:
             if '_id' in d:

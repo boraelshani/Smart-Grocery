@@ -22,34 +22,47 @@ from models import models as m
 
 def format_price(price):
     """
-    Convert a price string (e.g., '$12.99') into a clean float.
+    Convert a price string (e.g., '$12.99', '£5.00') into a clean float.
+    
+    Robustness:
+    - Handles inputs that are already floats.
+    - Strips currency symbols like $ and £.
+    - Strips surrounding whitespace.
     
     Args:
-        price (str or float): The raw price.
+        price (str or float): The raw price input.
         
     Returns:
-        float: The numeric price value.
+        float: The numeric price value (e.g., 12.99).
     """
-    # CONVERT: Price string to float (remove $ symbols)
+    # CONVERT: Price string to float
     if isinstance(price, str):
+        # Remove common currency symbols and whitespace
         return float(price.replace("$", "").replace("£", "").strip())
+    # If it's already a number (int/float), just return it as-is
     return price
 
 def find_cheapest_product(product):
     """
     Identify the store offering the lowest price for a specific product.
     
+    Logic:
+    Iterates through the 'stores' array nested within the product document
+    to find the entry with the minimum numeric price.
+    
     Args:
         product (dict): Product document containing a 'stores' list.
         
     Returns:
-        dict: The store object with the minimum price.
+        dict: The store object (e.g. {'store': 'Aldi', 'price': 1.99}) with the minimum price.
     """
-    # FIND BEST DEAL: Get store with lowest price for this product
+    # Initialize minimum price to Infinity so the first real price will always be lower
     min_price = float("inf")
     cheapest = None
     
+    # Iterate through all stores carrying this product
     for store in product["stores"]:
+        # Normalize price string to float for comparison
         price = format_price(store["price"])
         if price < min_price:
             min_price = price
@@ -59,82 +72,114 @@ def find_cheapest_product(product):
 
 def calculate_total_cost(shopping_list, products):
     """
-    Calculate the total cost of a shopping list, assuming best prices.
+    Calculate the estimated total cost of a shopping list.
+    
+    Assumption:
+    It assumes the user will buy each item at the store offering the *best price*.
     
     Args:
-        shopping_list (list): List of items (dicts or strings).
-        products (list): Full catalog of product documents to look up prices.
+        shopping_list (list): List of items the user wants to buy.
+            Can be simple strings ["Milk"] or dicts [{"name": "Milk"}].
+        products (list): Full catalog of product documents (the 'database') to look up prices.
         
     Returns:
-        float: Total cost rounded to 2 decimals.
+        float: Total estimated cost rounded to 2 decimals.
     """
-    # CALCULATE TOTAL: Sum up costs of all items in shopping list
+    # CALCULATE TOTAL: Sum up costs of all items
     total = 0.0
+    
     for item in shopping_list:
+        # 1. Normalize Item Key
         # Handle dict items (new format) vs string items (legacy)
         if isinstance(item, dict):
             key = item.get("product_name") or item.get("name")
         else:
             key = item
 
+        # 2. Find Product Price
+        # Look through the entire product catalog to find a match
+        # (Note: In production, this loop-inside-loop is inefficient O(N*M). 
+        # Better to query DB directly for prices).
         for product in products:
             if product.get("name", "").lower() == str(key).lower():
+                # Find the cheapest price for this specific product
                 cheapest = find_cheapest_product(product)
                 if cheapest:
+                    # Add to running total
                     total += format_price(cheapest["price"])
+                    
+    # Return formatted money float
     return round(total, 2)
 
 def search_products(query, products):
     """
-    Filter products by partial name match.
+    Filter in-memory product list by partial name match.
     
     Args:
-        query (str): Search term.
+        query (str): Search term (e.g. "Bread").
         products (list): List of product dictionaries.
         
     Returns:
-        list: Filtered list of products.
+        list: Subset of products containing the query string.
     """
-    # SEARCH: Filter products by name (case-insensitive)
+    # Case-insensitive search using list comprehension
+    # Check if query string appears inside product name
     return [p for p in products if query.lower() in p["name"].lower()]
 
 def sanitize_mongo_doc(doc):
     """
-    Recursively convert MongoDB-specific types (ObjectId, Decimal128) 
-    to standard JSON-serializable types (str, float).
+    Recursively convert MongoDB-specific data types into standard JSON-friendly types.
     
-    Why: Flask's jsonify() cannot handle bson.ObjectId or bson.Decimal128 directly.
+    Why this is needed:
+    MongoDB drivers return data using special BSON types:
+    - `ObjectId("...")`: Not valid JSON.
+    - `Decimal128("10.99")`: Not valid JSON.
+    Flask's `jsonify` serializer will crash if fed these types directly.
+    
+    Supported Conversions:
+    - ObjectId -> str
+    - Decimal128 -> float
+    - Recursive traversal of nested lists and dicts.
     
     Args:
         doc (dict, list, or val): The MongoDB document or field.
         
     Returns:
-        The sanitized version ready for JSON response.
+        The sanitized structure, safe to send to the frontend.
     """
     if doc is None:
         return None
     
+    # 1. Handle Lists (Recursion)
     if isinstance(doc, list):
         return [sanitize_mongo_doc(item) for item in doc]
+        
+    # 2. Handle Dictionaries (Recursion)
     if isinstance(doc, dict):
         new_doc = {}
         for k, v in doc.items():
             if k == "_id":
-                # Convert ObjectId to string
+                # Special handling: Convert Primary Key to string
+                # We also add a pure 'id' field for convenience
                 id_str = str(v)
                 new_doc["id"] = id_str
                 new_doc["_id"] = id_str
             elif isinstance(v, Decimal128):
-                # Decimal128 -> float for frontend math
+                # Extract the Python decimal, then convert to float
                 new_doc[k] = float(v.to_decimal())
             else:
+                # Recurse for nested fields
                 new_doc[k] = sanitize_mongo_doc(v)
         return new_doc
+        
+    # 3. Handle Primitive BSON Types (Leaf Nodes)
     if isinstance(doc, ObjectId):
         return str(doc)
     if isinstance(doc, Decimal128):
-        # Convert to string first to avoid precision issues with float()
+        # Convert to string first to avoid precision issues, then float
         return float(str(doc))
+        
+    # 4. Return standard types (str, int, bool) as-is
     return doc
 
 # 
@@ -142,28 +187,42 @@ def sanitize_mongo_doc(doc):
 # 
 
 def jwt_secret():
-    """Get the JWT secret key from config or env."""
+    """
+    Retrieve the secret key used for signing JWTs.
+    Checks config -> env var -> flask secret key chain.
+    """
     return current_app.config.get("JWT_SECRET_KEY") or os.environ.get("JWT_SECRET_KEY") or current_app.secret_key
 
 def generate_jwt(email: str) -> str:
     """
-    Generate a JSON Web Token for user authentication.
+    Generate a JSON Web Token (JWT) for stateless authentication.
+    
+    Payload Claims:
+    - sub (Subject): The user's email.
+    - iat (Issued At): When token was created.
+    - exp (Expiration): When token dies (set to 6 hours from now).
     
     Args:
-        email (str): User identifier to embed in token.
+        email (str): User identifier.
         
     Returns:
-        str: Encoded JWT string.
+        str: The encoded token string.
     """
     payload = {
         "sub": email,
         "iat": datetime.utcnow(),
         "exp": datetime.utcnow() + timedelta(hours=6)
     }
+    # Encode with HS256 algorithm
     return jwt.encode(payload, jwt_secret(), algorithm="HS256")
 
 
 def decode_jwt(token: str):
+    """
+    Verify and decode a JWT.
+    Returns the payload dictionary if signature is valid and token not expired.
+    Returns None if invalid.
+    """
     try:
         return jwt.decode(token, jwt_secret(), algorithms=["HS256"])
     except Exception as e:
@@ -171,9 +230,20 @@ def decode_jwt(token: str):
         return None
 
 def get_token_from_request():
+    """
+    Extract JWT from the HTTP request.
+    
+    Priority:
+    1. Authorization Header (Bearer token) - Standard for APIs
+    2. 'auth_token' Cookie - Standard for Web Browsers
+    """
+    # 1. Check Header
     auth_header = request.headers.get("Authorization", "")
     if isinstance(auth_header, str) and auth_header.lower().startswith("bearer "):
         return auth_header.split(" ", 1)[1].strip()
+        
+    # 2. Check Cookie
+    # (Browsers automatically send cookies with every request)
     cookie_token = request.cookies.get("auth_token")
     if cookie_token:
         return cookie_token
@@ -181,10 +251,17 @@ def get_token_from_request():
 
 def get_user_email():
     """
-    Get the current user_s email from Flask session.
-    Checks JWT first, then session.
-    Fallback to mock user data for development/testing if enabled.
+    Determine the currently logged-in user.
+    
+    Strategy:
+    1. Check for valid JWT token in headers/cookies.
+    2. Check for Flask Session (legacy/simple auth).
+    3. Fallback: Return a default mock user if in dev mode with no auth.
+    
+    Returns:
+        str: The user's email address or None.
     """
+    # 1. Try JWT
     try:
         token = get_token_from_request()
         if token:
@@ -194,7 +271,11 @@ def get_user_email():
     except Exception:
         pass
 
+    # 2. Try Session (Server-side cookie)
     email = session.get("user")
+    
+    # 3. Last Resort: Dev Mode Mock User
     if not email and getattr(m, "users", None):
+        # Pick the first available mock user if one exists
         email = "user1@example.com" if "user1@example.com" in m.users else next(iter(m.users.keys()), None)
     return email

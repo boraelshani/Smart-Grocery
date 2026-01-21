@@ -27,27 +27,41 @@ def ensure_venv():
     Why: Keeps dependencies isolated and ensures everyone runs the code with the 
     same library versions defined in requirements.txt.
     """
+    # Get the absolute path of the directory where this script (app.py) is located.
+    # This helps us build paths relative to the project root, no matter where the script is run from.
     current_dir = os.path.dirname(os.path.abspath(__file__))
     
-    # Path handling for both Windows and Linux/Mac
-    # Checks for both 'venv' and '.venv' folders
+    # We check for two common names for virtual environment folders: 'venv' and '.venv'.
+    # This allows flexibility for different developers' setups.
     venv_options = ['venv', '.venv']
     
     for venv_name in venv_options:
-        # Determine the path to the python executable within the virtual environment
+        # Determine the expected path to the python executable within the virtual environment.
+        # This differs between Windows and Unix-based systems (Linux/macOS).
         if sys.platform == "win32":
+            # On Windows, the python executable is inside the 'Scripts' folder.
             venv_python = os.path.join(current_dir, venv_name, 'Scripts', 'python.exe')
         else:
+            # On Linux/Mac, the python executable is inside the 'bin' folder.
             venv_python = os.path.join(current_dir, venv_name, 'bin', 'python')
         
-        # Check if we are already running the venv python
+        # Check two conditions before switching:
+        # 1. Does the virtual environment python executable actually exist at that path?
+        # 2. Is the currently running python interpreter (sys.executable) DIFFERENT from the venv python?
         if os.path.exists(venv_python) and sys.executable != venv_python:
             print(f"INFO: Auto-switching to virtual environment: {venv_python}")
             try:
-                # Replace the current process with a new one using the venv python
+                # Use os.execv to replace the current process image with a new process.
+                # This effectively restarts the script using the correct Python interpreter.
+                # The arguments passed are [venv_python, script_name, ...other_args].
                 os.execv(venv_python, [venv_python] + sys.argv)
             except Exception as e:
+                # If something goes wrong (e.g., permission error), catch the exception 
+                # and print a warning, but continue running (maybe with the system python).
                 print(f"WARNING: Could not switch to venv: {e}")
+            
+            # If we found a valid venv and attempted to switch, we break the loop.
+            # (Note: os.execv does not return if successful, so this break only runs on failure).
             break
 
 ensure_venv()
@@ -59,16 +73,22 @@ from dotenv import load_dotenv, find_dotenv
 # ═══════════════════════════════════════════════════════════════════════════
 # 1. ENVIRONMENT SETUP: Load configuration from .env file
 # ═══════════════════════════════════════════════════════════════════════════
-# Load environment variables (like DB connection strings) from a .env file
+# Find the .env file in the project directory or parent directories.
+# 'usecwd=True' ensures we look starting from the current working directory.
 dotenv_path = find_dotenv('.env', usecwd=True)
+
+# If a .env file is found, load the variables into os.environ.
+# 'override=True' means variables in .env will overwrite existing system environment variables.
 if dotenv_path:
     load_dotenv(dotenv_path, override=True)
     print(f'INFO: Loaded .env from {dotenv_path}')
 else:
+    # Inform the user if no configuration file was found (defaults will be used later).
     print('INFO: No .env file found in project root')
 
-# Ensure SSL_CERT_FILE is set for pymongo TLS if not already
-# This is crucial for connecting to MongoDB Atlas securely
+# Ensure SSL_CERT_FILE is set for pymongo TLS if not already.
+# MongoDB Atlas (cloud version) requires secure connections using SSL/TLS.
+# certifi.where() provides the path to a bundle of trusted CA certificates.
 if not os.environ.get('SSL_CERT_FILE'):
     os.environ['SSL_CERT_FILE'] = certifi.where()
 
@@ -77,39 +97,62 @@ from utils.db import mongo, sanitize_uri
 # ═══════════════════════════════════════════════════════════════════════════
 # 2. FLASK APP INITIALIZATION
 # ═══════════════════════════════════════════════════════════════════════════
+# Create the Flask application instance.
+# __name__ is passed to let Flask know where to look for resources like templates and static files.
 app = Flask(__name__)
-# SECRET_KEY is used to sign session cookies for security.
+
+# SECRET_KEY is crucial for security. usage:
+# 1. It signs the session cookie so users can't tamper with their session data (like claiming to be logged in).
+# 2. It's used for CSRF protection in forms.
+# We try to get it from environment variables, but fall back to 'dev-secret-key' for local development.
 app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key')
-# JWT_SECRET_KEY is used for making secure JSON Web Tokens for API authentication
+
+# JWT_SECRET_KEY is specifically for JSON Web Token encryption.
+# This often matches the app secret key but can be separate.
 app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', app.secret_key)
 
 # ═══════════════════════════════════════════════════════════════════════════
 # 3. MONGODB CONFIGURATION
 # ═══════════════════════════════════════════════════════════════════════════
-# Parse MongoDB connection URI from environment
+# Retrieve the MongoDB connection string (URI) from environment variables.
+# Format: mongodb+srv://<username>:<password>@cluster.mongodb.net/database
 raw_uri = os.environ.get('MONGO_URI', 'mongodb://localhost:27017/smart_grocery')
-# Sanitize cleans up common copy-paste errors (like <password> tags)
+
+# Sanitize the URI using a helper function.
+# This fixes common user errors, like leaving '<password>' placeholders or extra whitespace.
 app.config['MONGO_URI'] = sanitize_uri(raw_uri)
 
 
-# Set default database name if URI doesn't specify one
+# Set default database name if the URI doesn't explicitly specify one.
+# We parse the URI string; if no database name is found after the slashes/at-sign, we add 'smart_grocery'.
 if '/' not in raw_uri.split('@')[-1].rstrip('/'):
     app.config.setdefault('MONGO_DBNAME', 'smart_grocery')
 
-# Initialize PyMongo with the Flask app
-# We wrap this in a try-except to handle cases where the MONGO_URI (especially SRV)
-# fails to resolve due to network or DNS issues, allowing the app to still boot in fallback mode.
+# Initialize PyMongo with the Flask app.
+# We wrap this in a try-except block to handle connection failures gracefully.
+# This allows the app to start in "Offline/Fallback Mode" if the database is unreachable.
 try:
-    app.config['MONGO_CONNECTTIMEOUTMS'] = 5000  # 5 second timeout for connection
-    app.config['MONGO_SERVERSELECTIONTIMEOUTMS'] = 5000 # 5 second timeout for server selection
+    # Set a timeout for the initial connection attempt (5000ms = 5 seconds).
+    # This prevents the app from hanging indefinitely if the network is down.
+    app.config['MONGO_CONNECTTIMEOUTMS'] = 5000 
+    
+    # Set a timeout for selecting a server (finding a master node in a replica set).
+    app.config['MONGO_SERVERSELECTIONTIMEOUTMS'] = 5000
+    
+    # Bind the PyMongo instance to our Flask app.
     mongo.init_app(app)
-    # Test connection if possible
+    
+    # Verify the connection immediately within the application context.
     with app.app_context():
+        # Check if the 'db' attribute was successfully attached to the mongo object.
         if mongo.db is not None:
-            # The command 'ping' is a low-impact way to verify connection
+            # Execute the 'ping' command. This is a lightweight command to check connectivity.
+            # If this raises an exception, we know we can't talk to the database.
             mongo.db.command('ping')
             print("INFO: MongoDB connection verified.")
 except Exception as e:
+    # If any error occurs during setup or ping, print it and warn about fallback mode.
+    # The app will continue running, but will likely use local JSON files instead of the database.
     print(f'WARNING: MongoDB initialization or connection failed: {e}')
     print('INFO: Running in fallback mode with local JSON data.')
 

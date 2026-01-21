@@ -89,12 +89,18 @@ def home():
     4. Fallback Handling: Uses local JSON data if MongoDB fails.
     5. Statistics: Calculates total savings and counts for badges.
     """
-    # If the user is not signed in, show the entry page prompting Log In / Sign Up
+    # 1. AUTHENTICATION CHECK
+    # Check if the 'user' key exists in the session (cookies).
+    # If not, the user is not logged in.
     user_email = session.get('user')
     if not user_email:
+        # User is Guest: Render the 'entry.html' (Login/Signup options).
         return render_template('entry.html')
 
-    # Initialize all potential template variables to empty defaults
+    # 2. INITIALIZATION
+    # Initialize all potential template variables to empty defaults.
+    # We do this to ensure the template never crashes due to a missing variable, 
+    # even if subsequent database calls fail.
     stores = []
     products = []
     featured_deals = []
@@ -109,7 +115,9 @@ def home():
     using_fallback = False
     user_join_date = None
 
-    # Get user join date for "NEW" badge logic
+    # 3. GET USER JOIN DATE
+    # We use this later to determine if a user gets the "NEW" badge
+    # or to filter content relevant to when they joined.
     if user_email:
         try:
             from models.users_model import get_user_by_email
@@ -117,34 +125,48 @@ def home():
             if user_data:
                 user_join_date = user_data.get('created_at')
         except:
+            # Silently fail if DB error - it's non-critical UI candy
             pass
 
-    # Load stores/products/deals from Models
+    # 4. LOAD MAIN DATA
+    # We wrap everything in a TRY block because external DB calls can fail.
     try:
+        # Fetch list of stores available in the system
         stores = stores_model.list_stores()
+        # Fetch list of all products
         products = products_model.list_products()
         
-        # Count total deals from all collections using Models
+        # Calculate Grand Total of all active deals in the system
+        # This sums up Featured Deals + Multibuy Offers + Quantity Discounts
         total_deals_count = (featured_deals_model.get_deals_count() + 
                            multibuy_offers_model.get_offers_count() + 
                            len(quantity_discounts_model.list_active_discounts()))
         
-        # Fetch featured deals, multibuy offers, and quantity discounts
+        # Fetch the actual deal objects for display
         featured_deals_list = featured_deals_model.list_featured_deals()
         multibuy_offers_list = multibuy_offers_model.list_active_offers()
         quantity_discounts_list = quantity_discounts_model.list_active_discounts()
         
-        # Separate multi-buy deals from regular discount deals
+        # 4a. DEAL SEPARATION STRATEGY
+        # We want to mix different types of deals (Multibuy vs Regular Discounts)
+        # to show variety on the home page.
         multibuy_deals = []
         regular_deals = []
         
-        # Check featured_deals_list for multi-buy vs regular
+        # Iterate through 'Featured Deals' collection and categorize them
         for deal in featured_deals_list:
+            # Parse the 'offer' field to detect if it's a Buy X Get Y type deal
             offer_obj = deal.get('offer') if isinstance(deal.get('offer'), dict) else None
             offer_str = deal.get('offer', '') if isinstance(deal.get('offer'), str) else ''
+            
+            # Extract quantity parameters (X and Y)
             offer_x = offer_obj.get('x') if offer_obj else (deal.get('buy_quantity') or deal.get('multibuy_buy') or '')
             offer_y = offer_obj.get('y') if offer_obj else (deal.get('free_quantity') or deal.get('multibuy_free') or '')
+            
+            # Determine Deal Type
             offer_type = offer_obj.get('type') if offer_obj else ('buyXgetY' if offer_x and offer_y else '')
+            
+            # Simple heuristic: If it says "buy" and "get"/"free", consider it a multibuy
             is_multibuy = (offer_type == 'buyXgetY') or (offer_str and ('buy' in offer_str.lower() and ('get' in offer_str.lower() or 'free' in offer_str.lower() or '+' in offer_str)))
             
             if is_multibuy:
@@ -152,39 +174,48 @@ def home():
             else:
                 regular_deals.append(deal)
         
-        # Add all multibuy_offers and quantity_discounts to multibuy_deals
+        # Merge specialized offer collections into the main lists
+        # This unifies data from different DB collections into one UI list
         multibuy_deals.extend(multibuy_offers_list)
         multibuy_deals.extend(quantity_discounts_list)
         
-        # Ensure at least 5 multibuy and 5 regular deals
+        # 4b. SELECTION LOGIC
+        # We want to show a balanced mix, e.g., 5 multibuy + 5 regular deals first.
         import random
+        # Slice the first 5 of each (or all if less than 5)
         selected_multibuy = multibuy_deals[:5] if len(multibuy_deals) >= 5 else multibuy_deals
         selected_regular = regular_deals[:5] if len(regular_deals) >= 5 else regular_deals
         
-        # Combine and fill remaining with any other deals
+        # Combine the selected subsets
         featured_deals = selected_multibuy + selected_regular
         
-        # Add more deals to reach 20 total
+        # Fill up the rest of the list until we hit 20 total deals
+        # This ensures the page doesn't look empty if we are short on one type.
         remaining_deals = [d for d in (multibuy_deals + regular_deals) if d not in featured_deals]
         if remaining_deals:
             featured_deals.extend(remaining_deals[:max(0, 20 - len(featured_deals))])
         
-        # If no deals found, use JSON fallback
+        # 4c. FALLBACK FOR EMPTY DB
+        # If the DB returned nothing (e.g. empty collection), force fallback mode.
         if not featured_deals:
             using_fallback = True
             featured_deals = load_featured_deals_fallback()
             total_deals_count = len(featured_deals)
             
     except Exception as e:
+        # If DB connection failed completely:
         print(f'ERROR in home route: {e}')
         using_fallback = True
+        # Load static JSON file so the user still sees something working
         featured_deals = load_featured_deals_fallback()
         total_deals_count = len(featured_deals)
     
-    # Filter featured deals based on user join date if requested
+    # 5. POST-PROCESSING: DATE FILTERING
+    # Ensure we don't show deals created *before* the user joined if that's a business rule.
+    # (Optional logic, currently commented out user_join_date check or loosely applied)
     if user_join_date:
         from datetime import datetime
-        # Helper to parse dates from Mongo/JSON strings if needed
+        # Helper to safely parse dates from various formats (Mongo objects vs Strings)
         def get_date(d):
             dt = d.get('created_at')
             if isinstance(dt, str):
@@ -192,64 +223,71 @@ def home():
                 except: return None
             return dt
         
-        # Filter notification-like "posts" (featured deals)
+        # Filter Logic: Keep deal if it has NO date OR date is >= user join date
         featured_deals = [d for d in featured_deals if not get_date(d) or get_date(d) >= user_join_date]
 
-    # Check favorites for user using Model
+    # 6. FETCH FAVORITES
+    # We need to know which products the user has liked to color the heart icon red.
     fav_ids = set()
     if user_email:
         try:
+            # Query the favorites collection for this user
             user_favs = favorites_model.get_user_favorites(user_email)
+            # Create a Set of Product IDs for O(1) fast lookup
             fav_ids = {str(f.get('product_id')) for f in user_favs}
         except Exception as e:
             print(f"Error loading favorites for home page: {e}")
     
-    # Mark favorited items
+    # 7. APPLY 'IS_FAVORITED' FLAG
+    # Iterate through products and deals, adding a boolean flag for the template
     for p in products:
         p['is_favorited'] = str(p.get('id') or p.get('_id', '')) in fav_ids
     for d in featured_deals:
         d['is_favorited'] = str(d.get('id') or d.get('_id', '')) in fav_ids
 
-    # Fetch popular products using Model
+    # 8. FETCH POPULAR PRODUCTS
+    # Shows "Trending" items.
     try:
         popular_products = products_model.get_popular_products(limit=12)
+        # Apply favorite flag to these too
         for p in popular_products:
             p['is_favorited'] = str(p.get('id') or p.get('_id', '')) in fav_ids
     except Exception as e:
         print(f"Error fetching popular products: {e}")
+        # Fallback to just the first 12 products
         popular_products = products[:12] if products else []
 
-    # Pull user preferences (preferred stores)
+    # 9. USER STORE PREFERENCES
+    # Fetch which stores the user likes (e.g., "Costco", "Whole Foods")
     preferred_stores = []
     if user_email:
         try:
             from models.users_model import get_user_by_email
             user_doc = get_user_by_email(user_email)
             if user_doc:
+                # Check nested preferences object first, then root level fallback
                 prefs_obj = user_doc.get('preferences') or {}
                 preferred_stores = prefs_obj.get('preferred_stores') or user_doc.get('preferred_stores') or []
         except Exception:
             preferred_stores = []
 
-    # Calculate per-store product counts and total product count
+    # 10. CALCULATE STORE STATISTICS
+    # We want to show "Whole Foods (150 items)" on the UI.
     from collections import defaultdict
 
     def _norm_store(name):
+        """Normalize store name for case-insensitive matching"""
         return (str(name or '').strip().lower())
 
-    def _norm_compact(name):
-        # normalize and remove non-alphanumeric for flexible matching
-        import re as _re
-        n = _norm_store(name)
-        return _re.sub(r"[^a-z0-9]", "", n)
-
+    # Initialize a dictionary that defaults to 0 for missing keys
     store_counts = defaultdict(int)
     total_product_count = 0
 
-    # Count products by store (only count products, not deals, for accuracy)
+    # Count products per store
     for product in products:
         stores_list = product.get('stores', [])
         if stores_list:
+            # If product is in multiple stores, add it to the global count for each availability
             total_product_count += len(stores_list)
             for s in stores_list:
                 store_name = s.get('store') or s.get('store_name') or s.get('name') or ''
@@ -257,13 +295,14 @@ def home():
                 if norm:
                     store_counts[norm] += 1
         else:
+            # Single store product
             total_product_count += 1
             store_name = product.get('store') or product.get('store_name') or ''
             norm = _norm_store(store_name)
             if norm:
                 store_counts[norm] += 1
 
-    # Count featured deals separately by store and add to product count
+    # Include Featured Deals in the store counts
     for deal in featured_deals:
         deal_store = deal.get('store') or deal.get('source') or ''
         norm = _norm_store(deal_store)
@@ -271,60 +310,96 @@ def home():
             store_counts[norm] += 1
     total_product_count += len(featured_deals)
 
-    # Attach counts to store documents shown on the home page
-    # Use the same counting logic as store_products_page for consistency
+    # Update the 'stores' list objects with their counts
     for store in stores:
         name = store.get('name') or store.get('store') or ''
         norm = _norm_store(name)
         
-        # Count actual products for this store using Models
+        # Try to get authoritative count from DB first
         store_product_count = 0
         try:
-            # Count products and deals using Models instead of direct DB calls
             product_count = products_model.count_by_store(name)
             deal_count = featured_deals_model.count_by_store(name)
             store_product_count = product_count + deal_count
         except Exception as e:
+            # Fallback to the manual counts we just calculated
             print(f'WARNING: Error counting products for {name}: {e}')
             store_product_count = store_counts.get(norm, 0)
         
         store['product_count'] = store_product_count
 
-    # Choose a single store to feature on the home page based on preferences
+    # 11. CHOOSE A STORE TO FEATURE
+    # The home page design features a specific store's products (e.g., "Best at Aldi").
+    # We try to pick a store the user likes, or just a random one.
+    
+    # Create a quick lookup map: key=normalized_name, value=original_name
+    # Example: {'costco': 'Costco', 'wholefoods': 'Whole Foods'}
     store_lookup = {(_norm_store(s.get('name') or s.get('store') or '')): (s.get('name') or s.get('store') or '') for s in stores if (s.get('name') or s.get('store'))}
+    
+    # Filter the user's preferred stores to only those that actually exist in our DB
+    # (Removes old invalid preferences)
     candidate_norms = [_norm_store(s) for s in preferred_stores if _norm_store(s) in store_lookup]
+    
+    # SELECTION LOGIC:
     chosen_norm = None
     if candidate_norms:
+        # A. If user has preferences, pick one of them randomly.
+        # This keeps the dashboard feeling fresh but relevant.
         chosen_norm = candidate_norms[0] if len(candidate_norms) == 1 else random.choice(candidate_norms)
     elif store_lookup:
+        # B. If no preferences, pick ANY store from the database.
         chosen_norm = random.choice(list(store_lookup.keys()))
+        
+    # Get the display name back from our lookup map
     chosen_store_name = store_lookup.get(chosen_norm) if chosen_norm else None
 
-    # Build list of products and deals for the chosen store
+    # 12. BUILD FEATURED STORE PRODUCT LIST
+    # Retrieve top 20 items for the chosen store to display in the "Brand Spotlight" section.
     if chosen_norm:
+        # Pre-calculate compact normalized name to speed up the loop
         chosen_compact = _norm_compact(chosen_store_name or chosen_norm)
+        
+        # Iterate through ALL products to find ones belonging to this store
+        # (Note: In a huge DB, a direct MongoDB query would be faster, but this works for <10k items)
         for product in products:
             match_entry = None
+            
+            # Check the 'stores' array within the product document
+            # (Products often have multiple price points/stores)
             for s in product.get('stores', []) or []:
                 store_name = s.get('store') or s.get('store_name') or s.get('name') or ''
                 store_norm = _norm_store(store_name)
                 store_compact = _norm_compact(store_name)
-                # Accept exact or compact contains matching to handle variants like "lidl österreich"
+                
+                # MATCHING LOGIC:
+                # 1. Exact Name (Normalized)
+                # 2. Substring Match (Compact) - handle "Lidl" matching "Lidl US"
                 if store_norm == chosen_norm or (store_compact and chosen_compact and (store_compact in chosen_compact or chosen_compact in store_compact)):
                     match_entry = s
-                    break
+                    break # Stop looking once found in this product
+            
+            # Fallback: Check if product has a single top-level 'store' field (legacy data structure)
             if not match_entry:
                 single_store = product.get('store') or product.get('store_name')
                 if single_store:
                     single_norm = _norm_store(single_store)
                     single_compact = _norm_compact(single_store)
                     if single_norm == chosen_norm or (single_compact and chosen_compact and (single_compact in chosen_compact or chosen_compact in single_compact)):
+                        # Construct a temporary object to mimic the 'stores' array format
                         match_entry = {'store': single_store, 'price': product.get('price')}
 
+            # If we found a match, format the data for the UI
             if match_entry:
+                # ID Resolution: Try multiple fields to get a unique identifier
                 pid = product.get('id') or product.get('_id') or product.get('product_id') or match_entry.get('product_id') or match_entry.get('id') or None
+                
+                # Image Resolution: Valid URL > First in List > Placeholder
                 image = match_entry.get('image') or product.get('image') or ((product.get('images') or [None])[0]) or url_for('static', filename='placeholder.svg')
+                
+                # Price Resolution: Store-specific price > Base price > 0
                 price_val = match_entry.get('price') or match_entry.get('price_val') or product.get('price') or 0
+                
+                # Add to display list
                 store_products.append({
                     'id': str(pid) if pid is not None else None,
                     'name': product.get('name') or product.get('title') or 'Product',
@@ -336,17 +411,20 @@ def home():
                     'url': product.get('url') or match_entry.get('url') or product.get('link') or product.get('product_url') or '',
                 })
 
-        # Also include featured deals for the chosen store
+        # Also search FEATURED DEALS for this store and mix them in
         try:
             for deal in featured_deals:
                 deal_store = deal.get('store') or deal.get('source') or ''
                 deal_norm = _norm_store(deal_store)
                 deal_compact = _norm_compact(deal_store)
+                
+                # Same matching logic as above
                 if deal_norm == chosen_norm or (deal_compact and chosen_compact and (deal_compact in chosen_compact or chosen_compact in deal_compact)):
                     did = str(deal.get('id') or deal.get('_id') or '')
                     dname = deal.get('name') or deal.get('title') or 'Deal'
                     dimg = deal.get('image') or url_for('static', filename='placeholder.svg')
                     dprice = deal.get('price') or deal.get('best_price') or 0
+                    
                     store_products.append({
                         'id': did if did else None,
                         'name': dname,
@@ -360,7 +438,7 @@ def home():
         except Exception:
             pass
 
-    # Limit to a manageable number for Home section (use View All for the rest)
+    # Limit to a manageable number for Home section (use 'View All' page for the rest)
     store_products = store_products[:20]
 
     # Calculate max savings percentage from featured deals
@@ -473,27 +551,50 @@ def home():
 
 @main_bp.route('/stores')
 def stores_page():
+    """
+    Stores Directory Page.
+    
+    Displays a grid of all available stores with their product counts.
+    
+    Data Flow:
+    1. Fetch all store documents from MongoDB.
+    2. For each store, calculate real-time inventory stats:
+       - Count of regular products.
+       - Count of featured deals.
+    3. Render 'stores.html' with the enriched data.
+    """
     using_fallback = False
     try:
+        # Fetch basic store info (name, logo, description)
         stores = stores_model.list_stores()
+        
+        # Enrich with live statistics
         for s in stores:
-            # Count products for this store using Models
             store_name = s.get('name', '')
             
-            # Count in products and featured_deals collections
+            # Execute two count queries per store
+            # OPTIMIZATION NOTE: In high-scale apps, this N+1 query pattern 
+            # might be slow. Consider aggregation pipelines [$lookup] instead.
             product_count = products_model.count_by_store(store_name)
             deals_count = featured_deals_model.count_by_store(store_name)
             
+            # Add 'product_count' field for the frontend badge
             s['product_count'] = product_count + deals_count
+            
     except Exception as e:
         print(f"Error fetching stores with counts: {e}")
-    # Get standard category options for chips/filters
+        # If DB fails, we might show empty list or fallback data if configured
+    
+    # Prepare filter options for the UI
     category_options = [{"name": cat} for cat in STANDARD_CATEGORIES]
     
-    # Sanitize stores data
+    # Convert BSON types (ObjectId) to strings for Jinja2 compatibility
     stores = helpers.sanitize_mongo_doc(stores)
 
-    return render_template('stores.html', stores=stores, using_fallback=using_fallback, category_options=category_options)
+    return render_template('stores.html', 
+                         stores=stores, 
+                         using_fallback=using_fallback, 
+                         category_options=category_options)
 
 @main_bp.route('/stores/<store_name>')
 def store_products_page(store_name):

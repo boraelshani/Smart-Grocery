@@ -24,22 +24,30 @@ Data: Fetches all products and their store prices from database
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=9">
   <style>
-    /* Compare page specific tweaks */
+    /* 
+     * COMPARE PAGE STYLES
+     * Specific layout tweaks for the comparison grid and filters.
+     */
     .compare-search-row {
-      --search-height: 46px;
+      --search-height: 46px;      /* CSS Variable to synchronize height */
       /* adjust to match input height */
       margin-bottom: 1.5rem;
       /* slightly more space before product grid */
     }
 
-    /* Ensure the input-group and button group align items exactly */
+    /* 
+     * Search Input Group Alignment 
+     * Ensuring the text input and search button align perfectly horizontally
+     * even on different browsers.
+     */
     .compare-search-row .input-group {
       display: flex !important;
       align-items: center !important;
     }
 
+    /* Force specific height on form control */
     .compare-search-row .input-group .form-control {
-      height: var(--search-height) !important;
+      height: var(--search-height) !important; /* Use variable defined above */
       box-sizing: border-box;
       display: flex !important;
       align-items: center !important;
@@ -47,6 +55,7 @@ Data: Fetches all products and their store prices from database
       font-size: 1rem;
     }
 
+    /* Force same height on buttons */
     .compare-search-row .input-group .btn,
     .compare-search-row .input-group .btn-group .btn {
       height: var(--search-height) !important;
@@ -57,44 +66,53 @@ Data: Fetches all products and their store prices from database
       padding: 0 0.75rem !important;
       font-size: 1rem;
     }
-
+    
+    /* Vertically center icon within button */
     .compare-search-row .input-group .btn i {
       line-height: 1;
       display: inline-block;
       vertical-align: middle;
     }
-
+    
+    /* Header Gradient background */
     .hero-section {
       background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
       color: white;
       padding: 4rem 0;
     }
 
+    /* Filter Sidebar Container */
     .filter-card {
       border: none;
-      border-radius: 15px;
+      border-radius: 15px; /* Softer rounded corners */
       background: #ffffff;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07); /* Subtle depth */
     }
 
+    /* 
+     * Product Card Animation 
+     * The white card containing product info.
+     */
     .product-card-inner {
-      border: 2px solid transparent;
+      border: 2px solid transparent; /* Prepare for hover border without layout shift */
       border-radius: 15px;
       overflow: hidden;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Custom easing curve */
       background: white;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     }
-
+    
+    /* Hover State: Lift up and glow purple */
     .product-card-inner:hover {
-      transform: translateY(-8px);
-      box-shadow: 0 20px 40px rgba(124, 58, 237, 0.12);
-      border-color: var(--premium-purple);
+      transform: translateY(-8px); /* Moves up 8 pixels */
+      box-shadow: 0 20px 40px rgba(124, 58, 237, 0.12); /* Large purple shadow */
+      border-color: var(--premium-purple); /* Border appears */
     }
-
+    
+    /* Product Image Container */
     .product-image {
-      height: 240px;
-      object-fit: contain;
+      height: 240px; /* Fixed height for consistency */
+      object-fit: contain; /* Ensures whole image is visible without cropping */
       background: #ffffff !important;
       padding: 15px;
     }
@@ -393,8 +411,16 @@ Data: Fetches all products and their store prices from database
               style="height: 50px; display: flex; align-items: center; border: 2px solid #e2e8f0; background: #f5f3ff; color: #7c3aed; font-weight: 600; font-size: 1.05rem; transition: all 0.3s ease;">
               <i class="bi bi-sliders2 me-2"></i> Filters
             </button>
+            
+            <!-- 
+              Dropdown Menu for Filters 
+              - Contains Category, Store, Price Range, and Sort Order
+              - Uses data-bs-auto-close="outside" behavior implicitly via click handling
+            -->
             <div class="dropdown-menu dropdown-menu-end p-3 shadow-lg border-0 mt-2"
               aria-labelledby="filtersDropdownBtn" style="min-width: 320px; border-radius: 16px; z-index: 1050;">
+              
+              <!-- Category Filter -->
               <div class="mb-2">
                 <label class="form-label"><i class="bi bi-grid"></i> Category</label>
                 <select id="category-filter" class="form-select">
@@ -409,6 +435,7 @@ Data: Fetches all products and their store prices from database
                 </select>
               </div>
 
+              <!-- Store Filter: Populated dynamically via JS -->
               <div class="mb-2">
                 <label class="form-label"><i class="bi bi-shop"></i> Store</label>
                 <select id="store-filter" class="form-select">
@@ -416,6 +443,7 @@ Data: Fetches all products and their store prices from database
                 </select>
               </div>
 
+              <!-- Price Range Inputs -->
               <div class="mb-2">
                 <label class="form-label"><i class="bi bi-currency-dollar"></i> Price Range</label>
                 <div class="input-group">
@@ -425,6 +453,7 @@ Data: Fetches all products and their store prices from database
                 </div>
               </div>
 
+              <!-- Sorting Options -->
               <div class="mb-2">
                 <label class="form-label"><i class="bi bi-sort-down"></i> Sort By</label>
                 <select id="sort-order" class="form-select">
@@ -435,6 +464,7 @@ Data: Fetches all products and their store prices from database
                 </select>
               </div>
 
+              <!-- Filter Action Buttons -->
               <div class="d-flex gap-2 mt-3">
                 <button id="apply-filters" class="btn flex-grow-1" style="background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); 
                              color: white; 
@@ -455,6 +485,7 @@ Data: Fetches all products and their store prices from database
                   onmouseover="this.style.opacity='0.85'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 12px rgba(108, 117, 125, 0.4)';"
                   onmouseout="this.style.opacity='1'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">Clear</button>
               </div>
+
 
               <div id="active-filters" class="mt-3 d-flex flex-wrap gap-2" style="display:none;">
                 <!-- Filter badges will appear here -->
@@ -502,21 +533,45 @@ Data: Fetches all products and their store prices from database
 
       <div class="row g-4" id="products-grid">
         {% if products %}
+        
+        {# 
+           MAIN PRODUCT LOOP
+           Iterates through the paginated list of products to display them in a grid.
+           Each product card contains:
+           1. Product Image & Main Price Badge (Cheapest found)
+           2. Metadata (Name, Category)
+           3. Nested Loop of Stores where it's available
+           4. "Add to List" CTA
+           
+           Data Attributes (data-stores, data-price, etc.) are used by JavaScript 
+           for client-side sorting and filtering without reloading.
+        #}
         {% for p in products %}
-        <div class="col-md-6 col-lg-4 product-card" data-stores='{{ p.get("stores")|tojson }}'
+        <div class="col-md-6 col-lg-4 product-card" 
+          data-stores='{{ p.get("stores")|tojson }}'
           data-price="{{ (p.get('cheapest') and p.get('cheapest').get('price')) or p.get('price','') }}"
-          data-name="{{ p.get('name','') |lower }}" data-category="{{ p.get('category','') |lower }}">
+          data-name="{{ p.get('name','') |lower }}" 
+          data-category="{{ p.get('category','') |lower }}">
+          
           <div class="card product-card-inner h-100" style="background-color: #ffffff;">
+            {# 
+               LINK TO DETAILS
+               The entire top section is a link to the detailed view.
+            #}
             <a href="{{ url_for('main.product_detail', product_id=p.get('id')) }}"
               class="product-link text-decoration-none text-dark d-block">
               <div class="position-relative">
                 <img
                   src="{{ prefer_processed(p.get('image') or (p.get('images') and p.get('images')[0]) or url_for('static', filename='placeholder.svg')) }}"
                   class="card-img-top product-image" alt="{{ p.get('name') or p.get('title','Product') }}">
+                
+                {# Price Badge: Shows cheapest available price #}
                 <span class="price-badge">
                   <i class="bi bi-tag-fill"></i> €{{ (p.get('cheapest') and p.get('cheapest').get('price')) or
                   p.get('price','N/A') }}
                 </span>
+                
+                {# Favorite Button: Z-indexed to sit on top of the image #}
                 <button type="button" class="btn-favorite {{ 'active' if p.get('is_favorited') else '' }}" style="z-index: 10;"
                   data-product-id="{{ p.get('id') or p.get('_id') }}"
                   onclick="toggleFavorite(event, this)" title="Add to favorites">
@@ -524,6 +579,7 @@ Data: Fetches all products and their store prices from database
                 </button>
               </div>
             </a>
+            
             <div class="card-body pb-0" style="background-color: #fff;">
               <div class="d-flex justify-content-between align-items-start mb-3">
                 <h5 class="card-title mb-0 fw-bold">{{ p.get('name') or p.get('title','') }}</h5>
@@ -538,7 +594,14 @@ Data: Fetches all products and their store prices from database
                   <i class="bi bi-shop"></i> Available at {{ p.get('stores')|length }} store{{ 's' if
                   p.get('stores')|length != 1 else '' }}
                 </h6>
+                
+                {# 
+                   NESTED LOOP: STORES
+                   Shows the top 3 stores where this product is found.
+                   Sorted by price usually (backend logic).
+                #}
                 {% for s in p.get('stores')[:3] %}
+                {# Store Item: Clickable to select specific store price #}
                 <div class="store-item" data-store-name="{{ s.get('store') or s.get('name') }}"
                   data-store-price="{{ s.get('price') }}" data-product-id="{{ p.get('id') }}"
                   data-image="{{ prefer_processed(s.get('image') if (s.get('image') and 'logo' not in s.get('image')|lower and 'brand' not in s.get('image')|lower) else p.get('image') or (p.get('images') and p.get('images')[0]) or url_for('static', filename='placeholder.svg')) }}">
@@ -558,6 +621,7 @@ Data: Fetches all products and their store prices from database
                     </div>
                     <div class="text-end d-flex align-items-center gap-2" style="min-width: 68px;">
                       <span class="text-success fw-bold fs-5">
+                        {# Add Star Icon for "Cheapest" option #}
                         {% if p.get('cheapest') and (s.get('price')|string) ==
                         (p.get('cheapest').get('price')|string) %}<i class="bi bi-star-fill"
                           style="color: #ffc107; margin-right: 4px;"></i>{% endif %}€{{ s.get('price') }}

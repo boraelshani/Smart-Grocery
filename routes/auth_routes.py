@@ -28,24 +28,50 @@ def login():
     """
     Handle user login with email and password.
     
-    POST: Authenticate user credentials against stored hashed passwords
-    GET: Display login form
+    Operations:
+    1. REQUEST HANDLING: Accepts both GET (form display) and POST (submission).
+    2. CREDENTIAL VERIFICATION: Calls `users_model.authenticate()` to check hash/plaintext.
+    3. ACCESS TOKEN GENERATION: Creates a JWT (JSON Web Token) for secure API access.
+    4. SESSION ESTABLISHMENT: Sets a secure HTTP-only cookie to maintain login state.
+    
+    POST: Authenticates user.
+    GET: Renders login.html.
     """
     if request.method == 'POST':
+        # 1. EXTRACT CREDENTIALS
+        # Pull data from the form submission
         email = request.form['email']
         password = request.form['password']
-        # Use users_model.authenticate which verifies hashed passwords
-        print(f'[LOGIN] email={email}, password_entered={repr(password)}')
+        
+        # Log attempts (excluding password for security)
+        print(f'[LOGIN] Attempt for email={email}')
+        
+        # 2. VERIFY CREDENTIALS
+        # Delegate to the model layer (users_model.py) which handles bcrypt hashing logic.
         ok = users_model.authenticate(email, password)
         print(f'[LOGIN] auth result={ok}')
+        
         if ok:
+            # 3. GENERATE TOKEN (JWT)
+            # This token securely encodes the user's identity and is signed by the server's secret key.
             token = helpers.generate_jwt(email)
-            # JSON clients get the token directly
+            
+            # 4. HANDLE API CLIENTS (Mobile App / AJAX)
+            # If the request specifically asked for JSON, return the token directly.
             if request.is_json or request.accept_mimetypes.best == 'application/json':
                 return jsonify({'token': token, 'email': email}), 200
 
-            session['user'] = email  # Store user in session for server-rendered pages
+            # 5. HANDLE BROWSER CLIENTS
+            # Store primary identifier in Flask's session object (server-side signed cookie).
+            session['user'] = email  
+            
+            # Prepare redirect response to the home page
             resp = redirect(url_for('main.home'))
+            
+            # Set a secondary 'auth_token' cookie for client-side JS or API usage if needed.
+            # 'httponly=True' prevents XSS scripts from stealing the cookie.
+            # 'samesite=Lax' provides CSRF protection.
+            # 'secure=True' ensures cookie is only sent over HTTPS (in production).
             resp.set_cookie(
                 'auth_token',
                 token,
@@ -55,10 +81,17 @@ def login():
             )
             return resp
         else:
-            # Return email back so user doesn't need to retype it
+            # 6. HANDLE FAILURE
+            # Return email back to the template so the user doesn't have to re-type it.
+            # (Good UX practice)
+            
             if request.is_json or request.accept_mimetypes.best == 'application/json':
                 return jsonify({'error': 'Invalid credentials'}), 401
+                
+            # Render page again with error message
             return render_template('login.html', error="Invalid credentials", email=email)
+            
+    # GET request: Just show the empty form
     return render_template('login.html')
 
 
@@ -67,50 +100,72 @@ def signup():
     """
     Handle new user registration.
     
-    Validates:
-    - Email and password are provided
-    - Email is in valid format
-    - Account doesn't already exist
-    - Password meets minimum requirements
+    Process Flow:
+    1. Input Extraction: Get name, email, password from form.
+    2. Validation: Check for empty fields.
+    3. Duplicate Check: Query DB to ensure email is unique.
+    4. Account Creation: Insert new document into 'users' collection via logic in `create_user`.
+    5. Auto-Login: Set session immediately so user doesn't have to log in subsequently.
+    
+    Returns:
+        Redirects to home on success, re-renders signup template on error.
     """
     if request.method == 'POST':
+        # 1. EXTRACT FORM DATA
         name = request.form.get('name')
         email = request.form.get('email')
         password = request.form.get('password')
-        print(f'[SIGNUP] email={email}, password_entered={repr(password)}, name={name}')
+        print(f'[SIGNUP] Registration attempt for email={email}')
+        
+        # 2. BASIC VALIDATION
+        # Ensure mandatory fields are present
         if not email or not password:
             return render_template('signup.html', error='Please provide email and password', name=name, email=email)
 
-        # Check whether an account already exists
+        # 3. DATA INTEGRITY CHECK
+        # Query the database (via model) to prevent duplicate accounts.
         existing = None
         try:
             existing = users_model.get_user_by_email(email)
         except Exception:
+            # If DB error, assume None to avoid blocking user (risky but fail-open) or handle error
             existing = None
+            
         if existing:
+            # User already exists
             return render_template('signup.html', error='Email already registered', name=name, email=email)
 
-        # create user record
+        # 4. PREPARE USER DOCUMENT
+        # This dictionary mirrors the structure found in MongoDB 'users' collection.
         user_doc = {
             'email': email,
-            'password': password,
-            'name': name or email,
-            'shopping_list': [],
+            'password': password,   # Will be hashed by create_user()
+            'name': name or email,  # Fallback to email if name provided is empty
+            'shopping_list': [],    # Initialize empty list
             'total_cost': 0.0,
-            'seen_deals': []
+            'seen_deals': []        # Track notifications user has dismissed
         }
+        
+        # 5. CREATE ACCOUNT
+        # We wrap in a retry loop for resilience (e.g. temporary network blip)
         try:
             users_model.create_user(user_doc)
         except Exception:
-            # try once more, then fail gracefully
+            # Retry logic: Try once more immediately
             try:
+                print("[SIGNUP] First attempt failed, retrying...")
                 users_model.create_user(user_doc)
-            except Exception:
-                return render_template('signup.html', error='Could not create user', name=name, email=email)
+            except Exception as e:
+                # Permanent failure
+                print(f"[SIGNUP] Critical failure creating user: {e}")
+                return render_template('signup.html', error='Could not create user account. Please try again later.', name=name, email=email)
 
+        # 6. AUTO-LOGIN
+        # Set session variable directly so user is immediately logged in
         session['user'] = email
         return redirect(url_for('main.home'))
 
+    # GET request: Show registration form
     return render_template('signup.html')
 
 

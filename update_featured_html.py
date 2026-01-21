@@ -1,4 +1,5 @@
-<!--
+
+content = r'''<!--
 ═══════════════════════════════════════════════════════════════════════════
 FEATURED DEALS PAGE
 ═══════════════════════════════════════════════════════════════════════════
@@ -601,4 +602,7 @@ Styling:
     </div>
   </div>
 </body>
-</html>
+</html>'''
+
+with open(r'c:\Users\beni\Desktop\Smart-Grocery\templates\featured_deals.html', 'w', encoding='utf-8') as f:
+    f.write(content)
