@@ -4,12 +4,11 @@ STORES MODEL - Database Operations for Store Information
 ═══════════════════════════════════════════════════════════════════════════
 Purpose: Handle all store database queries and operations
 Database Collection: 'stores' in MongoDB
-Functions:
-- Get all stores
-- Get store by name/ID
-- Get products by store
-- Store details (hours, location, distance)
-Used by: stores page, main routes, store-specific product listings
+
+Functionality:
+- Retrieve store details (name, location, hours)
+- List all available stores
+- Store management (CRUD for Admins)
 ═══════════════════════════════════════════════════════════════════════════
 """
 from pymongo import MongoClient
@@ -23,59 +22,37 @@ load_dotenv()
 
 
 class StoresModel:
-    # CONNECT TO MONGODB: Use Flask connection or create new one
     def __init__(self):
-        mongo_uri = os.getenv('MONGO_URI') or 'mongodb://localhost:27017/smart_grocery'
-        # guard against empty/whitespace values which trigger pymongo ConfigurationError
-        if isinstance(mongo_uri, str) and not mongo_uri.strip():
-            mongo_uri = 'mongodb://localhost:27017/smart_grocery'
-        # sanitize common mistake: remove angle-brackets if user pasted URI with <...>
-        if '<' in mongo_uri or '>' in mongo_uri:
-            mongo_uri = mongo_uri.replace('<', '').replace('>', '')
-            try:
-                os.environ['MONGO_URI'] = mongo_uri
-            except Exception:
-                pass
-        database_name = os.getenv('DATABASE_NAME', None)
+        # Use centralized database connection logic
+        from utils.db import get_db
+        self.db = get_db()
+        self._client = None
 
-        try:
-            from utils.db import mongo as flask_mongo
-        except Exception:
-            flask_mongo = None
-
-        if flask_mongo is not None and getattr(flask_mongo, 'db', None) is not None:
-            self.db = flask_mongo.db
-            self._client = None
-        else:
-            # use certifi CA bundle for TLS connections
-            try:
-                self._client = MongoClient(mongo_uri, tlsCAFile=certifi.where())
-            except TypeError:
-                # older pymongo may not accept tlsCAFile for non-TLS URIs
-                self._client = MongoClient(mongo_uri)
-            if database_name:
-                self.db = self._client[database_name]
-            else:
-                try:
-                    self.db = self._client.get_default_database()
-                    if self.db is None:
-                        self.db = self._client['smart_grocery']
-                except Exception:
-                    self.db = self._client['smart_grocery']
 
     def list_stores(self) -> List[dict]:
+        """
+        Get a list of all stores in the database.
+        
+        Returns:
+            List[dict]: List of store documents with 'id' field added.
+        """
         # GET ALL STORES: Return all stores (for /stores page)
         docs = list(self.db.stores.find({}))
+        # Normalization: Add 'id' string field for easier frontend usage
         for d in docs:
             if '_id' in d:
-                d['id'] = str(d['_id'])  # Convert MongoDB ID to string
+                d['id'] = str(d['_id'])
         return docs
 
     def get_store_count(self) -> int:
+        """Count total stores (used for stats/admin dashboard)."""
         return self.db.stores.count_documents({})
 
     def get_store_by_name(self, name: str) -> Optional[dict]:
-        # LOOKUP STORE by name (used when viewing store products)
+        """
+        Lookup a store by its exact name.
+        Used for mapping product prices to store details.
+        """
         if not name:
             return None
         doc = self.db.stores.find_one({'name': name})
@@ -86,7 +63,9 @@ class StoresModel:
         return doc
 
     def get_store_by_id(self, id_str: str) -> Optional[dict]:
-        # GET SINGLE STORE by MongoDB ID
+        """
+        Get a single store by its MongoDB ObjectId.
+        """
         try:
             doc = self.db.stores.find_one({'_id': ObjectId(id_str)})
             if not doc:
@@ -97,11 +76,14 @@ class StoresModel:
             return None
 
     def insert_store(self, doc: dict) -> str:
+        """Create a new store (Admin Only)."""
         res = self.db.stores.insert_one(doc)
         return str(res.inserted_id)
 
     def update_store(self, id_str: str, update_doc: dict) -> bool:
+        """Update existing store details (Admin Only)."""
         try:
+            # Safety: Prevent accidental overwriting of the immutable _id
             update_doc.pop('_id', None)
             res = self.db.stores.update_one({'_id': ObjectId(id_str)}, {'$set': update_doc})
             return getattr(res, 'modified_count', 0) > 0
@@ -109,6 +91,7 @@ class StoresModel:
             return False
 
     def delete_store(self, id_str: str) -> bool:
+        """Delete a store permanently."""
         try:
             res = self.db.stores.delete_one({'_id': ObjectId(id_str)})
             return getattr(res, 'deleted_count', 0) > 0
@@ -120,8 +103,10 @@ class StoresModel:
             self._client.close()
 
 
+# Singleton Instance to be imported by routes
 stores_model = StoresModel()
 
+# Wrapper functions for older code references
 def list_stores() -> List[dict]:
     return stores_model.list_stores()
 
@@ -133,3 +118,4 @@ def get_store_count() -> int:
 
 def insert_store(doc: dict):
     return stores_model.insert_store(doc)
+

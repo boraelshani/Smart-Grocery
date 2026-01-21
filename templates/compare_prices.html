@@ -338,11 +338,6 @@ Data: Fetches all products and their store prices from database
           <li class="nav-item">
             <a class="nav-link d-flex align-items-center position-relative {% if 'shopping-list' in request.path or request.endpoint == 'main.shopping_list' %}active{% endif %}" href="{{ url_for('main.shopping_list') }}">
               <i class="bi bi-list-check me-1"></i> Lists
-              {% if (shopping_list_count or 0) > 0 %}
-              <span class="position-absolute badge rounded-pill bg-danger" style="font-size: 0.65rem; padding: 0.45em 0.7em; top: -5px; right: -10px; border: 2px solid white; box-shadow: 0 4px 10px rgba(220, 53, 69, 0.4); min-width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;">
-                {{ shopping_list_count }}
-              </span>
-              {% endif %}
             </a>
           </li>
           <li class="nav-item ms-lg-1">
@@ -381,10 +376,6 @@ Data: Fetches all products and their store prices from database
 
   <section class="container py-4">
     <!-- Search row with filter button -->
-    {% if using_fallback %}
-    <div class="alert alert-warning" role="alert" style="margin-top:1rem">Warning: using local fallback product data —
-      database unavailable.</div>
-    {% endif %}
     <div class="row align-items-end mb-3 compare-search-row">
       <div class="col-md-12">
         <!-- Search Container: Enlarged and Search Button Removed to match Deals page -->
@@ -515,7 +506,7 @@ Data: Fetches all products and their store prices from database
         <div class="col-md-6 col-lg-4 product-card" data-stores='{{ p.get("stores")|tojson }}'
           data-price="{{ (p.get('cheapest') and p.get('cheapest').get('price')) or p.get('price','') }}"
           data-name="{{ p.get('name','') |lower }}" data-category="{{ p.get('category','') |lower }}">
-          <div class="card product-card-inner h-100">
+          <div class="card product-card-inner h-100" style="background-color: #ffffff;">
             <a href="{{ url_for('main.product_detail', product_id=p.get('id')) }}"
               class="product-link text-decoration-none text-dark d-block">
               <div class="position-relative">
@@ -533,7 +524,7 @@ Data: Fetches all products and their store prices from database
                 </button>
               </div>
             </a>
-            <div class="card-body pb-0" style="background-color: #f8f9fa;">
+            <div class="card-body pb-0" style="background-color: #fff;">
               <div class="d-flex justify-content-between align-items-start mb-3">
                 <h5 class="card-title mb-0 fw-bold">{{ p.get('name') or p.get('title','') }}</h5>
                 {% if p.get('category') %}
@@ -549,7 +540,8 @@ Data: Fetches all products and their store prices from database
                 </h6>
                 {% for s in p.get('stores')[:3] %}
                 <div class="store-item" data-store-name="{{ s.get('store') or s.get('name') }}"
-                  data-store-price="{{ s.get('price') }}" data-product-id="{{ p.get('id') }}">
+                  data-store-price="{{ s.get('price') }}" data-product-id="{{ p.get('id') }}"
+                  data-image="{{ prefer_processed(s.get('image') if (s.get('image') and 'logo' not in s.get('image')|lower and 'brand' not in s.get('image')|lower) else p.get('image') or (p.get('images') and p.get('images')[0]) or url_for('static', filename='placeholder.svg')) }}">
                   <div class="d-flex justify-content-between align-items-center gap-1">
                     <div class="d-flex align-items-center gap-2 flex-grow-1" style="min-width:0;">
                       <img
@@ -584,7 +576,7 @@ Data: Fetches all products and their store prices from database
             </div>
             {% endif %}
 
-            <div class="card-body pt-2 mt-auto" style="background-color: #f8f9fa;">
+            <div class="card-body pt-2 mt-auto" style="background-color: #fff;">
               <div class="mt-auto">
                 {% if p.get('expires') %}
                 <p class="text-muted small mb-3">
@@ -600,6 +592,8 @@ Data: Fetches all products and their store prices from database
                     data-image="{{ prefer_processed(p.get('image') or (p.get('images') and p.get('images')[0]) or url_for('static', filename='placeholder.svg'))|e }}"
                     data-store=""
                     data-offer-json='{{ p.offer|tojson|forceescape if p.offer else "" }}'
+                    data-tier-json='{{ p.discount_tiers|tojson|forceescape if p.discount_tiers else "" }}'
+                    data-special-offer="{{ p.special_offer_type or '' }}"
                     data-offer-type="{{ p.offer_type or '' }}"
                     data-offer-x="{{ p.offer_x or '' }}"
                     data-offer-y="{{ p.offer_y or '' }}"
@@ -666,7 +660,7 @@ Data: Fetches all products and their store prices from database
         <div class="row g-4">
           {% for deal in deals %}
           <div class="col-md-6 col-lg-4">
-            <div class="card h-100 shadow-sm">
+            <div class="card h-100 shadow-sm" style="background-color: #ffffff;">
               {% if deal.get('discount_label') or deal.get('discount_percent') %}
               <div class="position-absolute top-0 end-0 m-2">
                 <span class="badge" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
@@ -676,8 +670,8 @@ Data: Fetches all products and their store prices from database
               {% endif %}
               <img src="{{ deal.get('image') or url_for('static', filename='placeholder.svg') }}" class="card-img-top"
                 alt="{{ deal.get('title') or deal.get('name') }}"
-                style="height: 200px; object-fit: contain; padding: 1rem;">
-              <div class="card-body">
+                style="height: 200px; object-fit: contain; padding: 1rem; background-color: #ffffff;">
+              <div class="card-body" style="background-color: #ffffff;">
                 <h5 class="card-title">{{ deal.get('title') or deal.get('name') }}</h5>
                 <p class="text-muted mb-2">
                   <i class="bi bi-shop"></i> {{ deal.get('store') or deal.get('source', 'Store') }}
@@ -692,6 +686,18 @@ Data: Fetches all products and their store prices from database
                   class="btn btn-premium btn-premium-view w-100 mt-3">
                   <i class="bi bi-info-circle-fill"></i> View Deal
                 </a>
+                <button type="button" class="btn btn-premium btn-premium-add w-100 mt-2"
+                  data-name="{{ deal.get('title') or deal.get('name') }}"
+                  data-id="{{ deal.get('id') or deal.get('_id') }}"
+                  data-price="{{ deal.get('price', '0') }}"
+                  data-initial-price="{{ deal.get('price', '0') }}"
+                  data-store="{{ deal.get('store', '') }}"
+                  data-image="{{ deal.get('image') or url_for('static', filename='placeholder.svg') }}"
+                  data-tier-json='{{ (deal.get("tiers") or deal.get("discount_tiers"))|tojson|forceescape if (deal.get("tiers") or deal.get("discount_tiers")) else "" }}'
+                  data-special-offer="{{ deal.get('offer_type') or deal.get('special_offer_type') or '' }}"
+                  onclick="event.stopPropagation(); handleAddToCart(event, this);">
+                  <i class="bi bi-cart-plus-fill"></i> Add to List
+                </button>
               </div>
             </div>
           </div>
@@ -842,8 +848,8 @@ Data: Fetches all products and their store prices from database
               <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body p-4">
-              <p class="text-muted mb-4">Select a list to add <span id="pendingItemName"
-                  class="fw-bold text-dark"></span> to:</p>
+              <p class="text-white mb-4">Select a list to add <span id="pendingItemName"
+                  class="fw-bold text-white"></span> to:</p>
               <div id="globalListSelectorBody" class="d-grid gap-2">
                 <!-- Populated by script.js -->
               </div>

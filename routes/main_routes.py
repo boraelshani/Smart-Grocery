@@ -8,6 +8,7 @@ from models.multibuy_offers_model import multibuy_offers_model
 from models.favorites_model import favorites_model
 from models.notifications_model import notifications_model
 from models.quantity_discounts_model import quantity_discounts_model
+from utils import helpers
 from bson.decimal128 import Decimal128
 import json
 import os
@@ -45,55 +46,10 @@ def load_featured_deals_fallback():
         return []
 
 
-def _get_user_email():
-    """
-    Helper function to get the current user's email from session.
-    Fallback to mock user for development mode.
-    Returns: User email string or None
-    """
-    email = session.get('user')
-    if not email and getattr(m, 'users', None):
-        email = 'user1@example.com' if 'user1@example.com' in m.users else next(iter(m.users.keys()), None)
-    return email
 
 
-def sanitize_mongo_doc(doc):
-    """
-    Recursively convert MongoDB types (ObjectId, Decimal128) to JSON-serializable types.
-    """
-    if doc is None:
-        return None
-    from bson import ObjectId
-    from bson.decimal128 import Decimal128
-    
-    if isinstance(doc, list):
-        return [sanitize_mongo_doc(item) for item in doc]
-    if isinstance(doc, dict):
-        new_doc = {}
-        for k, v in doc.items():
-            if k == '_id':
-                id_str = str(v)
-                new_doc['id'] = id_str
-                new_doc['_id'] = id_str
-            elif isinstance(v, Decimal128):
-                new_doc[k] = float(v.to_decimal())
-            else:
-                new_doc[k] = sanitize_mongo_doc(v)
-        return new_doc
-    if isinstance(doc, ObjectId):
-        return str(doc)
-    if isinstance(doc, Decimal128):
-        # Convert to string first to avoid precision issues with float()
-        return float(str(doc))
-    return doc
 
 
-def _attach_offers_to_products(products):
-    """
-    Helper to attach multibuy and quantity discount metadata to a list of products.
-    Delegates completely to the multibuy_offers_model.
-    """
-    return multibuy_offers_model.attach_offers_to_products(products)
 
 
 def _mark_list_metadata(items, fav_ids=None):
@@ -104,9 +60,12 @@ def _mark_list_metadata(items, fav_ids=None):
         return items
         
     # 1. Attach offer metadata using Model-based helper
-    _attach_offers_to_products(items)
+    multibuy_offers_model.attach_offers_to_products(items)
     
-    # 2. Mark favorites if fav_ids provided
+    # 2. Attach quantity discount metadata
+    quantity_discounts_model.attach_discounts_to_products(items)
+
+    # 3. Mark favorites if fav_ids provided
     if fav_ids is not None:
         for item in items:
             if isinstance(item, dict):
@@ -118,6 +77,18 @@ def _mark_list_metadata(items, fav_ids=None):
 
 @main_bp.route('/')
 def home():
+    """
+    The Main Dashboard (Home) Route.
+    
+    Logic Flow:
+    1. Authentication Check: Redirects to Entry page if not logged in.
+    2. Data Aggregation: Fetches Stores, Products, and Featured Deals from DB.
+    3. User Personalization: 
+       - Fetches user favorites to mark items with hearts.
+       - Generates recommendations based on past behavior.
+    4. Fallback Handling: Uses local JSON data if MongoDB fails.
+    5. Statistics: Calculates total savings and counts for badges.
+    """
     # If the user is not signed in, show the entry page prompting Log In / Sign Up
     user_email = session.get('user')
     if not user_email:
@@ -153,12 +124,15 @@ def home():
         stores = stores_model.list_stores()
         products = products_model.list_products()
         
-        # Count total deals from both collections using Models
-        total_deals_count = featured_deals_model.get_deals_count() + multibuy_offers_model.get_offers_count()
+        # Count total deals from all collections using Models
+        total_deals_count = (featured_deals_model.get_deals_count() + 
+                           multibuy_offers_model.get_offers_count() + 
+                           len(quantity_discounts_model.list_active_discounts()))
         
-        # Fetch both featured deals and multibuy offers using Models
+        # Fetch featured deals, multibuy offers, and quantity discounts
         featured_deals_list = featured_deals_model.list_featured_deals()
         multibuy_offers_list = multibuy_offers_model.list_active_offers()
+        quantity_discounts_list = quantity_discounts_model.list_active_discounts()
         
         # Separate multi-buy deals from regular discount deals
         multibuy_deals = []
@@ -178,8 +152,9 @@ def home():
             else:
                 regular_deals.append(deal)
         
-        # Add all multibuy_offers to multibuy_deals
+        # Add all multibuy_offers and quantity_discounts to multibuy_deals
         multibuy_deals.extend(multibuy_offers_list)
+        multibuy_deals.extend(quantity_discounts_list)
         
         # Ensure at least 5 multibuy and 5 regular deals
         import random
@@ -473,13 +448,13 @@ def home():
             print(f"Error marking favorites on home page: {e}")
 
     # Sanitize all data for template rendering to prevent ObjectId errors
-    stores = sanitize_mongo_doc(stores)
-    products = sanitize_mongo_doc(products)
-    featured_deals = sanitize_mongo_doc(featured_deals)
-    popular_products = sanitize_mongo_doc(popular_products)
-    recommended_products = sanitize_mongo_doc(recommended_products)
-    store_products = sanitize_mongo_doc(store_products)
-    favorites = sanitize_mongo_doc(favorites)
+    stores = helpers.sanitize_mongo_doc(stores)
+    products = helpers.sanitize_mongo_doc(products)
+    featured_deals = helpers.sanitize_mongo_doc(featured_deals)
+    popular_products = helpers.sanitize_mongo_doc(popular_products)
+    recommended_products = helpers.sanitize_mongo_doc(recommended_products)
+    store_products = helpers.sanitize_mongo_doc(store_products)
+    favorites = helpers.sanitize_mongo_doc(favorites)
 
     return render_template('home.html', 
                          stores=stores, 
@@ -516,7 +491,7 @@ def stores_page():
     category_options = [{"name": cat} for cat in STANDARD_CATEGORIES]
     
     # Sanitize stores data
-    stores = sanitize_mongo_doc(stores)
+    stores = helpers.sanitize_mongo_doc(stores)
 
     return render_template('stores.html', stores=stores, using_fallback=using_fallback, category_options=category_options)
 
@@ -559,6 +534,19 @@ def store_products_page(store_name):
             deal['store_price'] = deal.get('price')
             deal['store_image'] = deal.get('image')
             products.append(deal)
+
+        # Get Quantity Discounts for this store
+        try:
+            qd_all = quantity_discounts_model.list_active_discounts()
+            for qd in qd_all:
+                if (qd.get('store') or '').lower() == store_name.lower():
+                     if 'title' in qd and 'name' not in qd:
+                         qd['name'] = qd['title']
+                     qd['store_price'] = qd.get('price')
+                     qd['store_image'] = qd.get('image')
+                     products.append(qd)
+        except Exception as e:
+            print(f"Error merging quantity discounts: {e}")
 
         # Check favorites for user using Model
         user_email = session.get('user')
@@ -629,8 +617,8 @@ def store_products_page(store_name):
     category_options = [{"name": cat} for cat in STANDARD_CATEGORIES]
     
     # Sanitize data for template
-    products = sanitize_mongo_doc(products)
-    store_info = sanitize_mongo_doc(store_info)
+    products = helpers.sanitize_mongo_doc(products)
+    store_info = helpers.sanitize_mongo_doc(store_info)
     
     return render_template('store_products.html', 
                          store_name=store_name, 
@@ -641,7 +629,17 @@ def store_products_page(store_name):
 
 @main_bp.route('/featured-deals')
 def featured_deals_page():
-    """Render featured deals page with server-side pagination (30 per page) and filtering."""
+    """
+    Deals & Offers Page.
+    
+    Aggregates special offers from two sources:
+    1. Featured Deals: Single item discounts (e.g., 20% off).
+    2. Multibuy Offers: Quantity-based deals (e.g., Buy 1 Get 1 Free).
+    
+    Features:
+    - Sorting: Automatically sorts by highest discount %.
+    - Notification Logic: Tracks which deals the user has 'seen' to clear notification badges.
+    """
     using_fallback = False
     per_page = 30
     try:
@@ -662,7 +660,8 @@ def featured_deals_page():
     try:
         featured_deals_list = featured_deals_model.list_featured_deals()
         multibuy_offers_list = multibuy_offers_model.list_active_offers()
-        deals = featured_deals_list + multibuy_offers_list
+        quantity_discounts_list = quantity_discounts_model.list_active_discounts()
+        deals = featured_deals_list + multibuy_offers_list + quantity_discounts_list
     except Exception as e:
         print(f'WARNING: Model query failed for deals: {e}')
         using_fallback = True
@@ -777,7 +776,16 @@ def featured_deals_page():
 
 @main_bp.route('/compare-prices')
 def compare_prices():
-    """Render compare page with server-side pagination (30 per page) and category filter."""
+    """
+    Core Feature: Price Comparison Engine.
+    
+    This route handles the complex logic of displaying products with:
+    1. Filtering: By Category (e.g., 'Dairy', 'Meat').
+    2. Searching: By name, store, or description (RegEx based).
+    3. Pagination: Server-side pagination to handle large datasets efficiently.
+       - Formula: skip = (page - 1) * per_page
+    4. Data Enrichment: Adds real store logos and 'favorited' status to each item.
+    """
     per_page = 30
     try:
         page = int(request.args.get('page', 1))
@@ -866,7 +874,9 @@ def compare_prices():
         # Search result deals/stores if search query provided
         if search_query:
             try:
-                all_deals = featured_deals_model.list_featured_deals() + multibuy_offers_model.list_active_offers()
+                all_deals = (featured_deals_model.list_featured_deals() + 
+                           multibuy_offers_model.list_active_offers() + 
+                           quantity_discounts_model.list_active_discounts())
                 deals = [d for d in all_deals if search_query.lower() in (d.get('title') or d.get('name') or '').lower() or search_query.lower() in (d.get('store') or '').lower()]
                 
                 all_stores = stores_model.list_stores()
@@ -943,7 +953,8 @@ def product_detail(product_id):
         return render_template('404.html'), 404
 
     # Attach any active multibuy/quantity offers to the single product
-    _attach_offers_to_products([product])
+    multibuy_offers_model.attach_offers_to_products([product])
+    quantity_discounts_model.attach_discounts_to_products([product])
 
     # Ensure a minimal stores array exists for featured deals or products without stores
     if not product.get('stores'):
@@ -1103,7 +1114,7 @@ def featured_deal_detail(deal_id):
                          print(f"Error fetching product url for deal: {e}")
 
             # Attach any active multibuy/quantity offers using Model-based helper
-            _attach_offers_to_products([deal])
+            multibuy_offers_model.attach_offers_to_products([deal])
             
             # Check if favorited using Model
             is_favorited = False
@@ -1325,7 +1336,8 @@ def shopping_list():
             # Make sure items are dicts before processing
             valid_items = [i for i in items if isinstance(i, dict)]
             if valid_items:
-                 _attach_offers_to_products(valid_items)
+                 multibuy_offers_model.attach_offers_to_products(valid_items)
+                 quantity_discounts_model.attach_discounts_to_products(valid_items)
 
             total = 0.0
             completed_count = 0
@@ -1385,9 +1397,9 @@ def shopping_list():
                 active_list = all_lists[0]
 
         # Sanitize lists for template to avoid ObjectId issues
-        all_lists = sanitize_mongo_doc(all_lists)
+        all_lists = helpers.sanitize_mongo_doc(all_lists)
         if active_list:
-            active_list = sanitize_mongo_doc(active_list)
+            active_list = helpers.sanitize_mongo_doc(active_list)
 
         # Build items list with price/store information for the template
         shopping_entries = active_list.get('list_items', active_list.get('items', [])) if active_list else []
@@ -1520,7 +1532,8 @@ def shopping_list():
                     'qty': qty,
                     'purchased': purchased,
                     'image': image_val or '',
-                    'offer': entry.get('offer') if isinstance(entry, dict) else None
+                    'offer': entry.get('offer') if isinstance(entry, dict) else None,
+                    'discount_tiers': entry.get('discount_tiers') if isinstance(entry, dict) else None
                 }
 
         for k, v in agg.items():
@@ -1770,7 +1783,7 @@ def delete_notification(notification_id):
 
 @main_bp.route('/profile', methods=['GET', 'POST'])
 def profile():
-    user_email = _get_user_email()
+    user_email = helpers.get_user_email()
     
     if request.method == 'POST' and user_email:
         name = request.form.get('name')
@@ -1866,7 +1879,7 @@ def profile():
 @main_bp.route('/update-stores', methods=['POST'])
 def update_stores():
     """Handle preferred stores update from profile page"""
-    user_email = _get_user_email()
+    user_email = helpers.get_user_email()
     if not user_email:
         return redirect(url_for('auth.login'))
         
@@ -1891,7 +1904,7 @@ def update_stores():
 @main_bp.route('/update-categories', methods=['POST'])
 def update_categories():
     """Handle preferred categories update from profile page"""
-    user_email = _get_user_email()
+    user_email = helpers.get_user_email()
     if not user_email:
         return redirect(url_for('auth.login'))
         
@@ -1938,6 +1951,17 @@ def api_search_products():
         if m.HAS_DB:
             # Use model for search
             products = products_model.search_by_name(q, limit=50)
+            
+            # Also search quantity_discounts
+            try:
+                qd_list = quantity_discounts_model.list_active_discounts()
+                for d in qd_list:
+                    name = d.get('name') or d.get('product_name') or ''
+                    if q.lower() in name.lower():
+                         products.append(d)
+            except Exception as e:
+                print(f"Error searching quantity discounts: {e}")
+
             for d in products:
                 # only include products that look like valid, usable product docs
                 def _has_price(prod):
@@ -1958,7 +1982,7 @@ def api_search_products():
                 if not _has_price(d):
                     # skip legacy/broken entries that don't have usable price info
                     continue
-                results.append(sanitize_mongo_doc(d))
+                results.append(helpers.sanitize_mongo_doc(d))
         else:
             # fallback to in-memory search (log this so it's visible)
             print('WARNING: api_search_products used fallback in-memory products (DB unavailable)')
@@ -1967,7 +1991,7 @@ def api_search_products():
                 if q.lower() in str(name).lower():
                     # filter out in-memory legacy items without price
                     if p.get('price') not in (None, '') or (p.get('cheapest') and p['cheapest'].get('price')) or (p.get('stores') and len(p.get('stores')) and p.get('stores')[0].get('price')):
-                        results.append(sanitize_mongo_doc(p))
+                        results.append(helpers.sanitize_mongo_doc(p))
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -1993,7 +2017,7 @@ def api_get_product():
             
             if not doc:
                 return jsonify({'item': None}), 404
-            return jsonify({'item': sanitize_mongo_doc(doc)})
+            return jsonify({'item': helpers.sanitize_mongo_doc(doc)})
         else:
             # fallback: search in-memory products
             for p in getattr(m, 'products', []):
@@ -2045,10 +2069,10 @@ def api_get_stores():
         if m.HAS_DB:
             stores = stores_model.list_stores()[:500]
             for s in stores:
-                out.append(shape_store(sanitize_mongo_doc(s)))
+                out.append(shape_store(helpers.sanitize_mongo_doc(s)))
         else:
             for s in getattr(m, 'stores', []):
-                out.append(shape_store(sanitize_mongo_doc(s)))
+                out.append(shape_store(helpers.sanitize_mongo_doc(s)))
         return jsonify({'stores': out})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -2145,7 +2169,7 @@ def api_claim_deal():
         return jsonify({'error': 'no_deal_id_provided'}), 400
 
     # Get user email
-    email = _get_user_email()
+    email = helpers.get_user_email()
 
     try:
         # attempt to find deal document using models
@@ -2302,6 +2326,11 @@ def toggle_favorite():
                 product = featured_deals_model.get_deal_by_id(product_id)
             if not product:
                 product = multibuy_offers_model.get_offer_by_id(product_id)
+            if not product:
+                # Try quantity discounts
+                try: 
+                    product = quantity_discounts_model.get_discount_by_id(product_id)
+                except Exception: pass
             
             if not product:
                 print(f'ERROR: Product not found with id {product_id}')
@@ -2321,7 +2350,9 @@ def toggle_favorite():
                 'image': product.get('image', ''),
                 'category': product.get('category', ''),
                 'best_price': (product.get('cheapest') and product.get('cheapest').get('price')) or product.get('price', 'N/A'),
-                'store': store_name
+                'store': store_name,
+                'discount_tiers': product.get('discount_tiers'),
+                'offer': product.get('offer')
             }
             
             success = favorites_model.add_favorite(user_email, product_id, product_data)
@@ -2411,11 +2442,8 @@ def mark_notifications_read():
         # Handle Dynamic IDs: Persist to user profile
         if dynamic_ids:
             try:
-                from utils.db import mongo
-                mongo.db.users.update_one(
-                    {'email': user_email},
-                    {'$addToSet': {'read_dynamic_notifications': {'$each': dynamic_ids}}}
-                )
+                from models.users_model import users_model
+                users_model.mark_dynamic_notifications_read(user_email, dynamic_ids)
                 success_count += len(dynamic_ids)
             except Exception as e:
                 print(f"Error saving dynamic read status: {e}")
@@ -2465,11 +2493,8 @@ def mark_all_notifications_read():
             dynamic_ids.extend([f"suggestion_qty_{str(q.get('_id'))}" for q in qds])
             
             if dynamic_ids:
-                from utils.db import mongo
-                mongo.db.users.update_one(
-                    {'email': user_email},
-                    {'$addToSet': {'read_dynamic_notifications': {'$each': dynamic_ids}}}
-                )
+                from models.users_model import users_model
+                users_model.mark_dynamic_notifications_read(user_email, dynamic_ids)
         except Exception as e:
             print(f"Error marking all dynamic as read: {e}")
         
@@ -2856,7 +2881,7 @@ def add_item_to_active_list_api():
         success = add_item_to_list(user_email, target_list_id, item)
         updated_lists = get_user_lists(user_email) if success else lists_data
         # Sanitize lists data before returning
-        sanitized_lists = sanitize_mongo_doc(updated_lists)
+        sanitized_lists = helpers.sanitize_mongo_doc(updated_lists)
         return jsonify({'success': success, 'count': _unpurchased_total(sanitized_lists)})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -2873,7 +2898,7 @@ def get_lists_api():
         from models.users_model import get_user_lists
         lists_data = get_user_lists(user_email)
         
-        return jsonify({'success': True, 'lists': sanitize_mongo_doc(lists_data.get('lists', []))})
+        return jsonify({'success': True, 'lists': helpers.sanitize_mongo_doc(lists_data.get('lists', []))})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 

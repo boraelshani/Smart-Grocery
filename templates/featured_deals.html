@@ -105,11 +105,6 @@ Data: Fetches featured deals from database
           <li class="nav-item">
             <a class="nav-link d-flex align-items-center position-relative {% if 'shopping-list' in request.path or request.endpoint == 'main.shopping_list' %}active{% endif %}" href="{{ url_for('main.shopping_list') }}">
               <i class="bi bi-list-check me-1"></i> Lists
-              {% if (shopping_list_count or 0) > 0 %}
-              <span class="position-absolute badge rounded-pill bg-danger" style="font-size: 0.65rem; padding: 0.45em 0.7em; top: -5px; right: -10px; border: 2px solid white; box-shadow: 0 4px 10px rgba(220, 53, 69, 0.4); min-width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;">
-                {{ shopping_list_count }}
-              </span>
-              {% endif %}
             </a>
           </li>
           <li class="nav-item ms-lg-1">
@@ -299,6 +294,7 @@ Data: Fetches featured deals from database
             p.get('discount_percent') is not none else '') %}
             {% set offer_obj = p.get('offer') if p.get('offer') is mapping else None %}
             {% set offer = p.get('offer', '') %}
+            {% set discount_tiers = p.get('discount_tiers') %}
             {% set offer_x = offer_obj.x if offer_obj is not none else (p.get('buy_quantity') or p.get('multibuy_buy')
             or '') %}
             {% set offer_y = offer_obj.y if offer_obj is not none else (p.get('free_quantity') or p.get('multibuy_free')
@@ -339,6 +335,7 @@ Data: Fetches featured deals from database
                 data-image="{{ p.get('image') or url_for('static', filename='placeholder.svg') }}"
                 data-store="{{ p.get('store') or p.get('source','') }}"
                 data-offer-json='{{ offer_obj|tojson|forceescape if offer_obj is not none else "" }}'
+                data-tier-json='{{ discount_tiers|tojson|forceescape if discount_tiers else "" }}'
                 data-offer-type="{{ offer_type }}" data-offer-x="{{ offer_x }}" data-offer-y="{{ offer_y }}">
                 <i class="bi bi-cart-plus-fill"></i>Add to List
               </button>
@@ -433,7 +430,7 @@ Data: Fetches featured deals from database
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
-          <p class="text-muted mb-3">Choose which list to add this item to:</p>
+          <p class="text-white mb-3">Choose which list to add this item to:</p>
           <div id="globalListSelectorBody">
             <!-- List options will be populated here by JavaScript -->
           </div>

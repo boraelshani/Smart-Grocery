@@ -4,18 +4,18 @@ Import featured deals from JSON file to MongoDB
 import json
 import sys
 import os
-from pymongo import MongoClient
 from dotenv import load_dotenv
-import certifi
+
+# Add project root to path to allow imports
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from utils.db import get_db
 
 # Load environment variables
 load_dotenv()
 
 def import_featured_deals():
     """Import featured deals from JSON file to MongoDB"""
-    
-    if not os.environ.get('SSL_CERT_FILE'):
-        os.environ['SSL_CERT_FILE'] = certifi.where()
     
     # Read the JSON file
     json_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'featured_deals.json')
@@ -27,17 +27,15 @@ def import_featured_deals():
         print(f"Loaded {len(deals)} featured deals from JSON file")
         
         # Connect to MongoDB
-        mongo_uri = os.getenv('MONGO_URI')
-        if not mongo_uri:
-            print("Error: MONGO_URI not found in environment variables")
+        db = get_db()
+        if not db:
+            print("Error: Could not connect to database")
             return
-        
-        client = MongoClient(mongo_uri, tlsCAFile=certifi.where())
-        db = client.get_database()  # Use default database from URI
         
         # Clear existing featured deals
         result = db.featured_deals.delete_many({})
         print(f"Deleted {result.deleted_count} existing featured deals from MongoDB")
+
         
         # Insert new featured deals
         if deals:

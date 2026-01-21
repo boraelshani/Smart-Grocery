@@ -208,6 +208,7 @@ function setupStoreSelection() {
 
         const addBtn = productCard.querySelector('.btn-premium-add');
         const priceBadge = productCard.querySelector('.price-badge');
+        const productImage = productCard.querySelector('.product-image');
 
         if (isAlreadySelected) {
           // Deselect current
@@ -222,6 +223,11 @@ function setupStoreSelection() {
               priceBadge.innerHTML = inner + '€' + initialPrice;
             }
           }
+          // Revert Image
+          if (productImage && addBtn) {
+            const originalImage = addBtn.getAttribute('data-image');
+            if (originalImage) productImage.src = originalImage;
+          }
         } else {
           // Select new
           storeItem.classList.add('selected');
@@ -234,6 +240,13 @@ function setupStoreSelection() {
             priceBadge.innerHTML = inner + '€' + storeItem.dataset.storePrice;
             priceBadge.style.transform = 'scale(1.1)';
             setTimeout(() => { priceBadge.style.transform = 'scale(1)'; }, 200);
+          }
+          // Update Image to Store-specific image
+          if (productImage && storeItem.dataset.image) {
+            // Only swap if it's not a generic placeholder, unless the original was also a placeholder
+            if (!storeItem.dataset.image.includes('placeholder.svg')) {
+               productImage.src = storeItem.dataset.image;
+            }
           }
         }
       }
@@ -428,17 +441,45 @@ function setupCompareFilters() {
 
   collectStoresAndCategories();
 
-  // Add search event listeners to apply filters on search
-  searchInput && searchInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); applyFilters(); } });
-  searchBtn && searchBtn.addEventListener('click', (e) => { e.preventDefault(); applyFilters(); });
-  searchInput && searchInput.addEventListener('input', () => { applyFilters(); });
+  // Helper to update URL params and reload for server-side filtering
+  const updateParamAndReload = (key, value) => {
+    const url = new URL(window.location.href);
+    if (value) {
+      url.searchParams.set(key, value);
+    } else {
+      url.searchParams.delete(key);
+    }
+    url.searchParams.set('page', '1'); // Reset to first page
+    window.location.href = url.toString();
+  };
 
-  applyBtn && applyBtn.addEventListener('click', (e) => { e.preventDefault(); applyFilters(); });
-  clearBtn && clearBtn.addEventListener('click', (e) => { e.preventDefault(); clearFilters(); });
-  categorySelect && categorySelect.addEventListener('change', () => {
-    if (categoryChipsRow) categoryChipsRow.querySelectorAll('.category-chip').forEach(ch => ch.classList.remove('active'));
-    applyFilters();
+  // Add search event listeners to apply filters on search
+  searchInput && searchInput.addEventListener('keydown', (e) => { 
+    if (e.key === 'Enter') { 
+      e.preventDefault(); 
+      updateParamAndReload('search', searchInput.value.trim()); 
+    } 
   });
+  searchBtn && searchBtn.addEventListener('click', (e) => { 
+    e.preventDefault(); 
+    updateParamAndReload('search', searchInput ? searchInput.value.trim() : ''); 
+  });
+  
+  applyBtn && applyBtn.addEventListener('click', (e) => { e.preventDefault(); applyFilters(); });
+  clearBtn && clearBtn.addEventListener('click', (e) => { 
+    e.preventDefault(); 
+    const url = new URL(window.location.href);
+    if (url.searchParams.has('category') || url.searchParams.has('search')) {
+      window.location.href = window.location.pathname; // Clear all server filters
+    } else {
+      clearFilters(); 
+    }
+  });
+
+  categorySelect && categorySelect.addEventListener('change', () => {
+    updateParamAndReload('category', categorySelect.value);
+  });
+
   storeSelect && storeSelect.addEventListener('change', () => { applyFilters(); });
   minInput && minInput.addEventListener('change', () => { applyFilters(); });
   maxInput && maxInput.addEventListener('change', () => { applyFilters(); });
@@ -447,10 +488,8 @@ function setupCompareFilters() {
     categoryChipsRow.addEventListener('click', (e) => {
       const btn = e.target.closest('.category-chip');
       if (!btn) return;
-      categoryChipsRow.querySelectorAll('.category-chip').forEach(ch => ch.classList.remove('active'));
-      btn.classList.add('active');
-      if (categorySelect) categorySelect.value = '';
-      applyFilters();
+      const val = (btn.dataset.categoryChip || '').trim();
+      updateParamAndReload('category', val);
     });
   }
 }
@@ -868,6 +907,7 @@ window.showListSelector = async function (item) {
 
     const dealId = btn.getAttribute('data-deal-id') || null;
     const offerJson = btn.getAttribute('data-offer-json') || '';
+    const tierJson = btn.getAttribute('data-tier-json') || '';
     const offerType = btn.getAttribute('data-offer-type') || '';
     const offerX = btn.getAttribute('data-offer-x') || '';
     const offerY = btn.getAttribute('data-offer-y') || '';
@@ -875,6 +915,11 @@ window.showListSelector = async function (item) {
     // Build offer payload if present
     let offerPayload = null;
     try { if (offerJson) offerPayload = JSON.parse(offerJson); } catch (err) { }
+    
+    // Build tier payload if present
+    let discountTiers = null;
+    try { if (tierJson) discountTiers = JSON.parse(tierJson); } catch (err) { }
+
     if (!offerPayload && offerType === 'buyXgetY' && offerX && offerY) {
       const xNum = parseInt(offerX, 10) || 0;
       const yNum = parseInt(offerY, 10) || 0;
@@ -891,6 +936,7 @@ window.showListSelector = async function (item) {
     item = { name, price: basePriceToStore, store, image, id };
     if (dealId) item.deal_id = dealId;
     if (offerPayload) item.offer = offerPayload;
+    if (discountTiers) item.discount_tiers = discountTiers;
     
     const priceVal = formatPrice(basePriceToStore);
     if (!isNaN(priceVal) && priceVal > 0) item.price_val = priceVal;
@@ -917,28 +963,61 @@ window.showListSelector = async function (item) {
 
     modalBody.innerHTML = '';
 
+    // PREVIEW HEADER: Show what we are adding
+    const itemPreview = document.createElement('div');
+    itemPreview.className = 'text-center mb-4';
+    
+    let imgHtml = '';
+    if (item.image && item.image !== 'undefined' && item.image !== '' && !item.image.includes('placeholder')) {
+      imgHtml = `<img src="${item.image}" class="shadow-sm" style="width: 80px; height: 80px; object-fit: contain; background: white; border-radius: 20px; padding: 6px; box-shadow: 0 8px 25px rgba(0,0,0,0.15); margin-bottom: 15px;">`;
+    } else {
+      imgHtml = `<div class="mx-auto shadow-sm" style="width: 70px; height: 70px; background: rgba(255,255,255,0.2); border-radius: 20px; display: flex; align-items: center; justify-content: center; margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.3);"><i class="bi bi-cart-plus-fill fs-2 text-white"></i></div>`;
+    }
+
+    itemPreview.innerHTML = `
+      ${imgHtml}
+      <h4 class="fw-800 text-white mb-2" style="font-weight: 800; letter-spacing: -0.5px;">${escapeHtml(item.name || 'New Item')}</h4>
+      <div class="d-flex justify-content-center gap-2 align-items-center">
+        ${item.price ? `<span class="badge bg-white text-primary fw-bold px-3 py-2 rounded-pill shadow-sm" style="font-size: 0.95rem;">€${item.price}</span>` : ''}
+        ${item.store ? `<span class="badge bg-dark bg-opacity-25 text-white border border-white border-opacity-25 px-3 py-2 rounded-pill">${escapeHtml(item.store)}</span>` : ''}
+      </div>
+    `;
+    modalBody.appendChild(itemPreview);
+
+    // LIST OPTIONS
+    const listContainer = document.createElement('div');
+    listContainer.className = 'd-flex flex-column gap-2';
+    modalBody.appendChild(listContainer);
+
     data.lists.forEach(list => {
       const itemCount = list.items ? list.items.length : 0;
       const card = document.createElement('div');
-      card.className = 'list-selector-option';
+      card.className = 'list-selector-option btn-smooth';
+      
+      // Calculate total if available (optional enhancement)
+      // We can add a subtle gradient to the icon based on list name length (just for distinctiveness)
+      const hue = (list.name.length * 25) % 360; 
 
       card.innerHTML = `
-        <div class="card-body">
-          <div class="list-selector-icon">
-            <i class="bi bi-bag-heart-fill"></i>
+        <div class="card-body p-3 d-flex align-items-center w-100">
+          <div class="list-selector-icon me-3 shadow-sm flex-shrink-0" style="width: 50px; height: 50px; background: linear-gradient(135deg, hsl(${hue}, 70%, 60%), hsl(${hue}, 70%, 45%));">
+            <i class="bi bi-bag-heart-fill fs-4"></i>
           </div>
-          <div class="list-info">
-            <div class="list-title">${escapeHtml(list.name)}</div>
-            <div class="list-subtitle">${itemCount} item${itemCount !== 1 ? 's' : ''}</div>
+          <div class="list-info flex-grow-1 text-start" style="min-width: 0;">
+            <div class="list-title text-dark fw-bold mb-1 text-truncate" style="font-size: 1.05rem;">${escapeHtml(list.name)}</div>
+            <div class="list-subtitle text-muted small d-flex align-items-center gap-2">
+                <span class="badge bg-light text-secondary border rounded-pill px-2">${itemCount} items</span>
+                <small class="text-truncate">${list.created_at ? list.created_at.substring(0,10) : ''}</small>
+            </div>
           </div>
-          <div class="list-action-icon">
-            <i class="bi bi-plus-lg"></i>
+          <div class="list-action-icon rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center flex-shrink-0" style="width: 40px; height: 40px;">
+            <i class="bi bi-plus-lg fw-bold"></i>
           </div>
         </div>
       `;
 
       card.addEventListener('click', () => addItemToSelectedList(list.id));
-      modalBody.appendChild(card);
+      listContainer.appendChild(card);
     });
 
     // Show modal
@@ -1237,7 +1316,64 @@ window.handleAddToCart = async function (event, name, price, image, store) {
   // Support both (event, name, price, image, store) and (event, element)
   let item;
   if (name instanceof HTMLElement) {
-    item = name; // Let addItemToShoppingList/showListSelector handle the element
+    const btn = name;
+    // Check if we are in store selection mode (e.g. Compare Prices page)
+    const productCard = btn.closest('.product-card');
+    let storeSelected = false; // Flag to track if we handled the store selection logic
+
+    if (productCard) {
+        const hasStoreOptions = productCard.querySelector('.store-item');
+        if (hasStoreOptions) {
+            const selectedStoreItem = productCard.querySelector('.store-item.selected');
+            if (!selectedStoreItem) {
+                showNotification('Please select a store first', 'warning');
+                return;
+            }
+            
+            // Extract data with selected store overrides
+            const itemName = btn.getAttribute('data-name') || btn.getAttribute('data-title') || 'Item';
+            // Prefer store-specific price, fallback to base price
+            let itemPrice = selectedStoreItem.getAttribute('data-store-price') || btn.getAttribute('data-price') || '';
+            const itemStore = selectedStoreItem.getAttribute('data-store-name') || btn.getAttribute('data-store') || '';
+            const itemImage = btn.getAttribute('data-image') || '';
+            const itemId = btn.getAttribute('data-id') || null;
+            
+            // Extract offer data
+            const dealId = btn.getAttribute('data-deal-id') || null;
+            const offerJson = btn.getAttribute('data-offer-json') || '';
+            const tierJson = btn.getAttribute('data-tier-json') || '';
+            const offerType = btn.getAttribute('data-offer-type') || '';
+            const offerX = btn.getAttribute('data-offer-x') || '';
+            const offerY = btn.getAttribute('data-offer-y') || '';
+            
+            let offerPayload = null;
+            try { if (offerJson) offerPayload = JSON.parse(offerJson); } catch (err) { }
+            
+            let discountTiers = null;
+            try { if (tierJson) discountTiers = JSON.parse(tierJson); } catch (err) { }
+            
+            if (!offerPayload && offerType === 'buyXgetY' && offerX && offerY) {
+                offerPayload = { type: 'buyXgetY', x: parseInt(offerX), y: parseInt(offerY) };
+            }
+
+            item = {
+                name: itemName,
+                price: itemPrice,
+                store: itemStore,
+                image: itemImage,
+                id: itemId,
+                deal_id: dealId,
+                offer_payload: offerPayload,
+                discount_tiers: discountTiers
+            };
+            storeSelected = true;
+        }
+    }
+    
+    // If not handled by store logic, just use the element
+    if (!storeSelected) {
+        item = name; 
+    }
   } else {
     item = { name, price, store, image };
     const priceVal = formatPrice(price);

@@ -283,11 +283,6 @@ Used: When clicking on a product in a specific store's listing
           <li class="nav-item">
             <a class="nav-link d-flex align-items-center position-relative {% if 'shopping-list' in request.path or request.endpoint == 'main.shopping_list' %}active{% endif %}" href="{{ url_for('main.shopping_list') }}">
               <i class="bi bi-list-check me-1"></i> Lists
-              {% if (shopping_list_count or 0) > 0 %}
-              <span class="position-absolute badge rounded-pill bg-danger" style="font-size: 0.65rem; padding: 0.45em 0.7em; top: -5px; right: -10px; border: 2px solid white; box-shadow: 0 4px 10px rgba(220, 53, 69, 0.4); min-width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;">
-                {{ shopping_list_count }}
-              </span>
-              {% endif %}
             </a>
           </li>
           <li class="nav-item ms-lg-1">
@@ -459,7 +454,7 @@ Used: When clicking on a product in a specific store's listing
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
-          <p class="text-muted mb-3">Choose which list to add this item to:</p>
+          <p class="text-white mb-3">Choose which list to add this item to:</p>
           <div id="globalListSelectorBody">
             <!-- List options will be populated here by JavaScript -->
           </div>

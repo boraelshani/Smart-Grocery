@@ -3,10 +3,16 @@
 USER MODEL & AUTHENTICATION
 ═══════════════════════════════════════════════════════════════════════════
 Handles all user-related database operations including:
-- User authentication with hashed passwords
+- User authentication with hashed passwords (bcrypt)
 - User account creation and retrieval
 - Shopping list management (CRUD operations)
-- Supports both MongoDB and in-memory fallback for development
+- Dual-mode support: MongoDB (Production) or In-Memory Mock (Development)
+
+Key Concepts:
+- Password Hashing (Security)
+- Fallback Logic (Reliability)
+- BSON Type Conversion (ObjectId handles)
+═══════════════════════════════════════════════════════════════════════════
 """
 
 from pymongo import MongoClient
@@ -25,11 +31,9 @@ load_dotenv()
 # IMPORT DATABASE & MOCK DATA SOURCES
 # ═══════════════════════════════════════════════════════════════════════════
 
-# Try to import Flask-PyMongo instance for database access
-try:
-    from utils.db import mongo as flask_mongo
-except Exception:
-    flask_mongo = None
+# Try to import Flask-PyMongo instance `mongodb` wrapper for database access.
+# This prevents circular import errors if we did it at top level in some architectures.
+from utils.db import get_db
 
 # Try to import mock/fallback data for development mode
 try:
@@ -54,15 +58,22 @@ def get_user_by_email(email: str):
     """
     if not email:
         return None
-    if flask_mongo is not None and getattr(flask_mongo, 'db', None) is not None:
-        doc = flask_mongo.db.users.find_one({'email': email})
+    
+    # 1. DATABASE CHECK
+    # get_db() returns the active database connection or None
+    if get_db() is not None:
+        doc = get_db().users.find_one({'email': email})
         if not doc:
             return None
+        # Convert BSON document to standard Python dict
         doc = dict(doc)
+        # Convert ObjectId (not JSON serializable) to string
         if '_id' in doc:
-            doc['id'] = str(doc['_id'])  # Convert MongoDB ObjectId to string
+            doc['id'] = str(doc['_id'])
         return doc
-    # Fallback to in-memory mock data
+        
+    # 2. FALLBACK CHECK (Mock Data)
+    # getattr defensively checks if 'mock_models' has 'users' dictionary
     if getattr(mock_models, 'users', None) is None:
         return None
     return mock_models.users.get(email)
@@ -71,16 +82,31 @@ def get_user_by_email(email: str):
 def get_all_users():
     """
     Retrieve all user accounts.
+    Useful for Admin dashboards or broadcasting notifications.
     """
-    if flask_mongo is not None and getattr(flask_mongo, 'db', None) is not None:
-        return list(flask_mongo.db.users.find({}))
+    if get_db() is not None:
+        # Return list because cursor is an iterator
+        return list(get_db().users.find({}))
+        
     if getattr(mock_models, 'users', None) is not None:
         return [data for email, data in mock_models.users.items()]
     return []
 
 
 def hash_password(password: str) -> str:
-    """Hash a password using bcrypt (includes a per-password salt)."""
+    """
+    Hash a password using bcrypt.
+    
+    Why Bcrypt:
+    - It's slow by design (resists brute force).
+    - It handles salting automatically (prevents rainbow table attacks).
+    
+    Args:
+        password: Plain text password.
+        
+    Returns:
+        str: Secure hash string.
+    """
     if password is None:
         return ''
     if isinstance(password, bytes):
@@ -88,6 +114,9 @@ def hash_password(password: str) -> str:
     trimmed = str(password).strip()
     if not trimmed:
         return ''
+        
+    # Generate salt and hash
+    # .decode('utf-8') converts the resulting bytes back to a string for DB storage
     return bcrypt.hashpw(trimmed.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
 
@@ -96,8 +125,11 @@ def verify_password(plain: str, hashed: str) -> bool:
     if not plain or not hashed:
         return False
     try:
+        # checkpw recalculates hash of 'plain' using salt from 'hashed' 
+        # and compares them efficiently
         return bcrypt.checkpw(plain.encode('utf-8'), str(hashed).encode('utf-8'))
     except Exception:
+        # Fail safe on encoding errors
         return False
 
 
@@ -113,18 +145,21 @@ def create_user(user_doc: dict):
     """
     try:
         pwd = user_doc.get('password')
-        # If the password is not already a bcrypt hash, hash it now
+        # If the password is provided and not already a bcrypt hash (starts with $2), hash it.
         if pwd and not (isinstance(pwd, str) and pwd.startswith('$2')):
             user_doc['password'] = hash_password(pwd)
     except Exception:
         pass
 
-    if flask_mongo is not None and getattr(flask_mongo, 'db', None) is not None:
+    # PRODUCTION: Insert into MongoDB
+    if get_db() is not None:
         if 'created_at' not in user_doc:
             from datetime import datetime
             user_doc['created_at'] = datetime.utcnow()
-        res = flask_mongo.db.users.insert_one(user_doc)
-        return str(res.inserted_id)
+        res = get_db().users.insert_one(user_doc)
+        return str(res.inserted_id) # Return the auto-generated ID
+        
+    # DEVELOPMENT: Insert into memory
     if getattr(mock_models, 'users', None) is None:
         return None
     if 'created_at' not in user_doc:
@@ -135,17 +170,23 @@ def create_user(user_doc: dict):
 
 
 def authenticate(email: str, password: str) -> bool:
+    """
+    Authenticate a user by email and password.
+    Supports both bcrypt hashes (new users) and plain text (legacy/mock users).
+    """
     user = get_user_by_email(email)
     if not user:
         print(f'[AUTH] user {email} not found')
         return False
+    
     stored = user.get('password')
     if stored is None:
         print(f'[AUTH] user {email} has no password field')
         return False
+        
     stored_str = stored.decode('utf-8', 'ignore') if isinstance(stored, (bytes, bytearray)) else str(stored)
 
-    # Prefer bcrypt verification when stored value is a bcrypt hash
+    # SECURE: Prefer bcrypt verification when stored value is a bcrypt hash
     if stored_str.startswith('$2'):
         try:
             ok = verify_password(password, stored_str)
@@ -154,7 +195,8 @@ def authenticate(email: str, password: str) -> bool:
         except Exception as e:
             print(f'[AUTH] bcrypt verify failed: {e}')
 
-    # Fallback to legacy plain-text comparison for pre-existing accounts
+    # LEGACY/MOCK: Fallback to plain-text comparison
+    # Only used for accounts created before bcrypt implementation or mock data
     print(f'[AUTH] legacy compare: stored={repr(stored_str)} vs entered={repr(password)}')
     match = stored_str.strip() == str(password).strip()
     print(f'[AUTH] legacy result={match}')
@@ -162,14 +204,19 @@ def authenticate(email: str, password: str) -> bool:
 
 
 def update_shopping_list(email: str, new_list: list) -> bool:
+    """Overwrite the entire shopping list for a user."""
     if not email:
         return False
-    if flask_mongo is not None and getattr(flask_mongo, 'db', None) is not None:
+        
+    if get_db() is not None:
         try:
-            flask_mongo.db.users.update_one({'email': email}, {'$set': {'shopping_list': new_list}}, upsert=True)
+            # $set replaces the entire array
+            get_db().users.update_one({'email': email}, {'$set': {'shopping_list': new_list}}, upsert=True)
             return True
         except Exception:
             return False
+            
+    # Mock fallback
     if getattr(mock_models, 'users', None) is None:
         return False
     u = mock_models.users.get(email)
@@ -181,14 +228,19 @@ def update_shopping_list(email: str, new_list: list) -> bool:
 
 
 def add_to_shopping_list(email: str, item) -> bool:
+    """Add a single item to the user's shopping list."""
     if not email or not item:
         return False
-    if flask_mongo is not None and getattr(flask_mongo, 'db', None) is not None:
+        
+    if get_db() is not None:
         try:
-            res = flask_mongo.db.users.update_one({'email': email}, {'$push': {'shopping_list': item}}, upsert=True)
+            # $push adds to the array. upsert=True creates user if missing.
+            res = get_db().users.update_one({'email': email}, {'$push': {'shopping_list': item}}, upsert=True)
             return (getattr(res, 'modified_count', 0) > 0) or (getattr(res, 'upserted_id', None) is not None)
         except Exception:
             return False
+            
+    # Mock fallback
     if getattr(mock_models, 'users', None) is None:
         return False
     u = mock_models.users.get(email)
@@ -200,24 +252,32 @@ def add_to_shopping_list(email: str, item) -> bool:
 
 
 def remove_from_shopping_list(email: str, item) -> bool:
+    """Remove an item from the shopping list."""
     if not email or not item:
         return False
-    if flask_mongo is not None and getattr(flask_mongo, 'db', None) is not None:
+        
+    if get_db() is not None:
         try:
-            res = flask_mongo.db.users.update_one({'email': email}, {'$pull': {'shopping_list': item}})
+            # $pull removes all instances matching the value
+            # Attempt 1: Remove simple string item
+            res = get_db().users.update_one({'email': email}, {'$pull': {'shopping_list': item}})
             if getattr(res, 'modified_count', 0) > 0:
                 return True
-            res2 = flask_mongo.db.users.update_one({'email': email}, {'$pull': {'shopping_list': {'name': item}}})
+                
+            # Attempt 2: Remove object item by name match (if shopping list contains update objects)
+            res2 = get_db().users.update_one({'email': email}, {'$pull': {'shopping_list': {'name': item}}})
             return getattr(res2, 'modified_count', 0) > 0
         except Exception:
             return False
+            
+    # Mock fallback
     if getattr(mock_models, 'users', None) is None:
         return False
     u = mock_models.users.get(email)
     if not u:
         return False
     
-    # Remove by name or exact match
+    # Simple list filtering for in-memory
     new_list = [i for i in u.get('shopping_list', []) if i != item and not (isinstance(i, dict) and i.get('name') == item)]
     u['shopping_list'] = new_list
     return True
@@ -237,9 +297,9 @@ def update_user_profile(email: str, update_data: dict) -> bool:
     if not email or not update_data:
         return False
         
-    if flask_mongo is not None and getattr(flask_mongo, 'db', None) is not None:
+    if get_db() is not None:
         try:
-            flask_mongo.db.users.update_one({'email': email}, {'$set': update_data}, upsert=True)
+            get_db().users.update_one({'email': email}, {'$set': update_data}, upsert=True)
             return True
         except Exception as e:
             print(f"[DB ERROR] Failed to update user profile: {e}")
@@ -254,27 +314,8 @@ def update_user_profile(email: str, update_data: dict) -> bool:
 
 
 def update_user(email: str, update_data: dict) -> bool:
-    """Generic update for user document."""
-    if not email or not update_data:
-        return False
-        
-    if flask_mongo is not None and getattr(flask_mongo, 'db', None) is not None:
-        try:
-            flask_mongo.db.users.update_one({'email': email}, {'$set': update_data}, upsert=True)
-            return True
-        except Exception as e:
-            print(f"[DB ERROR] Failed to update user: {e}")
-            return False
-            
-    # Mock fallback
-    if getattr(mock_models, 'users', None) is not None:
-        u = mock_models.users.get(email)
-        if not u:
-            mock_models.users[email] = {'email': email, **update_data}
-        else:
-            u.update(update_data)
-        return True
-    return False
+    """Generic update for user document. Same as update_user_profile but generic name."""
+    return update_user_profile(email, update_data)
 
 
 # Multi-List Shopping List Functions
@@ -284,44 +325,51 @@ except:
     flask_mongo = None
 
 def get_user_lists(email: str) -> dict:
-    """Get all shopping lists for a user. Returns dict with lists array and active_list_id."""
+    """
+    Get all shopping lists for a user. 
+    Handles migration from single 'shopping_list' to multiple 'shopping_lists'.
+    
+    Returns:
+        dict: {'lists': [...], 'active_list_id': ...}
+    """
     if not email:
         return {'lists': [], 'active_list_id': None}
     
-    if flask_mongo is not None and getattr(flask_mongo, 'db', None) is not None:
+    if get_db() is not None:
         try:
-            user = flask_mongo.db.users.find_one({'email': email})
+            user = get_db().users.find_one({'email': email})
             if not user:
                 return {'lists': [], 'active_list_id': None}
             
             lists = user.get('shopping_lists', [])
             active_id = user.get('active_list_id')
             
-            # Migrate old shopping_list to new format if needed
+            # Migration Logic: If old list exists but no new lists, assume default list
             if not lists and user.get('shopping_list'):
                 from bson import ObjectId
-                from datetime import datetime
-                default_id = str(ObjectId())
-                lists = [{
-                    'id': default_id,
-                    'name': 'My List',
-                    'items': user.get('shopping_list', []),
-                    'created_at': datetime.utcnow().isoformat()
-                }]
-                flask_mongo.db.users.update_one(
+                default_list = {
+                     'id': str(ObjectId()),
+                     'name': 'My List',
+                     'items': user.get('shopping_list', []),
+                     'created_at': datetime.utcnow()
+                }
+                # Update DB with new structure
+                get_db().users.update_one(
                     {'email': email},
-                    {'$set': {'shopping_lists': lists, 'active_list_id': default_id}}
+                    {'$set': {'shopping_lists': [default_list], 'active_list_id': default_list['id']}}
                 )
-                active_id = default_id
-            
+                return {'lists': [default_list], 'active_list_id': default_list['id']}
+                
             return {'lists': lists, 'active_list_id': active_id}
-        except Exception as e:
-            print(f'Error getting user lists: {e}')
+        except Exception:
             return {'lists': [], 'active_list_id': None}
-    
-    # Mock data fallback
-    u = mock_models.users.get(email, {})
-    return {'lists': u.get('shopping_lists', []), 'active_list_id': u.get('active_list_id')}
+            
+    # Mock data fallback (Used if MongoDB is unavailable)
+    if mock_models:
+        u = mock_models.users.get(email, {})
+        return {'lists': u.get('shopping_lists', []), 'active_list_id': u.get('active_list_id')}
+        
+    return {'lists': [], 'active_list_id': None}
 
 
 def create_shopping_list(email: str, list_name: str) -> Optional[str]:
@@ -339,9 +387,9 @@ def create_shopping_list(email: str, list_name: str) -> Optional[str]:
         'created_at': datetime.utcnow().isoformat()
     }
     
-    if flask_mongo is not None and getattr(flask_mongo, 'db', None) is not None:
+    if get_db() is not None:
         try:
-            result = flask_mongo.db.users.update_one(
+            result = get_db().users.update_one(
                 {'email': email},
                 {'$push': {'shopping_lists': new_list}}
             )
@@ -349,7 +397,7 @@ def create_shopping_list(email: str, list_name: str) -> Optional[str]:
                 return new_list['id']
             # If user doesn't exist in DB, create them
             if result.matched_count == 0:
-                 flask_mongo.db.users.insert_one({
+                 get_db().users.insert_one({
                      'email': email,
                      'shopping_lists': [new_list],
                      'active_list_id': new_list['id']
@@ -374,9 +422,9 @@ def rename_shopping_list(email: str, list_id: str, new_name: str) -> bool:
     if not email or not list_id or not new_name:
         return False
     
-    if flask_mongo is not None and getattr(flask_mongo, 'db', None) is not None:
+    if get_db() is not None:
         try:
-            result = flask_mongo.db.users.update_one(
+            result = get_db().users.update_one(
                 {'email': email, 'shopping_lists.id': list_id},
                 {'$set': {'shopping_lists.$.name': new_name.strip()}}
             )
@@ -401,20 +449,20 @@ def delete_shopping_list(email: str, list_id: str) -> bool:
     if not email or not list_id:
         return False
     
-    if flask_mongo is not None and getattr(flask_mongo, 'db', None) is not None:
+    if get_db() is not None:
         try:
-            result = flask_mongo.db.users.update_one(
+            result = get_db().users.update_one(
                 {'email': email},
                 {'$pull': {'shopping_lists': {'id': list_id}}}
             )
             # If deleted list was active, set active to first remaining list
-            user = flask_mongo.db.users.find_one({'email': email})
+            user = get_db().users.find_one({'email': email})
             # Since we just pulled the list, it won't be in shopping_lists.
             # But active_list_id might still point to it.
             if user and user.get('active_list_id') == list_id:
                 remaining_lists = user.get('shopping_lists', [])
                 new_active = remaining_lists[0]['id'] if remaining_lists else None
-                flask_mongo.db.users.update_one(
+                get_db().users.update_one(
                     {'email': email},
                     {'$set': {'active_list_id': new_active}}
                 )
@@ -442,9 +490,9 @@ def set_active_list(email: str, list_id: str) -> bool:
     if not email or not list_id:
         return False
     
-    if flask_mongo is not None and getattr(flask_mongo, 'db', None) is not None:
+    if get_db() is not None:
         try:
-            result = flask_mongo.db.users.update_one(
+            result = get_db().users.update_one(
                 {'email': email},
                 {'$set': {'active_list_id': list_id}}
             )
@@ -467,9 +515,9 @@ def update_list_items(email: str, list_id: str, items: list) -> bool:
     if not email or not list_id:
         return False
     
-    if flask_mongo is not None and getattr(flask_mongo, 'db', None) is not None:
+    if get_db() is not None:
         try:
-            result = flask_mongo.db.users.update_one(
+            result = get_db().users.update_one(
                 {'email': email, 'shopping_lists.id': list_id},
                 {'$set': {'shopping_lists.$.items': items}}
             )
@@ -543,10 +591,10 @@ def add_item_to_list(email: str, list_id: str, item) -> bool:
         item_obj.setdefault('price', price_val)
     target_key = _normalize_name_store(item_obj)
     
-    if flask_mongo is not None and getattr(flask_mongo, 'db', None) is not None:
+    if get_db() is not None:
         try:
             # Get current list to check for duplicates
-            user = flask_mongo.db.users.find_one({'email': email})
+            user = get_db().users.find_one({'email': email})
             if not user:
                 return False
             
@@ -585,6 +633,13 @@ def add_item_to_list(email: str, list_id: str, item) -> bool:
                     merged_item['store'] = item_obj.get('store')
                 if not merged_item.get('image') and item_obj.get('image'):
                     merged_item['image'] = item_obj.get('image')
+                # Ensure discount offers/tiers are attached to the merged item
+                if item_obj.get('discount_tiers'):
+                    merged_item['discount_tiers'] = item_obj.get('discount_tiers')
+                if item_obj.get('discount_label'):
+                    merged_item['discount_label'] = item_obj.get('discount_label')
+                if item_obj.get('offer'):
+                    merged_item['offer'] = item_obj.get('offer')
                 if price_val is not None:
                     if merged_item.get('price_val') in (None, '', 0):
                         merged_item['price_val'] = price_val
@@ -595,7 +650,7 @@ def add_item_to_list(email: str, list_id: str, item) -> bool:
                 item_obj['is_new'] = True  # New item added
                 items.append(item_obj)
 
-            result = flask_mongo.db.users.update_one(
+            result = get_db().users.update_one(
                 {'email': email, 'shopping_lists.id': list_id},
                 {'$set': {'shopping_lists.$.items': items}}
             )
@@ -650,9 +705,9 @@ def mark_items_as_seen(email: str, list_id: str) -> bool:
     if not email or not list_id:
         return False
     
-    if flask_mongo is not None and getattr(flask_mongo, 'db', None) is not None:
+    if get_db() is not None:
         try:
-            user = flask_mongo.db.users.find_one({'email': email})
+            user = get_db().users.find_one({'email': email})
             if not user:
                 return False
             
@@ -666,7 +721,7 @@ def mark_items_as_seen(email: str, list_id: str) -> bool:
                             changed = True
                     
                     if changed:
-                        flask_mongo.db.users.update_one(
+                        get_db().users.update_one(
                             {'email': email, 'shopping_lists.id': list_id},
                             {'$set': {'shopping_lists.$.items': items}}
                         )
@@ -692,17 +747,17 @@ def remove_item_from_list(email: str, list_id: str, item_name: str) -> bool:
     if not email or not list_id or not item_name:
         return False
     
-    if flask_mongo is not None and getattr(flask_mongo, 'db', None) is not None:
+    if get_db() is not None:
         try:
             # Try removing by name string
-            result = flask_mongo.db.users.update_one(
+            result = get_db().users.update_one(
                 {'email': email, 'shopping_lists.id': list_id},
                 {'$pull': {'shopping_lists.$.items': item_name}}
             )
             if result.modified_count > 0:
                 return True
             # Try removing by name field in object
-            result = flask_mongo.db.users.update_one(
+            result = get_db().users.update_one(
                 {'email': email, 'shopping_lists.id': list_id},
                 {'$pull': {'shopping_lists.$.items': {'name': item_name}}}
             )
@@ -725,6 +780,27 @@ def remove_item_from_list(email: str, list_id: str, item_name: str) -> bool:
                 return True
     return False
 
+def mark_dynamic_notifications_read(email: str, notification_ids: List[str]):
+    """
+    Mark dynamic notifications (suggestions) as read for a user.
+    """
+    if not email or not notification_ids:
+        return False
+        
+    try:
+        if flask_mongo:
+            get_db().users.update_one(
+                {'email': email},
+                {'$addToSet': {'read_dynamic_notifications': {'$each': notification_ids}}}
+            )
+            return True
+            
+        # Mock fallback could go here
+        return True
+    except Exception as e:
+        print(f"Error marking dynamic notifications read: {e}")
+        return False
+
 class UsersModel:
     """Wrapper class for user functions."""
     def get_user_by_email(self, email): return get_user_by_email(email)
@@ -741,5 +817,6 @@ class UsersModel:
     def remove_item_from_list(self, email, list_id, item_name): return remove_item_from_list(email, list_id, item_name)
     def update_list_items(self, email, list_id, items): return update_list_items(email, list_id, items)
     def mark_items_as_seen(self, email, list_id): return mark_items_as_seen(email, list_id)
+    def mark_dynamic_notifications_read(self, email, ids): return mark_dynamic_notifications_read(email, ids)
 
 users_model = UsersModel()

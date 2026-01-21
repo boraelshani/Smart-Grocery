@@ -1,20 +1,17 @@
 """
 ═══════════════════════════════════════════════════════════════════════════
-MULTI-BUY OFFERS MODEL - 2+1, BOGO, Buy X Get Y Deals
+MULTI-BUY OFFERS MODEL - Complex Discount Logic
 ═══════════════════════════════════════════════════════════════════════════
-Purpose: Handle multi-buy promotional offers separately from featured deals
+Purpose: Handle multi-buy promotional offers (e.g., "Buy X Get Y Free")
 Database Collection: 'multibuy_offers' in MongoDB
-Offer Types:
-- 2+1 Free (Buy 2 Get 1 Free)
-- BOGO (Buy One Get One Free)
-- Buy X Get Y (e.g., Buy 3 Get 2 Free)
-- Quantity discounts (e.g., 3 for $5)
-Functions:
-- Get all active multi-buy offers
-- Get offers by product/store
-- Calculate effective pricing
-- Validate offer rules
-Used by: shopping list, featured deals, product pages
+
+Core Features:
+- Offer validation (Active/Expired checks)
+- Dynamic Price Calculation (Effective unit price)
+- Product Enrichment (Attaching offer metadata to product objects)
+
+Algorithms:
+- `calculate_effective_price`: Mathematical model for BOGO, 3-for-2, etc.
 ═══════════════════════════════════════════════════════════════════════════
 """
 from pymongo import MongoClient
@@ -30,37 +27,22 @@ load_dotenv()
 
 class MultibuyOffersModel:
     def __init__(self):
-        mongo_uri = os.getenv('MONGO_URI') or 'mongodb://localhost:27017/smart_grocery'
-        if '<' in mongo_uri or '>' in mongo_uri:
-            mongo_uri = mongo_uri.replace('<', '').replace('>', '')
-        database_name = os.getenv('DATABASE_NAME', None)
-        
-        try:
-            from utils.db import mongo as flask_mongo
-        except Exception:
-            flask_mongo = None
+        # Database dependency injection
+        from utils.db import get_db
+        self.db = get_db()
+        # Internal client reference if needed
+        self._client = None
 
-        if flask_mongo is not None and getattr(flask_mongo, 'db', None) is not None:
-            self.db = flask_mongo.db
-            self._client = None
-        else:
-            try:
-                self._client = MongoClient(mongo_uri, tlsCAFile=certifi.where())
-            except TypeError:
-                self._client = MongoClient(mongo_uri)
-            if database_name:
-                self.db = self._client[database_name]
-            else:
-                try:
-                    self.db = self._client.get_default_database()
-                    if self.db is None:
-                        self.db = self._client['smart_grocery']
-                except Exception:
-                    self.db = self._client['smart_grocery']
 
     def list_active_offers(self) -> List[dict]:
-        """Get all active multi-buy offers"""
+        """
+        Get all offers where 'active' is True AND 'valid_until' is future/null.
+        
+        Returns:
+            List of active offer documents.
+        """
         now = datetime.utcnow()
+        # Query: Active flag is true AND (No expiration OR Expiration is in future)
         query = {
             'active': True,
             '$or': [
@@ -79,7 +61,7 @@ class MultibuyOffersModel:
         return self.db.multibuy_offers.count_documents({'active': True})
 
     def get_latest_offers(self, limit: int = 5) -> List[dict]:
-        """Get the latest multibuy offers added to the database"""
+        """Get the latest multibuy offers added to the database."""
         cursor = self.db.multibuy_offers.find({'active': True}).sort('_id', -1).limit(limit)
         docs = list(cursor)
         for d in docs:
@@ -88,7 +70,7 @@ class MultibuyOffersModel:
         return docs
 
     def get_offer_by_id(self, offer_id: str) -> Optional[dict]:
-        """Get specific offer by ID"""
+        """Get specific offer by ID."""
         try:
             doc = self.db.multibuy_offers.find_one({'_id': ObjectId(offer_id)})
             if doc and '_id' in doc:
@@ -98,7 +80,7 @@ class MultibuyOffersModel:
             return None
 
     def get_offers_by_product(self, product_id: str) -> List[dict]:
-        """Get all active offers for a specific product"""
+        """Get all active offers applicable to a specific product ID."""
         now = datetime.utcnow()
         query = {
             'product_id': ObjectId(product_id),
@@ -117,21 +99,32 @@ class MultibuyOffersModel:
 
     def attach_offers_to_products(self, products: List[dict]) -> List[dict]:
         """
-        Attach multibuy and quantity discount metadata to a list of products.
+        Enrich product objects with offer data.
+        
+        Why: Efficiency. Instead of querying the DB for each product in a loop (N+1 problem),
+        we fetch all active offers once and map them in memory.
+        
+        Args:
+            products: List of product dictionaries.
+            
+        Returns:
+            The same list, but with 'offer', 'offer_type', 'discount_label' fields added.
         """
         if not products:
             return products
             
         try:
-            # Get all active multibuy offers
+            # 1. Fetch all active offers
             mb_offers = self.list_active_offers()
             
-            # Get all active quantity discounts (lazy load to avoid circular import issues if any)
+            # 2. Fetch all quantity discounts (Lazy load to avoid circular import)
             from models.quantity_discounts_model import quantity_discounts_model
             q_discounts = quantity_discounts_model.list_active_discounts()
             
-            # Map by product_id AND product_name for fast lookup
+            # 3. Create Lookup Maps for O(1) access
+            # Map by ID
             mb_map_id = {}
+            # Map by Name (fallback)
             mb_map_name = {}
             
             for o in mb_offers:
@@ -146,15 +139,15 @@ class MultibuyOffersModel:
                 pid = str(q.get('product_id'))
                 if pid: qd_map[pid] = q
                 
+            # 4. Iterate products and attach data
             for p in products:
                 pid = str(p.get('id') or p.get('_id') or '')
                 pname = str(p.get('name') or '').lower().strip()
                 
-                # Extract basic offer info if available directly (featured deals)
+                # ... [Existing Logic Preserved for Compatibility] ...
                 ox_raw = p.get('buy_quantity') or p.get('multibuy_buy') or ''
                 oy_raw = p.get('free_quantity') or p.get('multibuy_free') or ''
                 
-                # If already has offer info object, extract details
                 if p.get('offer'):
                     offer_obj = p.get('offer') if isinstance(p.get('offer'), dict) else None
                     if offer_obj:
@@ -162,14 +155,12 @@ class MultibuyOffersModel:
                         p['offer_x'] = offer_obj.get('x') or ox_raw
                         p['offer_y'] = offer_obj.get('y') or oy_raw
                 
-                # Refine offer_x/y if missing but raw fields exist
                 if not p.get('offer_x'): p['offer_x'] = ox_raw
                 if not p.get('offer_y'): p['offer_y'] = oy_raw
                 if not p.get('offer_type') and p.get('offer_x') and p.get('offer_y'):
                     p['offer_type'] = 'buyXgetY'
 
-                # Look in mb_offers collection if no offer_x yet
-                # Try ID first, then Name
+                # Look in lookup maps
                 offer = None
                 if not p.get('offer_x'):
                     if pid in mb_map_id:
@@ -178,7 +169,6 @@ class MultibuyOffersModel:
                         offer = mb_map_name[pname]
 
                 if offer:
-                    # Ensure the offer object itself has the type set, so templates can see it inside 'offer'
                     if not offer.get('type'):
                         offer['type'] = 'buyXgetY'
                         
@@ -189,21 +179,18 @@ class MultibuyOffersModel:
                     p['offer_x'] = ox
                     p['offer_y'] = oy
                     
-                    # IMPORTANT: Capture the base original price for the multibuy calculation
                     if offer.get('original_price'):
                         p['original_price'] = offer.get('original_price')
-                    elif offer.get('price'): # fallback if original_price missing
+                    elif offer.get('price'): 
                         p['original_price'] = offer.get('price')
 
-                    # Ensure these raw fields are set for template compatibility
                     p['buy_quantity'] = ox
                     p['free_quantity'] = oy
                 
-                # Set discount label if we have x/y
                 if p.get('offer_x') and p.get('offer_y') and not p.get('discount_label'):
                     p['discount_label'] = f"{p['offer_x']}+{p['offer_y']} FREE"
 
-                # Look in qd_map (if not already found in mb)
+                # Check Quantity Discounts if no multibuy found
                 if not p.get('offer_type') and pid in qd_map:
                     qd = qd_map[pid]
                     p['offer'] = qd
@@ -219,7 +206,7 @@ class MultibuyOffersModel:
         return products
 
     def get_offers_by_store(self, store_name: str) -> List[dict]:
-        """Get all active offers for a specific store"""
+        """Get all active offers for a specific store."""
         now = datetime.utcnow()
         query = {
             'store': store_name,
@@ -239,18 +226,25 @@ class MultibuyOffersModel:
     def calculate_effective_price(self, unit_price: float, quantity: int, 
                                   buy_qty: int, free_qty: int) -> Dict[str, float]:
         """
-        Calculate the effective price for a multi-buy offer
+        Calculate the effective price for a "Buy X Get Y Free" offer.
+        
+        Logic:
+        1. Calculate cycle size (Buy X + Get Y = Cycle Size).
+        2. Determine how many full cycles fit in the desired quantity.
+        3. Calculate remainder items.
+        4. Determine how many items are actually paid for vs free.
         
         Args:
-            unit_price: Regular price per item
-            quantity: Total quantity customer wants
-            buy_qty: Number of items to buy in offer (X in "Buy X Get Y")
-            free_qty: Number of free items in offer (Y in "Buy X Get Y")
+            unit_price: Regular price per item.
+            quantity: Total quantity customer wants to buy.
+            buy_qty: Number of items to pay for in a cycle (X).
+            free_qty: Number of free items in a cycle (Y).
         
         Returns:
-            Dict with total_price, effective_unit_price, savings
+            Dict: {'total_price', 'effective_unit_price', 'savings'}
         """
         if buy_qty <= 0 or free_qty < 0:
+            # Fallback for invalid offer data
             return {
                 'total_price': unit_price * quantity,
                 'effective_unit_price': unit_price,
@@ -261,11 +255,13 @@ class MultibuyOffersModel:
         full_cycles = quantity // cycle
         remainder = quantity % cycle
         
-        # Pay for buy_qty items per cycle, get free_qty free
+        # Items paid for = (Cycles * Pay items) + (Remainder items capped at Pay items)
+        # e.g., Buy 2 Get 1 Free (Cycle 3).
+        # Buy 4: 1 Cycle (3 items, pay 2) + Remainder 1 (pay 1) = Pay 3.
         paid_items = full_cycles * buy_qty + min(remainder, buy_qty)
         total_price = paid_items * unit_price
         
-        # Calculate savings
+        # Savings
         regular_price = quantity * unit_price
         savings = regular_price - total_price
         effective_unit_price = total_price / quantity if quantity > 0 else unit_price
@@ -277,11 +273,10 @@ class MultibuyOffersModel:
         }
 
     def create_offer(self, offer_data: dict) -> str:
-        """Create a new multi-buy offer"""
+        """Create a new multi-buy offer (Admin)."""
         offer_data['created_at'] = datetime.utcnow()
         offer_data['active'] = offer_data.get('active', True)
         
-        # Ensure product_id is ObjectId
         if 'product_id' in offer_data and isinstance(offer_data['product_id'], str):
             offer_data['product_id'] = ObjectId(offer_data['product_id'])
         
@@ -289,7 +284,7 @@ class MultibuyOffersModel:
         return str(result.inserted_id)
 
     def update_offer(self, offer_id: str, update_data: dict) -> bool:
-        """Update an existing offer"""
+        """Update an existing offer (Admin)."""
         try:
             update_data.pop('_id', None)
             update_data['updated_at'] = datetime.utcnow()
@@ -303,7 +298,10 @@ class MultibuyOffersModel:
             return False
 
     def delete_offer(self, offer_id: str) -> bool:
-        """Delete an offer (or mark as inactive)"""
+        """
+        Soft delete an offer.
+        We prefer setting 'active': False over physical deletion to preserve history.
+        """
         try:
             # Soft delete: mark as inactive
             result = self.db.multibuy_offers.update_one(

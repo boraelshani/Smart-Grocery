@@ -1,103 +1,102 @@
 # Smart Grocery
 
-**Smart Grocery** is a web application designed to help users shop smarter by comparing prices of the same products across different stores. 
-It also provides useful features like featured deals, store information, a personal shopping list, and more.
+**Smart Grocery** is a comprehensive full-stack web application developed to modernize the grocery shopping experience. It allows users to compare product prices across different stores (real-time price comparison), discover featured deals, manage personal shopping lists, and receive notifications about price drops.
 
 ## Features
 
-- **Home Page:** Provides an overview of all the features and quick access to different sections of the app.
-- **Login / Sign Up:** Allows users to create an account and log in for personalized access.
-- **Compare Prices:** Check prices for the same product across multiple stores to find the best deal.
-- **Featured Deals:** Discover special offers and discounts from various stores.
-- **Stores Information:** See details like store distance (miles away) and opening hours.
-- **Profile Page:** Manage your personal account and preferences.
-- **Shopping List:** Keep track of items you want to buy, with checkboxes to mark purchased items. You can add or remove items, and see the total cost of your list.
+- **Store Price Comparison:** Compare prices for the same product across multiple vendors (e.g., Aldi, Lidl, Spar) to find the cheapest option.
+- **Smart Shopping List:** Add items to a digital list, check them off as you shop, and see estimated total costs.
+- **Notifications System:** Receive alerts for price drops, new deals, and system announcements.
+- **Featured Deals:** Browse aggregated special offers and discounts from all supported stores.
+- **User Accounts:** Secure login/signup system with profile management (avatar, address, phone).
+- **Store Locator:** View store details, opening hours, and distance from your location.
+- **Admin Dashboard:** Special administrative routes for managing products and deals.
+- **Robust Error Handling:** Custom, user-friendly 404 and 500 error pages.
 
 ## Technologies Used
 
-- Python (Flask)
-- HTML & CSS
-- Bootstrap
-- JavaScript
-- MongoDB Atlas (Database)
+- **Backend:** Python (Flask)
+- **Database:** MongoDB Atlas (NoSQL)
+- **Frontend:** HTML5, CSS3, Bootstrap 5, Jinja2 Templates
+- **Scripting:** JavaScript (Vanilla JS & Async Fetch API)
+- **Security:** Bcrypt (hashing), JWT (JSON Web Tokens)
 
 ## Team Members and Roles
 
-### **Bora Elshani** - Leader**
-- **Backend Development:**
-  - Flask application setup and configuration (`app.py`)
-  - Main routing logic and navigation (`routes/main_routes.py`)
-  - User authentication and session management (`models/users_model.py`)
-  - Database models and fallback data (`models/models.py`)
-  - Featured deals import script and data processing
-  
-- **Frontend Development:**
-  - Shopping List page - complete UI and functionality (`templates/shopping_list.html`)
-  - Profile page and user account management (`templates/profile.html`)
-  - Featured Deals pages (`templates/featured_deals.html`, `templates/featured_deal_detail.html`)
-  - Compare Prices page layout and features (`templates/compare_prices.html`)
-  - Product information view (`templates/product_info.html`)
-  - Entry/landing page (`templates/entry.html`)
-  
-- **JavaScript Development:**
-  - Shopping list interactive features (add/remove items, list management)
-  - Dynamic UI updates and real-time calculations
-  - API endpoint integrations
-  - Favorite products functionality
+### **Bora Elshani** - Team Lead & Full Stack Engineer
+**Key Contributions:**
+*   **Backend Architecture:** Designed `app.py` entry point and Flask configuration.
+*   **Core Logic:** Implemented `routes/main_routes.py` handling primary navigation and user flow.
+*   **Data Models:** Architected `users_model.py` for auth and `models.py` for fallback data.
+*   **Data Pipeline:** Wrote scripts for importing featured deals from JSON to MongoDB.
+*   **Frontend UX:** Developed the interactive Shopping List (`shopping_list.html`), Profile management (`profile.html`), and Deal view (`featured_deal_detail.html`).
+*   **Client-Side Logic:** Wrote complex JavaScript for dynamic shopping list updates and price calculations.
 
-### **Dren Buqa** 
-- **Backend Development:**
-  - Authentication routes and user management (`routes/auth_routes.py`)
-  - Main application routes (`routes/main_routes.py`)
-  - Admin functionality (`routes/admin_routes.py`)
-  - Flask app configuration (`app.py`)
-
-- **Frontend Development:**
-  - Homepage design and layout (`templates/home.html`)
-  - Product detail pages (`templates/product_detail.html`)
-  - Compare prices interface (`templates/compare_prices.html`)
-  - Authentication pages (Login & Signup) (`templates/login.html`, `templates/signup.html`)
-  - Error handling pages (`templates/404.html`, `templates/500.html`)
-  
-- **Styling & Design:**
-  - Complete CSS styling and theme (`static/style.css`)
-  - Responsive design implementation
-  - Bootstrap integration and customization
-  - Component styling and animations
-  
-- **Database Models:**
-  - Products data model (`models/products_model.py`)
-  - Stores data model (`models/stores_model.py`)
-  - Featured deals model (`models/featured_deals_model.py`)
-  - User model operations (`models/users_model.py`)
-  
-- **JavaScript Development:**
-  - Form validation and user input handling
-  - UI enhancements and interactions
-  - Product search and filtering
+### **Dren Buqa** - Full Stack Engineer & UI/UX Designer
+**Key Contributions:**
+*   **Auth System:** Built secure Login/Signup routes (`auth_routes.py`) and Admin capabilities (`admin_routes.py`).
+*   **Database Models:** Developed core data access layers for `products_model.py`, `stores_model.py`, and `featured_deals_model.py`.
+*   **Visual Design:** Created the unified visual identity (`style.css`), responsive layouts, and animations.
+*   **Frontend UI:** Designed the Home page (`home.html`), Login/Signup forms, and Comparison interface (`compare_prices.html`).
+*   **Error Handling:** Designed custom 404/500 pages for better user experience.
+*   **JavaScript:** Implemented form validation and interactive search filters.
 
 ---
 
-## Setup Instructions (First Time Only)
+## Setup Instructions
 
-Follow these steps **once** when you first clone the project or start working on it.
+### Prerequisites
+- Python 3.8 or higher
+- Git
 
 ### Step 1: Clone the Repository
-```bash
+```powershell
 git clone https://github.com/boraelshani/Smart-Grocery.git
-cd "Smart Grocery Project"
+cd Smart-Grocery
 ```
 
 ### Step 2: Create Virtual Environment
-This creates a local Python environment for the project.
-
+Run this command in PowerShell to create an isolated Python environment:
 ```powershell
-python -m venv .venv
+python -m venv venv
 ```
 
 ### Step 3: Activate Virtual Environment
+**Windows (PowerShell):**
+```powershell
+.\venv\Scripts\Activate.ps1
+```
 
-**Option A: PowerShell (Recommended)**
+### Step 4: Install Dependencies
+```powershell
+pip install -r requirements.txt
+```
+
+### Step 5: Configure Environment
+Create a `.env` file in the root directory with your secrets:
+```env
+MONGO_URI="mongodb+srv://<your-connection-string>"
+SECRET_KEY="your-secret-key"
+JWT_SECRET_KEY="your-jwt-secret"
+```
+
+### Step 6: Run the Application
+```powershell
+python app.py
+```
+Open your browser and navigate to `http://127.0.0.1:5000`.
+
+---
+
+## Project Structure (For Professor/Grading)
+
+*   **`app.py`**: The entry point. Initializes Flask, connects to MongoDB, and registers Blueprints.
+*   **`routes/`**: Contains the controllers (logic) for different parts of the app (`main`, `auth`, `admin`).
+*   **`models/`**: Handles all Database interactions. We use the **DAO (Data Access Object)** pattern here.
+*   **`templates/`**: HTML files using Jinja2 syntax to inject dynamic data.
+*   **`static/`**: CSS, Images, and JavaScript files.
+*   **`utils/`**: Helper functions for DB connections and common tasks (DRY principle).
+
 ```powershell
 .\.venv\Scripts\Activate.ps1
 ```

@@ -4,16 +4,16 @@ FEATURED DEALS MODEL - Promotional Offers & Special Sales
 ═══════════════════════════════════════════════════════════════════════════
 Purpose: Handle all featured deals and promotional offers
 Database Collection: 'featured_deals' in MongoDB
+
 Deal Types:
-- Multi-buy promotions (e.g., 2+1 free, buy 3 get 50% off)
+- Multi-buy promotions (e.g., 2+1 free)
 - Percentage discounts
 - Limited-time offers
-Functions:
-- Get all active deals
-- Get deals by store
-- Get deals by product
-- Claim deals to add to shopping list
-Used by: featured deals page, main dashboard, shopping list
+
+Key Functions:
+- List active deals
+- Create new deals (triggers user notifications)
+- Track deal claims (user engagement)
 ═══════════════════════════════════════════════════════════════════════════
 """
 from pymongo import MongoClient
@@ -27,52 +27,30 @@ load_dotenv()
 
 
 class FeaturedDealsModel:
-    # CONNECT TO MONGODB: Use Flask connection or create new one
     def __init__(self):
-        mongo_uri = os.getenv('MONGO_URI') or 'mongodb://localhost:27017/smart_grocery'
-        # sanitize common mistake: remove angle-brackets if user pasted URI with <...>
-        if '<' in mongo_uri or '>' in mongo_uri:
-            mongo_uri = mongo_uri.replace('<', '').replace('>', '')
-            try:
-                os.environ['MONGO_URI'] = mongo_uri
-            except Exception:
-                pass
-        database_name = os.getenv('DATABASE_NAME', None)
-        try:
-            from utils.db import mongo as flask_mongo
-        except Exception:
-            flask_mongo = None
+        # Database dependency injection
+        from utils.db import get_db
+        self.db = get_db()
+        self._client = None
 
-        if flask_mongo is not None and getattr(flask_mongo, 'db', None) is not None:
-            self.db = flask_mongo.db
-            self._client = None
-        else:
-            # use certifi CA bundle for TLS connections
-            try:
-                self._client = MongoClient(mongo_uri, tlsCAFile=certifi.where())
-            except TypeError:
-                self._client = MongoClient(mongo_uri)
-            if database_name:
-                self.db = self._client[database_name]
-            else:
-                try:
-                    self.db = self._client.get_default_database()
-                    if self.db is None:
-                        self.db = self._client['smart_grocery']
-                except Exception:
-                    self.db = self._client['smart_grocery']
 
     def get_deal_by_id(self, deal_id: str) -> Optional[dict]:
+        """
+        Retrieve a specific deal by its ID.
+        Handles both ObjectId strings and potential legacy/manual string IDs.
+        """
         from bson import ObjectId
         try:
+            # First attempt: Look up by standard MongoDB ObjectId
             doc = self.db.featured_deals.find_one({'_id': ObjectId(deal_id)})
             if doc and '_id' in doc:
                 doc['id'] = str(doc['_id'])
             return doc
         except Exception:
-            # Fallback to searching by id field if it's a string
+            # Fallback 1: Look for 'id' string field (sometimes used in seeded data)
             doc = self.db.featured_deals.find_one({'id': deal_id})
             if not doc:
+                # Fallback 2: Look for 'title' match (rare but possible in URL slugs)
                 doc = self.db.featured_deals.find_one({'title': deal_id})
             if doc and '_id' in doc:
                 doc['id'] = str(doc['_id'])
@@ -87,6 +65,7 @@ class FeaturedDealsModel:
         return docs
 
     def get_deals_count(self) -> int:
+        """Count total active deals."""
         return self.db.featured_deals.count_documents({})
 
     def get_latest_deals(self, limit: int = 10) -> List[dict]:
@@ -102,6 +81,7 @@ class FeaturedDealsModel:
         return docs
 
     def count_by_store(self, store_name: str) -> int:
+        """Count deals available at a specific store."""
         import re
         regex = {'$regex': re.escape(store_name), '$options': 'i'}
         return self.db.featured_deals.count_documents({
@@ -112,6 +92,7 @@ class FeaturedDealsModel:
         })
 
     def find_by_store(self, store_name: str) -> List[dict]:
+        """List deals from a specific store."""
         import re
         regex = {'$regex': re.escape(store_name), '$options': 'i'}
         docs = list(self.db.featured_deals.find({
@@ -136,26 +117,19 @@ class FeaturedDealsModel:
             doc['id'] = str(doc['_id'])
         return doc
 
-    def get_deal_by_id(self, id_str: str) -> Optional[dict]:
-        # GET SINGLE DEAL by MongoDB ID (used for deal detail page)
-        try:
-            doc = self.db.featured_deals.find_one({'_id': ObjectId(id_str)})
-            if not doc:
-                return None
-            doc['id'] = str(doc['_id'])
-            return doc
-        except Exception:
-            return None
-
     def insert_deal(self, doc: dict) -> str:
+        """
+        Add a new deal to the database.
+        Triggers a notification broadcast to all users about the new deal.
+        """
         # ADD NEW DEAL to database (admin only)
         if 'created_at' not in doc:
             from datetime import datetime
-            doc['created_at'] = datetime.utcnow()
+            doc['created_at'] = datetime.utcnow() # Timestamp for sorting
         res = self.db.featured_deals.insert_one(doc)
         deal_id = str(res.inserted_id)
         
-        # BROADCAST NOTIFICATION to all users
+        # BROADCAST NOTIFICATION: Alert all users about the new deal
         try:
             from models.notifications_model import NotificationsModel
             from models.users_model import get_all_users
@@ -163,6 +137,8 @@ class FeaturedDealsModel:
             nm = NotificationsModel()
             users = get_all_users()
             
+            # This loop sends a personal notification to every registered user
+            # In a massive scale app, this would be a background job/queue task
             for user in users:
                 user_email = user.get('email')
                 if not user_email:
@@ -217,3 +193,4 @@ def get_deal_by_title(title: str) -> Optional[dict]:
 
 def insert_deal(doc: dict):
     return featured_deals_model.insert_deal(doc)
+

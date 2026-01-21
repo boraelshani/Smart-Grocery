@@ -1769,7 +1769,7 @@ input[type=number] {
 
 /* Modal Content Background - Strong Purple (Matches Create List Modal) */
 #globalListSelectorModal .modal-content {
-  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
   border: 3px solid #7c3aed;
 }
 

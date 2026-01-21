@@ -10,68 +10,13 @@ from flask import render_template, request, redirect, url_for, session, jsonify,
 from . import auth_bp
 import re
 import os
-import jwt
-from datetime import datetime, timedelta
 from bson import Decimal128
 from models import models as m
 from models.users_model import users_model
 from models.products_model import products_model
 from models.featured_deals_model import featured_deals_model
 from models.multibuy_offers_model import multibuy_offers_model
-
-
-# ═══════════════════════════════════════════════════════════════════════════
-# HELPER FUNCTIONS
-# ═══════════════════════════════════════════════════════════════════════════
-
-def _get_user_email():
-    """
-    Get the current user's email from Flask session.
-    Fallback to mock user data for development/testing.
-    Returns: User email string or None
-    """
-    # Prefer JWT if provided (Authorization: Bearer or auth_token cookie)
-    token = _get_token_from_request()
-    if token:
-        decoded = _decode_jwt(token)
-        if decoded and decoded.get('sub'):
-            return decoded.get('sub')
-
-    email = session.get('user')
-    if not email and getattr(m, 'users', None):
-        email = 'user1@example.com' if 'user1@example.com' in m.users else next(iter(m.users.keys()), None)
-    return email
-
-
-def _jwt_secret():
-    return current_app.config.get('JWT_SECRET_KEY') or os.environ.get('JWT_SECRET_KEY') or current_app.secret_key
-
-
-def _generate_jwt(email: str) -> str:
-    payload = {
-        'sub': email,
-        'iat': datetime.utcnow(),
-        'exp': datetime.utcnow() + timedelta(hours=6)
-    }
-    return jwt.encode(payload, _jwt_secret(), algorithm='HS256')
-
-
-def _decode_jwt(token: str):
-    try:
-        return jwt.decode(token, _jwt_secret(), algorithms=['HS256'])
-    except Exception as e:
-        print(f'[JWT] decode failed: {e}')
-        return None
-
-
-def _get_token_from_request():
-    auth_header = request.headers.get('Authorization', '')
-    if isinstance(auth_header, str) and auth_header.lower().startswith('bearer '):
-        return auth_header.split(' ', 1)[1].strip()
-    cookie_token = request.cookies.get('auth_token')
-    if cookie_token:
-        return cookie_token
-    return None
+from utils import helpers
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -94,7 +39,7 @@ def login():
         ok = users_model.authenticate(email, password)
         print(f'[LOGIN] auth result={ok}')
         if ok:
-            token = _generate_jwt(email)
+            token = helpers.generate_jwt(email)
             # JSON clients get the token directly
             if request.is_json or request.accept_mimetypes.best == 'application/json':
                 return jsonify({'token': token, 'email': email}), 200
@@ -171,7 +116,7 @@ def signup():
 
 @auth_bp.route('/shopping-list/add', methods=['POST'])
 def add_shopping_item():
-    email = _get_user_email()
+    email = helpers.get_user_email()
     if not email:
         return jsonify({'error': 'no_user_available'}), 400
     data = request.get_json() or request.form
@@ -342,7 +287,7 @@ def add_shopping_item():
 
 @auth_bp.route('/shopping-list/remove', methods=['POST'])
 def remove_shopping_item():
-    email = _get_user_email()
+    email = helpers.get_user_email()
     if not email:
         return jsonify({'error': 'no_user_available'}), 400
     data = request.get_json() or request.form
@@ -363,7 +308,7 @@ def update_shopping_list_api():
     Persists the ordered list of full item objects (keeps price/image/qty/purchased).
     Backwards-compatible with older string-only lists.
     """
-    email = _get_user_email()
+    email = helpers.get_user_email()
     if not email:
         return jsonify({'error': 'no_user_available'}), 400
     data = request.get_json() or {}
@@ -391,7 +336,7 @@ def update_shopping_list_api():
 
 @auth_bp.route('/shopping-list/clear', methods=['POST'])
 def clear_shopping_list():
-    email = _get_user_email()
+    email = helpers.get_user_email()
     if not email:
         return jsonify({'error': 'no_user_available'}), 400
     try:
@@ -414,7 +359,7 @@ def logout():
 
 @auth_bp.route('/profile/update', methods=['POST'])
 def api_update_profile():
-    email = _get_user_email()
+    email = helpers.get_user_email()
     if not email:
         return jsonify({'error': 'not_authenticated'}), 401
         

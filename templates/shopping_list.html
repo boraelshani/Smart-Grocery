@@ -468,11 +468,6 @@
           <li class="nav-item">
             <a class="nav-link d-flex align-items-center position-relative {% if 'shopping-list' in request.path or request.endpoint == 'main.shopping_list' %}active{% endif %}" href="{{ url_for('main.shopping_list') }}">
               <i class="bi bi-list-check me-1"></i> Lists
-              {% if (shopping_list_count or 0) > 0 %}
-              <span class="position-absolute badge rounded-pill bg-danger" style="font-size: 0.65rem; padding: 0.45em 0.7em; top: -5px; right: -10px; border: 2px solid white; box-shadow: 0 4px 10px rgba(220, 53, 69, 0.4); min-width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;">
-                {{ shopping_list_count }}
-              </span>
-              {% endif %}
             </a>
           </li>
           <li class="nav-item ms-lg-1">
@@ -701,8 +696,10 @@
 						data-item-id="{{ item_id }}" data-name="{{ name }}" data-price="{{ raw_price }}"
 						data-qty="{{ qty }}" data-store="{{ store }}" data-image="{{ img }}"
 						data-offer-json='{{ offer_obj|tojson|forceescape if offer_obj is not none else "" }}'
+						data-tier-json='{{ it.get("discount_tiers")|tojson|forceescape if it is mapping and it.get("discount_tiers") else "" }}'
 						data-offer-type="{{ (offer_obj.type if offer_obj is not none and offer_obj.type) or ('buyXgetY' if offer_x and offer_y else '') }}"
-						data-offer-x="{{ offer_x }}" data-offer-y="{{ offer_y }}">
+						data-offer-x="{{ offer_x }}" data-offer-y="{{ offer_y }}"
+						{% if item_id %}ondblclick="window.location.href='{{ url_for('main.product_detail', product_id=item_id) }}'"{% endif %}>
 						
 						<!-- Premium Checkbox Wrapper -->
 						<div class="form-check p-0 m-0">
@@ -787,7 +784,6 @@
 			</div>
 
 			{% if items and items|length > 0 %}
-			<!-- Footer actions removed per request -->
 			{% endif %}
 		</div>
 	</section>
@@ -1116,22 +1112,32 @@
 				try {
 					const tiers = JSON.parse(tierJson);
 					if (Array.isArray(tiers) && tiers.length > 0) {
-						// Find applicable tier
-						let discountPercent = 0;
+                        // Bundle Logic: Sort by min_qty DESC to find largest bundle first
+                        tiers.sort((a, b) => (b.min_qty || 0) - (a.min_qty || 0));
+                        
+						// Find applicable bundle tier
+						let activeTier = null;
 						for (let tier of tiers) {
 							const minQty = tier.min_qty || 0;
-							const maxQty = tier.max_qty;  // undefined = no upper limit
-
+                            // Ignore max_qty for bundle logic unless handled specifically, 
+                            // typically bundle = sets of X.
 							if (qty >= minQty) {
-								if (maxQty === undefined || qty <= maxQty) {
-									discountPercent = tier.discount_percent || 0;
-								}
+                                activeTier = tier;
+                                break; 
 							}
 						}
 
-						if (discountPercent > 0) {
+						if (activeTier) {
+                            const bundleSize = activeTier.min_qty || 1;
+                            const discountPercent = activeTier.discount_percent || 0;
+                            
+                            // Apply discount only to complete sets/bundles
+                            const bundles = Math.floor(qty / bundleSize);
+                            const discountedCount = bundles * bundleSize;
+                            const remainder = qty % bundleSize;
+                            
 							const effectivePrice = unitPrice * (1 - discountPercent / 100);
-							return effectivePrice * qty;
+							return (effectivePrice * discountedCount) + (unitPrice * remainder);
 						}
 					}
 				} catch (e) {
@@ -1185,12 +1191,6 @@
 			if (remainingEl) remainingEl.textContent = `€${remaining.toFixed(2)}`;
 			if (completedCountEl) completedCountEl.textContent = completedCount;
 			if (itemsCountEl) itemsCountEl.textContent = totalCount;
-
-			// Also update legacy elements if they exist
-			const legacyValueEl = document.getElementById('total-value');
-			const legacyPriceEl = document.getElementById('total-price');
-			if (legacyValueEl) legacyValueEl.textContent = `€${planned.toFixed(2)}`;
-			if (legacyPriceEl) legacyPriceEl.textContent = planned.toFixed(2);
 		}
 
 		function updateListStats() {
@@ -1690,31 +1690,6 @@
 				});
 		}
 
-		// Duplicate list
-		function duplicateList(listId) {
-			event.stopPropagation();
-			fetch('/api/list/duplicate', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ list_id: listId })
-			})
-				.then(r => r.json())
-				.then(data => {
-					if (data.success) {
-						window.location.reload();
-					}
-				});
-		}
-
-		// Share list
-		function shareList(listId) {
-			event.stopPropagation();
-			const shareUrl = `${window.location.origin}/shared-list/${listId}`;
-			navigator.clipboard.writeText(shareUrl).then(() => {
-				showNotification('Share link copied to clipboard!', 'success');
-			});
-		}
-
 		// Toggle item completion
 		function toggleItemComplete(checkbox) {
 			const row = checkbox.closest('.item-row');
@@ -1889,12 +1864,6 @@
 			clearAllItems();
 		}
 
-		// Save order
-		function saveOrder() {
-			saveListState();
-			showNotification('List order saved!', 'success');
-		}
-
 		// Save list state
 		function saveListState() {
 			const items = Array.from(document.querySelectorAll('.item-row')).map(row => {
@@ -1902,6 +1871,12 @@
 				try {
 					const offerJson = row.getAttribute('data-offer-json');
 					if (offerJson) offer = JSON.parse(offerJson);
+				} catch (e) { }
+
+				let discountTiers = null;
+				try {
+					const tierJson = row.getAttribute('data-tier-json');
+					if (tierJson) discountTiers = JSON.parse(tierJson);
 				} catch (e) { }
 
 				return {
@@ -1912,6 +1887,7 @@
 					store: row.getAttribute('data-store') || '',
 					image: row.getAttribute('data-image') || '',
 					offer: offer,
+					discount_tiers: discountTiers,
 					special_offer: row.getAttribute('data-special-offer') || ''
 				};
 			});
@@ -2066,74 +2042,6 @@
 			}
 		});
 
-		// Show list selector modal when adding an item
-		function showListSelector(item) {
-			pendingItemToAdd = item;
-			const modalEl = document.getElementById('listSelectorModal');
-			if (!modalEl) return;
-			const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
-			const body = document.getElementById('listSelectorBody');
-
-			if (body) body.innerHTML = '';
-
-			// Fetch all lists from the current page data
-			const listTabs = document.querySelectorAll('[data-list-id]');
-
-			if (listTabs.length === 0) {
-				if (body) body.innerHTML = '<p class="text-muted">No lists available. Create a list first.</p>';
-				modal.show();
-				return;
-			}
-
-			listTabs.forEach(tab => {
-				const listId = tab.getAttribute('data-list-id');
-				if (listId === 'all') return; // Skip "All" if it exists
-				const listName = tab.querySelector('h5')?.textContent || 'Unknown List';
-				const itemsCountText = tab.querySelector('.header-chip span:nth-child(2)')?.textContent || '0';
-				const isActive = tab.classList.contains('active');
-
-				const card = document.createElement('div');
-				card.className = 'card mb-2 list-option cursor-pointer';
-				card.onclick = () => addItemToList(listId);
-				card.innerHTML = `
-			<div class="card-body p-3">
-				<div class="d-flex justify-content-between align-items-center">
-					<div>
-						<h6 class="mb-1 text-premium-dark" style="font-weight: 700;">
-							<i class="bi bi-list-ul me-2 text-premium-purple"></i>${listName.trim()}
-						</h6>
-						<small class="text-muted">${itemsCountText} items</small>
-					</div>
-					<div class="text-premium-purple">
-						<i class="bi bi-plus-circle-fill fs-5"></i>
-					</div>
-				</div>
-			</div>
-		`;
-				if (body) body.appendChild(card);
-			});
-
-			modal.show();
-		}
-
-		function addItemToList(listId) {
-			if (!pendingItemToAdd) {
-				showNotification('No item to add', 'danger');
-				return;
-			}
-
-			apiPostJson('/api/list/add-item', { item: pendingItemToAdd, list_id: listId })
-				.then(res => {
-					if (res && res.success) {
-						showNotification(`${pendingItemToAdd.name} added to list`, 'success');
-						safeReload();
-					} else {
-						showNotification(res?.error || 'Could not add item', 'danger');
-					}
-				})
-				.catch(err => showNotification('Error adding item', 'danger'));
-		}
-
 		// Show remove item confirmation modal
 		function showRemoveItemConfirm(btn, itemName) {
 			const itemNameEl = document.getElementById('removeItemName');
@@ -2211,26 +2119,6 @@
 			printList();
 		}
 	</script>
-
-	<!-- List Selector Modal -->
-	<div class="modal fade" id="listSelectorModal" tabindex="-1" aria-hidden="true">
-		<div class="modal-dialog modal-dialog-centered">
-			<div class="modal-content">
-				<div class="modal-header">
-					<h5 class="modal-title">
-						<i class="bi bi-diagram-3 me-2"></i>Select Shopping List
-					</h5>
-					<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-				</div>
-				<div class="modal-body" id="listSelectorBody">
-					<!-- List options will be populated here -->
-				</div>
-				<div class="modal-footer">
-					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-				</div>
-			</div>
-		</div>
-	</div>
 </body>
 
 </html>

@@ -1,93 +1,132 @@
+"""
+SEED NOTIFICATIONS SCRIPT
+Generates rich, realistic notifications based on actual products in the database.
+Also creates a system "Welcome" message for all users.
+"""
+
 import os
 import sys
+import random
 from datetime import datetime
-from pymongo import MongoClient
 from bson import ObjectId
 from dotenv import load_dotenv
-import certifi
 
 # Add project root to path
-sys.path.append(os.getcwd())
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from utils.db import get_db
 
 load_dotenv()
 
-def migrate_and_seed_notifications():
-    if not os.environ.get('SSL_CERT_FILE'):
-        os.environ['SSL_CERT_FILE'] = certifi.where()
-
-    mongo_uri = os.getenv('MONGO_URI')
-    client = MongoClient(mongo_uri, tlsCAFile=certifi.where())
-    db = client.get_database()
-    
-    # 1. Migrate existing notification types to match template IDs
-    print("Migrating existing notification types...")
-    res = db.notifications.update_many({'type': 'deal'}, {'$set': {'type': 'deal_alert'}})
-    print(f"Updated {res.modified_count} 'deal' -> 'deal_alert'")
-    
-    res = db.notifications.update_many({'type': 'new_deal'}, {'$set': {'type': 'deal_alert'}})
-    print(f"Updated {res.modified_count} 'new_deal' -> 'deal_alert'")
-    
-    # 2. Get all users
-    users = list(db.users.find({}, {'email': 1}))
-    if not users:
-        print("No users found. Exiting.")
+def seed_notifications():
+    db = get_db()
+    if not db:
+        print("Error: Could not connect to database")
         return
 
-    # 3. Get some products and deals to use as samples
-    products = list(db.products.find().limit(5))
-    deals = list(db.featured_deals.find().limit(3))
-    
-    print(f"Seeding notifications for {len(users)} users...")
-    
-    notifs_to_insert = []
-    for user in users:
-        email = user.get('email')
-        if not email: continue
-        
-        # System Notification
-        notifs_to_insert.append({
-            'user_email': email,
-            'type': 'system',
-            'title': 'Welcome to Alert Center!',
-            'message': 'You will now receive notifications about price drops, new deals, and profile updates here.',
-            'priority': 'normal',
-            'read': False,
-            'created_at': datetime.utcnow()
-        })
-        
-        # Product/Price Drop (if we have products)
-        for p in products:
-            notifs_to_insert.append({
-                'user_email': email,
-                'type': 'price_drop',
-                'title': f"Price Drop: {p.get('name')}",
-                'message': f"Great news! {p.get('name')} is now cheaper at {p.get('stores', [{}])[0].get('store', 'your favorite store')}.",
-                'product_id': p['_id'],
-                'priority': 'high',
-                'read': False,
-                'created_at': datetime.utcnow()
-            })
-            break # Just one per user
-            
-        # Deal Alert (if we have deals)
-        for d in deals:
-            notifs_to_insert.append({
-                'user_email': email,
-                'type': 'deal_alert',
-                'title': f"New Deal: {d.get('title')}",
-                'message': f"Flash sale! {d.get('description', 'Check out this featured deal.')}",
-                'priority': 'high',
-                'read': False,
-                'created_at': datetime.utcnow()
-            })
-            break # Just one per user
+    # 1. OPTIONAL: Migration for legacy data (harmless to run if no old data exists)
+    print("Ensuring notification types are consistent...")
+    db.notifications.update_many({"type": "deal"}, {"$set": {"type": "deal_alert"}})
+    db.notifications.update_many({"type": "new_deal"}, {"$set": {"type": "deal_alert"}})
 
-    if notifs_to_insert:
-        db.notifications.delete_many({}) # Clear existing to avoid clutter during fix
-        db.notifications.insert_many(notifs_to_insert)
-        print(f"Successfully seeded {len(notifs_to_insert)} notifications.")
-    else:
-        print("No notifications to insert.")
+    # 2. Fetch REAL products from the database
+    products = list(db.products.find().limit(20))
+    if not products:
+        print("No products found in DB. Please run product import first.")
+        # Create at least one system message so the user sees something
+        products = []
+
+    # 3. Get all users
+    users = list(db.users.find({}, {"email": 1}))
+    if not users:
+        print("No users found. Creating a demo user...")
+        # (Optional: create a user logic, but lets just skip)
+        return
+
+    print(f"Generating notifications for {len(users)} users...")
+    count = 0
+
+    for user in users:
+        email = user.get("email")
+        if not email: continue
+
+        # A. System Welcome Message (idempotent-ish: check if exists or just add)
+        # We just add it. User can delete it.
+        welcome = {
+            "user_email": email,
+            "type": "system",
+            "title": "Welcome to Smart Grocery!",
+            "message": "We will notify you here about price drops and new deals.",
+            "priority": "normal",
+            "read": False,
+            "created_at": datetime.utcnow()
+        }
+        db.notifications.insert_one(welcome)
+        count += 1
+
+        # B. Generate Rich Product Notifications
+        if products:
+            # Shuffle products to make it look interesting
+            random.shuffle(products)
+            selected_products = products[:3] 
+
+            for p in selected_products:
+                # Extract info
+                p_id = p["_id"]
+                name = p.get("name", "Unknown Product")
+                image = p.get("image")
+                
+                # Handle price safely (could be string or number)
+                raw_price = p.get("price_val") or p.get("price")
+                try: 
+                    price = float(str(raw_price).replace("", "").replace("$", "")) if raw_price else 0
+                except: 
+                    price = 0
+                
+                # Find a store name
+                store_name = "Supermarket"
+                if p.get("stores") and len(p["stores"]) > 0:
+                    store_name = p["stores"][0].get("store", store_name)
+                
+                # Randomize Offer Type
+                offer_types = ["20% OFF", "Price Drop", "New Arrival", "Best Value"]
+                offer = random.choice(offer_types)
+                
+                notif_type = "deal_alert"
+                old_price = None
+                
+                if offer == "Price Drop":
+                    notif_type = "price_drop"
+                    old_price = price * 1.2 if price else 0
+                    message = f"Price dropped to {price:.2f}! Was {old_price:.2f}."
+                else:
+                    message = f"Check out this great deal on {name} at {store_name}."
+
+                notification = {
+                    "user_email": email,
+                    "type": notif_type,
+                    "title": f"{offer}: {name}",
+                    "message": message,
+                    "priority": "high",
+                    "read": False,
+                    "product_id": str(p_id), # Link to REAL product
+                    
+                    # Rich Card Fields
+                    "product_name": name,
+                    "product_image": image,
+                    "price": price,
+                    "old_price": old_price,
+                    "store_name": store_name,
+                    "offer_name": offer,
+                    
+                    "created_at": datetime.utcnow()
+                }
+                
+                db.notifications.insert_one(notification)
+                count += 1
+
+    print(f"Successfully generated {count} notifications.")
 
 if __name__ == "__main__":
-    migrate_and_seed_notifications()
+    seed_notifications()
+
