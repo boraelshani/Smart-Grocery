@@ -62,11 +62,16 @@ input[type=number] {
 .product-description-clamp {
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
   min-height: 2.8em; /* Ensures consistent card height if description is short */
   line-height: 1.4;
+}
+
+.cursor-pointer {
+  cursor: pointer;
 }
 
 .product-link:hover {

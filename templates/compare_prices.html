@@ -548,7 +548,8 @@ Data: Fetches all products and their store prices from database
                         src="{{ prefer_processed(s.get('logo') or s.get('store_image') or url_for('static', filename='placeholder.svg')) }}"
                         alt="{{ s.get('store') or s.get('name') }}"
                         style="width: 24px; height: 24px; object-fit: contain; border-radius: 4px; background: white; padding: 2px; border: 1px solid #eee;"
-                        onerror="this.src='{{ url_for('static', filename='placeholder.svg') }}'">
+                        data-fallback-src="{{ url_for('static', filename='placeholder.svg') }}"
+                        onerror="this.src=this.dataset.fallbackSrc">
                       <div class="lh-sm overflow-hidden">
                         <span class="fw-semibold text-truncate d-block" style="color: #7c3aed;">{{ s.get('store') or
                           s.get('name')

@@ -304,7 +304,7 @@ Data: Fetches from notifications collection
           <li class="nav-item ms-lg-1">
             <a class="nav-link nav-icon-btn position-relative {% if 'notifications' in request.path %}active{% endif %}" href="{{ url_for('main.notifications_page') }}" aria-label="Notifications">
               <i class="bi bi-bell fs-5"></i>
-              <span class="position-absolute badge rounded-pill bg-danger" id="nav-unread-badge" style="font-size: 0.65rem; padding: 0.45em 0.7em; top: -5px; right: -10px; border: 2px solid white; box-shadow: 0 4px 10px rgba(220, 53, 69, 0.4); min-width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; {% if (unread_notifications_count or 0) <= 0 %}display: none !important;{% endif %}">
+              <span class="position-absolute badge rounded-pill bg-danger {% if (unread_notifications_count or 0) > 0 %}d-flex{% else %}d-none{% endif %} align-items-center justify-content-center" id="nav-unread-badge" style="font-size: 0.65rem; padding: 0.45em 0.7em; top: -5px; right: -10px; border: 2px solid white; box-shadow: 0 4px 10px rgba(220, 53, 69, 0.4); min-width: 22px; height: 22px;">
                 {{ unread_notifications_count }}
               </span>
             </a>
