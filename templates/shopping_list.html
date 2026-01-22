@@ -3,6 +3,13 @@
 
 <head>
 	<!-- 
+	===========================================
+	CATEGORY: HEAD SECTION
+	- Loads external libraries (Bootstrap).
+	- Links to our custom 'style.css'.
+	===========================================
+	-->
+	<!-- 
 	═══════════════════════════════════════════════════════════════════════════
 	SHOPPING LIST PAGE
 	═══════════════════════════════════════════════════════════════════════════
@@ -33,11 +40,13 @@
 		 the CSS file if it changes on the server. -->
 	<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v={{ range(1, 99999) | random }}">
 
+	
 	<!-- 
-	═══════════════════════════════════════════════════════════════════════════
-	PAGE-SPECIFIC STYLES
-	═══════════════════════════════════════════════════════════════════════════
-	These styles only apply to the shopping list page cards and layout animations.
+	===========================================
+	CATEGORY: CSS STYLES
+	- Custom styling just for the shopping list.
+	- Includes styles for: cards, chips, search bars, and the drag-and-drop effects.
+	===========================================
 	-->
 	<style>
 		/* Card Container: Interactive card that holds a single shopping list info */
@@ -131,6 +140,11 @@
 		}
 
 		.active-list-container {
+			/* GLASSMORPHISM EFFECT: 
+			   - background: semi-transparent white
+			   - backdrop-filter: blurs what is behind this element
+			   - This creates a modern 'frosted glass' look.
+			*/
 			background: rgba(255, 255, 255, 0.85);
 			backdrop-filter: blur(20px);
 			border-radius: 32px;
@@ -140,6 +154,10 @@
 		}
 
 		.item-row {
+			/* SMOOTH TRANSITIONS:
+			   - Changes to transform (movement), shadow, and opacity happen over 0.2 seconds.
+			   - Makes the UI feel responsive and polished.
+			*/
 			transition: transform 0.2s ease, box-shadow 0.2s ease, border 0.2s ease, opacity 0.2s ease;
 			border-left: 4px solid transparent;
 			padding: 1rem 1.25rem !important;
@@ -441,6 +459,13 @@
 	</style>
 </head>
 
+  ===========================================
+  CATEGORY: NAVIGATION BAR
+  - The top menu (Home, Stores, Deals, etc.).
+  - Uses Jinja2 checks to highlight the 'Lists' tab as active.
+  ===========================================
+  -->
+  <!-- 
 <body>
   <!-- Navigation -->
   <nav class="navbar navbar-expand-lg navbar-premium">
@@ -493,6 +518,14 @@
             </a>
           </li>
           <li class="nav-item ms-lg-2">
+  
+  <!-- 
+  ===========================================
+  CATEGORY: HERO SECTION
+  - The "My Shopping Lists" title area.
+  - Contains the "Create New List" button that triggers a modal.
+  ===========================================
+  -->
             <a class="nav-link nav-icon-btn nav-profile-btn {% if 'profile' in request.path %}active{% endif %}" href="{{ url_for('main.profile') }}" aria-label="User Profile">
               <i class="bi bi-person-circle fs-5"></i>
             </a>
@@ -508,7 +541,16 @@
     <div class="bg-shape shape-2"></div>
     <div class="bg-shape shape-3" style="position: absolute; bottom: 10%; left: 30%; width: 60px; height: 60px; background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(5px); border-radius: 20%; animation: float 10s infinite ease-in-out; animation-delay: -5s;"></div>
     
-    <div class="container position-relative" style="z-index: 2;">
+ 
+	<!-- 
+	===========================================
+	CATEGORY: LISTS TABS (HORIZONTAL SCROLL)
+	- Shows all the user's lists as cards.
+	- Loops through 'all_lists' using Jinja2 logic.
+	- Users click these cards to switch between lists.
+	===========================================
+	-->
+	   <div class="container position-relative" style="z-index: 2;">
       <div class="d-flex justify-content-between align-items-center flex-wrap gap-4">
         <div class="text-white">
           <h1 class="display-5 fw-800 mb-1" style="font-weight: 800;">My Shopping Lists</h1>
@@ -517,6 +559,11 @@
         <button class="btn btn-premium-style shadow-lg" 
             style="background: white !important; color: #7c3aed !important; border: none !important; font-size: 1.1rem; padding: 12px 28px !important;"
             data-bs-toggle="modal" data-bs-target="#createListModal">
+          <!-- 
+             MODAL TRIGGER:
+             - data-bs-toggle="modal": Tells Bootstrap this button opens a modal.
+             - data-bs-target="#createListModal": Tells Bootstrap WHICH modal to open (via ID).
+          -->
           <i class="bi bi-plus-circle-fill me-2"></i>Create New List
         </button>
       </div>
@@ -533,6 +580,11 @@
 				style="min-width: 320px; position: relative;"
 				data-list-id="{{ shopping_list.id }}" onclick="switchList('{{ shopping_list.id }}')">
 				<div class="p-4 d-flex flex-column gap-3">
+					<!-- 
+					JINJA2 NAMESPACE TRICK:
+					- In Jinja2 loops, normal variables reset every iteration. 
+					- We use 'namespace' to create a variable that survives inside the loop (e.g., counting 'new' items).
+					-->
 					{% set ns = namespace(new_count=0) %}
 					{% if list_items_list is iterable and list_items_list is not string and list_items_list is not mapping %}
 						{% for it in list_items_list %}
@@ -570,6 +622,15 @@
 							<span class="muted ms-1">Items</span>
 						</span>
 						<span class="header-chip price-chip">
+		
+		<!-- 
+		===========================================
+		CATEGORY: ACTIVE LIST VIEW
+		- The main container for the items in the selected list.
+		- Includes the list title, total price summary, and the list of items.
+		- Uses JavaScript to populate items dynamically (via displayListItems function).
+		===========================================
+		-->
 							<i class="bi bi-currency-euro"></i><span>{{ shopping_list.estimated_total|replace('€','')|default('0.00', true) }}</span>
 						</span>
 					</div>
@@ -674,6 +735,11 @@
 					{% set raw_price = (it.price_val if it.price_val is defined else (it.price if it.price is defined
 					else '')) %}
 					{% set raw_price = (raw_price|string).replace('$','').replace('€','').replace(',','') if raw_price
+					<!-- 
+					ROBUST DATA EXTRACTION:
+					- The backend might send data in different formats (direct properties or nested 'offer' objects).
+					- These checks ensure we find the discount info (Buy X Get Y) regardless of data shape.
+					-->
 					is not none else '' %}
 					{% set unit = (it.price_val if it.price_val is defined else (raw_price|float if raw_price is defined
 					else 0.0)) %}
@@ -699,7 +765,13 @@
 					{% elif it.offer_y is defined %}
 						{% set offer_y = it.offer_y %}
 					{% elif it.multibuy_free is defined %}
-						{% set offer_y = it.multibuy_free %}
+						!-- 
+					ITEM ROW CONTAINER:
+					- draggable="true": Enables HTML5 Drag & Drop API.
+					- data-attributes: We store raw data (JSON strings, IDs) directly in the HTML tag.
+					  JavaScript reads these later with 'getAttribute()' to perform calculations (like price) without asking the server again.
+					-->
+					<{% set offer_y = it.multibuy_free %}
 					{% elif it.free_quantity is defined %}
 						{% set offer_y = it.free_quantity %}
 					{% endif %}
@@ -800,6 +872,15 @@
 		</div>
 	</section>
 
+	<!-- 
+	===========================================
+	CATEGORY: MODALS
+	- Hidden pop-up windows.
+	- Used for: Creating Grid, Renaming, Deleting, and Confirmations.
+	- They stay hidden until a button is clicked (triggered by ID).
+	- Bootstrap 'modal fade' class handles the animation.
+	===========================================
+	-->
 	<!-- Create List Modal -->
 	<div class="modal fade" id="createListModal" tabindex="-1">
 		<div class="modal-dialog modal-dialog-centered" style="max-width: 420px;">
@@ -976,6 +1057,14 @@
 						<i class="bi bi-download fs-5"></i>
 					</div>
 					<h5 class="modal-title fw-800 text-success m-0">Export List?</h5>
+	
+	<!-- 
+	===========================================
+	CATEGORY: JAVASCRIPT LOGIC
+	- Handles the interactive parts without reloading the page.
+	- Functions to: switch lists, calculate totals, drag-and-drop, and API calls.
+	===========================================
+	-->
 					<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
 				</div>
 				<div class="modal-body px-4 pt-4 pb-4">
@@ -1085,10 +1174,16 @@
 				} catch (e) { }
 			}
 
-			// Fallback to regex on string description
-			const offerStr = row.getAttribute('data-offer') || '';
-			const m = offerStr.match(/(\d+)\s*\+\s*(\d+)/);
-			if (m) return { type: 'buyXgetY', x: parseInt(m[1], 10) || 0, y: parseInt(m[2], 10) || 0 };
+			// CORE PRICING LOGIC (The Brain):
+			// Calculates the final price for a row based on Quantity, Unit Price, and Active Discounts.
+			
+			const unitPrice = parseFloat(row.getAttribute('data-price') || 0) || 0;
+			const qty = parseInt(row.getAttribute('data-qty') || 1, 10) || 1;
+			const offerObj = parseOffer(row);
+
+			// SCENARIO 1: Multi-Buy Offer (e.g., "Buy 2 Get 1 Free")
+			// Logic: We define a 'cycle' (e.g., 3 items). Inside each cycle, you pay for X items.
+			// We calculate how many full cycles fit in the user's quantity.			if (m) return { type: 'buyXgetY', x: parseInt(m[1], 10) || 0, y: parseInt(m[2], 10) || 0 };
 			return null;
 		}
 
@@ -1110,7 +1205,11 @@
 
 					// Full cycles: pay for x items, free for y items per cycle
 					let total = fullCycles * x * unitPrice;
-
+SCENARIO 2: Tiered Discounts (e.g., "Buy 5+ for 10% off")
+			// Logic: We check if the quantity meets the minimum requirement ('minQty').
+			// If it does, we apply the discount percentage to the bundles.
+			
+			// 
 					// Remainder: pay for as many as we need (but not more than x)
 					total += Math.min(remainder, x) * unitPrice;
 
@@ -1215,7 +1314,7 @@
 			if (isSwitchingList) return;
 			isSwitchingList = true;
 
-			// Save this list as the last opened list
+			// UX IMPROVEMENT: Remember which list was open so we can re-open it on refresh (localStorage).
 			localStorage.setItem('lastOpenedListId', listId);
 
 			// Update active tab styling
@@ -1223,6 +1322,7 @@
 				tab.classList.remove('active');
 				tab.classList.remove('enlarged');
 			});
+			
 			const targetCard = document.querySelector(`.list-card[data-list-id="${listId}"]`);
 			if (targetCard) {
 				targetCard.classList.add('active');
@@ -1235,11 +1335,13 @@
 				target.scrollIntoView({ behavior: 'auto', block: 'start' });
 			}
 
-			// Fetch and display list items
+			// AJAX CALL (Asynchronous JavaScript and XML/JSON):
+			// We ask the server for the items in this list WITHOUT reloading the whole page.
+			// 'fetch' returns a Promise (future result).
 			fetch(`/api/list/${listId}/items`)
 				.then(r => {
 					if (!r.ok) throw new Error('Network response was not ok');
-					return r.json();
+					return r.json(); // Convert response text to JSON object
 				})
 				.then(data => {
 					if (data.success) {
@@ -1301,7 +1403,10 @@
 		}
 
 		// Run restore on page load
-		if (document.readyState === 'loading') {
+		i// DATA PROCESSING: 
+			// Users might find the same item twice. This function combines them.
+			// It uses an object 'merged' as a dictionary to track unique items (Key: "name__store").
+			f (document.readyState === 'loading') {
 			document.addEventListener('DOMContentLoaded', restoreLastOpenedList);
 		} else {
 			restoreLastOpenedList();
@@ -1341,6 +1446,10 @@
 						category: item.category || 'Uncategorized',
 						price_val: incomingPrice,
 						price: incomingPrice
+			// DOM MANIPULATION:
+			// This function takes raw JSON data and turns it into HTML elements (Strings).
+			// It then inserts this HTML into the page using .innerHTML.
+			
 					};
 				}
 			});
@@ -2001,10 +2110,12 @@
 
 		// Drag and drop
 		let draggedItem = null;
+		// EVENT LISTENERS: We attach functions to run when specific events happen (dragstart, drop, etc.)
 		document.addEventListener('dragstart', function (e) {
 			const itemRow = e.target.closest('.item-row');
 			if (itemRow) {
 				draggedItem = itemRow;
+				// setTimeout 0 puts this action at the end of the event queue, allowing the drag image to be created first.
 				setTimeout(() => {
 					itemRow.classList.add('dragging');
 				}, 0);
