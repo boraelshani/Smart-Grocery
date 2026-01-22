@@ -467,7 +467,9 @@ Data: Fetches store list and products by store from database
       {% if stores %}
       {% for store in stores %}
       <div class="col-12 col-md-6 col-lg-4 col-xl-3">
-        <div class="store-card h-100" style="cursor: pointer;" onclick="window.location.href='{{ url_for('main.store_products_page', store_name=store.name) }}'">
+        <div class="store-card h-100" style="cursor: pointer;" 
+             data-url="{{ url_for('main.store_products_page', store_name=store.name) }}"
+             onclick="window.location.href=this.dataset.url;">
           {% if store.product_count is defined %}
           <div class="product-count-badge">
             <i class="bi bi-box-seam me-1"></i> {{ store.product_count }} Products

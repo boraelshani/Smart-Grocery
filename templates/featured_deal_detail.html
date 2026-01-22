@@ -378,7 +378,7 @@
         <!-- Image Column -->
         <div class="col-lg-6 order-1 order-lg-2">
           <div class="image-card position-relative bg-white p-5 rounded-4 shadow-lg h-100 d-flex align-items-center justify-content-center">
-            <button class="favorite-btn position-absolute" 
+            <button class="favorite-btn btn-favorite position-absolute {{ 'active' if is_favorited else '' }}" 
                     data-product-id="{{ deal.get('id') or deal.get('_id') }}"
                     style="top: 1.5rem; right: 1.5rem; width: 45px; height: 45px; border-radius: 50%; border:none; background: #fff; color: #ff5e62; font-size:1.5rem; box-shadow: 0 5px 15px rgba(0,0,0,0.1);"
                     onclick="toggleFavorite(event, this)">

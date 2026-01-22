@@ -14,79 +14,79 @@ Data: Fetches all products and their store prices from database
 ═══════════════════════════════════════════════════════════════════════════
 -->
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en"> <!-- Root element defining language for screen readers -->
 
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Smart Grocery | Compare Prices</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=9">
+  <meta charset="UTF-8"> <!-- Standard character encoding -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- Responsive viewport for mobile scalability -->
+  <title>Smart Grocery | Compare Prices</title> <!-- Tab title -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"> <!-- Core UI framework -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css"> <!-- iconography set -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=9"> <!-- Main site-wide styles -->
   <style>
     /* 
      * COMPARE PAGE STYLES
      * Specific layout tweaks for the comparison grid and filters.
      */
     .compare-search-row {
-      --search-height: 46px;      /* CSS Variable to synchronize height */
+      --search-height: 46px;      /* CSS Variable to synchronize height across input and buttons */
       /* adjust to match input height */
       margin-bottom: 1.5rem;
-      /* slightly more space before product grid */
+      /* slightly more space before product grid for visual breathing room */
     }
 
     /* 
      * Search Input Group Alignment 
      * Ensuring the text input and search button align perfectly horizontally
-     * even on different browsers.
+     * even on different browsers using flexbox.
      */
     .compare-search-row .input-group {
       display: flex !important;
-      align-items: center !important;
+      align-items: center !important; /* Vertically center children */
     }
 
-    /* Force specific height on form control */
+    /* Force specific height on form control to prevent platform-specific rendering issues */
     .compare-search-row .input-group .form-control {
-      height: var(--search-height) !important; /* Use variable defined above */
-      box-sizing: border-box;
+      height: var(--search-height) !important; /* Use shared variable */
+      box-sizing: border-box; /* Include padding in height calculation */
       display: flex !important;
       align-items: center !important;
       padding: 0.45rem 0.75rem !important;
       font-size: 1rem;
     }
 
-    /* Force same height on buttons */
+    /* Force same height on buttons for a unified search bar look */
     .compare-search-row .input-group .btn,
     .compare-search-row .input-group .btn-group .btn {
       height: var(--search-height) !important;
       box-sizing: border-box;
       display: flex !important;
       align-items: center !important;
-      justify-content: center !important;
+      justify-content: center !important; /* Center text/icons inside */
       padding: 0 0.75rem !important;
       font-size: 1rem;
     }
     
-    /* Vertically center icon within button */
+    /* Vertically center icon within button using line-height */
     .compare-search-row .input-group .btn i {
       line-height: 1;
       display: inline-block;
       vertical-align: middle;
     }
     
-    /* Header Gradient background */
+    /* Header Gradient background for branding color consistency */
     .hero-section {
       background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
       color: white;
-      padding: 4rem 0;
+      padding: 4rem 0; /* Vertical breathing room for centered text */
     }
 
     /* Filter Sidebar Container */
     .filter-card {
       border: none;
-      border-radius: 15px; /* Softer rounded corners */
+      border-radius: 15px; /* Softer rounded corners for modern UI look */
       background: #ffffff;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07); /* Subtle depth */
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07); /* Subtle depth without being heavy */
     }
 
     /* 
@@ -94,42 +94,45 @@ Data: Fetches all products and their store prices from database
      * The white card containing product info.
      */
     .product-card-inner {
-      border: 2px solid transparent; /* Prepare for hover border without layout shift */
+      border: 2px solid transparent; /* Prepare for hover border without layout shift (pre-allocation) */
       border-radius: 15px;
       overflow: hidden;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Custom easing curve */
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Professional easing curve for smooth hover */
       background: white;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     }
     
-    /* Hover State: Lift up and glow purple */
+    /* Hover State: Lift up and glow purple to signal interactivity */
     .product-card-inner:hover {
-      transform: translateY(-8px); /* Moves up 8 pixels */
-      box-shadow: 0 20px 40px rgba(124, 58, 237, 0.12); /* Large purple shadow */
-      border-color: var(--premium-purple); /* Border appears */
+      transform: translateY(-8px); /* Moves up 8 pixels for "floating" effect */
+      box-shadow: 0 20px 40px rgba(124, 58, 237, 0.12); /* Large soft purple shadow */
+      border-color: var(--premium-purple); /* Border defines the active card */
     }
     
     /* Product Image Container */
     .product-image {
-      height: 240px; /* Fixed height for consistency */
-      object-fit: contain; /* Ensures whole image is visible without cropping */
+      height: 240px; /* Fixed height ensures grid alignment regardless of image aspect ratio */
+      object-fit: contain; /* Ensures whole image is visible without cropping/stretching */
       background: #ffffff !important;
       padding: 15px;
     }
 
+    /* Price tag positioned absolutely over the product image */
     .price-badge {
       position: absolute;
       top: 15px;
       right: 15px;
-      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); /* Bright pink/purple gradient for visibility */
       color: white;
       padding: 8px 16px;
       border-radius: 20px;
       font-weight: bold;
       font-size: 1.1rem;
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+      z-index: 5; /* Sit above image content */
     }
 
+    /* Small badge for product categorization */
     .category-badge {
       background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
       color: white;
@@ -139,6 +142,7 @@ Data: Fetches all products and their store prices from database
       font-size: 0.85rem;
     }
 
+    /* Individual store listing item inside the comparison grid */
     .store-item {
       border: 1px solid #e9ecef;
       border-radius: 10px;
@@ -149,17 +153,20 @@ Data: Fetches all products and their store prices from database
       cursor: pointer;
     }
 
+    /* Move item slightly to the right on hover for interactive feedback */
     .store-item:hover {
       background: #e9ecef;
       transform: translateX(5px);
     }
 
+    /* Highlight state when a user selects a specific store to add to list */
     .store-item.selected {
       background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
       border-color: #7c3aed;
       color: white;
     }
 
+    /* Override child colors when store-item is selected */
     .store-item.selected i:not(.bi-box-arrow-up-right) {
       color: white !important;
     }
@@ -172,13 +179,15 @@ Data: Fetches all products and their store prices from database
       color: white !important;
     }
 
+    /* Button to jump to retailer's actual website */
     .btn-go-store:hover {
       background: #e0e0ff !important;
       border-color: #7c3aed !important;
-      transform: scale(1.1);
+      transform: scale(1.1); /* Subtle zoom */
       transition: all 0.2s ease;
     }
 
+    /* Primary CTA: Adding item to custom shopping list */
     .btn-add-cart {
       background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
       border: none;
@@ -191,24 +200,25 @@ Data: Fetches all products and their store prices from database
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
+      gap: 8px; /* Space between icon and text */
       cursor: pointer;
       text-decoration: none !important;
       box-shadow: 0 4px 14px rgba(102, 126, 234, 0.3);
     }
 
     .btn-add-cart:hover {
-      transform: translateY(-2px);
+      transform: translateY(-2px); /* Lift */
       color: white;
       box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
       text-decoration: none !important;
     }
 
+    /* Reset lift on click for "pressed" feel */
     .btn-add-cart:active {
       transform: translateY(0);
     }
 
-    /* Light purple add-to-list CTA */
+    /* Light purple version of the add button for secondary actions or specific states */
     .add-to-list-btn {
       background: linear-gradient(135deg, #d8c4ff 0%, #c0a6ff 100%);
       border: 2px solid #b799ff;
@@ -239,12 +249,14 @@ Data: Fetches all products and their store prices from database
       transform: translateY(0);
     }
 
+    /* Focus rings for accessibility */
     .form-control:focus,
     .form-select:focus {
       border-color: #7c3aed;
       box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
     }
 
+    /* Filter indicator badge */
     .badge-filter {
       background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
       padding: 8px 14px;
@@ -252,89 +264,66 @@ Data: Fetches all products and their store prices from database
       font-weight: 500;
     }
 
+    /* Helper class for hover-able product links */
     .product-link {
       cursor: pointer;
     }
 
-    /* Favorite button styling */
-    .btn-favorite {
-      position: absolute;
-      top: 12px;
-      left: 12px;
-      width: 38px;
-      height: 38px;
-      border-radius: 50%;
-      background: white;
-      border: none;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-      color: #ccc;
-      font-size: 1.2rem;
-      transition: all 0.2s ease;
-      z-index: 10;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .btn-favorite:hover {
-      color: #ff6b6b;
-      transform: scale(1.1);
-    }
-
-    .btn-favorite.active {
-      color: #ff6b6b;
-    }
-
+    /* Container for the page navigation buttons at the bottom */
     .pagination-pane {
       background: #ffffff;
       border-radius: 14px;
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08); /* Modern soft shadow for layout depth */
       padding: 14px 18px;
     }
 
+    /* Individual page number styling for the pagination links */
     .pagination .page-link {
       border-radius: 12px;
-      min-width: 44px;
+      min-width: 44px; /* Sufficient hit area for mouse/touch */
       text-align: center;
     }
 
+    /* Target for the product listing area */
     #products-grid {
-      transition: opacity 0.18s ease-out;
+      transition: opacity 0.18s ease-out; /* Smooth transition for filtered content */
     }
 
+    /* Dramatic visual feedback during asynchronous data fetching */
     #products-grid.fade-out {
       opacity: 0.15;
     }
 
+    /* Logic for interactive elements that should appear "above" others on hover */
     .hover-lift {
       transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
 
     .hover-lift:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15) !important;
+      transform: translateY(-5px); /* Lift upwards */
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15) !important; /* Increase shadow depth */
     }
   </style>
 </head>
 
-<body>
-  <!-- Navigation -->
-  <nav class="navbar navbar-expand-lg navbar-premium">
-    <div class="container">
-      <a class="navbar-brand d-flex align-items-center" href="{{ url_for('main.home') }}">
-        <div class="brand-icon me-3">
-          <i class="bi bi-cart-check-fill fs-5"></i>
+<body> <!-- Root of the visible interface -->
+  <!-- Navigation Header (Responsive Bootstrap Navbar) -->
+  <nav class="navbar navbar-expand-lg navbar-premium"> <!-- Premium variant with custom styling -->
+    <div class="container"> <!-- Inner alignment wrapper -->
+      <a class="navbar-brand d-flex align-items-center" href="{{ url_for('main.home') }}"> <!-- Home link -->
+        <div class="brand-icon me-3"> <!-- Icon container -->
+          <i class="bi bi-cart-check-fill fs-5"></i> <!-- Marketplace check-mark icon -->
         </div>
-        <span>Smart<span class="brand-grocery-text">Grocery</span></span>
+        <span>Smart<span class="brand-grocery-text">Grocery</span></span> <!-- Branded application title -->
       </a>
-      <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"> <!-- Mobile toggle -->
         <span class="navbar-toggler-icon"></span>
       </button>
-      <div class="collapse navbar-collapse" id="navbarNav">
-        {% set cart_count = shopping_list_count or 0 %}
-        <ul class="navbar-nav ms-auto align-items-center">
+      <div class="collapse navbar-collapse" id="navbarNav"> <!-- Nav segment that collapses on mobile -->
+        {% set cart_count = shopping_list_count or 0 %} <!-- Local count of user items -->
+        <ul class="navbar-nav ms-auto align-items-center"> <!-- Links pushed to right edge -->
           <li class="nav-item">
-            <a class="nav-link {% if request.endpoint == 'main.home' %}active{% endif %}" href="{{ url_for('main.home') }}">
+            <a class="nav-link {% if request.endpoint == 'main.home' %}active{% endif %}" href="{{ url_for('main.home') }}"> <!-- Conditional activity -->
               <i class="bi bi-house-door me-1"></i> Home
             </a>
           </li>
@@ -361,14 +350,14 @@ Data: Fetches all products and their store prices from database
           <li class="nav-item ms-lg-1">
             <a class="nav-link nav-icon-btn position-relative {% if 'notifications' in request.path %}active{% endif %}" href="{{ url_for('main.notifications_page') }}" aria-label="Notifications">
               <i class="bi bi-bell fs-5"></i>
-              {% if (unread_notifications_count or 0) > 0 %}
+              {% if (unread_notifications_count or 0) > 0 %} <!-- Show badge only if there are alerts -->
               <span class="position-absolute badge rounded-pill bg-danger" style="font-size: 0.65rem; padding: 0.45em 0.7em; top: -5px; right: -10px; border: 2px solid white; box-shadow: 0 4px 10px rgba(220, 53, 69, 0.4); min-width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;">
                 {{ unread_notifications_count }}
               </span>
               {% endif %}
             </a>
           </li>
-          <li class="nav-item ms-lg-2">
+          <li class="nav-item ms-lg-2"> <!-- Direct access to user settings and history -->
             <a class="nav-link nav-icon-btn nav-profile-btn {% if 'profile' in request.path %}active{% endif %}" href="{{ url_for('main.profile') }}" aria-label="User Profile">
               <i class="bi bi-person-circle fs-5"></i>
             </a>
@@ -378,55 +367,52 @@ Data: Fetches all products and their store prices from database
     </div>
   </nav>
 
+  <!-- Hero header with animated background elements -->
   <header class="premium-hero">
-    <div class="bg-shape shape-1"></div>
-    <div class="bg-shape shape-2"></div>
-    <div class="bg-shape shape-3" style="position: absolute; bottom: 10%; left: 30%; width: 60px; height: 60px; background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(5px); border-radius: 20%; animation: float 10s infinite ease-in-out; animation-delay: -5s;"></div>
+    <div class="bg-shape shape-1"></div> <!-- Graphic circle 1 -->
+    <div class="bg-shape shape-2"></div> <!-- Graphic circle 2 -->
+    <div class="bg-shape shape-3" style="position: absolute; bottom: 10%; left: 30%; width: 60px; height: 60px; background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(5px); border-radius: 20%; animation: float 10s infinite ease-in-out; animation-delay: -5s;"></div> <!-- Dynamic square -->
     
-    <div class="container position-relative text-center text-white" style="z-index: 2;">
+    <div class="container position-relative text-center text-white" style="z-index: 2;"> <!-- High-z content -->
       <h1 class="display-4 fw-bold mb-3 text-white">
-        <i class="bi bi-graph-up-arrow"></i> Compare Prices
+        <i class="bi bi-graph-up-arrow"></i> Compare Prices <!-- Hero text identifying page purpose -->
       </h1>
-      <p class="lead mb-0 text-white">Find the best deals across all nearby stores</p>
-      <p class="opacity-75 text-white"><i class="bi bi-check-circle"></i> Save money on every purchase</p>
+      <p class="lead mb-0 text-white">Find the best deals across all nearby stores</p> <!-- Mission statement -->
+      <p class="opacity-75 text-white"><i class="bi bi-check-circle"></i> Save money on every purchase</p> <!-- Benefit tagline -->
     </div>
   </header>
 
-  <section class="container py-4">
-    <!-- Search row with filter button -->
-    <div class="row align-items-end mb-3 compare-search-row">
+  <section class="container py-4"> <!-- Bread-and-butter of the comparison logic -->
+    <!-- Interactive Search/Filter HUD (Heads-Up Display) -->
+    <div class="row align-items-end mb-3 compare-search-row"> <!-- Layout container for inputs -->
       <div class="col-md-12">
-        <!-- Search Container: Enlarged and Search Button Removed to match Deals page -->
+        <!-- Floating Pill Search Container -->
         <div class="d-flex align-items-center bg-white shadow-sm p-1"
-          style="border-radius: 50px; border: 1px solid #e2e8f0; height: 60px;">
-          <span class="ps-4 pe-2 text-muted" style="font-size: 1.2rem;"><i class="bi bi-search"></i></span>
+          style="border-radius: 50px; border: 1px solid #e2e8f0; height: 60px;"> <!-- Modern white capsule -->
+          <span class="ps-4 pe-2 text-muted" style="font-size: 1.2rem;"><i class="bi bi-search"></i></span> <!-- Visual cue: Magnifying glass -->
           <input id="product-search-input" type="text" class="form-control border-0 shadow-none bg-transparent"
             placeholder="Search by product name..." autocomplete="off" value="{{ search_query or '' }}"
-            style="outline: none !important; box-shadow: none !important; font-size: 1.1rem; height: 100%;">
+            style="outline: none !important; box-shadow: none !important; font-size: 1.1rem; height: 100%;"> <!-- Core input for string-matching products -->
 
-          <!-- Filters Dropdown: Enlarged and Styled with Color -->
-          <div class="dropdown ms-2 me-1">
+          <!-- Dropdown Filter Access System -->
+          <div class="dropdown ms-2 me-1"> 
             <button class="btn btn-smooth rounded-pill px-4" type="button" id="filtersDropdownBtn"
               data-bs-toggle="dropdown" aria-expanded="false"
-              style="height: 50px; display: flex; align-items: center; border: 2px solid #e2e8f0; background: #f5f3ff; color: #7c3aed; font-weight: 600; font-size: 1.05rem; transition: all 0.3s ease;">
-              <i class="bi bi-sliders2 me-2"></i> Filters
+              style="height: 50px; display: flex; align-items: center; border: 2px solid #e2e8f0; background: #f5f3ff; color: #7c3aed; font-weight: 600; font-size: 1.05rem; transition: all 0.3s ease;"> <!-- The purple "Filter" button -->
+              <i class="bi bi-sliders2 me-2"></i> Filters <!-- Sliders imply granular adjustment -->
             </button>
             
-            <!-- 
-              Dropdown Menu for Filters 
-              - Contains Category, Store, Price Range, and Sort Order
-              - Uses data-bs-auto-close="outside" behavior implicitly via click handling
-            -->
+            <!-- Hidden pane containing detailed search parameters -->
             <div class="dropdown-menu dropdown-menu-end p-3 shadow-lg border-0 mt-2"
-              aria-labelledby="filtersDropdownBtn" style="min-width: 320px; border-radius: 16px; z-index: 1050;">
+              aria-labelledby="filtersDropdownBtn" style="min-width: 320px; border-radius: 16px; z-index: 1050;"> <!-- Elevated menu box -->
               
-              <!-- Category Filter -->
+              <!-- Categorical sorting logic -->
               <div class="mb-2">
                 <label class="form-label"><i class="bi bi-grid"></i> Category</label>
-                <select id="category-filter" class="form-select">
-                  <option value="">All Categories</option>
+                <select id="category-filter" class="form-select"> <!-- Dropdown populated from DB -->
+                  <option value="">All Categories</option> <!-- Null filter -->
                   {% set cats = category_options if category_options is defined else [] %}
-                  {% for cat_obj in cats %}
+                  {% for cat_obj in cats %} <!-- Building individual selector entries -->
                   {% set cat_name = cat_obj.name if cat_obj is mapping else cat_obj %}
                   {% set val = cat_name|lower %}
                   <option value="{{ val }}" {% if category_filter and val==category_filter|lower %}selected{% endif %}>
@@ -435,28 +421,28 @@ Data: Fetches all products and their store prices from database
                 </select>
               </div>
 
-              <!-- Store Filter: Populated dynamically via JS -->
+              <!-- Retailer-based search constraints -->
               <div class="mb-2">
                 <label class="form-label"><i class="bi bi-shop"></i> Store</label>
-                <select id="store-filter" class="form-select">
+                <select id="store-filter" class="form-select"> <!-- Target for JS-based store insertion -->
                   <option value="">All Stores</option>
                 </select>
               </div>
 
-              <!-- Price Range Inputs -->
+              <!-- Financial limit controls -->
               <div class="mb-2">
                 <label class="form-label"><i class="bi bi-currency-dollar"></i> Price Range</label>
-                <div class="input-group">
+                <div class="input-group"> <!-- Combined input for lower/upper bounds -->
                   <input id="min-price" type="number" step="0.01" class="form-control bg-white" placeholder="Min">
                   <span class="input-group-text">to</span>
                   <input id="max-price" type="number" step="0.01" class="form-control bg-white" placeholder="Max">
                 </div>
               </div>
 
-              <!-- Sorting Options -->
+              <!-- Organizational ordering logic -->
               <div class="mb-2">
                 <label class="form-label"><i class="bi bi-sort-down"></i> Sort By</label>
-                <select id="sort-order" class="form-select">
+                <select id="sort-order" class="form-select"> <!-- Determines result presentation sequence -->
                   <option value="price-asc">Price: Low to High</option>
                   <option value="price-desc">Price: High to Low</option>
                   <option value="name-asc">Name: A to Z</option>
@@ -464,7 +450,7 @@ Data: Fetches all products and their store prices from database
                 </select>
               </div>
 
-              <!-- Filter Action Buttons -->
+              <!-- Footer actions for the filter pane -->
               <div class="d-flex gap-2 mt-3">
                 <button id="apply-filters" class="btn flex-grow-1" style="background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); 
                              color: white; 
@@ -474,7 +460,7 @@ Data: Fetches all products and their store prices from database
                              font-weight: 500;
                              transition: all 0.3s ease;"
                   onmouseover="this.style.opacity='0.85'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 12px rgba(102, 126, 234, 0.4)';"
-                  onmouseout="this.style.opacity='1'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">Apply</button>
+                  onmouseout="this.style.opacity='1'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">Apply</button> <!-- Executes the search refresh -->
                 <button id="clear-filters" class="btn" style="background: linear-gradient(135deg, #6c757d 0%, #495057 100%); 
                              color: white; 
                              border: none; 
@@ -483,49 +469,49 @@ Data: Fetches all products and their store prices from database
                              font-weight: 500;
                              transition: all 0.3s ease;"
                   onmouseover="this.style.opacity='0.85'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 12px rgba(108, 117, 125, 0.4)';"
-                  onmouseout="this.style.opacity='1'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">Clear</button>
+                  onmouseout="this.style.opacity='1'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">Clear</button> <!-- Resets all input states -->
               </div>
 
 
               <div id="active-filters" class="mt-3 d-flex flex-wrap gap-2" style="display:none;">
-                <!-- Filter badges will appear here -->
+                <!-- Container for UI "chips" representing set filters -->
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Category chips: with more margin -->
+      <!-- Quick-access category selection chips -->
       <div class="category-chip-row mt-4 mb-3">
         {% set cats = category_options if category_options is defined else [] %}
         <button type="button" class="category-chip {% if not category_filter %}active{% endif %}" data-category-chip=""
-          data-category-label="All">All</button>
+          data-category-label="All">All</button> <!-- Reset to global view -->
         {% for cat_obj in cats %}
         {% set cat_name = cat_obj.name if cat_obj is mapping else cat_obj %}
         {% set slug = cat_name|lower %}
         <button type="button"
           class="category-chip {% if category_filter and slug==category_filter|lower %}active{% endif %}"
-          data-category-chip="{{ slug }}" data-category-label="{{ cat_name }}">{{ cat_name }}</button>
+          data-category-chip="{{ slug }}" data-category-label="{{ cat_name }}">{{ cat_name }}</button> <!-- One-click filter -->
         {% endfor %}
       </div>
 
-      <!-- Results Count: reduced margin -->
+      <!-- Real-time status bar for search results -->
       <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
-        <h4 class="mb-0 fw-bold" style="color: #4b5563;">
+        <h4 class="mb-0 fw-bold" style="color: #4b5563;"> <!-- Contextual result header -->
           <i class="bi bi-box-seam me-2 text-primary"></i>Product Results
         </h4>
-        <div class="results-status-bar">
+        <div class="results-status-bar"> <!-- Right-hand pagination indicators -->
           <span class="results-status-text">
             <i class="bi bi-info-circle me-1"></i>
             {% if total_products %}
-            Showing {{ showing_start }}-{{ showing_end }}
+            Showing {{ showing_start }}-{{ showing_end }} <!-- Range calculation from backend logic -->
             {% else %}
-            No products found
+            No products found <!-- Empty state fallback -->
             {% endif %}
           </span>
           {% if total_products %}
           <span class="results-status-count">
-            {{ total_products }} Total
+            {{ total_products }} Total <!-- DB collection global count -->
           </span>
           {% endif %}
         </div>
@@ -570,13 +556,6 @@ Data: Fetches all products and their store prices from database
                   <i class="bi bi-tag-fill"></i> €{{ (p.get('cheapest') and p.get('cheapest').get('price')) or
                   p.get('price','N/A') }}
                 </span>
-                
-                {# Favorite Button: Z-indexed to sit on top of the image #}
-                <button type="button" class="btn-favorite {{ 'active' if p.get('is_favorited') else '' }}" style="z-index: 10;"
-                  data-product-id="{{ p.get('id') or p.get('_id') }}"
-                  onclick="toggleFavorite(event, this)" title="Add to favorites">
-                  <i class="bi {{ 'bi-heart-fill' if p.get('is_favorited') else 'bi-heart' }}"></i>
-                </button>
               </div>
             </a>
             
@@ -683,28 +662,28 @@ Data: Fetches all products and their store prices from database
         {% endif %}
       </div>
 
-      <!-- Stores Section (shown when search query exists) -->
+      <!-- Supplementary Results: Matching Retailers -->
       {% if search_query and stores and stores|length > 0 %}
       <div class="mt-5">
         <h4 class="mb-3 fw-bold">
-          <i class="bi bi-shop"></i> Stores matching "{{ search_query }}"
+          <i class="bi bi-shop"></i> Stores matching "{{ search_query }}" <!-- Header for direct store hits -->
           <span class="badge bg-primary ms-2">{{ stores|length }}</span>
         </h4>
         <div class="row g-4">
           {% for store in stores %}
           <div class="col-md-6 col-lg-4">
             <a href="{{ url_for('main.store_products_page', store_name=store.get('name')) }}"
-              class="text-decoration-none">
-              <div class="card h-100 shadow-sm hover-lift">
+              class="text-decoration-none"> <!-- Link to full catalog from this specific retailer -->
+              <div class="card h-100 shadow-sm hover-lift"> <!-- Visual elevation on interaction -->
                 <img src="{{ store.get('image') or 'https://via.placeholder.com/250x150' }}" class="card-img-top"
-                  alt="{{ store.get('name') }}" style="height: 150px; object-fit: cover;">
-                <div class="card-body">
+                  alt="{{ store.get('name') }}" style="height: 150px; object-fit: cover;"> <!-- Storefront branding -->
+                <div class="card-body"> <!-- Retailer metadata -->
                   <h5 class="card-title text-dark">{{ store.get('name') }}</h5>
                   {% if store.get('description') %}
-                  <p class="text-muted small">{{ store.get('description')[:100] }}...</p>
+                  <p class="text-muted small">{{ store.get('description')[:100] }}...</p> <!-- Truncated overview -->
                   {% endif %}
                   <div class="text-muted small">
-                    <i class="bi bi-box-seam"></i> {{ store.get('product_count', 0) }} products
+                    <i class="bi bi-box-seam"></i> {{ store.get('product_count', 0) }} products <!-- Inventory volume context -->
                   </div>
                 </div>
               </div>
@@ -715,19 +694,19 @@ Data: Fetches all products and their store prices from database
       </div>
       {% endif %}
 
-      <!-- Deals Section (shown when search query exists) -->
+      <!-- Supplementary Results: Promotional Content -->
       {% if search_query and deals and deals|length > 0 %}
       <div class="mt-5">
         <h4 class="mb-3 fw-bold">
-          <i class="bi bi-lightning-fill text-warning"></i> Deals matching "{{ search_query }}"
+          <i class="bi bi-lightning-fill text-warning"></i> Deals matching "{{ search_query }}" <!-- Header for promotional matches -->
           <span class="badge bg-primary ms-2">{{ deals|length }}</span>
         </h4>
         <div class="row g-4">
           {% for deal in deals %}
           <div class="col-md-6 col-lg-4">
-            <div class="card h-100 shadow-sm" style="background-color: #ffffff;">
+            <div class="card h-100 shadow-sm" style="background-color: #ffffff;"> <!-- White promotional card -->
               {% if deal.get('discount_label') or deal.get('discount_percent') %}
-              <div class="position-absolute top-0 end-0 m-2">
+              <div class="position-absolute top-0 end-0 m-2"> <!-- Absolute badge for "Sale" urgency -->
                 <span class="badge" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
                   {{ deal.get('discount_label') or (deal.get('discount_percent') ~ '% OFF') }}
                 </span>
@@ -735,22 +714,24 @@ Data: Fetches all products and their store prices from database
               {% endif %}
               <img src="{{ deal.get('image') or url_for('static', filename='placeholder.svg') }}" class="card-img-top"
                 alt="{{ deal.get('title') or deal.get('name') }}"
-                style="height: 200px; object-fit: contain; padding: 1rem; background-color: #ffffff;">
-              <div class="card-body" style="background-color: #ffffff;">
+                style="height: 200px; object-fit: contain; padding: 1rem; background-color: #ffffff;"> <!-- High-visibility product image -->
+              <div class="card-body" style="background-color: #ffffff;"> <!-- Promotional data -->
                 <h5 class="card-title">{{ deal.get('title') or deal.get('name') }}</h5>
                 <p class="text-muted mb-2">
-                  <i class="bi bi-shop"></i> {{ deal.get('store') or deal.get('source', 'Store') }}
+                  <i class="bi bi-shop"></i> {{ deal.get('store') or deal.get('source', 'Store') }} <!-- Where the deal originates -->
                 </p>
-                <div class="d-flex justify-content-between align-items-center">
-                  <span class="h4 mb-0 text-primary">€{{ deal.get('price', 'N/A') }}</span>
+                <div class="d-flex justify-content-between align-items-center"> <!-- Financial breakdown -->
+                  <span class="h4 mb-0 text-primary">€{{ deal.get('price', 'N/A') }}</span> <!-- Discounted price -->
                   {% if deal.get('original_price') %}
-                  <span class="text-muted text-decoration-line-through">€{{ deal.get('original_price') }}</span>
+                  <span class="text-muted text-decoration-line-through">€{{ deal.get('original_price') }}</span> <!-- MSRP context -->
                   {% endif %}
                 </div>
+                <!-- Detailed view for multi-buy or complex offers -->
                 <a href="{{ url_for('main.featured_deal_detail', deal_id=deal.get('id') or deal.get('_id')) }}"
                   class="btn btn-premium btn-premium-view w-100 mt-3">
                   <i class="bi bi-info-circle-fill"></i> View Deal
                 </a>
+                <!-- Direct injection into the active shopping list -->
                 <button type="button" class="btn btn-premium btn-premium-add w-100 mt-2"
                   data-name="{{ deal.get('title') or deal.get('name') }}"
                   data-id="{{ deal.get('id') or deal.get('_id') }}"
@@ -771,30 +752,31 @@ Data: Fetches all products and their store prices from database
       </div>
       {% endif %}
 
-      <!-- Pagination -->
+      <!-- Site-wide dynamic pagination controls -->
       {% if total_pages and total_pages > 1 %}
-      <div class="custom-pagination-container">
-        <ul class="pagination-pills">
-          <li class="page-item {{ 'disabled' if not has_prev }}">
+      <div class="custom-pagination-container"> <!-- Wrapper for centered positioning -->
+        <ul class="pagination-pills"> <!-- Modern "Pill" style navigation buttons -->
+          <li class="page-item {{ 'disabled' if not has_prev }}"> <!-- Navigation toggle: Back -->
             <a class="page-link nav-link"
               href="{% if has_prev %}{{ url_for('main.compare_prices', page=page-1, category=category_filter, search=search_query) }}{% else %}#{% endif %}">
               <i class="bi bi-arrow-left"></i> <span>Prev</span>
             </a>
           </li>
 
+          <!-- Dynamic Sliding Window logic for page numbers -->
           {% set start_page = [1, page - 2]|max %}
           {% set end_page = [total_pages, start_page + 4]|min %}
           {% set start_page = [1, end_page - 4]|max %}
 
-          {% for pnum in range(start_page, end_page + 1) %}
-          <li class="page-item {{ 'active' if pnum == page }}">
+          {% for pnum in range(start_page, end_page + 1) %} <!-- Loops through active page range -->
+          <li class="page-item {{ 'active' if pnum == page }}"> <!-- Highlight current location -->
             <a class="page-link"
               href="{{ url_for('main.compare_prices', page=pnum, category=category_filter, search=search_query) }}">{{
               pnum }}</a>
           </li>
           {% endfor %}
 
-          <li class="page-item {{ 'disabled' if not has_next }}">
+          <li class="page-item {{ 'disabled' if not has_next }}"> <!-- Navigation toggle: Forward -->
             <a class="page-link nav-link"
               href="{% if has_next %}{{ url_for('main.compare_prices', page=page+1, category=category_filter, search=search_query) }}{% else %}#{% endif %}">
               <span>Next</span> <i class="bi bi-arrow-right"></i>
@@ -805,93 +787,98 @@ Data: Fetches all products and their store prices from database
       {% endif %}
 
 
-      <!-- Modal for Selecting Shopping List -->
+      <!-- Interactive Modal: Shopping List Picker -->
       <div class="modal fade" id="listSelectorModal" tabindex="-1" aria-labelledby="listSelectorLabel"
         aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-md">
+        <div class="modal-dialog modal-dialog-centered modal-md"> <!-- Centered overlay logic -->
           <div class="modal-content"
-            style="border-radius: 14px; border: none; box-shadow: 0 12px 40px rgba(0,0,0,0.15);">
+            style="border-radius: 14px; border: none; box-shadow: 0 12px 40px rgba(0,0,0,0.15);"> <!-- Elevated container -->
             <div class="modal-header"
-              style="background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); color: white; border: none; border-radius: 14px 14px 0 0; padding: 1.1rem 1.4rem;">
+              style="background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); color: white; border: none; border-radius: 14px 14px 0 0; padding: 1.1rem 1.4rem;"> <!-- Branded header gradient -->
               <h6 class="modal-title mb-0" id="listSelectorLabel">
-                <i class="bi bi-cart-plus me-2"></i>Add to Shopping List
+                <i class="bi bi-cart-plus me-2"></i>Add to Shopping List <!-- Prompt for final user action -->
               </h6>
               <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
                 aria-label="Close"></button>
             </div>
-            <div class="modal-body" style="padding: 1.1rem 1.4rem;">
+            <div class="modal-body" style="padding: 1.1rem 1.4rem;"> <!-- Content area for selection -->
+              <!-- Visual summary of the item being added -->
               <div class="d-flex align-items-center gap-3 mb-3 p-3"
                 style="background:#f6f7fb; border:1px solid #e6e8f0; border-radius:12px;">
                 <img id="itemThumb" src="{{ url_for('static', filename='placeholder.svg') }}" alt="product"
-                  style="width:64px; height:64px; object-fit:contain; background:white; border-radius:10px; border:1px solid #e9ecef;">
+                  style="width:64px; height:64px; object-fit:contain; background:white; border-radius:10px; border:1px solid #e9ecef;"> <!-- Preview thumbnail -->
                 <div class="flex-grow-1">
                   <div class="fw-bold" id="itemNameDisplay" style="color:#2d2f3a; font-size:1rem; line-height:1.2;">
-                  </div>
-                  <div class="small text-muted" id="itemStoreHint"></div>
+                  </div> <!-- JS injected product name -->
+                  <div class="small text-muted" id="itemStoreHint"></div> <!-- JS injected store context -->
                 </div>
                 <span id="itemCheapestBadge" class="badge bg-success d-none"><i class="bi bi-star-fill me-1"></i>Best
-                  price</span>
+                  price</span> <!-- Indicator if item is a price 'Winner' -->
               </div>
               <div id="listSelectorContainer" class="d-flex flex-column gap-2">
-                <!-- Lists will be populated here -->
+                <!-- Data injection point: User's different shopping lists go here -->
               </div>
             </div>
             <div class="modal-footer" style="border-top: 1px solid #e9ecef; padding: 0.75rem 1.4rem;">
               <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
-                <i class="bi bi-x-circle me-1"></i>Cancel
+                <i class="bi bi-x-circle me-1"></i>Cancel <!-- Dismiss button -->
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      <footer class="text-center py-4 bg-light border-top">
-        <p class="mb-0 text-muted">&copy; 2025 Smart Grocery Team</p>
+      <footer class="text-center py-4 bg-light border-top"> <!-- Persistent bottom content -->
+        <p class="mb-0 text-muted">&copy; 2025 Smart Grocery Team</p> <!-- Copyright declaration -->
       </footer>
 
-      <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-      <script src="{{ url_for('static', filename='js/script.js') }}?v=11"></script>
+      <!-- JavaScript Dependencies -->
+      <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script> <!-- Bootstrap interactivity engine -->
+      <script src="{{ url_for('static', filename='js/script.js') }}?v=11"></script> <!-- Core business logic and AJAX handlers -->
       <script>
-        // Handle search button click
-        // handleCompareSearch is still needed for server-side search/category reloads
+        // Trigger logic for keyword-based comparative search
+        // Essential for server-side persistence of search state across pages
         function handleCompareSearch() {
           const searchInput = document.getElementById('product-search-input');
-          const searchTerm = (searchInput ? searchInput.value : '').trim();
-          const categoryFilter = '{{ category_filter or "" }}';
+          const searchTerm = (searchInput ? searchInput.value : '').trim(); // Extract User intent
+          const categoryFilter = '{{ category_filter or "" }}'; // Preserve current filter context
 
-          let url = '{{ url_for("main.compare_prices") }}';
-          const params = new URLSearchParams();
+          let url = '{{ url_for("main.compare_prices") }}'; // Execution target
+          const params = new URLSearchParams(); // Modern URL query constructor
 
-          if (searchTerm) params.set('search', searchTerm);
-          if (categoryFilter) params.set('category', categoryFilter);
+          if (searchTerm) params.set('search', searchTerm); // Append search key
+          if (categoryFilter) params.set('category', categoryFilter); // Append category key
 
+          // Final hop to the filtered results page
           if (params.toString()) url += '?' + params.toString();
           window.location.href = url;
         }
       </script>
 
-      <!-- Product Quick View Modal -->
+      <!-- Modal: Product Detail Quick-View -->
       <div class="modal fade" id="productModal" tabindex="-1" aria-labelledby="productModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-dialog modal-dialog-centered modal-lg"> <!-- Enlarged overlay for high-fidelity data -->
           <div class="modal-content overflow-hidden border-0 shadow-lg" style="border-radius: 20px;">
             <div class="modal-header border-0 pb-0"
-              style="background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);">
+              style="background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);"> <!-- Branded header gradient -->
               <h5 class="modal-title product-modal-title text-white fw-bold py-2 mt-2" id="productModalLabel">
-                <i class="bi bi-info-circle me-2"></i>Product Details
+                <i class="bi bi-info-circle me-2"></i>Product Details <!-- Informational header -->
               </h5>
               <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-                aria-label="Close"></button>
+                aria-label="Close"></button> <!-- Dismissive overlay button -->
             </div>
-            <div class="modal-body p-0">
-              <div class="row g-0">
+            <div class="modal-body p-0"> <!-- Full-width content wrapper -->
+              <div class="row g-0"> <!-- Multi-column layout for visual/textual data -->
+                <!-- Graphic column -->
                 <div class="col-md-5 d-flex align-items-center justify-content-center bg-white">
                   <img src="" class="img-fluid product-modal-image p-4" alt="Product Image"
-                    style="max-height: 350px; object-fit: contain;">
+                    style="max-height: 350px; object-fit: contain;"> <!-- Image target for JS script.js -->
                 </div>
+                <!-- Metadata column -->
                 <div class="col-md-7">
                   <div class="p-4" style="background-color: #f8f9fa; height: 100%;">
                     <div class="product-info-container">
-                      <!-- Dynamic content populated by script.js -->
+                      <!-- Dynamic terminal for JS-populated pricing tables, descriptions, and buttons -->
                     </div>
                   </div>
                 </div>
@@ -901,22 +888,22 @@ Data: Fetches all products and their store prices from database
         </div>
       </div>
 
-      <!-- Global List Selector Modal -->
+      <!-- Modal: Global Unified Shopping List Selector -->
       <div class="modal fade" id="globalListSelectorModal" tabindex="-1" aria-labelledby="globalListSelectorModalLabel"
         aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-dialog modal-dialog-centered"> <!-- Modal centered vertically -->
           <div class="modal-content overflow-hidden border-0 shadow" style="border-radius: 20px;">
-            <div class="modal-header border-0 pb-0">
+            <div class="modal-header border-0 pb-0"> <!-- Discrete header -->
               <h5 class="modal-title fw-bold" id="globalListSelectorModalLabel">
-                <i class="bi bi-plus-circle-fill me-2 text-primary"></i>Select List
+                <i class="bi bi-plus-circle-fill me-2 text-primary"></i>Select List <!-- Functional prompt -->
               </h5>
               <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body p-4">
+            <div class="modal-body p-4"> <!-- Choice container -->
               <p class="text-white mb-4">Select a list to add <span id="pendingItemName"
-                  class="fw-bold text-white"></span> to:</p>
+                  class="fw-bold text-white"></span> to:</p> <!-- Instructions context -->
               <div id="globalListSelectorBody" class="d-grid gap-2">
-                <!-- Populated by script.js -->
+                <!-- Stacked buttons for each user-defined list (Populated via JS) -->
               </div>
             </div>
           </div>
@@ -924,4 +911,4 @@ Data: Fetches all products and their store prices from database
       </div>
 </body>
 
-</html>
+</html> <!-- End of structure -->

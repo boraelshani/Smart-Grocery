@@ -225,6 +225,9 @@ def decode_jwt(token: str):
     """
     try:
         return jwt.decode(token, jwt_secret(), algorithms=["HS256"])
+    except jwt.ExpiredSignatureError:
+        # Silent failure for expired tokens - handled by session fallback
+        return None
     except Exception as e:
         print(f"[JWT] decode failed: {e}")
         return None

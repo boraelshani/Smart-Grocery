@@ -2,626 +2,627 @@
 ═══════════════════════════════════════════════════════════════════════════
 HOME PAGE (Main Dashboard - After Login)
 ═══════════════════════════════════════════════════════════════════════════
-Purpose: Main landing page after user logs in
+Purpose: Main landing page after user logs in, serving as the application's central hub.
 Features:
-- Featured products/deals section
-- All available products with prices across stores
-- User's favorite products list
-- Add to shopping list functionality
-- Search and filter capabilities
-- Responsive product grid
-Shown at route: /
+- Featured products/deals section: Highlights time-sensitive or high-value multi-buy offers.
+- All available products with prices across stores: Aggregated catalog view for quick comparisons.
+- User's favorite products list: Personalized section for tracking preferred items.
+- Add to shopping list functionality: Direct integration with the user's active grocery lists.
+- Search and filter capabilities: Global discovery tool for finding specific items or categories.
+- Responsive product grid: Adaptive layout for mobile, tablet, and desktop viewing.
+Shown at route: / (The default entry point for authenticated users)
 ═══════════════════════════════════════════════════════════════════════════
 -->
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Smart Grocery | Your Smart Shopping Destination</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <style>
+<!DOCTYPE html> <!-- Declares the document as HTML5 for modern browser parsing -->
+<html lang="en"> <!-- Sets the primary language of the document to English for accessibility -->
+<head> <!-- Metadata and external resource links section -->
+  <meta charset="UTF-8"> <!-- Character encoding for global character support (UTF-8) -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- Core responsive design tag for mobile scaling -->
+  <title>Smart Grocery | Your Smart Shopping Destination</title> <!-- Browser tab title text -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"> <!-- Bootstrap 5 CSS for grid and utility classes -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css"> <!-- Official Bootstrap icon set for UI symbols -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"> <!-- Site-wide custom styling rules -->
+  <style> /* Internal CSS for page-specific visual modules */
     /* Animated Hero Section */
     .hero-section {
-      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #8b5cf6 100%);
-      color: white;
-      padding: 7rem 0 6rem;
-      position: relative;
-      overflow: hidden;
-      border-bottom-left-radius: 60px;
-      border-bottom-right-radius: 60px;
+      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #8b5cf6 100%); /* Vibrant purple/blue brand gradient */
+      color: white; /* Contrast text color for high readability */
+      padding: 7rem 0 6rem; /* Vertical spacing for a large, impactful header */
+      position: relative; /* Context for absolute-positioned background decorations */
+      overflow: hidden; /* Clips any animation or pattern spillover */
+      border-bottom-left-radius: 60px; /* Modern "curved" bottom layout design */
+      border-bottom-right-radius: 60px; /* Matches left side for symmetrical curve */
     }
 
     .hero-section::before {
-      content: '';
-      position: absolute;
-      inset: 0;
+      content: ''; /* Empty content for pseudo-element creation */
+      position: absolute; /* Floating overlay */
+      inset: 0; /* Spans full background area */
       background: 
-        radial-gradient(circle at 20% 30%, rgba(99, 102, 241, 0.15), transparent 40%),
-        radial-gradient(circle at 80% 70%, rgba(139, 92, 246, 0.15), transparent 40%);
-      pointer-events: none;
+        radial-gradient(circle at 20% 30%, rgba(99, 102, 241, 0.15), transparent 40%), /* Subtle glow effect in top-left */
+        radial-gradient(circle at 80% 70%, rgba(139, 92, 246, 0.15), transparent 40%); /* Subtle glow effect in bottom-right */
+      pointer-events: none; /* Allows user interaction to pass through the decoration */
     }
 
     .hero-section::after {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
+      content: ''; /* Empty content for pattern overlay */
+      position: absolute; /* Floating overlay */
+      top: 0; /* Start at top */
+      left: 0; /* Start at left */
+      right: 0; /* End at right */
+      bottom: 0; /* End at bottom */
       background: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 86c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zm66 3c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zm-46-4c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zm20-46c.552 0 1-.448 1-1s-.448-1-1-1-1 .448-1 1 .448 1 1 1z' fill='%23ffffff' fill-opacity='0.08' fill-rule='evenodd'/%3E%3C/svg%3E");
-      opacity: 0.3;
+      opacity: 0.3; /* Low opacity for non-distracting visual texture */
     }
 
     .hero-content {
-      position: relative;
-      z-index: 2;
+      position: relative; /* Stacks above the pseudo-element gradients */
+      z-index: 2; /* Ensures text is always on top */
     }
 
     .hero-title {
-      font-size: 4.2rem;
-      font-weight: 900;
-      margin-bottom: 1.5rem;
-      letter-spacing: -0.04em;
-      line-height: 1.3;
-      background: linear-gradient(to bottom, #ffffff, #e0e7ff);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      animation: fadeInDown 0.8s ease-out;
-      padding-bottom: 0.2rem;
+      font-size: 4.2rem; /* Hero header sizing (approx 67px) */
+      font-weight: 900; /* Extra bold for maximum visual weight */
+      margin-bottom: 1.5rem; /* Space between title and subtitle */
+      letter-spacing: -0.04em; /* Tight kerning for a modern look */
+      line-height: 1.3; /* Comfortable leading for large-scale text */
+      background: linear-gradient(to bottom, #ffffff, #e0e7ff); /* Gradient fill for typography */
+      -webkit-background-clip: text; /* Clips background to text shapes (Standard browser support) */
+      background-clip: text; /* Standard property for compatibility */
+      -webkit-text-fill-color: transparent; /* Makes the original text transparent to show gradient */
+      animation: fadeInDown 0.8s ease-out; /* Slide-in effect on page load */
+      padding-bottom: 0.2rem; /* Prevents descender clipping by background-clip */
     }
 
     @keyframes fadeInDown {
-      from { opacity: 0; transform: translateY(-20px); }
-      to { opacity: 1; transform: translateY(0); }
+      from { opacity: 0; transform: translateY(-20px); } /* Start: invisible and slightly above final position */
+      to { opacity: 1; transform: translateY(0); } /* End: fully visible at target position */
     }
 
     .hero-subtitle {
-      font-size: 1.4rem;
-      font-weight: 500;
-      color: rgba(255, 255, 255, 0.9);
-      margin-bottom: 3rem;
-      max-width: 700px;
-      margin-left: auto;
-      margin-right: auto;
+      font-size: 1.4rem; /* Prominent secondary text sizing */
+      font-weight: 500; /* Medium weight for readability */
+      color: rgba(255, 255, 255, 0.9); /* Opaque white to blend with backgrounds */
+      margin-bottom: 3rem; /* Spacing before search interaction box */
+      max-width: 700px; /* Constrains text width for readability on wide screens */
+      margin-left: auto; /* Centers the text box horizontally */
+      margin-right: auto; /* Centers the text box horizontally */
     }
 
     .search-box {
-      background: white;
-      border-radius: 24px;
-      padding: 10px;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
-      display: flex;
-      align-items: center;
-      max-width: 750px;
-      margin: 0 auto;
-      transition: transform 0.3s ease;
+      background: white; /* Clean input background */
+      border-radius: 24px; /* Highly rounded corners for a friendly UI */
+      padding: 10px; /* Internal spacing around input/button */
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4); /* Deep shadow for 3D elevation from the hero background */
+      display: flex; /* Horizontal arrangement for input and submit button */
+      align-items: center; /* Vertical alignment centered */
+      max-width: 750px; /* Limits search length */
+      margin: 0 auto; /* Centers search box in viewport */
+      transition: transform 0.3s ease; /* Feedback animation for interaction */
     }
 
     .search-box:focus-within {
-      transform: translateY(-5px);
+      transform: translateY(-5px); /* Lift animation when user clicks into the input */
     }
 
     .search-box input {
-      border: none;
-      outline: none;
-      flex: 1;
-      padding: 15px 25px;
-      font-size: 1.2rem;
-      color: var(--premium-dark);
-      font-weight: 500;
+      border: none; /* Removes standard browser borders */
+      outline: none; /* Prevents default OS focus rings (using custom transform instead) */
+      flex: 1; /* Input grows to fill available horizontal space */
+      padding: 15px 25px; /* Large touch/typing area */
+      font-size: 1.2rem; /* Readable font size for user queries */
+      color: var(--premium-dark); /* Using premium dark variable for text color */
+      font-weight: 500; /* Medium weight for search terms */
     }
 
     .search-box button {
-      background: linear-gradient(135deg, var(--premium-purple), var(--premium-indigo));
-      border: none;
-      color: white;
-      padding: 16px 40px;
-      border-radius: 18px;
-      font-weight: 700;
-      font-size: 1.1rem;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      box-shadow: 0 10px 20px -5px rgba(124, 58, 237, 0.4);
+      background: linear-gradient(135deg, var(--premium-purple), var(--premium-indigo)); /* Matching brand colors for primary button */
+      border: none; /* Clean appearance */
+      color: white; /* High contrast text */
+      padding: 16px 40px; /* Large, clickable button shape */
+      border-radius: 18px; /* Slightly less round than container for nested aesthetic */
+      font-weight: 700; /* Bold CTA label */
+      font-size: 1.1rem; /* Prominent label size */
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Professional timing curve for hover transitions */
+      box-shadow: 0 10px 20px -5px rgba(124, 58, 237, 0.4); /* Glow effect from button color */
     }
 
     .search-box button:hover {
-      transform: scale(1.02);
-      box-shadow: 0 20px 25px -5px rgba(124, 58, 237, 0.5);
+      transform: scale(1.02); /* Subtle growth feedback */
+      box-shadow: 0 20px 25px -5px rgba(124, 58, 237, 0.5); /* Enhanced glow on hover */
     }
 
     /* Stats Section with Glassmorphism */
     .stats-section {
-      margin-top: -3.5rem;
-      position: relative;
-      z-index: 10;
+      margin-top: -3.5rem; /* Overlaps with circular hero bottom for visual integration */
+      position: relative; /* Context for layering */
+      z-index: 10; /* Ensures it stays above hero patterns */
     }
 
     .stat-card {
-      background: rgba(255, 255, 255, 0.9);
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(255, 255, 255, 0.5);
-      border-radius: 24px;
-      padding: 2.5rem 1.5rem;
-      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
-      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-      text-align: center;
+      background: rgba(255, 255, 255, 0.9); /* Near-opaque white background */
+      backdrop-filter: blur(10px); /* Translucent glass blurring effect for underlying hero colors */
+      border: 1px solid rgba(255, 255, 255, 0.5); /* Subtle border for glass defining edges */
+      border-radius: 24px; /* Matches search-box styling for consistency */
+      padding: 2.5rem 1.5rem; /* Comfortable internal spacing for analytics content */
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02); /* Soft layered shadows */
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); /* Smooth hover state transition */
+      text-align: center; /* Centers numbers and labels within the card */
     }
 
     .stat-card:hover {
-      transform: translateY(-10px);
-      background: white;
-      box-shadow: 0 25px 50px -12px rgba(124, 58, 237, 0.15);
+      transform: translateY(-10px); /* Significant lift on interaction */
+      background: white; /* Becomes solid white for clarity on hover */
+      box-shadow: 0 25px 50px -12px rgba(124, 58, 237, 0.15); /* Purple-tinted shadow highlighting brand connection */
     }
 
     .stat-icon {
-      width: 70px;
-      height: 70px;
-      background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
-      color: var(--premium-purple);
-      border-radius: 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin: 0 auto 1.5rem;
-      font-size: 2rem;
-      transition: transform 0.5s ease;
+      width: 70px; /* Fixed icon container width */
+      height: 70px; /* Fixed icon container height */
+      background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%); /* Soft purple gradient background for symbols */
+      color: var(--premium-purple); /* Symbol color using brand variable */
+      border-radius: 20px; /* Squircle shape for icons */
+      display: flex; /* Flexbox for icon centering */
+      align-items: center; /* Vertical alignment centered */
+      justify-content: center; /* Horizontal alignment centered */
+      margin: 0 auto 1.5rem; /* Centers icon and adds gap below it */
+      font-size: 2rem; /* Prominent icon size */
+      transition: transform 0.5s ease; /* Animation for interaction effects */
     }
 
     .stat-card:hover .stat-icon {
-      transform: rotateY(180deg);
-      background: var(--premium-purple);
-      color: white;
+      transform: rotateY(180deg); /* Playful "flip" animation on card hover */
+      background: var(--premium-purple); /* Reverses colors on hover */
+      color: white; /* Contrast text color */
     }
 
     .stat-number {
-      font-size: 2.8rem;
-      font-weight: 900;
-      color: var(--premium-dark);
-      margin-bottom: 0.25rem;
-      letter-spacing: -2px;
+      font-size: 2.8rem; /* Large, bold numeric value display */
+      font-weight: 900; /* Heaviest font weight for emphasis */
+      color: var(--premium-dark); /* Clean dark text color */
+      margin-bottom: 0.25rem; /* Small gap above label */
+      letter-spacing: -2px; /* Tight numeric kerning for professional data look */
     }
 
     .stat-label {
-      color: #64748b;
-      font-size: 0.95rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
+      color: #64748b; /* Muted gray for secondary descriptions */
+      font-size: 0.95rem; /* Smaller text for labels */
+      font-weight: 600; /* Semibold for structure */
+      text-transform: uppercase; /* Formal label appearance */
+      letter-spacing: 0.05em; /* Tracking boost for uppercase readability */
     }
 
     /* Modern Section Headers */
     .section-header {
-      margin-bottom: 2rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-end;
+      margin-bottom: 2rem; /* Space between header and product content */
+      display: flex; /* Horizontal spread for titles and "View All" buttons */
+      justify-content: space-between; /* Pushes content to opposing edges */
+      align-items: flex-end; /* Aligns button to bottom of text line */
     }
 
     .section-title {
-      font-size: 2.5rem;
-      font-weight: 900;
-      color: var(--premium-dark);
-      letter-spacing: -0.03em;
-      margin-bottom: 0.5rem;
+      font-size: 2.5rem; /* Large header sizing */
+      font-weight: 900; /* Bold weight for section prominence */
+      color: var(--premium-dark); /* Color indicator for high importance text */
+      letter-spacing: -0.03em; /* Tight kerning to match brand headers */
+      margin-bottom: 0.5rem; /* Small space before subtitle */
     }
 
     .section-subtitle {
-      font-size: 1.1rem;
-      color: #64748b;
-      font-weight: 500;
-      margin-bottom: 0;
+      font-size: 1.1rem; /* Subtle text sizing */
+      color: #64748b; /* Muted gray for context text */
+      font-weight: 500; /* Medium weight */
+      margin-bottom: 0; /* Reset default margins */
     }
 
     .view-all-btn {
-      background: #f1f5f9;
-      color: var(--premium-dark);
-      padding: 12px 28px;
-      border-radius: 14px;
-      font-weight: 700;
-      transition: all 0.3s ease;
-      text-decoration: none;
-      border: 1px solid #e2e8f0;
+      background: #f1f5f9; /* Light gray neutral background */
+      color: var(--premium-dark); /* Primary text color */
+      padding: 12px 28px; /* Comfortable clickable area */
+      border-radius: 14px; /* Standardized rounded corners */
+      font-weight: 700; /* Bold label weight */
+      transition: all 0.3s ease; /* Fast interaction transition */
+      text-decoration: none; /* Removes standard link underlining */
+      border: 1px solid #e2e8f0; /* Defining edge border */
     }
 
     .view-all-btn:hover {
-      background: var(--premium-purple);
-      color: white;
-      border-color: transparent;
-      transform: translateX(5px);
-      text-decoration: none;
+      background: var(--premium-purple); /* Swaps to brand color on hover */
+      color: white; /* Swaps to high contrast on hover */
+      border-color: transparent; /* Hides border when background fills */
+      transform: translateX(5px); /* Logical "Next" indicator animation */
+      text-decoration: none; /* Keeps anchor clean */
     }
 
     /* Scroll Container & Wrapper - CRITICAL */
     .scroll-container {
-      position: relative;
-      margin: 0 -15px;
-      padding: 10px 15px;
+      position: relative; /* Context for absolute positioning of arrow navigation */
+      margin: 0 -15px; /* Pulls container out to edges for edge-to-edge overflow appearance */
+      padding: 10px 15px; /* Restores padding for child content */
     }
 
     .scroll-wrapper {
-      display: flex;
-      overflow-x: auto;
-      scroll-behavior: smooth;
-      gap: 24px;
-      padding: 20px 5px;
-      scrollbar-width: none;
-      -ms-overflow-style: none;
+      display: flex; /* Linear horizontal arrangement of products */
+      overflow-x: auto; /* Natural mobile swipe support; manual code required for desktop scroll arrows */
+      scroll-behavior: smooth; /* Smooth scrolling when using arrow buttons via JS or CSS */
+      gap: 24px; /* Consistent spacing between product cards */
+      padding: 20px 5px; /* Breathing room for product card shadows */
+      scrollbar-width: none; /* Hides horizontal bars on Firefox */
+      -ms-overflow-style: none; /* Hides horizontal bars on IE/Edge */
     }
 
     .scroll-wrapper::-webkit-scrollbar {
-      display: none;
+      display: none; /* Hides horizontal bars on Chrome/Safari for clean swipe UI */
     }
 
     .scroll-arrow {
-      position: absolute;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 50px;
-      height: 50px;
-      background: white;
-      border: 1px solid #e2e8f0;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 10;
-      cursor: pointer;
-      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-      transition: all 0.3s ease;
-      color: var(--premium-purple);
+      position: absolute; /* Floats over the product row */
+      top: 50%; /* Center relative to card height */
+      transform: translateY(-50%); /* Correction to perfect vertical centering */
+      width: 50px; /* Navigation circle size */
+      height: 50px; /* Navigation circle size */
+      background: white; /* Clean background for icon */
+      border: 1px solid #e2e8f0; /* Subdued border */
+      border-radius: 50%; /* Perfect circle shape */
+      display: flex; /* Center alignment for internal icon */
+      align-items: center; /* Center cross-axis */
+      justify-content: center; /* Center main-axis */
+      z-index: 10; /* Ensures buttons are clickable above product cards */
+      cursor: pointer; /* Interaction affordance */
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); /* Floating button shadow */
+      transition: all 0.3s ease; /* Feedback timing */
+      color: var(--premium-purple); /* Matching brand colors for navigation symbols */
     }
 
     .scroll-arrow:hover {
-      background: var(--premium-purple);
-      color: white;
-      box-shadow: 0 20px 25px -5px rgba(124, 58, 237, 0.3);
-      transform: translateY(-50%) scale(1.1);
+      background: var(--premium-purple); /* Fill with brand color */
+      color: white; /* White icon on hover */
+      box-shadow: 0 20px 25px -5px rgba(124, 58, 237, 0.3); /* Brand glow on hover */
+      transform: translateY(-50%) scale(1.1); /* Center maintenance + Grow animation */
     }
 
-    .scroll-arrow.left { left: -10px; }
-    .scroll-arrow.right { right: -10px; }
+    .scroll-arrow.left { left: -10px; } /* Anchor arrow to the left side overlap */
+    .scroll-arrow.right { right: -10px; } /* Anchor arrow to the right side overlap */
 
     /* Product Cards */
     .product-card-horizontal {
-      min-width: 320px;
-      max-width: 320px;
-      background: white;
-      border-radius: 28px;
-      border: 1px solid #f1f5f9;
-      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-      position: relative;
-      display: flex;
-      flex-direction: column;
+      min-width: 320px; /* Fixed width for horizontal scrolling segments */
+      max-width: 320px; /* Prevents stretching in flex layouts */
+      background: white; /* Clean data surface */
+      border-radius: 28px; /* Extra rounded for a soft app-like feel */
+      border: 1px solid #f1f5f9; /* Subdued card framing */
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); /* Professional lift transition */
+      position: relative; /* Context for hearts/badges positioning */
+      display: flex; /* Organized card structure */
+      flex-direction: column; /* Vertical stacking of img/data */
+      cursor: pointer;
     }
 
     .product-card-horizontal:hover {
-      transform: translateY(-12px);
-      box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.12);
-      border-color: var(--premium-purple);
+      transform: translateY(-12px); /* Significant lift indicating interactivity */
+      box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.12); /* Pronounced shadow on hover indicating elevation */
+      border-color: var(--premium-purple); /* Border color shifts to match brand on hover */
     }
 
     .discount-badge {
-      position: absolute;
-      top: 20px;
-      left: 20px;
-      display: inline-block;
-      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-      color: white;
-      padding: 6px 14px;
-      border-radius: 14px;
-      font-size: 0.75rem;
-      font-weight: 850;
-      z-index: 6;
-      box-shadow: 0 8px 16px -4px rgba(245, 87, 108, 0.4);
-      width: fit-content;
-      white-space: nowrap;
+      position: absolute; /* Floats over the product image */
+      top: 20px; /* Spacing from top of card */
+      left: 20px; /* Spacing from left of card */
+      display: inline-block; /* Wraps tightly around content */
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); /* High-visibility red/pink gradient for deals */
+      color: white; /* Contrast text */
+      padding: 6px 14px; /* Comfortable padding for numeric/text badge */
+      border-radius: 14px; /* Matches modern rounded aesthetic */
+      font-size: 0.75rem; /* Small but bold for quick scanning */
+      font-weight: 850; /* High impact font weight */
+      z-index: 6; /* Ensures badge is above image and heart button */
+      box-shadow: 0 8px 16px -4px rgba(245, 87, 108, 0.4); /* Glow effect from the pink gradient */
+      width: fit-content; /* Size fits the internal text exactly */
+      white-space: nowrap; /* Prevents text wrapping within the badge */
     }
 
     .card-image-wrapper {
-      width: 100%;
-      height: 240px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 30px;
-      position: relative;
+      width: 100%; /* Spans full card width */
+      height: 240px; /* Consistent height for grid uniformity */
+      display: flex; /* Flexbox for image centering */
+      align-items: center; /* Vertical alignment centered */
+      justify-content: center; /* Horizontal alignment centered */
+      padding: 30px; /* Prevents image from touching the card edges */
+      position: relative; /* Context for children if needed */
     }
 
     .card-image-wrapper img {
-      max-height: 100%;
-      max-width: 100%;
-      object-fit: contain;
-      transition: transform 0.5s ease;
+      max-height: 100%; /* Scales to container height */
+      max-width: 100%; /* Scales to container width */
+      object-fit: contain; /* Prevents stretching of varying product image aspect ratios */
+      transition: transform 0.5s ease; /* Smooth "zoom" effect on hover */
     }
 
     .product-card-horizontal:hover .card-image-wrapper img {
-      transform: scale(1.1);
+      transform: scale(1.1); /* Subtle magnification feedback on card hover */
     }
 
     .product-card-body {
-      padding: 1.75rem;
-      background: #fbfcfe;
-      border-top: 1px solid #f1f5f9;
-      border-bottom-left-radius: 28px;
-      border-bottom-right-radius: 28px;
-      flex-grow: 1;
-      display: flex;
-      flex-direction: column;
+      padding: 1.75rem; /* Comfortable gutter for price and text */
+      background: #fbfcfe; /* Very light blue tint to distinguish from white card header */
+      border-top: 1px solid #f1f5f9; /* Defining line between image and info */
+      border-bottom-left-radius: 28px; /* Matches container rounding */
+      border-bottom-right-radius: 28px; /* Matches container rounding */
+      flex-grow: 1; /* Pushes footer elements to the bottom uniformly */
+      display: flex; /* Flexbox for structured content stacking */
+      flex-direction: column; /* Vertical arrangement */
     }
 
     .product-name {
-      font-size: 1.2rem;
-      font-weight: 800;
-      color: var(--premium-dark);
-      margin-bottom: 0.75rem;
+      font-size: 1.2rem; /* Medium-large title size */
+      font-weight: 800; /* Bold weight for product names */
+      color: var(--premium-dark); /* Color indicator for hierarchy */
+      margin-bottom: 0.75rem; /* Gap before price appears */
     }
 
     .product-price {
-      font-size: 1.5rem;
-      font-weight: 850;
-      color: var(--premium-purple);
-      letter-spacing: -1px;
-      margin-bottom: 1rem !important;
-      line-height: 1;
-      display: flex;
-      align-items: baseline;
+      font-size: 1.5rem; /* Major sizing for the primary decision factor */
+      font-weight: 850; /* Heavily emphasized price */
+      color: var(--premium-purple); /* Using brand color for active values */
+      letter-spacing: -1px; /* Tight numeric spacing for modern look */
+      margin-bottom: 1rem !important; /* Forces spacing even with Bootstrap defaults */
+      line-height: 1; /* Tight line height for clean numeric display */
+      display: flex; /* Horizontal flow for currency and units */
+      align-items: baseline; /* Aligns decimals and secondary text cleanly */
     }
 
     .product-price small {
-      font-size: 0.9rem;
-      font-weight: 600;
-      color: #64748b;
-      margin-left: 4px;
-      letter-spacing: 0;
+      font-size: 0.9rem; /* Reduced size for "each" or unit labels */
+      font-weight: 600; /* Semibold for structure */
+      color: #64748b; /* Muted descriptor color */
+      margin-left: 4px; /* Small gap after numeric value */
+      letter-spacing: 0; /* Reset tight spacing for secondary text */
     }
 
     .product-description-clamp {
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-      height: 2.8rem;
+      display: -webkit-box; /* Required for multi-line ellipsis in Webkit */
+      -webkit-line-clamp: 2; /* Truncates after two lines of text (Webkit) */
+      line-clamp: 2; /* Standard property for line truncation */
+      -webkit-box-orient: vertical; /* Sets clipping direction */
+      overflow: hidden; /* Clips spilled text */
+      height: 2.8rem; /* Sets fixed height to maintain alignment across rows */
     }
 
     .btn-favorite {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      width: 40px;
-      height: 40px;
-      background: white;
-      border: 1px solid #f1f5f9;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #cbd5e1;
-      z-index: 5;
-      transition: all 0.3s ease;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+      position: absolute; /* Independent of following flow */
+      top: 20px; /* Corner positioning */
+      right: 20px; /* Corner positioning */
+      width: 40px; /* Circular button width */
+      height: 40px; /* Circular button height */
+      background: white; /* Clean button surface */
+      border: 1px solid #f1f5f9; /* Defined edges */
+      border-radius: 50%; /* Perfect circle */
+      display: flex; /* Center icon */
+      align-items: center; /* Center cross-axis */
+      justify-content: center; /* Center main-axis */
+      color: #cbd5e1; /* Inactive "hollow" heart color */
+      z-index: 5; /* Above product image */
+      transition: all 0.3s ease; /* Interaction feedback */
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); /* Soft elevation shadow */
     }
 
     .btn-favorite:hover, .btn-favorite.active {
-      background: #fff1f2;
-      color: #f43f5e;
-      border-color: #fecdd3;
+      background: #fff1f2; /* Light pink tint for active/hover */
+      color: #f43f5e; /* Vibrant red-pink for heart fill */
+      border-color: #fecdd3; /* Soft border matching background tint */
     }
 
     /* Category Cards */
     .category-card {
-      min-width: 190px;
-      height: 150px;
-      background: white;
-      border: 1px solid #f1f5f9;
-      border-radius: 28px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-decoration: none;
-      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-      padding: 1.5rem;
+      min-width: 190px; /* Fixed sizing for scroll row uniformity */
+      height: 150px; /* Fixed height for grid alignment */
+      background: white; /* Clean background */
+      border: 1px solid #f1f5f9; /* Subdued card framing */
+      border-radius: 28px; /* App-style rounded edges */
+      display: flex; /* Centered content stack */
+      flex-direction: column; /* Vertical icon/text arrangement */
+      align-items: center; /* Center align children horizontally */
+      justify-content: center; /* Center align children vertically */
+      text-decoration: none; /* No link styling */
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); /* Professional lift transition */
+      padding: 1.5rem; /* Generous internal padding */
     }
 
     .category-card:hover {
-      background: var(--premium-purple);
-      border-color: transparent;
-      transform: translateY(-10px);
-      box-shadow: 0 20px 25px -5px rgba(124, 58, 237, 0.2);
-      text-decoration: none;
+      background: var(--premium-purple); /* Fill card with brand color on hover */
+      border-color: transparent; /* Remove edge border when color fills */
+      transform: translateY(-10px); /* Significant elevation indicating interactivity */
+      box-shadow: 0 20px 25px -5px rgba(124, 58, 237, 0.2); /* Logic: glow shadow from color fill */
+      text-decoration: none; /* Keeps anchor clean */
     }
 
     .category-icon {
-      font-size: 2.8rem;
-      color: var(--premium-purple);
-      margin-bottom: 0.75rem;
-      transition: all 0.3s ease;
+      font-size: 2.8rem; /* Large, recognizable symbols */
+      color: var(--premium-purple); /* Brand color symbols while inactive */
+      margin-bottom: 0.75rem; /* Space before label */
+      transition: all 0.3s ease; /* Color shift timing */
     }
 
     .category-name {
-      font-weight: 700;
-      color: var(--premium-dark);
-      font-size: 1rem;
-      transition: all 0.3s ease;
+      font-weight: 700; /* Bold label weight */
+      color: var(--premium-dark); /* Contrast label color */
+      font-size: 1rem; /* Clear label sizing */
+      transition: all 0.3s ease; /* Color shift timing */
     }
 
     .category-card:hover .category-icon,
     .category-card:hover .category-name {
-      color: white !important;
+      color: white !important; /* Force children into inverse white when background is purple */
     }
 
     /* Store Cards */
     .store-card {
-      min-width: 280px;
-      background: white;
-      border-radius: 32px;
-      border: 1px solid #f1f5f9;
-      text-decoration: none;
-      color: inherit;
-      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-      overflow: hidden;
+      min-width: 280px; /* Larger scroll segments for retailer info */
+      background: white; /* Data surface */
+      border-radius: 32px; /* Extra round modern aesthetic */
+      border: 1px solid #f1f5f9; /* Defining edge */
+      text-decoration: none; /* Clean anchor */
+      color: inherit; /* Pass-through text color */
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); /* Professional transition */
+      overflow: hidden; /* Clips any animation or spilled color from body */
     }
 
     .store-card:hover {
-      transform: translateY(-12px);
-      box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.12);
-      text-decoration: none;
+      transform: translateY(-12px); /* Elevation feedback */
+      box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.12); /* Deep shadow for impact */
+      text-decoration: none; /* Clean anchor */
     }
 
     .store-card-image {
-      height: 180px;
-      padding: 30px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: white;
+      height: 180px; /* Fixed height for branding logos */
+      padding: 30px; /* Gutter to prevent logos from touching card edge */
+      display: flex; /* Center alignment */
+      align-items: center; /* Center vertical */
+      justify-content: center; /* Center horizontal */
+      background: white; /* Neutral backdrop for varied logos */
     }
 
     .store-card-image img {
-      max-height: 100%;
-      max-width: 100%;
-      object-fit: contain;
+      max-height: 100%; /* Scaling constraint */
+      max-width: 100%; /* Scaling constraint */
+      object-fit: contain; /* Professional branding display */
     }
 
     .store-card-body {
-      padding: 1.75rem;
-      background: #fbfcfe;
-      border-top: 1px solid #f1f5f9;
+      padding: 1.75rem; /* Internal information spacing */
+      background: #fbfcfe; /* Tint for visual separation of data zone */
+      border-top: 1px solid #f1f5f9; /* Defining line */
     }
 
     /* Newsletter Section */
     .newsletter-section {
-      background: linear-gradient(135deg, var(--premium-purple) 0%, var(--premium-indigo) 100%);
-      color: white;
-      padding: 6rem 0;
-      border-radius: 60px;
-      margin: 4rem 0;
-      position: relative;
-      overflow: hidden;
+      background: linear-gradient(135deg, var(--premium-purple) 0%, var(--premium-indigo) 100%); /* Impact brand gradient */
+      color: white; /* Contrast text */
+      padding: 6rem 0; /* Large vertical spacing for call-to-action block */
+      border-radius: 60px; /* Highly curved corners matching hero */
+      margin: 4rem 0; /* Spacing between sections */
+      position: relative; /* Context for decorations */
+      overflow: hidden; /* Clips decorative circles */
     }
 
     .newsletter-section::before {
-      content: '';
-      position: absolute;
-      width: 300px;
-      height: 300px;
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 50%;
-      top: -150px;
-      right: -150px;
+      content: ''; /* Decoration element */
+      position: absolute; /* Floating over background */
+      width: 300px; /* Circle size */
+      height: 300px; /* Circle size */
+      background: rgba(255, 255, 255, 0.1); /* Low-opacity white for visual texture */
+      border-radius: 50%; /* Perfect circle */
+      top: -150px; /* Halfway off-canvas top */
+      right: -150px; /* Halfway off-canvas right */
     }
 
     .newsletter-form {
-      max-width: 600px;
-      margin: 0 auto;
-      background: rgba(255, 255, 255, 0.15);
-      backdrop-filter: blur(10px);
-      padding: 10px;
-      border-radius: 24px;
-      display: flex;
-      gap: 10px;
-      border: 1px solid rgba(255, 255, 255, 0.2);
+      max-width: 600px; /* Constraints width for comfortable viewing */
+      margin: 0 auto; /* Horizontal centering */
+      background: rgba(255, 255, 255, 0.15); /* Translucent input background */
+      backdrop-filter: blur(10px); /* Glassmorphism blurring effect */
+      padding: 10px; /* Internal spacing between field and button */
+      border-radius: 24px; /* Matches modern UI patterns */
+      display: flex; /* Horizontal input arrangement */
+      gap: 10px; /* Internal spacing */
+      border: 1px solid rgba(255, 255, 255, 0.2); /* Glass defining border */
     }
 
     .newsletter-form input {
-      flex: 1;
-      background: transparent;
-      border: none;
-      padding: 15px 20px;
-      color: white;
-      font-weight: 500;
+      flex: 1; /* Input takes up maximum available width */
+      background: transparent; /* No background (uses parent glass styling) */
+      border: none; /* No internal borders */
+      padding: 15px 20px; /* Comfortable typing area */
+      color: white; /* Contrasting input text */
+      font-weight: 500; /* Medium weight */
     }
 
     .newsletter-form input::placeholder {
-      color: rgba(255, 255, 255, 0.7);
+      color: rgba(255, 255, 255, 0.7); /* Translucent placeholder text */
     }
 
     .newsletter-form button {
-      background: white;
-      color: var(--premium-purple);
-      border: none;
-      padding: 15px 35px;
-      border-radius: 18px;
-      font-weight: 800;
-      transition: all 0.3s ease;
+      background: white; /* Clean, bold CTA background */
+      color: var(--premium-purple); /* Text color matching sectional theme */
+      border: none; /* No borders */
+      padding: 15px 35px; /* Large, friendly button size */
+      border-radius: 18px; /* Matches input rounded corners */
+      font-weight: 800; /* Bold label weight */
+      transition: all 0.3s ease; /* Feedback animation timing */
     }
 
     .newsletter-form button:hover {
-      transform: scale(1.05);
-      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+      transform: scale(1.05); /* Logical growth on interaction */
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1); /* Shadow enhancement for elevation */
     }
 
     /* Section Spacing */
     .content-section {
-      padding: 2.5rem 0;
+      padding: 2.5rem 0; /* Standardized vertical padding for content blocks */
     }
 
     .bg-soft-purple {
-      background: #f5f3ff;
+      background: #f5f3ff; /* Extremely light purple backdrop for subtle page partitioning */
     }
+
+    .cursor-pointer { cursor: pointer; } /* Utility for clickable elements */
+    .cursor-default { cursor: default; } /* Utility for non-clickable elements */
   </style>
 </head>
-<body>
-  <!-- Navigation -->
-  <nav class="navbar navbar-expand-lg navbar-premium">
-    <div class="container">
-      <a class="navbar-brand d-flex align-items-center" href="{{ url_for('main.home') }}">
-        <div class="brand-icon me-3">
-          <i class="bi bi-cart-check-fill fs-5"></i>
+<body> <!-- Visible application contents -->
+  <!-- Navigation --> <!-- Global navigation block -->
+  <nav class="navbar navbar-expand-lg navbar-premium"> <!-- Modern premium styled navbar using custom variables -->
+    <div class="container"> <!-- Centers the navbar content within the viewport -->
+      <a class="navbar-brand d-flex align-items-center" href="{{ url_for('main.home') }}"> <!-- Home link containing brand visual -->
+        <div class="brand-icon me-3"> <!-- Rounded symbol container -->
+          <i class="bi bi-cart-check-fill fs-5"></i> <!-- Internal brand icon -->
         </div>
-        <span>Smart<span class="brand-grocery-text">Grocery</span></span>
+        <span>Smart<span class="brand-grocery-text">Grocery</span></span> <!-- Text brand label with color highlighting -->
       </a>
-      <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-        <span class="navbar-toggler-icon"></span>
+      <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"> <!-- Burger menu for smaller screens -->
+        <span class="navbar-toggler-icon"></span> <!-- Standardized toggle symbol -->
       </button>
-      <div class="collapse navbar-collapse" id="navbarNav">
-        {% set cart_count = shopping_list_count or 0 %}
-        <ul class="navbar-nav ms-auto align-items-center">
-          <li class="nav-item">
-            <a class="nav-link {% if request.endpoint == 'main.home' %}active{% endif %}" href="{{ url_for('main.home') }}">
-              <i class="bi bi-house-door me-1"></i> Home
+      <div class="collapse navbar-collapse" id="navbarNav"> <!-- Wrapper for collapsible navigation links -->
+        {% set cart_count = shopping_list_count or 0 %} <!-- Variable for calculating and displaying current list totals -->
+        <ul class="navbar-nav ms-auto align-items-center"> <!-- List of links pushed to the right side -->
+          <li class="nav-item"> <!-- Home link nav item -->
+            <a class="nav-link {% if request.endpoint == 'main.home' %}active{% endif %}" href="{{ url_for('main.home') }}"> <!-- Home link with active detection logic -->
+              <i class="bi bi-house-door me-1"></i> Home <!-- Icon and core label -->
             </a>
           </li>
-          <li class="nav-item">
-            <a class="nav-link {% if 'stores' in request.path or request.endpoint == 'main.stores_page' %}active{% endif %}" href="{{ url_for('main.stores_page') }}">
-              <i class="bi bi-shop me-1"></i> Stores
+          <li class="nav-item"> <!-- Stores link nav item -->
+            <a class="nav-link {% if 'stores' in request.path or request.endpoint == 'main.stores_page' %}active{% endif %}" href="{{ url_for('main.stores_page') }}"> <!-- Specific active check for stores routes -->
+              <i class="bi bi-shop me-1"></i> Stores <!-- Store discovery link -->
             </a>
           </li>
-          <li class="nav-item">
-            <a class="nav-link {% if 'featured-deals' in request.path or request.endpoint == 'main.featured_deals_page' %}active{% endif %}" href="{{ url_for('main.featured_deals_page') }}">
-              <i class="bi bi-tags me-1"></i> Deals
+          <li class="nav-item"> <!-- Deals link nav item -->
+            <a class="nav-link {% if 'featured-deals' in request.path or request.endpoint == 'main.featured_deals_page' %}active{% endif %}" href="{{ url_for('main.featured_deals_page') }}"> <!-- Targeted check for deals route active state -->
+              <i class="bi bi-tags me-1"></i> Deals <!-- High-value items link -->
             </a>
           </li>
-          <li class="nav-item">
-            <a class="nav-link {% if 'compare' in request.path or request.endpoint == 'main.compare_prices' %}active{% endif %}" href="{{ url_for('main.compare_prices') }}">
-              <i class="bi bi-arrow-left-right me-1"></i> Compare
+          <li class="nav-item"> <!-- Compare Prices nav item -->
+            <a class="nav-link {% if 'compare' in request.path or request.endpoint == 'main.compare_prices' %}active{% endif %}" href="{{ url_for('main.compare_prices') }}"> <!-- Active state logic for comparison engine -->
+              <i class="bi bi-arrow-left-right me-1"></i> Compare <!-- Manual search and logic link -->
             </a>
           </li>
-          <li class="nav-item">
-            <a class="nav-link d-flex align-items-center position-relative {% if 'shopping-list' in request.path or request.endpoint == 'main.shopping_list' %}active{% endif %}" href="{{ url_for('main.shopping_list') }}">
-              <i class="bi bi-list-check me-1"></i> Lists
-              {% if (shopping_list_count or 0) > 0 %}
+          <li class="nav-item"> <!-- Shopping Lists Link -->
+            <a class="nav-link d-flex align-items-center position-relative {% if 'shopping-list' in request.path or request.endpoint == 'main.shopping_list' %}active{% endif %}" href="{{ url_for('main.shopping_list') }}"> <!-- Dynamic active path highlighting -->
+              <i class="bi bi-list-check me-1"></i> Lists <!-- List management label -->
+            </a>
+          </li>
+          <li class="nav-item ms-lg-1"> <!-- Notifications Link -->
+            <a class="nav-link nav-icon-btn position-relative {% if 'notifications' in request.path %}active{% endif %}" href="{{ url_for('main.notifications_page') }}" aria-label="Notifications"> <!-- Active detection for alerts -->
+              <i class="bi bi-bell fs-5"></i> <!-- Bell symbol -->
+              {% if (unread_notifications_count or 0) > 0 %} <!-- Logic for unread badge visibility -->
               <span class="position-absolute badge rounded-pill bg-danger" style="font-size: 0.65rem; padding: 0.45em 0.7em; top: -5px; right: -10px; border: 2px solid white; box-shadow: 0 4px 10px rgba(220, 53, 69, 0.4); min-width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;">
-                {{ shopping_list_count }}
+                {{ unread_notifications_count }} <!-- Count of unviewed alerts -->
               </span>
               {% endif %}
             </a>
           </li>
-          <li class="nav-item ms-lg-1">
-            <a class="nav-link nav-icon-btn position-relative {% if 'notifications' in request.path %}active{% endif %}" href="{{ url_for('main.notifications_page') }}" aria-label="Notifications">
-              <i class="bi bi-bell fs-5"></i>
-              {% if (unread_notifications_count or 0) > 0 %}
-              <span class="position-absolute badge rounded-pill bg-danger" style="font-size: 0.65rem; padding: 0.45em 0.7em; top: -5px; right: -10px; border: 2px solid white; box-shadow: 0 4px 10px rgba(220, 53, 69, 0.4); min-width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;">
-                {{ unread_notifications_count }}
-              </span>
-              {% endif %}
-            </a>
-          </li>
-          <li class="nav-item ms-lg-2">
-            <a class="nav-link nav-icon-btn nav-profile-btn {% if 'profile' in request.path %}active{% endif %}" href="{{ url_for('main.profile') }}" aria-label="User Profile">
-              <i class="bi bi-person-circle fs-5"></i>
+          <li class="nav-item ms-lg-2"> <!-- User Profile and Settings -->
+            <a class="nav-link nav-icon-btn nav-profile-btn {% if 'profile' in request.path %}active{% endif %}" href="{{ url_for('main.profile') }}" aria-label="User Profile"> <!-- Circular button for personal dashboard -->
+              <i class="bi bi-person-circle fs-5"></i> <!-- Profile head symbol -->
             </a>
           </li>
         </ul>
@@ -629,254 +630,259 @@ Shown at route: /
     </div>
   </nav>
 
-  <!-- Unified Premium Hero Section -->
-  <header class="premium-hero">
-    <div class="bg-shape shape-1"></div>
-    <div class="bg-shape shape-2"></div>
-    <div class="bg-shape shape-3"></div>
+  <!-- Unified Premium Hero Section --> <!-- Major attention-grabbing header for product discovery -->
+  <header class="premium-hero"> <!-- Styled container for main CTAs and branding -->
+    <div class="bg-shape shape-1"></div> <!-- Abstract animated background circles -->
+    <div class="bg-shape shape-2"></div> <!-- Abstract animated background circles -->
+    <div class="bg-shape shape-3"></div> <!-- Abstract animated background circles -->
     
-    <div class="container text-center position-relative" style="z-index: 2;">
-      <h1 class="display-3 fw-bold mb-3 text-white">Shop Smarter,<br>Save Bigger.</h1>
-      <p class="lead mx-auto mb-5 opacity-90 text-white" style="max-width: 700px;">The ultimate destination to track prices, find exclusive coupons, and coordinate your grocery trips across all major retailers.</p>
+    <div class="container text-center position-relative" style="z-index: 2;"> <!-- Content centered over moving shapes -->
+      <h1 class="display-3 fw-bold mb-3 text-white">Shop Smarter,<br>Save Bigger.</h1> <!-- Bold value proposition heading -->
+      <p class="lead mx-auto mb-5 opacity-90 text-white" style="max-width: 700px;">The ultimate destination to track prices, find exclusive coupons, and coordinate your grocery trips across all major retailers.</p> <!-- Contextual background for the app's purpose -->
       
-      <div class="search-box mx-auto">
-        <i class="bi bi-search ms-3 text-muted fs-5"></i>
-        <input type="text" placeholder="Search brands, products, or stores..." id="hero-search">
-        <button onclick="handleHeroSearch()" class="me-1">
+      <div class="search-box mx-auto"> <!-- Centered Global Search Input -->
+        <i class="bi bi-search ms-3 text-muted fs-5"></i> <!-- Decorative magnifying glass -->
+        <input type="text" placeholder="Search brands, products, or stores..." id="hero-search"> <!-- Interactive user query field -->
+        <button onclick="handleHeroSearch()" class="me-1"> <!-- Trigger for JavaScript search handler -->
           Explore Deals
         </button>
       </div>
 
-      <div class="mt-5 d-flex justify-content-center gap-4 flex-wrap opacity-75">
+      <div class="mt-5 d-flex justify-content-center gap-4 flex-wrap opacity-75"> <!-- Key feature value tags -->
         <div class="d-flex align-items-center text-white small">
-          <i class="bi bi-check-circle-fill me-2 text-info"></i> Real-time Tracking
+          <i class="bi bi-check-circle-fill me-2 text-info"></i> Real-time Tracking <!-- Benefit: Live data -->
         </div>
         <div class="d-flex align-items-center text-white small">
-          <i class="bi bi-check-circle-fill me-2 text-info"></i> Exclusive Coupons
+          <i class="bi bi-check-circle-fill me-2 text-info"></i> Exclusive Coupons <!-- Benefit: Discounts -->
         </div>
         <div class="d-flex align-items-center text-white small">
-          <i class="bi bi-check-circle-fill me-2 text-info"></i> Shared Lists
+          <i class="bi bi-check-circle-fill me-2 text-info"></i> Shared Lists <!-- Benefit: Coordination -->
         </div>
       </div>
     </div>
   </header>
 
-  <!-- Stats Section -->
-  <section class="stats-section">
-    <div class="container">
-      <div class="row g-4 justify-content-center">
-        <div class="col-lg-3 col-md-6">
-          <div class="stat-card">
-            <div class="stat-icon">
+  <!-- Stats Section --> <!-- Quantitative overview of the catalog scale -->
+  <section class="stats-section"> <!-- Interactive counter module -->
+    <div class="container"> <!-- Grid layout wrapper -->
+      <div class="row g-4 justify-content-center"> <!-- Centered responsive columns -->
+        <div class="col-lg-3 col-md-6"> <!-- Spans 1/4th of row on large screens -->
+          <div class="stat-card"> <!-- Individual metric card -->
+            <div class="stat-icon"> <!-- Visual descriptor -->
               <i class="bi bi-shop"></i>
             </div>
-            <div class="stat-number" data-target="{{ stores|length }}">0</div>
-            <div class="stat-label">Verified Stores</div>
+            <div class="stat-number" data-target="{{ stores|length }}">0</div> <!-- Final count target for JS animation; sourced from DB -->
+            <div class="stat-label">Verified Stores</div> <!-- Description of metric -->
           </div>
         </div>
-        <div class="col-lg-3 col-md-6">
-          <div class="stat-card">
-            <div class="stat-icon">
+        <div class="col-lg-3 col-md-6"> <!-- Spans 1/4th of row on large screens -->
+          <div class="stat-card"> <!-- Individual metric card -->
+            <div class="stat-icon"> <!-- Visual descriptor -->
               <i class="bi bi-box-seam"></i>
             </div>
-            <div class="stat-number" data-target="{{ total_product_count }}">0</div>
-            <div class="stat-label">Stock Items</div>
+            <div class="stat-number" data-target="{{ total_product_count }}">0</div> <!-- Global item count from repository -->
+            <div class="stat-label">Stock Items</div> <!-- Description of metric -->
           </div>
         </div>
-        <div class="col-lg-3 col-md-6">
-          <div class="stat-card">
-            <div class="stat-icon">
+        <div class="col-lg-3 col-md-6"> <!-- Spans 1/4th of row on large screens -->
+          <div class="stat-card"> <!-- Individual metric card -->
+            <div class="stat-icon"> <!-- Visual descriptor -->
               <i class="bi bi-lightning-charge-fill"></i>
             </div>
-            <div class="stat-number" data-target="{{ total_deals_count }}">0</div>
-            <div class="stat-label">Live Discounts</div>
+            <div class="stat-number" data-target="{{ total_deals_count }}">0</div> <!-- Count of active special offers -->
+            <div class="stat-label">Live Discounts</div> <!-- Description of metric -->
           </div>
         </div>
-        <div class="col-lg-3 col-md-6">
-          <div class="stat-card">
-            <div class="stat-icon">
+        <div class="col-lg-3 col-md-6"> <!-- Spans 1/4th of row on large screens -->
+          <div class="stat-card"> <!-- Individual metric card -->
+            <div class="stat-icon"> <!-- Visual descriptor -->
               <i class="bi bi-piggy-bank-fill"></i>
             </div>
-            <div class="stat-number" data-target="{{ max_savings }}">0%</div>
-            <div class="stat-label">Max Savings</div>
+            <div class="stat-number" data-target="{{ max_savings }}">0%</div> <!-- Maximum possible percentage discount found -->
+            <div class="stat-label">Max Savings</div> <!-- Description of metric -->
           </div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Categories Section -->
-  <section class="content-section">
-    <div class="container">
-      <div class="section-header">
+  <!-- Categories Section --> <!-- Navigational shortcuts to product departments -->
+  <section class="content-section"> <!-- Modular section for departments -->
+    <div class="container"> <!-- Standard content alignment -->
+      <div class="section-header"> <!-- Title and Subtitle grouping -->
         <div>
-          <h2 class="section-title">Shop by Category</h2>
-          <p class="section-subtitle">Discover high-quality essentials across our verified departments</p>
+          <h2 class="section-title">Shop by Category</h2> <!-- Section heading -->
+          <p class="section-subtitle">Discover high-quality essentials across our verified departments</p> <!-- Descriptive secondary text -->
         </div>
       </div>
-      <div class="scroll-container">
-        <button class="scroll-arrow left" onclick="scrollSection('categories', 'left')" aria-label="Scroll left">
-          <i class="bi bi-chevron-left"></i>
+      <div class="scroll-container"> <!-- Wrapper for horizontal scrolling arrows and content -->
+        <button class="scroll-arrow left" onclick="scrollSection('categories', 'left')" aria-label="Scroll left"> <!-- Interactive Arrow (Left) -->
+          <i class="bi bi-chevron-left"></i> <!-- Icon symbol -->
         </button>
-        <div class="scroll-wrapper d-flex flex-nowrap" id="categories-scroll" style="overflow-x: auto; gap: 20px; scrollbar-width: none; -ms-overflow-style: none;">
-          <a href="{{ url_for('main.compare_prices') }}?category=dairy" class="category-card premium-outline-hover">
-            <div class="category-icon text-premium-purple"><i class="bi bi-egg-fried"></i></div>
-            <div class="category-name">Dairy & Eggs</div>
+        <div class="scroll-wrapper d-flex flex-nowrap" id="categories-scroll" style="overflow-x: auto; gap: 20px; scrollbar-width: none; -ms-overflow-style: none;"> <!-- The actual list of category links -->
+          <a href="{{ url_for('main.compare_prices') }}?category=dairy" class="category-card premium-outline-hover"> <!-- Dairy link with query parameter -->
+            <div class="category-icon text-premium-purple"><i class="bi bi-egg-fried"></i></div> <!-- Category-specific symbol -->
+            <div class="category-name">Dairy & Eggs</div> <!-- Category label -->
           </a>
-          <a href="{{ url_for('main.compare_prices') }}?category=produce" class="category-card premium-outline-hover">
-            <div class="category-icon text-premium-purple"><i class="bi bi-apple"></i></div>
-            <div class="category-name">Fresh Produce</div>
+          <a href="{{ url_for('main.compare_prices') }}?category=produce" class="category-card premium-outline-hover"> <!-- Fresh Produce link -->
+            <div class="category-icon text-premium-purple"><i class="bi bi-apple"></i></div> <!-- Fruit symbol -->
+            <div class="category-name">Fresh Produce</div> <!-- Category label -->
           </a>
-          <a href="{{ url_for('main.compare_prices') }}?category=meat" class="category-card premium-outline-hover">
-            <div class="category-icon text-premium-purple"><i class="bi bi-egg-fill"></i></div>
-            <div class="category-name">Meat & Seafood</div>
+          <a href="{{ url_for('main.compare_prices') }}?category=meat" class="category-card premium-outline-hover"> <!-- Meat/Seafood link -->
+            <div class="category-icon text-premium-purple"><i class="bi bi-egg-fill"></i></div> <!-- Protein symbol -->
+            <div class="category-name">Meat & Seafood</div> <!-- Category label -->
           </a>
-          <a href="{{ url_for('main.compare_prices') }}?category=bakery" class="category-card premium-outline-hover">
-            <div class="category-icon text-premium-purple"><i class="bi bi-cake2"></i></div>
-            <div class="category-name">Bakery Fresh</div>
+          <a href="{{ url_for('main.compare_prices') }}?category=bakery" class="category-card premium-outline-hover"> <!-- Bakery link -->
+            <div class="category-icon text-premium-purple"><i class="bi bi-cake2"></i></div> <!-- Bread/Cake symbol -->
+            <div class="category-name">Bakery Fresh</div> <!-- Category label -->
           </a>
-          <a href="{{ url_for('main.compare_prices') }}?category=snacks" class="category-card premium-outline-hover">
-            <div class="category-icon text-premium-purple"><i class="bi bi-bag-fill"></i></div>
-            <div class="category-name">Snacks & More</div>
+          <a href="{{ url_for('main.compare_prices') }}?category=snacks" class="category-card premium-outline-hover"> <!-- Snacks link -->
+            <div class="category-icon text-premium-purple"><i class="bi bi-bag-fill"></i></div> <!-- Packaging symbol -->
+            <div class="category-name">Snacks & More</div> <!-- Category label -->
           </a>
-          <a href="{{ url_for('main.compare_prices') }}?category=beverages" class="category-card premium-outline-hover">
-            <div class="category-icon text-premium-purple"><i class="bi bi-cup-straw"></i></div>
-            <div class="category-name">Beverages</div>
+          <a href="{{ url_for('main.compare_prices') }}?category=beverages" class="category-card premium-outline-hover"> <!-- Beverages link -->
+            <div class="category-icon text-premium-purple"><i class="bi bi-cup-straw"></i></div> <!-- Drink symbol -->
+            <div class="category-name">Beverages</div> <!-- Category label -->
           </a>
-          <a href="{{ url_for('main.compare_prices') }}?category=frozen" class="category-card premium-outline-hover">
-            <div class="category-icon text-premium-purple"><i class="bi bi-snow"></i></div>
-            <div class="category-name">Frozen Goods</div>
+          <a href="{{ url_for('main.compare_prices') }}?category=frozen" class="category-card premium-outline-hover"> <!-- Frozen foods link -->
+            <div class="category-icon text-premium-purple"><i class="bi bi-snow"></i></div> <!-- Cold symbol -->
+            <div class="category-name">Frozen Goods</div> <!-- Category label -->
           </a>
-          <a href="{{ url_for('main.compare_prices') }}?category=pantry" class="category-card premium-outline-hover">
-            <div class="category-icon text-premium-purple"><i class="bi bi-archive"></i></div>
-            <div class="category-name">Pantry Elite</div>
+          <a href="{{ url_for('main.compare_prices') }}?category=pantry" class="category-card premium-outline-hover"> <!-- Long-life pantry link -->
+            <div class="category-icon text-premium-purple"><i class="bi bi-archive"></i></div> <!-- Storage symbol -->
+            <div class="category-name">Pantry Elite</div> <!-- Category label -->
           </a>
         </div>
-        <button class="scroll-arrow right" onclick="scrollSection('categories', 'right')" aria-label="Scroll right">
-          <i class="bi bi-chevron-right"></i>
+        <button class="scroll-arrow right" onclick="scrollSection('categories', 'right')" aria-label="Scroll right"> <!-- Interactive Arrow (Right) -->
+          <i class="bi bi-chevron-right"></i> <!-- Icon symbol -->
         </button>
       </div>
     </div>
   </section>
 
-  <!-- Compare Prices Section -->
-  <section class="content-section">
-    <div class="container">
-      <div class="section-header">
+  <!-- Compare Prices Section --> <!-- Highlighted items with cross-store pricing ranges -->
+  <section class="content-section"> <!-- Modular section for pricing comparison preview -->
+    <div class="container"> <!-- Standard layout alignment -->
+      <div class="section-header"> <!-- Title and CTA spread -->
         <div>
-          <h2 class="section-title"><i class="bi bi-arrow-left-right text-premium-purple me-2"></i>Compare Prices</h2>
-          <p class="section-subtitle">Real-time price comparisons across the entire network</p>
+          <h2 class="section-title"><i class="bi bi-arrow-left-right text-premium-purple me-2"></i>Compare Prices</h2> <!-- Iconified Section Header -->
+          <p class="section-subtitle">Real-time price comparisons across the entire network</p> <!-- Descriptor text -->
         </div>
-        <a href="{{ url_for('main.compare_prices') }}" class="view-all-btn">
-          Compare All <i class="bi bi-arrow-right ms-1"></i>
+        <a href="{{ url_for('main.compare_prices') }}" class="view-all-btn"> <!-- Link to full search page -->
+          Compare All <i class="bi bi-arrow-right ms-1"></i> <!-- Arrow pointing to destination -->
         </a>
       </div>
-      <div class="scroll-container">
-        <button class="scroll-arrow left" onclick="scrollSection('compare', 'left')" aria-label="Scroll left">
+      <div class="scroll-container"> <!-- Interaction layer for product horizontal row -->
+        <button class="scroll-arrow left" onclick="scrollSection('compare', 'left')" aria-label="Scroll left"> <!-- Nav Arrow (Left) -->
           <i class="bi bi-chevron-left"></i>
         </button>
-        <div class="scroll-wrapper d-flex flex-nowrap" id="compare-scroll" style="overflow-x: auto; gap: 24px; scrollbar-width: none; -ms-overflow-style: none;">
-          {% for product in products[:20] %}
-          {% set pid = product.get('id') or product.get('_id') %}
-          <div class="product-card-horizontal premium-outline-hover" {% if pid %}onclick="window.location='{{ url_for('main.product_detail', product_id=pid) }}'"{% endif %} style="cursor: {% if pid %}pointer{% else %}default{% endif %}; min-width: 320px;">
-            <div class="card-image-wrapper">
-              <img src="{{ product.get('image') or 'https://via.placeholder.com/280x200' }}" alt="{{ product.get('name') }}">
+        <div class="scroll-wrapper d-flex flex-nowrap" id="compare-scroll" style="overflow-x: auto; gap: 24px; scrollbar-width: none; -ms-overflow-style: none;"> <!-- Horizontal row for items -->
+          {% for product in products[:20] %} <!-- Iterate through first 20 products from DB -->
+          {% set pid = product.get('id') or product.get('_id') %} <!-- Handle both standard and MongoDB ID formats -->
+          <div class="product-card-horizontal premium-outline-hover {% if pid %}cursor-pointer{% else %}cursor-default{% endif %}" 
+               {% if pid %}data-url="{{ url_for('main.product_detail', product_id=pid) }}"
+               onclick="window.location=this.dataset.url;"{% endif %} 
+               style="min-width: 320px;"> <!-- Interactive card linking to details -->
+            <div class="card-image-wrapper"> <!-- Visual section -->
+              <img src="{{ product.get('image') or 'https://via.placeholder.com/280x200' }}" alt="{{ product.get('name') }}"> <!-- Product photo with generic fallback -->
             </div>
-            <div class="product-card-body">
-              <div class="product-name product-description-clamp">{{ product.get('name', 'Premium Item') }}</div>
+            <div class="product-card-body"> <!-- Text and data section -->
+              <div class="product-name product-description-clamp">{{ product.get('name', 'Premium Item') }}</div> <!-- Trimmed name for row consistency -->
               
-              {% if product.get('stores') and product.get('stores')|length > 0 %}
-              {% set prices = [] %}
-              {% for store in product.get('stores', []) %}
-                {% set price_val = store.get('price') %}
+              {% if product.get('stores') and product.get('stores')|length > 0 %} <!-- Logic to extract pricing bounds across stores -->
+              {% set prices = [] %} <!-- Storage for numeric comparisons -->
+              {% for store in product.get('stores', []) %} <!-- Check every retailer selling the item -->
+                {% set price_val = store.get('price') %} <!-- Extract raw price -->
                 {% if price_val %}
-                  {% set _ = prices.append(price_val|float if price_val is string else price_val) %}
+                  {% set _ = prices.append(price_val|float if price_val is string else price_val) %} <!-- Type safety: convert to float for min/max functions -->
                 {% endif %}
               {% endfor %}
               
-              {% if prices|length > 0 %}
-              {% set min_price = prices|min %}
-              {% set max_price = prices|max %}
+              {% if prices|length > 0 %} <!-- Execute if at least one price point was identified -->
+              {% set min_price = prices|min %} <!-- Cheapest option -->
+              {% set max_price = prices|max %} <!-- Most expensive option -->
               <div class="product-store text-muted small mb-1">
-                <i class="bi bi-diagram-3 me-1"></i>Available at {{ product.get('stores')|length }} stores
+                <i class="bi bi-diagram-3 me-1"></i>Available at {{ product.get('stores')|length }} stores <!-- Indicator of retailer coverage -->
               </div>
-              <div class="product-price">
-                €{{ "%.2f"|format(min_price) }}{% if min_price != max_price %} - <small>€{{ "%.2f"|format(max_price) }}</small>{% endif %}
+              <div class="product-price"> <!-- Range display -->
+                €{{ "%.2f"|format(min_price) }}{% if min_price != max_price %} - <small>€{{ "%.2f"|format(max_price) }}</small>{% endif %} <!-- Conditional range: if min==max, show single price -->
               </div>
               {% endif %}
               {% endif %}
 
-              <div class="d-grid mt-auto">
+              <div class="d-grid mt-auto"> <!-- Botton action container -->
                 {% if pid %}
-                <a href="{{ url_for('main.product_detail', product_id=pid) }}" class="btn btn-premium-purple" onclick="event.stopPropagation();">
-                  <i class="bi bi-bar-chart-fill me-1"></i> Compare Prices
+                <a href="{{ url_for('main.product_detail', product_id=pid) }}" class="btn btn-premium-purple" onclick="event.stopPropagation();"> <!-- Primary CTA into detailed breakdown -->
+                  <i class="bi bi-bar-chart-fill me-1"></i> Compare Prices <!-- Chart icon + Label -->
                 </a>
                 {% endif %}
               </div>
             </div>
           </div>
-          {% endfor %}
+          {% endfor %} <!-- Loop termination -->
         </div>
-        <button class="scroll-arrow right" onclick="scrollSection('compare', 'right')" aria-label="Scroll right">
+        <button class="scroll-arrow right" onclick="scrollSection('compare', 'right')" aria-label="Scroll right"> <!-- Nav Arrow (Right) -->
           <i class="bi bi-chevron-right"></i>
         </button>
       </div>
     </div>
   </section>
 
-  <!-- Flash Deals Section -->
-  {% if featured_deals and featured_deals|length > 0 %}
-  <section class="content-section" style="background: #fbfcfe;">
-    <div class="container">
-      <div class="section-header">
+  <!-- Flash Deals Section --> <!-- High-impact promotional content area -->
+  {% if featured_deals and featured_deals|length > 0 %} <!-- Only render if there are active deals to display -->
+  <section class="content-section" style="background: #fbfcfe;"> <!-- Light background for differentiation -->
+    <div class="container"> <!-- Standard alignment -->
+      <div class="section-header"> <!-- Promo Header with Icon -->
         <div>
-          <h2 class="section-title"><i class="bi bi-lightning-fill text-warning me-2"></i>Flash Deals</h2>
-          <p class="section-subtitle">Real-time limited offers with maximum savings</p>
+          <h2 class="section-title"><i class="bi bi-lightning-fill text-warning me-2"></i>Flash Deals</h2> <!-- Lightning icon for urgency -->
+          <p class="section-subtitle">Real-time limited offers with maximum savings</p> <!-- Urgency descriptor -->
         </div>
-        <a href="{{ url_for('main.featured_deals_page') }}" class="view-all-btn">
-          View All Deals <i class="bi bi-arrow-right ms-1"></i>
+        <a href="{{ url_for('main.featured_deals_page') }}" class="view-all-btn"> <!-- Link to deals portal -->
+          View All Deals <i class="bi bi-arrow-right ms-1"></i> <!-- CTA with arrow -->
         </a>
       </div>
-      <div class="scroll-container">
-        <button class="scroll-arrow left" onclick="scrollSection('deals', 'left')" aria-label="Scroll left">
+      <div class="scroll-container"> <!-- Interaction wrapper for deals row -->
+        <button class="scroll-arrow left" onclick="scrollSection('deals', 'left')" aria-label="Scroll left"> <!-- Left Navigation -->
           <i class="bi bi-chevron-left"></i>
         </button>
-        <div class="scroll-wrapper d-flex flex-nowrap" id="deals-scroll" style="overflow-x: auto; gap: 24px; scrollbar-width: none; -ms-overflow-style: none;">
-          {% for deal in featured_deals[:12] %}
-          {% set deal_id = deal.get('id') or deal.get('_id') %}
-          {% set offer_obj = deal.get('offer') if deal.get('offer') is mapping else None %}
-          {% set offer_x = offer_obj.x if offer_obj is not none else (deal.get('buy_quantity') or deal.get('multibuy_buy') or '') %}
-          {% set offer_y = offer_obj.y if offer_obj is not none else (deal.get('free_quantity') or deal.get('multibuy_free') or '') %}
-          {% set offer_type = offer_obj.type if offer_obj is not none else ('buyXgetY' if (offer_x and offer_y) else '') %}
+        <div class="scroll-wrapper d-flex flex-nowrap" id="deals-scroll" style="overflow-x: auto; gap: 24px; scrollbar-width: none; -ms-overflow-style: none;"> <!-- Horizontal scroll for deals -->
+          {% for deal in featured_deals[:12] %} <!-- Display top 12 curated deals -->
+          {% set deal_id = deal.get('id') or deal.get('_id') %} <!-- ID resolution -->
+          {% set offer_obj = deal.get('offer') if deal.get('offer') is mapping else None %} <!-- Extract nested coupon/offer logic -->
+          {% set offer_x = offer_obj.x if offer_obj is not none else (deal.get('buy_quantity') or deal.get('multibuy_buy') or '') %} <!-- Logic for "Buy X" -->
+          {% set offer_y = offer_obj.y if offer_obj is not none else (deal.get('free_quantity') or deal.get('multibuy_free') or '') %} <!-- Logic for "Get Y" -->
+          {% set offer_type = offer_obj.type if offer_obj is not none else ('buyXgetY' if (offer_x and offer_y) else '') %} <!-- Determine deal template type -->
           
-          <div class="product-card-horizontal premium-outline-hover" style="min-width: 320px;">
-            {% if deal.get('discount_label') or deal.get('discount_percent') %}
-            <div class="discount-badge">
-              {{ deal.get('discount_label') or (deal.get('discount_percent') ~ '% OFF') }}
+          <div class="product-card-horizontal premium-outline-hover" style="min-width: 320px;"> <!-- Deal specific card -->
+            {% if deal.get('discount_label') or deal.get('discount_percent') %} <!-- Render visual savings indicator if present -->
+            <div class="discount-badge"> <!-- High visibility tag -->
+              {{ deal.get('discount_label') or (deal.get('discount_percent') ~ '% OFF') }} <!-- Dynamic label from DB -->
             </div>
             {% endif %}
             <button class="btn-favorite {{ 'active' if deal.get('is_favorited') else '' }}" 
                     data-product-id="{{ deal_id }}" 
                     onclick="toggleFavorite(event, '{{ deal_id }}', this)"
-                    aria-label="Add to favorites">
-              <i class="bi {{ 'bi-heart-fill' if deal.get('is_favorited') else 'bi-heart' }}"></i>
+                    aria-label="Add to favorites"> <!-- Floating favorite control with JS interactivity -->
+              <i class="bi {{ 'bi-heart-fill' if deal.get('is_favorited') else 'bi-heart' }}"></i> <!-- Fill heart if already in favorites -->
             </button>
-            <div class="card-image-wrapper" onclick="window.location='{{ url_for('main.featured_deal_detail', deal_id=deal_id) }}'" style="cursor: pointer;">
-              <img src="{{ deal.get('image') or 'https://via.placeholder.com/280x200' }}" alt="{{ deal.get('title') or deal.get('name') }}">
+            <div class="card-image-wrapper cursor-pointer" 
+                 data-url="{{ url_for('main.featured_deal_detail', deal_id=deal_id) }}"
+                 onclick="window.location=this.dataset.url;"> <!-- Click image to see logic details -->
+              <img src="{{ deal.get('image') or 'https://via.placeholder.com/280x200' }}" alt="{{ deal.get('title') or deal.get('name') }}"> <!-- Deal visual -->
             </div>
-            <div class="product-card-body">
-              <div class="product-name product-description-clamp">{{ deal.get('title') or deal.get('name', 'Premium Deal') }}</div>
+            <div class="product-card-body"> <!-- Metadata area for deals -->
+              <div class="product-name product-description-clamp">{{ deal.get('title') or deal.get('name', 'Premium Deal') }}</div> <!-- Deal Header -->
               
               <div class="product-store text-muted small mb-1">
-                <i class="bi bi-shop me-1"></i>{{ deal.get('store') or deal.get('source', 'Partner Store') }}
+                <i class="bi bi-shop me-1"></i>{{ deal.get('store') or deal.get('source', 'Partner Store') }} <!-- Show source retailer -->
               </div>
-              <div class="product-price">
-                €{{ deal.get('price', '0.00') }}
-                {% if deal.get('original_price') %}
-                <small class="text-decoration-line-through ms-2" style="font-size: 0.85rem; color: #adb5bd;">€{{ deal.get('original_price') }}</small>
+              <div class="product-price"> <!-- Deal pricing -->
+                €{{ deal.get('price', '0.00') }} <!-- Current promotional price -->
+                {% if deal.get('original_price') %} <!-- Show contrast only if higher price known -->
+                <small class="text-decoration-line-through ms-2" style="font-size: 0.85rem; color: #adb5bd;">€{{ deal.get('original_price') }}</small> <!-- Strikethrough pricing for psychological validation -->
                 {% endif %}
               </div>
-              <div class="d-grid gap-2">
+              <div class="d-grid gap-2"> <!-- Multiple action row -->
                 <button type="button" class="btn btn-premium-action w-100" 
                         data-id="{{ deal_id }}" 
                         data-name="{{ deal.get('title') or deal.get('name') }}" 
@@ -887,18 +893,18 @@ Shown at route: /
                         data-offer-json='{{ offer_obj|tojson|forceescape if offer_obj is not none else "" }}'
                         data-offer-type="{{ offer_type }}"
                         data-offer-x="{{ offer_x }}"
-                        data-offer-y="{{ offer_y }}">
-                  <i class="bi bi-plus-circle me-1"></i> Add to List
+                        data-offer-y="{{ offer_y }}"> <!-- Primary Add button with huge payload for list persistence -->
+                  <i class="bi bi-plus-circle me-1"></i> Add to List <!-- "Quick-add" label -->
                 </button>
-                <a href="{{ url_for('main.featured_deal_detail', deal_id=deal_id) }}" class="btn btn-premium btn-premium-view btn-sm w-100">
-                  <i class="bi bi-info-circle me-1"></i> View Details
+                <a href="{{ url_for('main.featured_deal_detail', deal_id=deal_id) }}" class="btn btn-premium btn-premium-view btn-sm w-100"> <!-- Link to logic page -->
+                  <i class="bi bi-info-circle me-1"></i> View Details <!-- Education label -->
                 </a>
               </div>
             </div>
           </div>
-          {% endfor %}
+          {% endfor %} <!-- Termination of deals loop -->
         </div>
-        <button class="scroll-arrow right" onclick="scrollSection('deals', 'right')" aria-label="Scroll right">
+        <button class="scroll-arrow right" onclick="scrollSection('deals', 'right')" aria-label="Scroll right"> <!-- Promo Right Nav -->
           <i class="bi bi-chevron-right"></i>
         </button>
       </div>
@@ -906,59 +912,60 @@ Shown at route: /
   </section>
   {% endif %}
 
-  <!-- Most Popular Section -->
-  {% if popular_products and popular_products|length > 0 %}
-  <section class="content-section">
-    <div class="container">
-      <div class="section-header">
+  <!-- Most Popular Section --> <!-- Items with highest community interaction -->
+  {% if popular_products and popular_products|length > 0 %} <!-- Display check -->
+  <section class="content-section"> <!-- Layout container -->
+    <div class="container"> <!-- Alignment -->
+      <div class="section-header"> <!-- Heading cluster -->
         <div>
-          <h2 class="section-title"><i class="bi bi-fire text-danger me-2"></i>Popular Right Now</h2>
-          <p class="section-subtitle">The community's most-tracked and hottest items this week</p>
+          <h2 class="section-title"><i class="bi bi-fire text-danger me-2"></i>Popular Right Now</h2> <!-- "Fire" icon for trending items -->
+          <p class="section-subtitle">The community's most-tracked and hottest items this week</p> <!-- Descriptor -->
         </div>
-        <a href="{{ url_for('main.compare_prices') }}?sort=popular" class="view-all-btn">
+        <a href="{{ url_for('main.compare_prices') }}?sort=popular" class="view-all-btn"> <!-- Link to sorted search results -->
           Explore Trending <i class="bi bi-arrow-right ms-1"></i>
         </a>
       </div>
-      <div class="scroll-container">
-        <button class="scroll-arrow left" onclick="scrollSection('popular', 'left')" aria-label="Scroll left">
+      <div class="scroll-container"> <!-- Interactive scroll area -->
+        <button class="scroll-arrow left" onclick="scrollSection('popular', 'left')" aria-label="Scroll left"> <!-- Nav Left -->
           <i class="bi bi-chevron-left"></i>
         </button>
-        <div class="scroll-wrapper d-flex flex-nowrap" id="popular-scroll" style="overflow-x: auto; gap: 24px; scrollbar-width: none; -ms-overflow-style: none;">
-          {% for product in popular_products %}
-          {% set pid = product.get('id') or product.get('_id') %}
-          {% set store_data = (product.get('stores') or [{}])[0] %}
-          {% set store_name = product.get('store') or store_data.get('store') or 'Multiple Stores' %}
-          {% set offer_obj = product.get('offer') if product.get('offer') is mapping else None %}
-          {% set offer_x = offer_obj.x if offer_obj is not none else (product.get('buy_quantity') or product.get('multibuy_buy') or '') %}
-          {% set offer_y = offer_obj.y if offer_obj is not none else (product.get('free_quantity') or product.get('multibuy_free') or '') %}
-          {% set offer_type = offer_obj.type if offer_obj is not none else ('buyXgetY' if (offer_x and offer_y) else '') %}
+        <div class="scroll-wrapper d-flex flex-nowrap" id="popular-scroll" style="overflow-x: auto; gap: 24px; scrollbar-width: none; -ms-overflow-style: none;"> <!-- Trending row -->
+          {% for product in popular_products %} <!-- JINJA LOOP through trending items -->
+          {% set pid = product.get('id') or product.get('_id') %} <!-- Resolve dynamic ID -->
+          {% set store_data = (product.get('stores') or [{}])[0] %} <!-- Extract first store info for preview -->
+          {% set store_name = product.get('store') or store_data.get('store') or 'Multiple Stores' %} <!-- Resolve retailer name -->
+          {% set offer_obj = product.get('offer') if product.get('offer') is mapping else None %} <!-- Promotion object check -->
+          {% set offer_x = offer_obj.x if offer_obj is not none else (product.get('buy_quantity') or product.get('multibuy_buy') or '') %} <!-- Quantity for multibuy -->
+          {% set offer_y = offer_obj.y if offer_obj is not none else (product.get('free_quantity') or product.get('multibuy_free') or '') %} <!-- Free count for multibuy -->
+          {% set offer_type = offer_obj.type if offer_obj is not none else ('buyXgetY' if (offer_x and offer_y) else '') %} <!-- Template type -->
           
-          <div class="product-card-horizontal premium-outline-hover" style="min-width: 320px;">
-            {% if product.get('discount_label') or product.get('discount_percent') %}
+          <div class="product-card-horizontal premium-outline-hover" style="min-width: 320px;" 
+               {% if pid %}onclick="window.location='{{ url_for('main.product_detail', product_id=pid) }}'"{% endif %}> <!-- Individual popular item -->
+            {% if product.get('discount_label') or product.get('discount_percent') %} <!-- High visibility savings badge -->
             <div class="discount-badge">
               {{ product.get('discount_label') or (product.get('discount_percent') ~ '% OFF') }}
             </div>
             {% endif %}
             <button class="btn-favorite {{ 'active' if product.get('is_favorited') else '' }}" 
                     data-product-id="{{ pid }}" 
-                    onclick="toggleFavorite(event, '{{ pid }}', this)"
-                    aria-label="Add to favorites">
+                    onclick="toggleFavorite(event, '{{ pid }}', this); event.stopPropagation();"
+                    aria-label="Add to favorites"> <!-- Interactive heart with JS status toggle -->
               <i class="bi {{ 'bi-heart-fill' if product.get('is_favorited') else 'bi-heart' }}"></i>
             </button>
-            <div class="card-image-wrapper" {% if pid %}onclick="window.location='{{ url_for('main.product_detail', product_id=pid) }}'"{% endif %} style="cursor: {% if pid %}pointer{% else %}default{% endif %};">
-              <img src="{{ product.get('image') or 'https://via.placeholder.com/280x200' }}" alt="{{ product.get('name') }}">
+            <div class="card-image-wrapper"> <!-- Detail link context (inherited from parent card) -->
+              <img src="{{ product.get('image') or 'https://via.placeholder.com/280x200' }}" alt="{{ product.get('name') }}"> <!-- Item visual -->
             </div>
-            <div class="product-card-body">
-              <div class="product-name product-description-clamp">{{ product.get('name', 'Popular Item') }}</div>
+            <div class="product-card-body"> <!-- Text group -->
+              <div class="product-name product-description-clamp">{{ product.get('name', 'Popular Item') }}</div> <!-- Item title -->
               
               <div class="product-store text-muted small mb-1">
-                <i class="bi bi-shop me-1"></i>{{ store_name }}
+                <i class="bi bi-shop me-1"></i>{{ store_name }} <!-- Seller identity -->
               </div>
               <div class="product-price">
-                €{{ '%.2f'|format((product.price or store_data.get('price') or 0)|float) }}
+                €{{ '%.2f'|format((product.price or store_data.get('price') or 0)|float) }} <!-- Standardized currency format -->
               </div>
 
-              <div class="d-grid gap-2 mt-auto">
+              <div class="d-grid gap-2 mt-auto"> <!-- Action buttons -->
                 <button type="button" class="btn btn-premium-action w-100" 
                         data-id="{{ pid }}" 
                         data-name="{{ product.name }}" 
@@ -969,18 +976,19 @@ Shown at route: /
                         data-offer-json='{{ offer_obj|tojson|forceescape if offer_obj is not none else "" }}'
                         data-offer-type="{{ offer_type }}"
                         data-offer-x="{{ offer_x }}"
-                        data-offer-y="{{ offer_y }}">
+                        data-offer-y="{{ offer_y }}"
+                        onclick="event.stopPropagation(); window.showListSelector(this);"> <!-- Added stopPropagation and handler -->
                   <i class="bi bi-plus-circle me-1"></i> Add to List
                 </button>
-                <a href="{{ url_for('main.product_detail', product_id=pid) }}" class="btn btn-premium btn-premium-view btn-sm w-100" onclick="event.stopPropagation();">
+                <a href="{{ url_for('main.product_detail', product_id=pid) }}" class="btn btn-premium btn-premium-view btn-sm w-100" onclick="event.stopPropagation();"> <!-- Detail navigation -->
                   <i class="bi bi-eye me-1"></i> Details
                 </a>
               </div>
             </div>
           </div>
-          {% endfor %}
+          {% endfor %} <!-- Loop end -->
         </div>
-        <button class="scroll-arrow right" onclick="scrollSection('popular', 'right')" aria-label="Scroll right">
+        <button class="scroll-arrow right" onclick="scrollSection('popular', 'right')" aria-label="Scroll right"> <!-- TRENDING Right nav -->
           <i class="bi bi-chevron-right"></i>
         </button>
       </div>
@@ -988,92 +996,94 @@ Shown at route: /
   </section>
   {% endif %}
 
-  <!-- Popular Stores Section -->
-  <section class="content-section">
-    <div class="container">
-      <div class="section-header">
+  <!-- Popular Stores Section --> <!-- Highlights of partnered retailers -->
+  <section class="content-section"> <!-- Layout container -->
+    <div class="container"> <!-- Standard alignment -->
+      <div class="section-header"> <!-- Section metadata -->
         <div>
-          <h2 class="section-title"><i class="bi bi-shop-window text-premium-purple me-2"></i>Verified Partners</h2>
-          <p class="section-subtitle">Exclusive catalogs from the region's top grocery chains</p>
+          <h2 class="section-title"><i class="bi bi-shop-window text-premium-purple me-2"></i>Verified Partners</h2> <!-- Store header icon -->
+          <p class="section-subtitle">Exclusive catalogs from the region's top grocery chains</p> <!-- Description -->
         </div>
-        <a href="{{ url_for('main.stores_page') }}" class="view-all-btn">
+        <a href="{{ url_for('main.stores_page') }}" class="view-all-btn"> <!-- Global store index link -->
           View All <i class="bi bi-arrow-right ms-1"></i>
         </a>
       </div>
-      <div class="scroll-container">
-        <button class="scroll-arrow left" onclick="scrollSection('stores', 'left')" aria-label="Scroll left">
+      <div class="scroll-container"> <!-- Interaction layer -->
+        <button class="scroll-arrow left" onclick="scrollSection('stores', 'left')" aria-label="Scroll left"> <!-- Store Nav Left -->
           <i class="bi bi-chevron-left"></i>
         </button>
-        <div class="scroll-wrapper d-flex flex-nowrap" id="stores-scroll" style="overflow-x: auto; gap: 24px; scrollbar-width: none; -ms-overflow-style: none;">
-          {% for store in stores %}
-          <a href="{{ url_for('main.store_products_page', store_name=store.get('name')) }}" class="store-card premium-outline-hover" style="min-width: 280px;">
+        <div class="scroll-wrapper d-flex flex-nowrap" id="stores-scroll" style="overflow-x: auto; gap: 24px; scrollbar-width: none; -ms-overflow-style: none;"> <!-- Store Row -->
+          {% for store in stores %} <!-- Iterating through available retailers -->
+          <a href="{{ url_for('main.store_products_page', store_name=store.get('name')) }}" class="store-card premium-outline-hover" style="min-width: 280px;"> <!-- Visual card linking to retailer's inventory -->
             <div class="store-card-image">
-              <img src="{{ store.get('image') or 'https://via.placeholder.com/250x150' }}" alt="{{ store.get('name') }}">
+              <img src="{{ store.get('image') or 'https://via.placeholder.com/250x150' }}" alt="{{ store.get('name') }}"> <!-- Store logo/branding -->
             </div>
             <div class="store-card-body text-center">
-              <div class="store-name text-dark fw-bold">{{ store.get('name') }}</div>
+              <div class="store-name text-dark fw-bold">{{ store.get('name') }}</div> <!-- Retailer Name -->
               <div class="badge bg-soft-purple text-premium-purple mt-2">
-                <i class="bi bi-box-seam me-1"></i>{{ store.get('product_count', 0) }} Products
+                <i class="bi bi-box-seam me-1"></i>{{ store.get('product_count', 0) }} Products <!-- Catalog size indicator -->
               </div>
             </div>
           </a>
-          {% endfor %}
+          {% endfor %} <!-- Store termination -->
         </div>
-        <button class="scroll-arrow right" onclick="scrollSection('stores', 'right')" aria-label="Scroll right">
+        <button class="scroll-arrow right" onclick="scrollSection('stores', 'right')" aria-label="Scroll right"> <!-- Store Nav Right -->
           <i class="bi bi-chevron-right"></i>
         </button>
       </div>
     </div>
   </section>
 
-  <!-- Products from Preferred/Random Store -->
-  {% if store_products and store_products|length > 0 %}
-  {% set store_name = chosen_store_name or (store_products[0].store if store_products and store_products[0].store else 'Major Partner') %}
-  <section class="content-section">
-    <div class="container">
-      <div class="section-header">
+  <!-- Products from Preferred/Random Store --> <!-- Focused retailer highlights -->
+  {% if store_products and store_products|length > 0 %} <!-- Display logic -->
+  {% set store_name = chosen_store_name or (store_products[0].store if store_products and store_products[0].store else 'Major Partner') %} <!-- Display name logic -->
+  <section class="content-section"> <!-- Layout container -->
+    <div class="container"> <!-- Alignment -->
+      <div class="section-header"> <!-- Header cluster -->
         <div>
-          <h2 class="section-title"><i class="bi bi-shop-window text-premium-purple me-2"></i>Store Highlights: {{ store_name }}</h2>
-          <p class="section-subtitle">Fresh highlights and trending essentials from your selected shop</p>
+          <h2 class="section-title"><i class="bi bi-shop-window text-premium-purple me-2"></i>Store Highlights: {{ store_name }}</h2> <!-- Dynamic retailer Title -->
+          <p class="section-subtitle">Fresh highlights and trending essentials from your selected shop</p> <!-- Description -->
         </div>
-        <a href="{{ url_for('main.store_products_page', store_name=store_name) }}" class="view-all-btn">
+        <a href="{{ url_for('main.store_products_page', store_name=store_name) }}" class="view-all-btn"> <!-- Link to full store stock -->
           Explore Catalog <i class="bi bi-arrow-right ms-1"></i>
         </a>
       </div>
-      <div class="scroll-container">
-        <button class="scroll-arrow left" onclick="scrollSection('store-products', 'left')" aria-label="Scroll left">
+      <div class="scroll-container"> <!-- Interaction wrapper -->
+        <button class="scroll-arrow left" onclick="scrollSection('store-products', 'left')" aria-label="Scroll left"> <!-- Highlight Left Nav -->
           <i class="bi bi-chevron-left"></i>
         </button>
-        <div class="scroll-wrapper d-flex flex-nowrap" id="store-products-scroll" style="overflow-x: auto; gap: 24px; scrollbar-width: none; -ms-overflow-style: none;">
-          {% for product in store_products %}
-          {% set detail_url = url_for('main.product_info', product_id=product.id, store_name=store_name, store_price=product.price or '', store_image=product.image or '', store_url=product.url or '') %}
-          {% set offer_obj = product.get('offer') if product.get('offer') is mapping else None %}
-          {% set offer_x = offer_obj.x if offer_obj is not none else (product.get('buy_quantity') or product.get('multibuy_buy') or '') %}
-          {% set offer_y = offer_obj.y if offer_obj is not none else (product.get('free_quantity') or product.get('multibuy_free') or '') %}
-          {% set offer_type = offer_obj.type if offer_obj is not none else ('buyXgetY' if (offer_x and offer_y) else '') %}
+        <div class="scroll-wrapper d-flex flex-nowrap" id="store-products-scroll" style="overflow-x: auto; gap: 24px; scrollbar-width: none; -ms-overflow-style: none;"> <!-- Products from specific shop row -->
+          {% for product in store_products %} <!-- JINJA LOOP for specific store items -->
+          {% set detail_url = url_for('main.product_info', product_id=product.id, store_name=store_name, store_price=product.price or '', store_image=product.image or '', store_url=product.url or '') %} <!-- Route link construction -->
+          {% set offer_obj = product.get('offer') if product.get('offer') is mapping else None %} <!-- Deal check -->
+          {% set offer_x = offer_obj.x if offer_obj is not none else (product.get('buy_quantity') or product.get('multibuy_buy') or '') %} <!-- Quantity X -->
+          {% set offer_y = offer_obj.y if offer_obj is not none else (product.get('free_quantity') or product.get('multibuy_free') or '') %} <!-- Quantity Y -->
+          {% set offer_type = offer_obj.type if offer_obj is not none else ('buyXgetY' if (offer_x and offer_y) else '') %} <!-- Format -->
           
-          <div class="product-card-horizontal premium-outline-hover" style="min-width: 320px;">
-            {% if product.get('discount_label') or product.get('discount_percent') %}
+          <div class="product-card-horizontal premium-outline-hover" style="min-width: 320px;"> <!-- Focused store item card -->
+            {% if product.get('discount_label') or product.get('discount_percent') %} <!-- Savings indicator badge -->
             <div class="discount-badge">
               {{ product.get('discount_label') or (product.get('discount_percent') ~ '% OFF') }}
             </div>
             {% endif %}
             <button class="btn-favorite {{ 'active' if product.get('is_favorited') else '' }}" 
                     onclick="toggleFavorite(event, '{{ product.id }}', this)"
-                    aria-label="Add to favorites">
+                    aria-label="Add to favorites"> <!-- Floating favorite control -->
               <i class="bi {{ 'bi-heart-fill' if product.get('is_favorited') else 'bi-heart' }}"></i>
             </button>
-            <div class="card-image-wrapper" {% if product.id %}onclick="window.location='{{ detail_url }}'"{% endif %} style="cursor: {% if product.id %}pointer{% else %}default{% endif %};">
-              <img src="{{ product.image or url_for('static', filename='placeholder.svg') }}" alt="{{ product.name }}">
+            <div class="card-image-wrapper {% if product.id %}cursor-pointer{% else %}cursor-default{% endif %}" 
+                 {% if product.id %}data-url="{{ detail_url }}"
+                 onclick="window.location=this.dataset.url;"{% endif %}> <!-- Detail navigation trigger -->
+              <img src="{{ product.image or url_for('static', filename='placeholder.svg') }}" alt="{{ product.name }}"> <!-- Item photo -->
             </div>
-            <div class="product-card-body">
-              <div class="product-name product-description-clamp">{{ product.name }}</div>
+            <div class="product-card-body"> <!-- Text group -->
+              <div class="product-name product-description-clamp">{{ product.name }}</div> <!-- Title -->
               <div class="product-store text-muted small mb-1">
-                <i class="bi bi-shop me-1"></i>{{ store_name }}
+                <i class="bi bi-shop me-1"></i>{{ store_name }} <!-- Localized store label -->
               </div>
-              <div class="product-price">€{{ '%.2f'|format((product.price or 0)|float) }}</div>
+              <div class="product-price">€{{ '%.2f'|format((product.price or 0)|float) }}</div> <!-- Price label -->
               
-              <div class="d-grid gap-2">
+              <div class="d-grid gap-2"> <!-- Action area -->
                 <button type="button" class="btn btn-premium-action w-100" 
                         data-name="{{ product.name }}"
                         data-price="{{ product.price or '0.00' }}"
@@ -1084,20 +1094,20 @@ Shown at route: /
                         data-offer-json='{{ offer_obj|tojson|forceescape if offer_obj is not none else "" }}'
                         data-offer-type="{{ offer_type }}"
                         data-offer-x="{{ offer_x }}"
-                        data-offer-y="{{ offer_y }}">
+                        data-offer-y="{{ offer_y }}"> <!-- Global List adder UI trigger -->
                   <i class="bi bi-plus-circle me-1"></i> Add to List
                 </button>
                 {% if product.id %}
-                <a href="{{ detail_url }}" class="btn btn-premium btn-premium-view btn-sm w-100" onclick="event.stopPropagation();">
+                <a href="{{ detail_url }}" class="btn btn-premium btn-premium-view btn-sm w-100" onclick="event.stopPropagation();"> <!-- Full details navigator -->
                   <i class="bi bi-eye me-1"></i> Details
                 </a>
                 {% endif %}
               </div>
             </div>
           </div>
-          {% endfor %}
+          {% endfor %} <!-- Terminal Loop -->
         </div>
-        <button class="scroll-arrow right" onclick="scrollSection('store-products', 'right')" aria-label="Scroll right">
+        <button class="scroll-arrow right" onclick="scrollSection('store-products', 'right')" aria-label="Scroll right"> <!-- Highlight Right Nav -->
           <i class="bi bi-chevron-right"></i>
         </button>
       </div>
@@ -1105,36 +1115,38 @@ Shown at route: /
   </section>
   {% endif %}
 
-  <!-- Things You Might Like Section (always show) -->
-  {% if recommended_products and recommended_products|length > 0 %}
-  <section class="content-section">
-    <div class="container">
-      <div class="section-header">
+  <!-- Things You Might Like Section (always show) --> <!-- Personalized recommendations based on user behavior data -->
+  {% if recommended_products and recommended_products|length > 0 %} <!-- Display logic -->
+  <section class="content-section"> <!-- Layout container -->
+    <div class="container"> <!-- Standard alignment -->
+      <div class="section-header"> <!-- Heading cluster -->
         <div>
-          <h2 class="section-title"><i class="bi bi-heart-fill text-danger me-2"></i>Personalized for You</h2>
-          <p class="section-subtitle">Intelligent suggestions based on your frequent favorites</p>
+          <h2 class="section-title"><i class="bi bi-heart-fill text-danger me-2"></i>Personalized for You</h2> <!-- Heart icon for interest-based matches -->
+          <p class="section-subtitle">Intelligent suggestions based on your frequent favorites</p> <!-- Description of the algo source -->
         </div>
-        <a href="{{ url_for('main.compare_prices') }}" class="view-all-btn">
+        <a href="{{ url_for('main.compare_prices') }}" class="view-all-btn"> <!-- Global search link -->
           Explore More <i class="bi bi-arrow-right ms-1"></i>
         </a>
       </div>
-      <div class="scroll-container">
-        <button class="scroll-arrow left" onclick="scrollSection('recommend', 'left')" aria-label="Scroll left">
+      <div class="scroll-container"> <!-- Interaction layer -->
+        <button class="scroll-arrow left" onclick="scrollSection('recommend', 'left')" aria-label="Scroll left"> <!-- Recommendation Left Nav -->
           <i class="bi bi-chevron-left"></i>
         </button>
-        <div class="scroll-wrapper d-flex flex-nowrap" id="recommend-scroll" style="overflow-x: auto; gap: 24px; scrollbar-width: none; -ms-overflow-style: none;">
-          {% for product in recommended_products %}
-          {% set store_data = (product.get('stores') or [{}])[0] %}
-          {% set pid = product.get('id') or product.get('_id') %}
-          {% set store_name = store_data.get('store') or store_data.get('store_name') or 'Partner' %}
-          {% set detail_url = url_for('main.product_info', product_id=pid, store_name=store_name, store_price=store_data.get('price') or product.get('best_price') or product.get('price') or '0.00', store_image=product.get('image') or '', store_url=store_data.get('url') or product.get('url') or '') %}
-          {% set offer_obj = product.get('offer') if product.get('offer') is mapping else None %}
-          {% set offer_x = offer_obj.x if offer_obj is not none else (product.get('buy_quantity') or product.get('multibuy_buy') or '') %}
-          {% set offer_y = offer_obj.y if offer_obj is not none else (product.get('free_quantity') or product.get('multibuy_free') or '') %}
-          {% set offer_type = offer_obj.type if offer_obj is not none else ('buyXgetY' if (offer_x and offer_y) else '') %}
+        <div class="scroll-wrapper d-flex flex-nowrap" id="recommend-scroll" style="overflow-x: auto; gap: 24px; scrollbar-width: none; -ms-overflow-style: none;"> <!-- Personalized item row -->
+          {% for product in recommended_products %} <!-- JINJA LOOP for individualized matches -->
+          {% set store_data = (product.get('stores') or [{}])[0] %} <!-- Best store preview -->
+          {% set pid = product.get('id') or product.get('_id') %} <!-- ID cleanup -->
+          {% set store_name = store_data.get('store') or store_data.get('store_name') or 'Partner' %} <!-- Identification of source retailer -->
+          {% set detail_url = url_for('main.product_info', product_id=pid, store_name=store_name, store_price=store_data.get('price') or product.get('best_price') or product.get('price') or '0.00', store_image=product.get('image') or '', store_url=store_data.get('url') or product.get('url') or '') %} <!-- Contextual link generation -->
+          {% set offer_obj = product.get('offer') if product.get('offer') is mapping else None %} <!-- Promotion data -->
+          {% set offer_x = offer_obj.x if offer_obj is not none else (product.get('buy_quantity') or product.get('multibuy_buy') or '') %} <!-- Multi-X -->
+          {% set offer_y = offer_obj.y if offer_obj is not none else (product.get('free_quantity') or product.get('multibuy_free') or '') %} <!-- Multi-Y -->
+          {% set offer_type = offer_obj.type if offer_obj is not none else ('buyXgetY' if (offer_x and offer_y) else '') %} <!-- Logic type -->
           
-          <div class="product-card-horizontal premium-outline-hover" {% if pid %}onclick="window.location='{{ detail_url }}'"{% endif %} style="cursor: {% if pid %}pointer{% else %}default{% endif %}; min-width: 320px;">
-            {% if product.get('discount_label') or product.get('discount_percent') %}
+          <div class="product-card-horizontal premium-outline-hover {% if pid %}cursor-pointer{% else %}cursor-default{% endif %}" 
+               {% if pid %}data-url="{{ detail_url }}"
+               onclick="window.location=this.dataset.url;"{% endif %} style="min-width: 320px;"> <!-- Interactive Recommendation Card -->
+            {% if product.get('discount_label') or product.get('discount_percent') %} <!-- High impact savings tag -->
             <div class="discount-badge">
               {{ product.get('discount_label') or (product.get('discount_percent') ~ '% OFF') }}
             </div>
@@ -1142,20 +1154,20 @@ Shown at route: /
             <button class="btn-favorite {{ 'active' if product.get('is_favorited') else '' }}" 
                     data-product-id="{{ pid }}" 
                     onclick="toggleFavorite(event, '{{ pid }}', this)"
-                    aria-label="Add to favorites">
+                    aria-label="Add to favorites"> <!-- Fav toggle -->
               <i class="bi {{ 'bi-heart-fill' if product.get('is_favorited') else 'bi-heart' }}"></i>
             </button>
-            <div class="card-image-wrapper">
-              <img src="{{ product.get('image') or 'https://via.placeholder.com/280x200' }}" alt="{{ product.get('name', 'Product') }}">
+            <div class="card-image-wrapper"> <!-- Visual section -->
+              <img src="{{ product.get('image') or 'https://via.placeholder.com/280x200' }}" alt="{{ product.get('name', 'Product') }}"> <!-- Item Photo -->
             </div>
-            <div class="product-card-body">
-              <div class="product-name product-description-clamp">{{ product.get('name', 'Premium Product') }}</div>
+            <div class="product-card-body"> <!-- Metadata section -->
+              <div class="product-name product-description-clamp">{{ product.get('name', 'Premium Product') }}</div> <!-- Item Title -->
               <div class="product-store text-muted small mb-1">
-                <i class="bi bi-shop me-1"></i>{{ store_name }}
+                <i class="bi bi-shop me-1"></i>{{ store_name }} <!-- Source indicator -->
               </div>
-              <div class="product-price">€{{ store_data.get('price') or product.get('best_price') or product.get('price') or '0.00' }}</div>
+              <div class="product-price">€{{ store_data.get('price') or product.get('best_price') or product.get('price') or '0.00' }}</div> <!-- Recommendation price -->
               
-              <div class="d-grid gap-2">
+              <div class="d-grid gap-2"> <!-- Execution layer -->
                 <button type="button" class="btn btn-premium-action w-100" onclick="handleAddToCart(event, this)"
                         data-name="{{ product.get('name', 'Product') }}"
                         data-price="{{ store_data.get('price') or product.get('best_price') or product.get('price') or '0.00' }}"
@@ -1166,18 +1178,18 @@ Shown at route: /
                         data-offer-json='{{ offer_obj|tojson|forceescape if offer_obj is not none else "" }}'
                         data-offer-type="{{ offer_type }}"
                         data-offer-x="{{ offer_x }}"
-                        data-offer-y="{{ offer_y }}">
+                        data-offer-y="{{ offer_y }}"> <!-- Global List adder UI trigger -->
                   <i class="bi bi-plus-circle me-1"></i> Add to List
                 </button>
-                <a href="{{ detail_url }}" class="btn btn-premium btn-premium-view btn-sm w-100" onclick="event.stopPropagation();">
+                <a href="{{ detail_url }}" class="btn btn-premium btn-premium-view btn-sm w-100" onclick="event.stopPropagation();"> <!-- Full details view Navigator -->
                   <i class="bi bi-eye me-1"></i> Details
                 </a>
               </div>
             </div>
           </div>
-          {% endfor %}
+          {% endfor %} <!-- Terminal Recommendations Loop -->
         </div>
-        <button class="scroll-arrow right" onclick="scrollSection('recommend', 'right')" aria-label="Scroll right">
+        <button class="scroll-arrow right" onclick="scrollSection('recommend', 'right')" aria-label="Scroll right"> <!-- Recommendation Right Nav -->
           <i class="bi bi-chevron-right"></i>
         </button>
       </div>
@@ -1185,48 +1197,48 @@ Shown at route: /
   </section>
   {% endif %}
 
-  <!-- Newsletter Section -->
-  <section class="newsletter-section my-4">
-    <div class="container">
-      <div class="newsletter-inner p-5 text-center text-white rounded-5 shadow-lg" style="background: linear-gradient(135deg, var(--premium-purple), #4c1d95);">
-        <h2 class="fw-bold mb-3">Join the Smart Shopping Revolution</h2>
-        <p class="mb-4 opacity-90 mx-auto" style="max-width: 600px;">Get personalized deal alerts, exclusive retail insights, and price drop notifications delivered straight to your inbox.</p>
-        <form class="newsletter-form d-flex gap-2 justify-content-center mx-auto" style="max-width: 500px;" onsubmit="handleNewsletterSubmit(event)">
-          <input type="email" class="form-control rounded-pill px-4 border-0 shadow-sm" style="height: 54px;" placeholder="Your email address" required>
-          <button type="submit" class="btn btn-white rounded-pill px-4 fw-bold text-premium-purple shadow" style="height: 54px; background: white;">Subscribe</button>
+  <!-- Newsletter Section --> <!-- Subscription module for retention and marketing -->
+  <section class="newsletter-section my-4"> <!-- Layout spacing -->
+    <div class="container"> <!-- Inner content alignment -->
+      <div class="newsletter-inner p-5 text-center text-white rounded-5 shadow-lg" style="background: linear-gradient(135deg, var(--premium-purple), #4c1d95);"> <!-- High-contrast gradient CTA box -->
+        <h2 class="fw-bold mb-3">Join the Smart Shopping Revolution</h2> <!-- Major section header -->
+        <p class="mb-4 opacity-90 mx-auto" style="max-width: 600px;">Get personalized deal alerts, exclusive retail insights, and price drop notifications delivered straight to your inbox.</p> <!-- Contextual benefit description -->
+        <form class="newsletter-form d-flex gap-2 justify-content-center mx-auto" style="max-width: 500px;" onsubmit="handleNewsletterSubmit(event)"> <!-- Interactive form with JS handler override -->
+          <input type="email" class="form-control rounded-pill px-4 border-0 shadow-sm" style="height: 54px;" placeholder="Your email address" required> <!-- Secure user input field -->
+          <button type="submit" class="btn btn-white rounded-pill px-4 fw-bold text-premium-purple shadow" style="height: 54px; background: white;">Subscribe</button> <!-- Branding-coded submission button -->
         </form>
-        <p class="mt-3 small opacity-75">We value your privacy. Unsubscribe at any time.</p>
+        <p class="mt-3 small opacity-75">We value your privacy. Unsubscribe at any time.</p> <!-- Trust building microcopy -->
       </div>
     </div>
   </section>
 
-  <!-- Footer -->
-  <footer class="bg-dark text-white py-5">
-    <div class="container">
-      <div class="row">
-        <div class="col-md-4 mb-4">
-          <h5 class="fw-bold mb-3"><i class="bi bi-cart-check-fill me-2"></i>Smart Grocery</h5>
-          <p class="text-white-50">Your trusted companion for smart grocery shopping. Compare prices, find deals, and save money.</p>
+  <!-- Footer --> <!-- Site-wide navigation and meta information -->
+  <footer class="bg-dark text-white py-5"> <!-- High-contrast structural divider -->
+    <div class="container"> <!-- Standard content alignment -->
+      <div class="row"> <!-- Responsive grid splitter -->
+        <div class="col-md-4 mb-4"> <!-- Brand identity column -->
+          <h5 class="fw-bold mb-3"><i class="bi bi-cart-check-fill me-2"></i>Smart Grocery</h5> <!-- Application Logo/Branding -->
+          <p class="text-white-50">Your trusted companion for smart grocery shopping. Compare prices, find deals, and save money.</p> <!-- Meta description of platform -->
         </div>
-        <div class="col-md-2 mb-4">
-          <h6 class="fw-bold mb-3">Quick Links</h6>
-          <ul class="list-unstyled">
+        <div class="col-md-2 mb-4"> <!-- Directional links column -->
+          <h6 class="fw-bold mb-3">Quick Links</h6> <!-- Sub-header -->
+          <ul class="list-unstyled"> <!-- Navigation List -->
             <li class="mb-2"><a href="{{ url_for('main.home') }}" class="text-white-50 text-decoration-none">Home</a></li>
             <li class="mb-2"><a href="{{ url_for('main.stores_page') }}" class="text-white-50 text-decoration-none">Stores</a></li>
             <li class="mb-2"><a href="{{ url_for('main.featured_deals_page') }}" class="text-white-50 text-decoration-none">Deals</a></li>
             <li class="mb-2"><a href="{{ url_for('main.compare_prices') }}" class="text-white-50 text-decoration-none">Compare</a></li>
           </ul>
         </div>
-        <div class="col-md-3 mb-4">
-          <h6 class="fw-bold mb-3">Account</h6>
-          <ul class="list-unstyled">
+        <div class="col-md-3 mb-4"> <!-- Membership portal links -->
+          <h6 class="fw-bold mb-3">Account</h6> <!-- Sub-header -->
+          <ul class="list-unstyled"> <!-- Profile related list -->
             <li class="mb-2"><a href="{{ url_for('main.profile') }}" class="text-white-50 text-decoration-none">Profile</a></li>
             <li class="mb-2"><a href="{{ url_for('main.shopping_list') }}" class="text-white-50 text-decoration-none">Shopping List</a></li>
           </ul>
         </div>
-        <div class="col-md-3 mb-4">
-          <h6 class="fw-bold mb-3">Follow Us</h6>
-          <div class="d-flex gap-3">
+        <div class="col-md-3 mb-4"> <!-- External social proof column -->
+          <h6 class="fw-bold mb-3">Follow Us</h6> <!-- Community header -->
+          <div class="d-flex gap-3"> <!-- Interactive social symbols -->
             <a href="#" class="text-white-50" style="font-size: 1.5rem;"><i class="bi bi-facebook"></i></a>
             <a href="#" class="text-white-50" style="font-size: 1.5rem;"><i class="bi bi-twitter"></i></a>
             <a href="#" class="text-white-50" style="font-size: 1.5rem;"><i class="bi bi-instagram"></i></a>
@@ -1234,144 +1246,146 @@ Shown at route: /
           </div>
         </div>
       </div>
-      <hr class="my-4 bg-white opacity-25">
+      <hr class="my-4 bg-white opacity-25"> <!-- Visual separator for copyright -->
       <div class="text-center text-white-50">
-        <p class="mb-0">&copy; 2025 Smart Grocery Team. All rights reserved.</p>
+        <p class="mb-0">&copy; 2025 Smart Grocery Team. All rights reserved.</p> <!-- Legal identification -->
       </div>
     </div>
   </footer>
   <script>
-    // Global functions defined before other scripts load
+    // Global functions defined before other scripts load /* Essential logic reachable from event attributes */
 
-    // Horizontal scroll functionality
+    // Horizontal scroll functionality /* Logic for custom carousels used throughout the dashboard */
     window.scrollSection = function(sectionId, direction) {
-      console.log('scrollSection called:', sectionId, direction);
-      const container = document.getElementById(sectionId + '-scroll');
+      console.log('scrollSection called:', sectionId, direction); // Debug tracking
+      const container = document.getElementById(sectionId + '-scroll'); // Locate specific DOM row
       if (!container) {
-        console.error('Scroll container not found:', sectionId + '-scroll');
+        console.error('Scroll container not found:', sectionId + '-scroll'); // Fail-safe
         return;
       }
-      console.log('Container found, current scrollLeft:', container.scrollLeft);
-      const scrollAmount = 300;
+      console.log('Container found, current scrollLeft:', container.scrollLeft); // State check
+      const scrollAmount = 300; // Fixed physical offset per click
       if (direction === 'left') {
-        container.scrollLeft -= scrollAmount;
+        container.scrollLeft -= scrollAmount; // Negative translation
       } else {
-        container.scrollLeft += scrollAmount;
+        container.scrollLeft += scrollAmount; // Positive translation
       }
-      console.log('After scroll, scrollLeft:', container.scrollLeft);
+      console.log('After scroll, scrollLeft:', container.scrollLeft); // Verification
     }
 
-    // Hero search functionality
+    // Hero search functionality /* Logic for mapping Hero search box to the global search page results */
     window.handleHeroSearch = function() {
-      const searchInput = document.getElementById('hero-search');
-      const searchTerm = searchInput.value.trim();
+      const searchInput = document.getElementById('hero-search'); // Reference input
+      const searchTerm = searchInput.value.trim(); // Sanitize entry
       if (searchTerm) {
-        window.location.href = `{{ url_for('main.compare_prices') }}?search=${encodeURIComponent(searchTerm)}`;
+        window.location.href = `{{ url_for('main.compare_prices') }}?search=${encodeURIComponent(searchTerm)}`; // Redirect to search route with params
       }
     }
   </script>
+  <!-- Third party logic integration (Bootstrap core) -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- Custom Core Application Logic (script.js contains cart/fav/auth logic) -->
   <script src="{{ url_for('static', filename='js/script.js') }}?v=11"></script>
   <script>
 
-    // Newsletter form handling
+    // Newsletter form handling /* Local UI logic for the newsletter submission event */
     function handleNewsletterSubmit(e) {
-      e.preventDefault();
-      const email = e.target.querySelector('input').value;
-      alert('Thank you for subscribing! We\'ll send you the best deals to ' + email);
-      e.target.reset();
+      e.preventDefault(); // Stop standard page refresh
+      const email = e.target.querySelector('input').value; // Extract content
+      alert('Thank you for subscribing! We\'ll send you the best deals to ' + email); // Feedback simulated (backend not hooked yet)
+      e.target.reset(); // Clear UI state
     }
 
-    // Hide scroll arrows when at start/end or when content fits
+    // Hide scroll arrows when at start/end or when content fits /* Smart UI logic for cleaner carousels */
     function updateScrollArrows() {
-      const scrollWrappers = document.querySelectorAll('.scroll-wrapper');
+      const scrollWrappers = document.querySelectorAll('.scroll-wrapper'); // Grab every active row
       scrollWrappers.forEach(wrapper => {
-        const container = wrapper.closest('.scroll-container');
+        const container = wrapper.closest('.scroll-container'); // Find parents
         if (!container) return;
         
-        const leftArrow = container.querySelector('.scroll-arrow.left');
+        const leftArrow = container.querySelector('.scroll-arrow.left'); // Find controls
         const rightArrow = container.querySelector('.scroll-arrow.right');
         
         if (!leftArrow || !rightArrow) return;
         
-        // Check if content is scrollable
+        // Check if content is scrollable /* Math to determine if overflow exists */
         const isScrollable = wrapper.scrollWidth > wrapper.clientWidth + 5; // 5px tolerance
         
         if (!isScrollable) {
-          // Hide both arrows if content fits
+          // Hide both arrows if content fits within horizontal view
           leftArrow.style.display = 'none';
           rightArrow.style.display = 'none';
         } else {
-          // Show/hide arrows based on scroll position
-          leftArrow.style.display = wrapper.scrollLeft > 5 ? 'flex' : 'none';
-          rightArrow.style.display = wrapper.scrollLeft < wrapper.scrollWidth - wrapper.clientWidth - 10 ? 'flex' : 'none';
+          // Show/hide arrows based on current scroll position to guide the user
+          leftArrow.style.display = wrapper.scrollLeft > 5 ? 'flex' : 'none'; // Only show left if user can go back
+          rightArrow.style.display = wrapper.scrollLeft < wrapper.scrollWidth - wrapper.clientWidth - 10 ? 'flex' : 'none'; // Only show right if more data remains
         }
       });
     }
 
-    // Update arrows on scroll
+    // Update arrows on scroll /* Bind logic to active user movement */
     document.querySelectorAll('.scroll-wrapper').forEach(wrapper => {
       wrapper.addEventListener('scroll', updateScrollArrows);
     });
 
-    // Initial arrow state - call multiple times to ensure it works
+    // Initial arrow state - call multiple times to ensure it works after fonts/images load
     setTimeout(updateScrollArrows, 100);
     setTimeout(updateScrollArrows, 500);
-    window.addEventListener('load', updateScrollArrows);
-    window.addEventListener('resize', updateScrollArrows);
+    window.addEventListener('load', updateScrollArrows); // Final check on complete load
+    window.addEventListener('resize', updateScrollArrows); // Re-calculate if window size changes
 
-    // Number counter animation for stats
+    // Number counter animation for stats /* Javascript logic to animate numbers from 0 to data-target on visual exposure */
     function animateCounters() {
-      const counters = document.querySelectorAll('.stat-number');
-      const speed = 200;
+      const counters = document.querySelectorAll('.stat-number'); // Every count element
+      const speed = 200; // Total duration of animation
 
       counters.forEach(counter => {
         const updateCount = () => {
-          const target = +counter.getAttribute('data-target');
-          const currentText = counter.innerText;
-          const hasPercent = currentText.includes('%');
-          const count = parseFloat(currentText) || 0;
-          const inc = target / speed;
+          const target = +counter.getAttribute('data-target'); // Resolve goal number (integer)
+          const currentText = counter.innerText; // Current visible state
+          const hasPercent = currentText.includes('%'); // Format check
+          const count = parseFloat(currentText) || 0; // Current progress level
+          const inc = target / speed; // Percentage-based increment for smoothness
 
           if (count < target) {
-            const nextCount = Math.ceil(count + inc);
-            counter.innerText = hasPercent ? nextCount + '%' : nextCount;
-            setTimeout(updateCount, 1);
+            const nextCount = Math.ceil(count + inc); // Calculate next frame
+            counter.innerText = hasPercent ? nextCount + '%' : nextCount; // Visual update
+            setTimeout(updateCount, 1); // Recusion for next frame
           } else {
-            counter.innerText = hasPercent ? target + '%' : target;
+            counter.innerText = hasPercent ? target + '%' : target; // Final state lock
           }
         };
-        updateCount();
+        updateCount(); // Start frame loop
       });
     }
 
-    // Run animation when stats section is in view
-    const statsSection = document.querySelector('.stats-section');
+    // Run animation when stats section is in view /* Performance optimization: Only animate when the user scrolls to the data */
+    const statsSection = document.querySelector('.stats-section'); // Targeted section
     if (statsSection) {
       const observer = new IntersectionObserver((entries) => {
-        if (entries[0].isIntersecting) {
-          animateCounters();
-          observer.unobserve(statsSection);
+        if (entries[0].isIntersecting) { // Detect scroll entry
+          animateCounters(); // Trigger animation
+          observer.unobserve(statsSection); // One-time run only
         }
-      }, { threshold: 0.5 });
-      observer.observe(statsSection);
+      }, { threshold: 0.5 }); // Require 50% visibility before starting
+      observer.observe(statsSection); // Register observer
     }
   </script>
 
-  <!-- Global List Selector Modal -->
-  <div class="modal fade" id="globalListSelectorModal" tabindex="-1" aria-labelledby="globalListSelectorModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content">
-        <div class="modal-header">
+  <!-- Global List Selector Modal --> <!-- Dynamic UI component for choosing target shopping lists -->
+  <div class="modal fade" id="globalListSelectorModal" tabindex="-1" aria-labelledby="globalListSelectorModalLabel" aria-hidden="true"> <!-- Bootstrap standard modal structure -->
+    <div class="modal-dialog modal-dialog-centered"> <!-- Center in viewport -->
+      <div class="modal-content"> <!-- Interaction container -->
+        <div class="modal-header"> <!-- Header + Close control -->
           <h5 class="modal-title" id="globalListSelectorModalLabel">
-            <i class="bi bi-cart-plus me-2"></i>Select Shopping List
+            <i class="bi bi-cart-plus me-2"></i>Select Shopping List <!-- Title with context icon -->
           </h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button> <!-- Standard Close -->
         </div>
-        <div class="modal-body">
-          <p class="text-muted mb-3">Choose which list to add this item to:</p>
-          <div id="globalListSelectorBody">
-            <!-- List options will be populated here by JavaScript -->
+        <div class="modal-body"> <!-- Data injection zone -->
+          <p class="text-muted mb-3">Choose which list to add this item to:</p> <!-- User instruction -->
+          <div id="globalListSelectorBody"> <!-- Target ID for JS-based list population (AJAX from script.js) -->
+            <!-- List options will be populated here dynamically by script.js backend fetch -->
           </div>
         </div>
       </div>

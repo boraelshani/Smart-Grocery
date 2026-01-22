@@ -1,31 +1,31 @@
 <!--
 ═══════════════════════════════════════════════════════════════════════════
-PRODUCT DETAIL PAGE
+PRODUCT DETAIL PAGE - Full technical documentation for oral exam preparation
 ═══════════════════════════════════════════════════════════════════════════
 Purpose: Show detailed information about a single product
 Features:
-- Modern glass-morphism design
-- Product image with favorite button
-- Store selection with animated cards
-- Price comparison across stores
-- Add to shopping list with list selector
-Route: /product/<product_id>
-Data: Fetches single product details from database
+- Modern glass-morphism design: Using backdrop-filter for translucent UI
+- Product image with favorite button: SVG placeholder support and heart toggle
+- Store selection with animated cards: Interactive store pricing picker
+- Price comparison across stores: Displays localized pricing data
+- Add to shopping list with list selector: Dynamic list management integration
+Route: /product/<product_id> handled by main_routes.py
+Data: Fetches single product details from database using PyMongo or Mock models
 ═══════════════════════════════════════════════════════════════════════════
 -->
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html> <!-- Standard HTML5 document type declaration -->
+<html lang="en"> <!-- Root element of the page specifying English language content -->
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{ product.name }} | Smart Grocery</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <style>
+<head> <!-- Metadata and resource links container -->
+  <meta charset="UTF-8"> <!-- Set character encoding to UTF-8 for universal character support -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- Responsive viewport setting for mobile scaling -->
+  <title>{{ product.name }} | Smart Grocery</title> <!-- Dynamic title showing the product name from Flask context -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"> <!-- Bootstrap 5 framework styles -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css"> <!-- iconography library -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"> <!-- Site-wide custom CSS for shared components -->
+  <style> /* Page-specific internal styling for custom layouts */
     body {
-      background: #ffffff;
+      background: #ffffff; /* Sets the default document background to clean white */
     }
 
     /* 
@@ -33,26 +33,26 @@ Data: Fetches single product details from database
      * Specialized Hero for Product Detail with rounded bottom pattern.
      */
     .product-detail-hero {
-      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #8b5cf6 100%);
-      color: white;
-      padding: 9rem 0 4rem; /* Top padding accomdoates the absolute navbar */
-      border-bottom-left-radius: 50px; /* Unique Curve */
-      border-bottom-right-radius: 50px; /* Unique Curve */
-      position: relative;
-      overflow: hidden;
-      margin-bottom: 2rem;
+      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #8b5cf6 100%); /* Premium purple gradient background */
+      color: white; /* Contrast text color for dark gradient backgrounds */
+      padding: 9rem 0 4rem; /* Top padding accommodates the fixed absolute navigation bar */
+      border-bottom-left-radius: 50px; /* Large unique rounded corner for a soft UI feel */
+      border-bottom-right-radius: 50px; /* Symmetrical rounded corner at the bottom right */
+      position: relative; /* Established as reference for absolutely positioned decorators */
+      overflow: hidden; /* Clips any decorative shapes that exceed the hero container boundaries */
+      margin-bottom: 2rem; /* Buffer space before the product specifications begin */
     }
 
     /* Background pattern dots overlay */
     .product-detail-hero::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      /* Radial gradients creating soft glowing orbs */
+      content: ''; /* Required pseudo-element content property */
+      position: absolute; /* Place relative to the hero container */
+      inset: 0; /* Align to all four edges (top, bottom, left, right) */
+      /* Radial gradients creating soft glowing purple and white orbs */
       background: 
         radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.1), transparent 40%),
         radial-gradient(circle at 80% 70%, rgba(255, 255, 255, 0.1), transparent 40%);
-      pointer-events: none; /* Allows clicks to pass through to underlying elements */
+      pointer-events: none; /* Ensures the decoration doesn't block clicks on buttons below */
     }
     
     /* 
@@ -60,24 +60,24 @@ Data: Fetches single product details from database
      * Semi-transparent button that blurs the background behind it.
      */
     .btn-glass-back {
-      background: rgba(255, 255, 255, 0.15); /* White with low opacity */
-      backdrop-filter: blur(10px); /* The Blur Effect */
-      border: 1px solid rgba(255, 255, 255, 0.3); /* Thin semi-transparent border */
-      color: white;
-      font-weight: 600;
-      padding: 0.6rem 1.2rem;
-      border-radius: 16px;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      text-decoration: none;
+      background: rgba(255, 255, 255, 0.15); /* Translucent white foundation */
+      backdrop-filter: blur(10px); /* The Blur Effect making it feel like frosted glass */
+      border: 1px solid rgba(255, 255, 255, 0.3); /* Subtle border for definition against dark colors */
+      color: white; /* Clear text label */
+      font-weight: 600; /* Semi-bold text for readability on glass */
+      padding: 0.6rem 1.2rem; /* Comfortable touch area for the button */
+      border-radius: 16px; /* Smooth corners matching the modern design language */
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* High-performance smooth animation curve */
+      display: inline-flex; /* Align icon and text horizontally */
+      align-items: center; /* Center icon and text vertically */
+      gap: 0.5rem; /* Space between the arrow icon and the 'Back' label */
+      text-decoration: none; /* Removes standard anchor underline */
     }
     
     .btn-glass-back:hover {
-      background: rgba(255, 255, 255, 0.25); /* Increase opacity on hover */
-      color: white;
-      transform: translateX(-4px); /* Move left slightly */
+      background: rgba(255, 255, 255, 0.25); /* Lift opacity to indicate interactivity */
+      color: white; /* Maintain white text on darker hover state */
+      transform: translateX(-4px); /* Interactive nudge effect moving button left */
     }
 
     /* 
@@ -85,15 +85,15 @@ Data: Fetches single product details from database
      * The navbar on this page is initially transparent/absolute.
      */
     .navbar {
-      position: fixed !important;
-      top: 0;
-      left: 0;
-      right: 0;
-      z-index: 1000;
-      background: transparent !important; /* Start transparent */
-      border-bottom: none !important;
-      box-shadow: none !important;
-      transition: all 0.3s ease;
+      position: fixed !important; /* Locks navbar to the top of the viewport during scrolling */
+      top: 0; /* Align to the very top edge */
+      left: 0; /* Align to the left edge */
+      right: 0; /* Align to the right edge */
+      z-index: 1000; /* High priority layering to stay above all content */
+      background: transparent !important; /* Initially transparent to blend with Hero gradient */
+      border-bottom: none !important; /* Removes default Bootstrap border line */
+      box-shadow: none !important; /* Removes default shadow for a seamless Hero look */
+      transition: all 0.3s ease; /* Smooth transition when background appears on scroll */
     }
 
     /* 
@@ -101,9 +101,9 @@ Data: Fetches single product details from database
      * Applied via JS when user scrolls down.
      */
     .navbar.scrolled {
-      background: rgba(124, 58, 237, 0.95) !important; /* Become visible purple */
-      backdrop-filter: blur(10px);
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1) !important;
+      background: rgba(124, 58, 237, 0.95) !important; /* Opaque purple background for legibility over white sections */
+      backdrop-filter: blur(10px); /* Secondary blur effect for a premium feel when sticky */
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1) !important; /* Adds depth when the header is sticky */
     }
     
     /* 
@@ -115,418 +115,418 @@ Data: Fetches single product details from database
     .navbar.scrolled .brand-grocery-text,
     .navbar.scrolled .nav-link,
     .navbar.scrolled .nav-link i {
-      color: #ffffff !important;
+      color: #ffffff !important; /* Hard-coded white to override theme defaults on scroll */
     }
 
     /* Fix hover disappearing text */
     .navbar.scrolled .nav-link:hover,
     .navbar.scrolled .nav-link:hover i {
-      color: #ffffff !important;
-      opacity: 0.8 !important;
+      color: #ffffff !important; /* Keeps labels white during hover interactions */
+      opacity: 0.8 !important; /* Softens label color on hover for visual feedback */
     }
 
     .navbar-brand, .navbar-brand i, .nav-link, .nav-link i {
-      color: rgba(255, 255, 255, 0.95) !important;
+      color: rgba(255, 255, 255, 0.95) !important; /* Initial slightly transparent white for hero blending */
     }
 
     .nav-link.active {
-      color: white !important;
-      font-weight: 700;
+      color: white !important; /* Highlighted color for the current page link */
+      font-weight: 700; /* Extra bold text for the active navigation item */
     }
 
     .nav-link:hover {
-      color: white !important;
+      color: white !important; /* Brightens text when cursor is over the link */
     }
 
     .navbar-toggler-icon {
-      filter: invert(1);
+      filter: invert(1); /* Flips icon color to white for better visibility on dark purple */
     }
     
     .navbar .badge {
-      border-color: transparent !important;
+      border-color: transparent !important; /* Removes border from notification/cart badges in header */
     }
 
     /* Fixed Go To Store Button State */
     .btn-go-store-main.disabled {
-      opacity: 0.6;
-      pointer-events: none;
-      background: #e2e8f0;
-      border-color: #e2e8f0;
-      color: #94a3b8;
+      opacity: 0.6; /* Dulls button to indicate it cannot be clicked */
+      pointer-events: none; /* Mathematically prevents click events from being processed */
+      background: #e2e8f0; /* Gray background for inactive state */
+      border-color: #e2e8f0; /* Gray border for inactive state */
+      color: #94a3b8; /* Faded text color */
     }
 
     /* Breadcrumb Hover */
     .breadcrumb a:hover {
-      text-decoration: underline !important; 
+      text-decoration: underline !important; /* Visual indicator that the breadcrumb path is clickable */
     }
 
     /* Breadcrumb Styling */
     .breadcrumb {
-      margin-bottom: 0.75rem;
+      margin-bottom: 0.75rem; /* Space between breadcrumb path and the product title */
     }
 
     .breadcrumb a {
-      color: white;
-      text-decoration: none;
+      color: white; /* Initial white state to match Hero styling */
+      text-decoration: none; /* No underline by default for a cleaner UI */
     }
 
     .breadcrumb-item+.breadcrumb-item::before {
-      color: rgba(255, 255, 255, 0.7);
+      color: rgba(255, 255, 255, 0.7); /* Custom separator color (usually a slash /) */
     }
 
     /* Category Badge */
     .category-badge {
-      display: inline-block;
-      background: rgba(255, 255, 255, 0.15);
-      color: white;
-      padding: 6px 12px;
-      border-radius: 999px;
-      font-weight: 700;
-      border: 1px solid rgba(255, 255, 255, 0.25);
+      display: inline-block; /* Allows vertical padding and margin while staying inline */
+      background: rgba(255, 255, 255, 0.15); /* Translucent pill background */
+      color: white; /* Label color */
+      padding: 6px 12px; /* Internal spacing for pill shape */
+      border-radius: 999px; /* Maximum rounding for a pill/capsule appearance */
+      font-weight: 700; /* Bold label for prominence */
+      border: 1px solid rgba(255, 255, 255, 0.25); /* Subtle border for glass defining edges */
     }
 
     /* Glass Card for Image */
     .glass-card {
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid rgba(255, 255, 255, 0.25);
-      border-radius: 18px;
-      box-shadow: 0 14px 36px rgba(0, 0, 0, 0.18);
-      backdrop-filter: blur(6px);
+      background: rgba(255, 255, 255, 0.08); /* Transparent layer foundation */
+      border: 1px solid rgba(255, 255, 255, 0.25); /* Border to catch light reflections */
+      border-radius: 18px; /* Rounding for contemporary feel */
+      box-shadow: 0 14px 36px rgba(0, 0, 0, 0.18); /* Deep shadow for floating effect */
+      backdrop-filter: blur(6px); /* Level of background blur */
     }
 
     /* Image Container */
     .image-card {
-      background: #ffffff;
-      border-radius: 18px;
-      padding: 1.25rem;
-      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12);
-      position: relative;
+      background: #ffffff; /* Contrast white background to make product images pop */
+      border-radius: 18px; /* Matching corner radius with the outer card */
+      padding: 1.25rem; /* Gutter between image and card edges */
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12); /* Secondary shadow for component isolation */
+      position: relative; /* Reference for the overlaid favorite button */
     }
 
     .product-image-large {
-      width: 100%;
-      height: 420px;
-      object-fit: contain;
-      background: #fff;
-      border-radius: 16px;
-      padding: 18px;
+      width: 100%; /* Spans full width of the white card and stays responsive */
+      height: 420px; /* Fixed height for visual consistency across products */
+      object-fit: contain; /* Ensures the product photo fits without cropping or distortion */
+      background: #fff; /* White background within the image area */
+      border-radius: 16px; /* Slightly tighter rounding than the card for nesting */
+      padding: 18px; /* Prevents the image from touching card edges */
     }
 
     /* Favorite Button */
     .favorite-btn {
-      position: absolute;
-      top: 1.5rem;
-      right: 1.5rem;
-      width: 50px;
-      height: 50px;
-      border-radius: 50%;
-      background: white;
-      border: none;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.4rem;
-      color: #7c3aed;
-      cursor: pointer;
-      transition: all 0.3s;
-      z-index: 10;
+      position: absolute; /* Floating button positioned inside image card */
+      top: 1.5rem; /* Offset from top edge */
+      right: 1.5rem; /* Offset from right edge */
+      width: 50px; /* Perfect circle width */
+      height: 50px; /* Perfect circle height */
+      border-radius: 50%; /* Makes the button round */
+      background: white; /* Solid white background for visibility on images */
+      border: none; /* Clean edges without stroke */
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); /* Soft drop shadow for elevation */
+      display: flex; /* Flex center items horizontally */
+      align-items: center; /* Flex center items vertically */
+      justify-content: center; /* Mathematical centering of the heart icon */
+      font-size: 1.4rem; /* Icon scale */
+      color: #7c3aed; /* Theme color for the heart outline */
+      cursor: pointer; /* Change mouse pointer to hand */
+      transition: all 0.3s; /* Smooth hover transition duration */
+      z-index: 10; /* Ensures button stays on top of the image */
     }
 
     .favorite-btn:hover {
-      transform: scale(1.1);
-      box-shadow: 0 6px 20px rgba(124, 58, 237, 0.3);
+      transform: scale(1.1); /* Subtle grow effect for tactile user feedback */
+      box-shadow: 0 6px 20px rgba(124, 58, 237, 0.3); /* Glowing purple shadow on hover */
     }
 
     .favorite-btn.active {
-      background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
-      color: white;
+      background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); /* Filled heart background state */
+      color: white; /* Heart icon becomes white when active */
     }
 
     /* Price Display */
     .price-display-card {
-      background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
-      border-radius: 18px;
-      padding: 1.75rem;
-      color: white;
-      margin-bottom: 1.5rem;
-      box-shadow: 0 12px 35px rgba(124, 58, 237, 0.25);
-      position: relative;
-      overflow: hidden;
+      background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); /* High-impact price banner gradient */
+      border-radius: 18px; /* Rounded card layout */
+      padding: 1.75rem; /* Generous internal padding */
+      color: white; /* Bright text for dark background contrast */
+      margin-bottom: 1.5rem; /* Gap between price and store info */
+      box-shadow: 0 12px 35px rgba(124, 58, 237, 0.25); /* Lifted appearance using theme shadow colors */
+      position: relative; /* Reference for price pill decorators */
+      overflow: hidden; /* Clips glowing orb pseudo-elements */
     }
 
     .price-display-card::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.15), transparent 60%);
+      content: ''; /* Empty content for decorative orb */
+      position: absolute; /* Independent positioning */
+      inset: 0; /* Cover whole card */
+      background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.15), transparent 60%); /* Floating light spot */
     }
 
     .price-display-content {
-      position: relative;
-      z-index: 1;
+      position: relative; /* Stacks text content above the ::before decorative layer */
+      z-index: 1; /* Priority layer */
     }
 
     .price-label {
-      font-size: 0.85rem;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      opacity: 0.9;
-      font-weight: 600;
-      margin-bottom: 0.5rem;
+      font-size: 0.85rem; /* Tiny secondary text for categorization */
+      text-transform: uppercase; /* Styled caps for clean professional look */
+      letter-spacing: 1px; /* Improved readability for uppercase fonts */
+      opacity: 0.9; /* Slightly faded white for visual hierarchy */
+      font-weight: 600; /* Bold sub-label */
+      margin-bottom: 0.5rem; /* Vertical flow space */
     }
 
     .price {
-      font-size: 2.4rem;
-      font-weight: 900;
-      line-height: 1;
-      margin-bottom: 0.5rem;
+      font-size: 2.4rem; /* Extra large font for the most important data point */
+      font-weight: 900; /* Maximum bold weight for emphasis */
+      line-height: 1; /* Compact vertical height for the number */
+      margin-bottom: 0.5rem; /* Space between value and store name */
     }
 
     .store-name {
-      font-size: 1.05rem;
-      opacity: 0.92;
+      font-size: 1.05rem; /* Secondary emphasis for store location */
+      opacity: 0.92; /* High contrast but secondary to price */
     }
 
     /* Info Card */
     .info-card {
-      background: white;
-      border-radius: 18px;
-      padding: 1.75rem;
-      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
-      margin-bottom: 1.25rem;
+      background: white; /* Standard card background for data clarity */
+      border-radius: 18px; /* Uniform rounded module style */
+      padding: 1.75rem; /* Standard inner gutter */
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08); /* Lower elevation shadow for sub-cards */
+      margin-bottom: 1.25rem; /* Vertical spacing between cards */
     }
 
     /* Section Titles */
     .section-title {
-      font-size: 1.2rem;
-      font-weight: 700;
-      color: #2d3748;
-      margin-bottom: 1rem;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
+      font-size: 1.2rem; /* Medium-large font for module headers */
+      font-weight: 700; /* Bold weight for section separation */
+      color: #2d3748; /* Dark slate gray for professional contrast */
+      margin-bottom: 1rem; /* Space before section content starts */
+      display: flex; /* Horizontal alignment for icon and text */
+      align-items: center; /* Vertical alignment centered */
+      gap: 0.5rem; /* Gap between the icon and heading text */
     }
 
     .section-title i {
-      color: #7c3aed;
+      color: #7c3aed; /* Theme purple color for icon decorators in titles */
     }
 
     /* Meta Badges */
     .meta-chips .badge {
-      font-weight: 700;
-      padding: 0.5rem 1rem;
-      border-radius: 12px;
-      margin-right: 0.5rem;
-      margin-bottom: 0.5rem;
+      font-weight: 700; /* Bold text for high-importance metadata tags */
+      padding: 0.5rem 1rem; /* Comfortable padding for the tag shape */
+      border-radius: 12px; /* Smooth rounded corners for tags */
+      margin-right: 0.5rem; /* Horizontal spacing between multiple tags */
+      margin-bottom: 0.5rem; /* Vertical spacing if tags wrap to next line */
     }
 
     /* Store Selection Grid */
     .store-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 1rem;
-      margin-bottom: 1.5rem;
+      display: grid; /* Modern CSS Grid layout engine */
+      grid-template-columns: repeat(2, 1fr); /* Two equal columns on desktop screens */
+      gap: 1rem; /* Uniform spacing between grid items */
+      margin-bottom: 1.5rem; /* Bottom margin of the store selector block */
     }
 
     @media (max-width: 576px) {
       .store-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr; /* Switch to single column on mobile for touch usability */
       }
     }
 
     /* Store Cards */
     .store-card {
-      background: white;
-      border: 2px solid #e9ecef;
-      border-radius: 14px;
-      padding: 1.25rem;
-      cursor: pointer;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      position: relative;
-      overflow: hidden;
+      background: white; /* Clean background for retailer options */
+      border: 2px solid #e9ecef; /* Light gray border for non-selected cards */
+      border-radius: 14px; /* Standardized card corner radius */
+      padding: 1.25rem; /* Spacing within the interaction area */
+      cursor: pointer; /* Visual indicator that the whole card can be clicked */
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Advanced timing for smooth state changes */
+      position: relative; /* Reference for absolute components like checkmarks */
+      overflow: hidden; /* Clips animations inside the card boundaries */
     }
 
     .store-card:hover {
-      border-color: #7c3aed;
-      box-shadow: 0 8px 25px rgba(102, 126, 234, 0.15);
-      transform: translateY(-3px);
+      border-color: #7c3aed; /* Outline highlights with theme color on hover */
+      box-shadow: 0 8px 25px rgba(102, 126, 234, 0.15); /* Soft shadow indicating elevation */
+      transform: translateY(-3px); /* Interactive lift effect */
     }
 
     .store-card.selected:not(.btn-go-store) {
-      border-color: #7c3aed;
-      background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
-      color: white;
-      box-shadow: 0 12px 35px rgba(102, 126, 234, 0.4);
+      border-color: #7c3aed; /* Purple border for the active store */
+      background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); /* Purple gradient for active selection */
+      color: white; /* Text becomes white on dark purple background */
+      box-shadow: 0 12px 35px rgba(102, 126, 234, 0.4); /* Stronger shadow for the active choice */
     }
 
     .store-card.selected .card-store-name,
     .store-card.selected .card-price {
-      color: white !important;
+      color: white !important; /* Forces child text to white when card is selected */
     }
 
     .store-card-content {
-      position: relative;
-      z-index: 1;
-      text-align: center;
+      position: relative; /* Positioning context for text */
+      z-index: 1; /* Ensures text stays above any background decorations */
+      text-align: center; /* Centers retailer branding and price */
     }
 
     .store-card .store-logo {
-      width: 60px;
-      height: 60px;
-      border-radius: 12px;
-      object-fit: contain;
-      background: #f8f9fa;
-      padding: 8px;
-      margin: 0 auto 0.75rem;
-      display: block;
-      border: 2px solid #e9ecef;
+      width: 60px; /* Uniform width for all store images */
+      height: 60px; /* Uniform height for all store images */
+      border-radius: 12px; /* Soft rounding for logo framing */
+      object-fit: contain; /* Prevents logos from being stretched/warped */
+      background: #f8f9fa; /* Light background for the logo image */
+      padding: 8px; /* Internal margin for the logo within its box */
+      margin: 0 auto 0.75rem; /* Centers the logo horizontally and adds bottom margin */
+      display: block; /* Forces block display for layout consistency */
+      border: 2px solid #e9ecef; /* Subtle border around the logo box */
     }
 
     .store-card.selected .store-logo {
-      border-color: rgba(255, 255, 255, 0.3);
-      background: rgba(255, 255, 255, 0.15);
+      border-color: rgba(255, 255, 255, 0.3); /* Subtle white border for logo on blue/purple background */
+      background: rgba(255, 255, 255, 0.15); /* Translucent background for logo in active state */
     }
 
     .store-card .card-store-name {
-      font-weight: 700;
-      font-size: 1.05rem;
-      margin-bottom: 0.5rem;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      padding: 0 0.25rem;
+      font-weight: 700; /* Bold retailer name */
+      font-size: 1.05rem; /* Readable font size for store names */
+      margin-bottom: 0.5rem; /* Space before the price appears */
+      white-space: nowrap; /* Prevents names from breaking to new lines */
+      overflow: hidden; /* Clips extremely long store names */
+      text-overflow: ellipsis; /* Adds ... for long text clipping */
+      padding: 0 0.25rem; /* Side padding for text safety */
     }
 
     .store-card.selected .card-store-name {
-      color: white;
+      color: white; /* Ensures readability on selected card */
     }
 
     .store-card .card-price {
-      font-size: 1.6rem;
-      font-weight: 900;
-      color: #7c3aed;
+      font-size: 1.6rem; /* Large font for store-specific price */
+      font-weight: 900; /* Maximum impact weight */
+      color: #7c3aed; /* Purple price text in inactive state */
     }
 
     .store-card.selected .card-price {
-      color: white;
+      color: white; /* White price text on active purple card */
     }
 
     .store-card .check-icon {
-      position: absolute;
-      top: 0.75rem;
-      right: 0.75rem;
-      width: 30px;
-      height: 30px;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.3);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      color: white;
+      position: absolute; /* Floating icon top right */
+      top: 0.75rem; /* Offset from top */
+      right: 0.75rem; /* Offset from right */
+      width: 30px; /* Icon container width */
+      height: 30px; /* Icon container height */
+      border-radius: 50%; /* Circle shape for checkmark */
+      background: rgba(255, 255, 255, 0.3); /* Glassy background for checkmark */
+      display: none; /* Hidden by default */
+      align-items: center; /* Centers checkmark horizontally */
+      justify-content: center; /* Centers checkmark vertically */
+      color: white; /* Checkmark color */
     }
 
     .store-card.selected .check-icon {
-      display: flex;
-      animation: checkPop 0.3s ease;
+      display: flex; /* Revealer when card is active */
+      animation: checkPop 0.3s ease; /* Trigger for the entry animation */
     }
 
     @keyframes checkPop {
       0% {
-        transform: scale(0);
+        transform: scale(0); /* Start at size 0 (invisible) */
       }
 
       50% {
-        transform: scale(1.2);
+        transform: scale(1.2); /* Grow slightly larger than normal for "pop" effect */
       }
 
       100% {
-        transform: scale(1);
+        transform: scale(1); /* Settle at final size */
       }
     }
 
     /* Add to List Button */
     .add-to-list-btn {
-      width: 100%;
-      background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
-      border: none;
-      color: white;
-      padding: 1.1rem;
-      border-radius: 14px;
-      font-weight: 700;
-      font-size: 1.05rem;
-      cursor: pointer;
-      transition: all 0.3s;
-      box-shadow: 0 8px 25px rgba(124, 58, 237, 0.3);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.6rem;
+      width: 100%; /* Spans full width of the side column */
+      background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); /* Primary action gradient */
+      border: none; /* Clean edges */
+      color: white; /* Bright text for contrast */
+      padding: 1.1rem; /* Large touch/click target area */
+      border-radius: 14px; /* Standardized radius */
+      font-weight: 700; /* Bold label */
+      font-size: 1.05rem; /* Prominent label size */
+      cursor: pointer; /* Interaction pointer */
+      transition: all 0.3s; /* Smooth hover transition */
+      box-shadow: 0 8px 25px rgba(124, 58, 237, 0.3); /* Elevated appearance */
+      display: flex; /* Flexbox for icon/text layout */
+      align-items: center; /* Vertical alignment */
+      justify-content: center; /* Horizontal alignment */
+      gap: 0.6rem; /* Space between plus icon and text */
     }
 
     .add-to-list-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 12px 35px rgba(124, 58, 237, 0.4);
-      color: white;
-      filter: brightness(1.1);
+      transform: translateY(-2px); /* Lift feedback */
+      box-shadow: 0 12px 35px rgba(124, 58, 237, 0.4); /* Deeper shadow on hover */
+      color: white; /* Maintain white label */
+      filter: brightness(1.1); /* Subtle color brightening effect */
     }
   </style>
 </head>
 
-<body>
-  <!-- Navigation -->
-  <nav class="navbar navbar-expand-lg navbar-premium sticky-top">
-    <div class="container">
-      <a class="navbar-brand d-flex align-items-center" href="{{ url_for('main.home') }}">
-        <div class="brand-icon me-3" style="background: linear-gradient(135deg, var(--premium-purple), var(--premium-indigo)); width: 44px; height: 44px; border-radius: 14px; display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 8px 16px -4px rgba(124, 58, 237, 0.3);">
-          <i class="bi bi-cart-check-fill fs-5"></i>
+<body> <!-- Main visible document body -->
+  <!-- Navigation --> <!-- Global navigation section -->
+  <nav class="navbar navbar-expand-lg navbar-premium sticky-top"> <!-- Fixed-top navigation using custom premium styling -->
+    <div class="container"> <!-- Centers the navbar content within the viewport -->
+      <a class="navbar-brand d-flex align-items-center" href="{{ url_for('main.home') }}"> <!-- Home link containing brand visual -->
+        <div class="brand-icon me-3" style="background: linear-gradient(135deg, var(--premium-purple), var(--premium-indigo)); width: 44px; height: 44px; border-radius: 14px; display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 8px 16px -4px rgba(124, 58, 237, 0.3);"> <!-- Rounded brand logo container -->
+          <i class="bi bi-cart-check-fill fs-5"></i> <!-- Internal cart brand icon -->
         </div>
-        <span>Smart<span class="brand-grocery-text">Grocery</span></span>
+        <span>Smart<span class="brand-grocery-text">Grocery</span></span> <!-- Text brand label with color highlighting -->
       </a>
-      <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-        <span class="navbar-toggler-icon"></span>
+      <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"> <!-- Burger menu for smaller screens -->
+        <span class="navbar-toggler-icon"></span> <!-- Default Bootstrap hamburger icon -->
       </button>
-      <div class="collapse navbar-collapse" id="navbarNav">
-        {% set cart_count = shopping_list_count or 0 %}
-        <ul class="navbar-nav ms-auto align-items-center">
-          <li class="nav-item">
-            <a class="nav-link {% if request.endpoint == 'main.home' %}active{% endif %}" href="{{ url_for('main.home') }}">
-              <i class="bi bi-house-door me-1"></i> Home
+      <div class="collapse navbar-collapse" id="navbarNav"> <!-- Container for collapsible links -->
+        {% set cart_count = shopping_list_count or 0 %} <!-- Variable for displaying the list item total -->
+        <ul class="navbar-nav ms-auto align-items-center"> <!-- List of links pushed to the right side -->
+          <li class="nav-item"> <!-- Home link Navigation item -->
+            <a class="nav-link {% if request.endpoint == 'main.home' %}active{% endif %}" href="{{ url_for('main.home') }}"> <!-- Home Link with active current state highlighting -->
+              <i class="bi bi-house-door me-1"></i> Home <!-- Icon and text for home link -->
             </a>
           </li>
-          <li class="nav-item">
-            <a class="nav-link {% if 'stores' in request.path or request.endpoint == 'main.stores_page' %}active{% endif %}" href="{{ url_for('main.stores_page') }}">
-              <i class="bi bi-shop me-1"></i> Stores
+          <li class="nav-item"> <!-- Stores link Navigation item -->
+            <a class="nav-link {% if 'stores' in request.path or request.endpoint == 'main.stores_page' %}active{% endif %}" href="{{ url_for('main.stores_page') }}"> <!-- Link to Stores page with detection for active paths -->
+              <i class="bi bi-shop me-1"></i> Stores <!-- Icon and text for stores link -->
             </a>
           </li>
-          <li class="nav-item">
-            <a class="nav-link {% if 'featured-deals' in request.path or request.endpoint == 'main.featured_deals_page' %}active{% endif %}" href="{{ url_for('main.featured_deals_page') }}">
-              <i class="bi bi-tags me-1"></i> Deals
+          <li class="nav-item"> <!-- Deals link Navigation item -->
+            <a class="nav-link {% if 'featured-deals' in request.path or request.endpoint == 'main.featured_deals_page' %}active{% endif %}" href="{{ url_for('main.featured_deals_page') }}"> <!-- Deals section link with active detection -->
+              <i class="bi bi-tags me-1"></i> Deals <!-- Icon and text for deals link -->
             </a>
           </li>
-          <li class="nav-item">
-            <a class="nav-link {% if 'compare' in request.path or request.endpoint == 'main.compare_prices' %}active{% endif %}" href="{{ url_for('main.compare_prices') }}">
-              <i class="bi bi-arrow-left-right me-1"></i> Compare
+          <li class="nav-item"> <!-- Price Compare link Navigation item -->
+            <a class="nav-link {% if 'compare' in request.path or request.endpoint == 'main.compare_prices' %}active{% endif %}" href="{{ url_for('main.compare_prices') }}"> <!-- Search and compare link with active detection -->
+              <i class="bi bi-arrow-left-right me-1"></i> Compare <!-- Icon and text for price comparison -->
             </a>
           </li>
-          <li class="nav-item">
-            <a class="nav-link d-flex align-items-center position-relative {% if 'shopping-list' in request.path or request.endpoint == 'main.shopping_list' %}active{% endif %}" href="{{ url_for('main.shopping_list') }}">
-              <i class="bi bi-list-check me-1"></i> Lists
+          <li class="nav-item"> <!-- Shopping Lists link Navigation item -->
+            <a class="nav-link d-flex align-items-center position-relative {% if 'shopping-list' in request.path or request.endpoint == 'main.shopping_list' %}active{% endif %}" href="{{ url_for('main.shopping_list') }}"> <!-- Managed list link with state check -->
+              <i class="bi bi-list-check me-1"></i> Lists <!-- Icon and text for lists link -->
             </a>
           </li>
-          <li class="nav-item ms-lg-1">
-            <a class="nav-link nav-icon-btn position-relative {% if 'notifications' in request.path %}active{% endif %}" href="{{ url_for('main.notifications_page') }}" aria-label="Notifications">
-              <i class="bi bi-bell fs-5"></i>
-              {% if (unread_notifications_count or 0) > 0 %}
+          <li class="nav-item ms-lg-1"> <!-- Notifications link Navigation item -->
+            <a class="nav-link nav-icon-btn position-relative {% if 'notifications' in request.path %}active{% endif %}" href="{{ url_for('main.notifications_page') }}" aria-label="Notifications"> <!-- Notifications page link -->
+              <i class="bi bi-bell fs-5"></i> <!-- Bell icon for unread messages -->
+              {% if (unread_notifications_count or 0) > 0 %} <!-- Condition for displaying count badge if greater than zero -->
               <span class="position-absolute badge rounded-pill bg-danger" style="font-size: 0.65rem; padding: 0.45em 0.7em; top: -5px; right: -10px; border: 2px solid white; box-shadow: 0 4px 10px rgba(220, 53, 69, 0.4); min-width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;">
-                {{ unread_notifications_count }}
+                {{ unread_notifications_count }} <!-- Dynamic number of alerts -->
               </span>
               {% endif %}
             </a>
           </li>
-          <li class="nav-item ms-lg-2">
-            <a class="nav-link nav-icon-btn nav-profile-btn {% if 'profile' in request.path %}active{% endif %}" href="{{ url_for('main.profile') }}" aria-label="User Profile">
-              <i class="bi bi-person-circle fs-5"></i>
+          <li class="nav-item ms-lg-2"> <!-- User profile icon link -->
+            <a class="nav-link nav-icon-btn nav-profile-btn {% if 'profile' in request.path %}active{% endif %}" href="{{ url_for('main.profile') }}" aria-label="User Profile"> <!-- Profile access button -->
+              <i class="bi bi-person-circle fs-5"></i> <!-- User head icon -->
             </a>
           </li>
         </ul>
@@ -534,88 +534,88 @@ Data: Fetches single product details from database
     </div>
   </nav>
 
-  <!-- Hero Section -->
-  <section class="product-detail-hero">
-    <div class="container position-relative" style="z-index: 1;">
-      <div class="d-flex justify-content-start mb-3">
-        <a href="{{ url_for('main.compare_prices') }}" class="btn-glass-back">
-          <i class="bi bi-arrow-left"></i> Back to Products
+  <!-- Hero Section --> <!-- Premium header for the product detail view -->
+  <section class="product-detail-hero"> <!-- Container for product overview and navigation pathways -->
+    <div class="container position-relative" style="z-index: 1;"> <!-- Content centered and stacked above background shapes -->
+      <div class="d-flex justify-content-start mb-3"> <!-- Grouping for back navigation -->
+        <a href="{{ url_for('main.compare_prices') }}" class="btn-glass-back"> <!-- Button to exit detail view and return to search -->
+          <i class="bi bi-arrow-left"></i> Back to Products <!-- Arrow and label for "Go Back" action -->
         </a>
       </div>
 
-      <nav aria-label="breadcrumb" class="mb-3">
-        <ol class="breadcrumb">
-          {% set trail = product.get('category_path') if product.get('category_path') else [] %}
-          {% if not trail and product.get('category') %}
-          {% set trail = ['Products', product.get('category')] %}
+      <nav aria-label="breadcrumb" class="mb-3"> <!-- Breadcrumb path for location awareness -->
+        <ol class="breadcrumb"> <!-- Bootstrap ordered list containing path segments -->
+          {% set trail = product.get('category_path') if product.get('category_path') else [] %} <!-- Retrieval of category structure for breadcrumbs -->
+          {% if not trail and product.get('category') %} <!-- Fallback check for single category data -->
+          {% set trail = ['Products', product.get('category')] %} <!-- Construct generic path if specific path missing -->
           {% endif %}
-          <li class="breadcrumb-item"><a href="{{ url_for('main.home') }}" class="text-white">Home</a></li>
-          <li class="breadcrumb-item"><a href="{{ url_for('main.compare_prices') }}" class="text-white">Products</a>
+          <li class="breadcrumb-item"><a href="{{ url_for('main.home') }}" class="text-white">Home</a></li> <!-- Root link of the site in path -->
+          <li class="breadcrumb-item"><a href="{{ url_for('main.compare_prices') }}" class="text-white">Products</a> <!-- General Catalog link in path -->
           </li>
-          {% if trail %}
-          {% for crumb in trail %}
-          {% if crumb != 'Products' %}
-          {% if loop.last %}
-          <li class="breadcrumb-item active text-white" aria-current="page">{{ crumb }}</li>
-          {% else %}
+          {% if trail %} <!-- Process hierarchy segments if they exist -->
+          {% for crumb in trail %} <!-- Iteration through the path array -->
+          {% if crumb != 'Products' %} <!-- Filter out the redundant root 'Products' from path -->
+          {% if loop.last %} <!-- If this is the final segment (the item itself) -->
+          <li class="breadcrumb-item active text-white" aria-current="page">{{ crumb }}</li> <!-- Non-clickable current location label -->
+          {% else %} <!-- Clickable ancestor segment -->
           <li class="breadcrumb-item">
-            <a href="{{ url_for('main.compare_prices', category=crumb) }}" class="text-white">{{ crumb }}</a>
+            <a href="{{ url_for('main.compare_prices', category=crumb) }}" class="text-white">{{ crumb }}</a> <!-- Link to all items in this parent category -->
           </li>
           {% endif %}
           {% endif %}
           {% endfor %}
-          {% else %}
-          <li class="breadcrumb-item active text-white" aria-current="page">{{ product.name }}</li>
+          {% else %} <!-- Fallback if no category data whatsoever -->
+          <li class="breadcrumb-item active text-white" aria-current="page">{{ product.name }}</li> <!-- Display name only -->
           {% endif %}
         </ol>
       </nav>
 
 
-      <h1 class="display-5 fw-bold text-white mb-2">{{ product.name }}</h1>
-      {% if product.category or (product.category_path and product.category_path|length) %}
+      <h1 class="display-5 fw-bold text-white mb-2">{{ product.name }}</h1> <!-- Prominent Product Heading -->
+      {% if product.category or (product.category_path and product.category_path|length) %} <!-- Visibility check for metadata badge -->
       <span class="category-badge mt-1"><i class="bi bi-tag-fill me-1"></i>{{ (product.category_path and
-        product.category_path[-1]) or product.category }}</span>
+        product.category_path[-1]) or product.category }}</span> <!-- Badge showing specific product categorization -->
       {% endif %}
     </div>
   </section>
 
-  <!-- Product Content -->
-  <section class="container py-5">
-    <div class="row g-4">
-      <!-- Product Image Column -->
-      <div class="col-lg-5">
-        <div class="image-card position-relative mb-3">
+  <!-- Product Content --> <!-- Main layout section for product imagery and data -->
+  <section class="container py-5"> <!-- Grid container with vertical spacing -->
+    <div class="row g-4"> <!-- Responsive grid row with gutters -->
+      <!-- Product Image Column --> <!-- Left side area for visual components -->
+      <div class="col-lg-5"> <!-- Spans 5 columns on desktop -->
+        <div class="image-card position-relative mb-3"> <!-- Styled wrapper for product image -->
           <img id="product-main-img"
             src="{{ prefer_processed(product.image or (product.images and product.images[0]) or url_for('static', filename='placeholder.svg')) }}"
             data-default-src="{{ prefer_processed(product.image or (product.images and product.images[0]) or url_for('static', filename='placeholder.svg')) }}"
-            alt="{{ product.name }}" class="product-image-large">
+            alt="{{ product.name }}" class="product-image-large"> <!-- Dynamic source image with fallback placeholder support -->
         </div>
-        <!-- Best Price card OUTSIDE the white image card -->
-        <div class="price-display-card mt-3">
-          <div class="price-display-content">
-            <div class="price-label">
-              <i class="bi bi-lightning-charge-fill"></i> Best Price
+        <!-- Best Price card OUTSIDE the white image card --> <!-- Banner for best found deal -->
+        <div class="price-display-card mt-3"> <!-- Highlighted price module -->
+          <div class="price-display-content"> <!-- Text content wrapper -->
+            <div class="price-label"> <!-- Sub-heading for the value -->
+              <i class="bi bi-lightning-charge-fill"></i> Best Price <!-- Icon indicating deal strength -->
             </div>
-            <div class="price" id="selected-price">
-              {% if best_price_value is not none %}
-              €{{ best_price_value }}
-              {% elif product.price %}
-              €{{ product.price }}
-              {% else %}
-              Select a Store
+            <div class="price" id="selected-price"> <!-- Target ID for JavaScript price updates -->
+              {% if best_price_value is not none %} <!-- Logic to render numeric value -->
+              €{{ best_price_value }} <!-- Displays the numeric value passed from the Flask route -->
+              {% elif product.price %} <!-- Fallback to the default product price if specific "best price" logic isn't triggered -->
+              €{{ product.price }} <!-- Standard price display -->
+              {% else %} <!-- Catch-all for data that lacks pricing entirely -->
+              Select a Store <!-- User prompt to interact with the store selection module -->
               {% endif %}
             </div>
-            <div class="store-name" id="selected-store">
-              {% if best_price_stores and best_price_stores|length > 0 %}
-              at <strong>{{ best_price_stores | join(', ') }}</strong>
-              {% elif product.store or product.source %}
-              at <strong>{{ product.store or product.source }}</strong>
-              {% else %}
-              Choose a store below
+            <div class="store-name" id="selected-store"> <!-- Descriptive sub-label for the price -->
+              {% if best_price_stores and best_price_stores|length > 0 %} <!-- Display the specific retailer(s) offering the best rate -->
+              at <strong>{{ best_price_stores | join(', ') }}</strong> <!-- Joins multiple stores with commas if a tie exists -->
+              {% elif product.store or product.source %} <!-- Single store fallback -->
+              at <strong>{{ product.store or product.source }}</strong> <!-- Highlighted store name -->
+              {% else %} <!-- Prompt if no selection active -->
+              Choose a store below <!-- Instructions for the user -->
               {% endif %}
             </div>
 
-            <!-- Add to List Button (inside Price Card) -->
+            <!-- Add to List Button (inside Price Card) --> <!-- The primary CTA for adding this item to the user's shopping list -->
             <button id="add-to-list-btn" class="btn w-100 mt-3 d-flex align-items-center justify-content-center fw-bold"
               style="background: rgba(255, 255, 255, 0.2); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.4); color: white; padding: 0.8rem; border-radius: 12px; transition: all 0.2s;"
               onmouseover="this.style.background='rgba(255, 255, 255, 0.3)'; this.style.transform='translateY(-2px)'"
@@ -627,55 +627,55 @@ Data: Fetches single product details from database
               data-special-offer="{{ product.special_offer_type or product.offer_type or '' }}"
               data-offer-type="{{ product.offer_type or '' }}"
               data-offer-x="{{ product.offer_x or '' }}"
-              data-offer-y="{{ product.offer_y or '' }}">
-              <i class="bi bi-cart-plus-fill me-2 fs-5"></i>
-              Add to List
+              data-offer-y="{{ product.offer_y or '' }}"> <!-- Complex data-attributes housing all details needed for the cart/list logic in JavaScript -->
+              <i class="bi bi-cart-plus-fill me-2 fs-5"></i> <!-- Semi-transparent cart icon -->
+              Add to List <!-- Button label -->
             </button>
           </div>
         </div>
       </div>
 
-      <!-- Product Info Column -->
-      <div class="col-lg-7">
+      <!-- Product Info Column --> <!-- Right side column for textual meta-data -->
+      <div class="col-lg-7"> <!-- Spans 7 columns on desktop -->
 
-        <!-- Product Details Card -->
-        <div class="info-card">
-          {% if product.description %}
-          <div class="mb-3">
-            <div class="section-title">
-              <i class="bi bi-file-text-fill"></i>
-              Description
+        <!-- Product Details Card --> <!-- Section containing product narrative and metadata chips -->
+        <div class="info-card"> <!-- Premium container with shadow/glass effects -->
+          {% if product.description %} <!-- Logic for showing description only if present -->
+          <div class="mb-3"> <!-- Bottom margin for separation -->
+            <div class="section-title"> <!-- Module Header -->
+              <i class="bi bi-file-text-fill"></i> <!-- Paper icon -->
+              Description <!-- Heading text -->
             </div>
-            <p class="text-muted mb-0">{{ product.description }}</p>
+            <p class="text-muted mb-0">{{ product.description }}</p> <!-- Sanitized text from MongoDB via Jinja -->
           </div>
           {% endif %}
 
-          <!-- Product Meta -->
-          <div class="mb-3">
-            <div class="section-title">
-              <i class="bi bi-info-circle-fill"></i>
-              Product Information
+          <!-- Product Meta --> <!-- Secondary attributes of the item -->
+          <div class="mb-3"> <!-- Margin for grouping -->
+            <div class="section-title"> <!-- Module Header -->
+              <i class="bi bi-info-circle-fill"></i> <!-- Information "i" icon -->
+              Product Information <!-- Info label -->
             </div>
-            <div class="meta-chips">
-              {% if product.category %}
-              <span class="badge bg-light text-primary"><i class="bi bi-tag"></i>&nbsp;{{ product.category }}</span>
+            <div class="meta-chips"> <!-- Container for utility badges -->
+              {% if product.category %} <!-- Check for category -->
+              <span class="badge bg-light text-primary"><i class="bi bi-tag"></i>&nbsp;{{ product.category }}</span> <!-- Category badge with tag icon -->
               {% endif %}
-              {% if product.unit %}
-              <span class="badge bg-light text-primary"><i class="bi bi-box"></i>&nbsp;{{ product.unit }}</span>
+              {% if product.unit %} <!-- Check for unit (e.g., 500g, 1kg) -->
+              <span class="badge bg-light text-primary"><i class="bi bi-box"></i>&nbsp;{{ product.unit }}</span> <!-- Unit badge with package icon -->
               {% endif %}
-              {% if product.stores %}
+              {% if product.stores %} <!-- Display available store count -->
               <span class="badge bg-light text-primary"><i class="bi bi-shop"></i>&nbsp;{{ product.stores|length }}
-                Store{{ 's' if product.stores|length != 1 }}</span>
+                Store{{ 's' if product.stores|length != 1 }}</span> <!-- Pluralized retailer count badge -->
               {% endif %}
             </div>
           </div>
 
-          <!-- Store Selection -->
-          {% if product.stores and product.stores|length > 0 %}
-          <div class="mb-3">
-            <div class="section-title">
-              <i class="bi bi-shop-window"></i>
-              Select Your Store
+          <!-- Store Selection --> <!-- Interactive grid where users choose a specific retailer -->
+          {% if product.stores and product.stores|length > 0 %} <!-- Display only if multiple price points exist -->
+          <div class="mb-3"> <!-- Spacing from surrounding cards -->
+            <div class="section-title"> <!-- Module Header -->
+              <i class="bi bi-shop-window"></i> <!-- Storefront icon -->
+              Select Your Store <!-- Direct user action prompt -->
             </div>
             
             {# 
@@ -686,35 +686,36 @@ Data: Fetches single product details from database
                2. Updates the "Add to List" button data (price, store name)
                3. Updates the Main Product Image (if store-specific image exists)
             #}
-            <div class="store-grid">
-              {% for store in product.stores %}
+            <div class="store-grid"> <!-- CSS grid container for retailer cards -->
+              {% for store in product.stores %} <!-- Iterate through price options in MongoDB document -->
               <div class="store-card" 
                    data-store="{{ store.store or store.name }}" 
                    data-price="{{ store.price }}"
-                   data-image="{{ prefer_processed(store.image if (store.image and 'logo' not in store.image|lower and 'brand' not in store.image|lower) else product.image or url_for('static', filename='placeholder.svg')) }}">
+                   data-image="{{ prefer_processed(store.image if (store.image and 'logo' not in store.image|lower and 'brand' not in store.image|lower) else product.image or url_for('static', filename='placeholder.svg')) }}"> <!-- Card with data-attributes for JS event listener -->
                 
                 {# Checkmark Icon: visible only when .selected class is added via JS #}
-                <div class="check-icon">
-                  <i class="bi bi-check-lg"></i>
+                <div class="check-icon"> <!-- Floating selection indicator -->
+                  <i class="bi bi-check-lg"></i> <!-- Bold checkmark -->
                 </div>
                 
-                <div class="store-card-content">
+                <div class="store-card-content"> <!-- Content wrapper within the interaction area -->
                   {# Store Logo #}
                   <img
                     src="{{ prefer_processed(store.logo or store.store_display_image or url_for('static', filename='placeholder.svg')) }}"
                     alt="{{ store.store or store.name }}" class="store-logo"
-                    onerror="this.src='{{ url_for('static', filename='placeholder.svg') }}'">
+                    data-fallback="{{ url_for('static', filename='placeholder.svg') }}"
+                    onerror="this.src=this.dataset.fallback;"> <!-- Store branding image with error fallback -->
                   
                   <div class="card-store-name" title="{{ store.store or store.name }}">{{ store.store or store.name }}
-                  </div>
-                  <div class="card-price mb-2">€{{ store.price }}</div>
+                  </div> <!-- Retailer name label -->
+                  <div class="card-price mb-2">€{{ store.price }}</div> <!-- Retailer-specific product price -->
 
                   {# External Link to Store Website (if available) #}
-                  {% if store.get('url') %}
+                  {% if store.get('url') %} <!-- Optional link to grocery website -->
                   <a href="{{ store.get('url') }}" target="_blank" rel="noopener noreferrer"
                     class="btn btn-sm btn-go-store w-100 py-2 d-flex align-items-center justify-content-center gap-2"
                     style="background: #f0f0ff; border-radius: 8px; color: #7c3aed; border: 1px solid #dadaff; font-weight: 600; font-size: 0.85rem;">
-                    <i class="bi bi-box-arrow-up-right"></i> Visit Store
+                    <i class="bi bi-box-arrow-up-right"></i> Visit Store <!-- External redirect button -->
                   </a>
                   {% endif %}
                 </div>
@@ -728,13 +729,13 @@ Data: Fetches single product details from database
     </div>
   </section>
 
-  <!-- Footer -->
-  <footer class="text-center py-4 bg-light border-top">
-    <p class="mb-0 text-muted">&copy; 2025 Smart Grocery Team</p>
+  <!-- Footer --> <!-- Standard page conclusion section -->
+  <footer class="text-center py-4 bg-light border-top"> <!-- Centered text footer with light background -->
+    <p class="mb-0 text-muted">&copy; 2025 Smart Grocery Team</p> <!-- Copyright notice -->
   </footer>
 
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script> <!-- Bootstrap JS for navigation and modals -->
+  <script src="{{ url_for('static', filename='js/script.js') }}"></script> <!-- Global application logic including list management -->
   <script>
     // ==========================================
     // PAGE SPECIFIC JAVASCRIPT: PRODUCT DETAIL
@@ -742,17 +743,17 @@ Data: Fetches single product details from database
     // ==========================================
     
     // Store selector variables
-    let selectedStoreData = {};
+    let selectedStoreData = {}; // Global-within-script object to track the active retailer selection
 
-    document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('DOMContentLoaded', function () { // Wait for the DOM tree to be fully loaded
       // Navbar scroll behavior (Specific to this page's transparent-to-solid header)
-      const navbar = document.querySelector('.navbar');
+      const navbar = document.querySelector('.navbar'); // References the navigation bar element
       if(navbar) {
-        window.addEventListener('scroll', () => {
-          if (window.scrollY > 50) {
-            navbar.classList.add('scrolled'); // Add purple background
+        window.addEventListener('scroll', () => { // Track vertical scrolling pixels
+          if (window.scrollY > 50) { // If scrolled more than 50 pixels
+            navbar.classList.add('scrolled'); // Apply solid color/shadow class
           } else {
-            navbar.classList.remove('scrolled'); // Revert to transparent
+            navbar.classList.remove('scrolled'); // Revert to transparent state
           }
         });
       }
@@ -766,35 +767,35 @@ Data: Fetches single product details from database
       const selectedStoreEl = document.getElementById('selected-store');
       // addToListBtn: The primary CTA, needs its data-attributes updated on selection
       const addToListBtn = document.getElementById('add-to-list-btn');
-      const productName = addToListBtn ? addToListBtn.dataset.name : '';
-      const productId = addToListBtn ? addToListBtn.dataset.id : '';
-      const mainImg = document.getElementById('product-main-img');
+      const productName = addToListBtn ? addToListBtn.dataset.name : ''; // Cache name from button data attribute
+      const productId = addToListBtn ? addToListBtn.dataset.id : ''; // Cache ID from button data attribute
+      const mainImg = document.getElementById('product-main-img'); // Reference to the big product image
       
       // Use the product image as the default, but allow switching to store image on selection
-      let defaultImgSrc = mainImg ? mainImg.getAttribute('data-default-src') : '';
-      if (mainImg && defaultImgSrc) mainImg.src = defaultImgSrc;
-      const favoriteBtn = document.getElementById('favorite-btn');
+      let defaultImgSrc = mainImg ? mainImg.getAttribute('data-default-src') : ''; // Save original image path
+      if (mainImg && defaultImgSrc) mainImg.src = defaultImgSrc; // Initialize image if source is available
+      const favoriteBtn = document.getElementById('favorite-btn'); // Reference to heart button (if present)
 
       // Start with no preselected store
-      selectedStoreData.store = '';
-      selectedStoreData.price = '';
-      selectedStoreData.image = defaultImgSrc;
-      storeCards.forEach(c => c.classList.remove('selected'));
+      selectedStoreData.store = ''; // Clear retailer tracker
+      selectedStoreData.price = ''; // Clear price tracker
+      selectedStoreData.image = defaultImgSrc; // Default to main product image
+      storeCards.forEach(c => c.classList.remove('selected')); // Remove selection marks from all cards
       if (addToListBtn) {
-        addToListBtn.dataset.price = '';
-        addToListBtn.dataset.store = '';
+        addToListBtn.dataset.price = ''; // Reset price on button for validation
+        addToListBtn.dataset.store = ''; // Reset store on button for validation
       }
 
       // Handle store card clicks
       storeCards.forEach(card => {
         card.addEventListener('click', function (e) {
-          // If clicking the redirection button, don't trigger selection
+          // If clicking the redirection button (Visit Store), don't trigger internal selection logic
           if (e.target.closest('.btn-go-store')) {
             return;
           }
-          const isSelected = this.classList.contains('selected');
+          const isSelected = this.classList.contains('selected'); // Check if already selected
           if (isSelected) {
-            // Deselect only, do not redirect
+            // Deselect the current card if clicked again
             this.classList.remove('selected');
             selectedStoreData.store = '';
             selectedStoreData.price = '';
@@ -803,29 +804,29 @@ Data: Fetches single product details from database
               addToListBtn.dataset.price = '';
               addToListBtn.dataset.store = '';
             }
-            if (mainImg && defaultImgSrc) mainImg.src = defaultImgSrc;
+            if (mainImg && defaultImgSrc) mainImg.src = defaultImgSrc; // Revert image to generic product photo
             return;
           }
-          // Remove selected class from all cards
+          // Exclusive selection: Clear others before selecting new one
           storeCards.forEach(c => c.classList.remove('selected'));
-          // Add selected class to clicked card
+          // Add visual selection class to the target card
           this.classList.add('selected');
-          const store = this.dataset.store;
-          const price = this.dataset.price;
-          // When a store is selected, show the product image for that store (not the store logo)
+          const store = this.dataset.store; // Pull store name from data attribute
+          const price = this.dataset.price; // Pull specific price from data attribute
+          // When a store is selected, attempt to show a store-specific product shot
           let imgSrc = defaultImgSrc;
-          // Try to get the product image for this store from the data-image attribute (which should be set to the product image for that store)
+          // Logic to verify if a store-specific image exists beyond a placeholder
           if (this.dataset.image && !this.dataset.image.includes('placeholder.svg')) {
             imgSrc = this.dataset.image;
           } else {
             imgSrc = defaultImgSrc;
           }
-          // Store selection
+          // Update the global state object
           selectedStoreData.store = store;
           selectedStoreData.price = price;
           selectedStoreData.image = imgSrc;
 
-          // Update main "Go to Store" button
+          // Update main "Go to Store" button link dynamically (not present in current HTML, but scaffolded here)
           const goToStoreBtn = document.getElementById('go-to-store-btn');
           const storeUrlBtn = this.querySelector('.btn-go-store'); 
           
@@ -841,52 +842,53 @@ Data: Fetches single product details from database
              }
           }
 
-          // Only update Add to List button and image
+          // Update the main Add to List button's metadata for backend submission
           if (addToListBtn) {
             addToListBtn.dataset.price = price;
             addToListBtn.dataset.store = store;
           }
+          // Real-time image swap on the page
           if (mainImg && imgSrc) {
             mainImg.src = imgSrc;
           }
         });
       });
 
-      // Add to shopping list
+      // Add to shopping list listener
       if (addToListBtn) {
         addToListBtn.addEventListener('click', async function (e) {
-          e.preventDefault();
-          e.stopPropagation();
+          e.preventDefault(); // Stop standard browser action
+          e.stopPropagation(); // Stop event bubbling to parent containers
 
-          // Check if store is selected
+          // Check if user has picked a retailer choice
           if (!selectedStoreData.store || !selectedStoreData.price) {
-            showNotification('Please select a store first', 'warning');
+            showNotification('Please select a store first', 'warning'); // User-friendly alert box
             return;
           }
 
           const price = selectedStoreData.price;
           const store = selectedStoreData.store;
 
-          // Validate price
+          // Logical validation to ensure we aren't adding items with missing/zero price
           if (!price || price === '0' || price === '0.00') {
             showNotification('Invalid price for selected store', 'danger');
             return;
           }
 
-          // Create item object
+          // Create a structured item object compatible with the global shopping list logic
           const item = {
             name: productName,
             price: price,
-            price_val: parseFloat(price.replace(/[^0-9.]/g, '')),
+            price_val: parseFloat(price.replace(/[^0-9.]/g, '')), // Strip currency symbols and parse as Number
             store: store,
-            qty: 1,
-            id: productId,
+            qty: 1, // Default quantity
+            id: productId, // Internal MongoDB ID
             image: selectedStoreData.image
           };
 
-          // Use list selector
+          // Trigger the global list selector logic (defined in script.js)
           try {
-            const result = await window.addItemToShoppingList(item);
+            const result = await window.addItemToShoppingList(item); // Call the main async helper
             if (result && result.error) {
               showNotification('Error adding item to list', 'danger');
             }
@@ -898,31 +900,31 @@ Data: Fetches single product details from database
       }
 
       // Favorite button
-      // Handled by global toggleFavorite function in script.js
+      // Handled by global toggleFavorite function in script.js - no local listeners needed here.
     });
   </script>
   <!-- No custom Add to List handler: rely on global JS handler from script.js -->
 
-  <!-- Global List Selector Modal -->
+  <!-- Global List Selector Modal --> <!-- UI element used when adding items to specific shopping lists -->
   <div class="modal fade" id="globalListSelectorModal" tabindex="-1" aria-labelledby="globalListSelectorModalLabel"
-    aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content">
-        <div class="modal-header">
+    aria-hidden="true"> <!-- Standard Bootstrap fade animation -->
+    <div class="modal-dialog modal-dialog-centered"> <!-- Centers the choice picker vertically on screen -->
+      <div class="modal-content"> <!-- Glassmorphism or solid styled container (controlled by CSS) -->
+        <div class="modal-header"> <!-- Top bar of the modal picker -->
           <h5 class="modal-title" id="globalListSelectorModalLabel">
-            <i class="bi bi-cart-plus me-2"></i>Select Shopping List
+            <i class="bi bi-cart-plus me-2"></i>Select Shopping List <!-- Title indicating the choice being made -->
           </h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button> <!-- Standard 'X' button to exit modal -->
         </div>
-        <div class="modal-body">
-          <p class="text-white mb-3">Choose which list to add this item to:</p>
-          <div id="globalListSelectorBody">
+        <div class="modal-body"> <!-- Main interaction area -->
+          <p class="text-white mb-3">Choose which list to add this item to:</p> <!-- Instructions to user -->
+          <div id="globalListSelectorBody"> <!-- Critical Target ID for JS to inject dynamic list options (e.g., Weekly Groceries, Party) -->
             <!-- List options will be populated here by JavaScript -->
           </div>
         </div>
       </div>
     </div>
   </div>
-</body>
+</body> <!-- End of document content -->
 
-</html>
+</html> <!-- End of HTML structure -->

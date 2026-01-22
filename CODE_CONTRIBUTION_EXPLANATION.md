@@ -1,16 +1,5 @@
-# Smart Grocery - Code Contribution Explanation
-
-**Author**: Bora Elshani  
-**Contribution**: 51.4% of the codebase  
-**Date**: December 2025
-
----
-
 ## Overview
 
-This document provides a detailed explanation of your major code contributions to the Smart Grocery application. These are the components your professor will likely ask about during presentations or code reviews.
-
----
 
 ## 1. `main_routes.py` (1,069 lines) - Core Backend Routing Logic
 

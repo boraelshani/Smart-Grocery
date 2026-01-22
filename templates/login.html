@@ -161,64 +161,64 @@ Route: POST /login
     }
 </style>
 </head>
-<body class="d-flex align-items-center justify-content-center">
+<body class="d-flex align-items-center justify-content-center"> <!-- Flexbox centered body -->
 
-  <div class="bg-pattern"></div>
-  <div class="shape shape-1"></div>
-  <div class="shape shape-2"></div>
+  <div class="bg-pattern"></div> <!-- Decorative pattern -->
+  <div class="shape shape-1"></div> <!-- Floating shape 1 -->
+  <div class="shape shape-2"></div> <!-- Floating shape 2 -->
 
-  <a href="{{ url_for('main.home') }}" class="back-link">
-    <i class="bi bi-arrow-left"></i> Back
+  <a href="{{ url_for('main.home') }}" class="back-link"> <!-- Link back to the home page -->
+    <i class="bi bi-arrow-left"></i> Back <!-- Arrow icon and text -->
   </a>
 
-  <div class="container d-flex justify-content-center px-3">
-    <div class="auth-card">
-      <div class="brand-header">
-        <div class="brand-icon">
-          <i class="bi bi-person-fill"></i>
+  <div class="container d-flex justify-content-center px-3"> <!-- Centered container -->
+    <div class="auth-card"> <!-- The white login box -->
+      <div class="brand-header"> <!-- Logo and header section -->
+        <div class="brand-icon"> <!-- Icon box -->
+          <i class="bi bi-person-fill"></i> <!-- Person icon -->
         </div>
-        <h2 class="fw-bold text-dark">Welcome Back</h2>
-        <p class="text-muted">Please sign in to continue</p>
+        <h2 class="fw-bold text-dark">Welcome Back</h2> <!-- Login title -->
+        <p class="text-muted">Please sign in to continue</p> <!-- Login subtitle -->
       </div>
 
-      <!-- Flash Messages -->
-	{% if error %}
-	<div class="alert alert-danger border-0 shadow-sm rounded-3 mb-4 d-flex align-items-center" role="alert">
-		<i class="bi bi-exclamation-circle-fill me-2 fs-5"></i>
-		{{ error }}
+      <!-- Flash Messages - Error notifications from Flask -->
+	{% if error %} <!-- If Python passes an 'error' variable -->
+	<div class="alert alert-danger border-0 shadow-sm rounded-3 mb-4 d-flex align-items-center" role="alert"> <!-- Bootstrap red alert -->
+		<i class="bi bi-exclamation-circle-fill me-2 fs-5"></i> <!-- Error symbol -->
+		{{ error }} <!-- Prints the ACTUAL error message -->
 	</div>
 	{% endif %}
-      {% with messages = get_flashed_messages(with_categories=true) %}
+      {% with messages = get_flashed_messages(with_categories=true) %} <!-- Check for Flask global flash messages -->
         {% if messages %}
           {% for category, message in messages %}
-            <div class="alert alert-{{ category }} border-0 shadow-sm rounded-3 mb-4 d-flex align-items-center">
+            <div class="alert alert-{{ category }} border-0 shadow-sm rounded-3 mb-4 d-flex align-items-center"> <!-- Colored alert based on success/error -->
               {% if category == 'success' %}
-                <i class="bi bi-check-circle-fill me-2 fs-5"></i>
+                <i class="bi bi-check-circle-fill me-2 fs-5"></i> <!-- Success icon -->
               {% else %}
-                <i class="bi bi-exclamation-circle-fill me-2 fs-5"></i>
+                <i class="bi bi-exclamation-circle-fill me-2 fs-5"></i> <!-- Error icon -->
               {% endif %}
-              {{ message }}
+              {{ message }} <!-- Prints the text of the message -->
             </div>
           {% endfor %}
         {% endif %}
       {% endwith %}
 
-      <form method="POST" action="{{ url_for('auth.login') }}">
-        <div class="form-floating mb-3">
-          <input type="email" class="form-control" id="email" name="email" placeholder="name@example.com" value="{{ email or request.form.get('email','') }}" required>
-          <label for="email">Email address</label>
+      <form method="POST" action="{{ url_for('auth.login') }}"> <!-- Form sends a POST request to the /login route -->
+        <div class="form-floating mb-3"> <!-- Bootstrap floating label container -->
+          <input type="email" class="form-control" id="email" name="email" placeholder="name@example.com" value="{{ email or request.form.get('email','') }}" required> <!-- Email input box -->
+          <label for="email">Email address</label> <!-- Floating label text -->
         </div>
         
-        <div class="form-floating mb-4">
-          <input type="password" class="form-control" id="password" name="password" placeholder="Password" required>
-          <label for="password">Password</label>
+        <div class="form-floating mb-4"> <!-- Bootstrap floating label container -->
+          <input type="password" class="form-control" id="password" name="password" placeholder="Password" required> <!-- Password input box (bullets hidden) -->
+          <label for="password">Password</label> <!-- Floating label text -->
         </div>
 
-        <button type="submit" class="btn btn-submit w-100 mb-3">
+        <button type="submit" class="btn btn-submit w-100 mb-3"> <!-- Submit button for the form -->
           Sign In
         </button>
 
-        <div class="auth-links">
+        <div class="auth-links"> <!-- Link to go to Signup page if user has no account -->
           <p class="mb-0 text-muted">Don't have an account? 
             <a href="{{ url_for('auth.signup') }}">Sign up</a>
           </p>

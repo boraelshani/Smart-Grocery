@@ -161,63 +161,63 @@ Route: POST /signup
     }
 </style>
 </head>
-<body class="d-flex align-items-center justify-content-center">
+<body class="d-flex align-items-center justify-content-center"> <!-- Centers the card in the middle of the screen -->
 
-  <div class="bg-pattern"></div>
-  <div class="shape shape-1"></div>
-  <div class="shape shape-2"></div>
+  <div class="bg-pattern"></div> <!-- Decorative background pattern -->
+  <div class="shape shape-1"></div> <!-- Floating decorative circle -->
+  <div class="shape shape-2"></div> <!-- Floating decorative circle -->
 
-  <a href="{{ url_for('main.home') }}" class="back-link">
-    <i class="bi bi-arrow-left"></i> Back
+  <a href="{{ url_for('main.home') }}" class="back-link"> <!-- Link to return to the Home page -->
+    <i class="bi bi-arrow-left"></i> Back <!-- Legend and arrow -->
   </a>
 
-  <div class="container d-flex justify-content-center px-3">
-    <div class="auth-card">
-      <div class="brand-header">
-        <div class="brand-icon">
-          <i class="bi bi-person-plus-fill"></i>
+  <div class="container d-flex justify-content-center px-3"> <!-- Container for responsive centering -->
+    <div class="auth-card"> <!-- The white card containing the signup form -->
+      <div class="brand-header"> <!-- Top section with icon and title -->
+        <div class="brand-icon"> <!-- Icon box -->
+          <i class="bi bi-person-plus-fill"></i> <!-- 'Add person' icon -->
         </div>
-        <h2 class="fw-bold text-dark">Create Account</h2>
-        <p class="text-muted">Start saving on groceries today</p>
+        <h2 class="fw-bold text-dark">Create Account</h2> <!-- Main Header -->
+        <p class="text-muted">Start saving on groceries today</p> <!-- Subtitle -->
       </div>
 
-      <!-- Flash Messages -->
-	  {% with messages = get_flashed_messages(with_categories=true) %}
+      <!-- Flash Messages - Error/Success alerts from Python logic -->
+	  {% with messages = get_flashed_messages(with_categories=true) %} <!-- Fetch messages sent via Flask flash() -->
         {% if messages %}
           {% for category, message in messages %}
-            <div class="alert alert-{{ category }} border-0 shadow-sm rounded-3 mb-4 d-flex align-items-center">
+            <div class="alert alert-{{ category }} border-0 shadow-sm rounded-3 mb-4 d-flex align-items-center"> <!-- Styled alert based on category -->
               {% if category == 'success' %}
-                <i class="bi bi-check-circle-fill me-2 fs-5"></i>
+                <i class="bi bi-check-circle-fill me-2 fs-5"></i> <!-- Green check for success -->
               {% else %}
-                <i class="bi bi-exclamation-circle-fill me-2 fs-5"></i>
+                <i class="bi bi-exclamation-circle-fill me-2 fs-5"></i> <!-- Red exclamation for error -->
               {% endif %}
-              {{ message }}
+              {{ message }} <!-- Display the text of the message -->
             </div>
           {% endfor %}
         {% endif %}
       {% endwith %}
 
-      <form method="POST" action="{{ url_for('auth.signup') }}">
-		<div class="form-floating mb-3">
-		  <input type="text" class="form-control" id="name" name="name" placeholder="John Doe" required>
-		  <label for="name">Full Name</label>
+      <form method="POST" action="{{ url_for('auth.signup') }}"> <!-- Submits data to the /signup Python route -->
+		<div class="form-floating mb-3"> <!-- Container for floating name input -->
+		  <input type="text" class="form-control" id="name" name="name" placeholder="John Doe" required> <!-- Name input field -->
+		  <label for="name">Full Name</label> <!-- Floating label -->
         </div>
 
-        <div class="form-floating mb-3">
-          <input type="email" class="form-control" id="email" name="email" placeholder="name@example.com" required>
-          <label for="email">Email address</label>
+        <div class="form-floating mb-3"> <!-- Container for floating email input -->
+          <input type="email" class="form-control" id="email" name="email" placeholder="name@example.com" required> <!-- Email input field -->
+          <label for="email">Email address</label> <!-- Floating label -->
         </div>
         
-        <div class="form-floating mb-4">
-          <input type="password" class="form-control" id="password" name="password" placeholder="Password" required>
-          <label for="password">Password</label>
+        <div class="form-floating mb-4"> <!-- Container for floating password input -->
+          <input type="password" class="form-control" id="password" name="password" placeholder="Password" required> <!-- Secure password input field -->
+          <label for="password">Password</label> <!-- Floating label -->
         </div>
 
-        <button type="submit" class="btn btn-submit w-100 mb-3">
+        <button type="submit" class="btn btn-submit w-100 mb-3"> <!-- Submit button to register user -->
           Sign Up
         </button>
 
-        <div class="auth-links">
+        <div class="auth-links"> <!-- Link to login if user already has an account -->
           <p class="mb-0 text-muted">Already have an account? 
             <a href="{{ url_for('auth.login') }}">Log in</a>
           </p>

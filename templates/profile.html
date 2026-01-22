@@ -1,981 +1,982 @@
 <!--
 ═══════════════════════════════════════════════════════════════════════════
-PROFILE PAGE (User Account Management)
+PROFILE PAGE (User Account Management) (Document header describing the page)
 ═══════════════════════════════════════════════════════════════════════════
-Purpose: User account settings and preferences
-Features:
-- Display user name and email
-- Account information
-- Password change option
-- Preferences and settings
-- Logout button
-Route: /profile
-Requires: User must be logged in
+Purpose: User account settings and preferences (Overview of page functionality)
+Features: (List of features available to the user)
+- Display user name and email (Personal identification)
+- Account information (User details)
+- Password change option (Security settings)
+- Preferences and settings (Customization options)
+- Logout button (Session termination)
+Route: /profile (The web address for this page)
+Requires: User must be logged in (Access control requirement)
 ═══════════════════════════════════════════════════════════════════════════
 -->
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Smart Grocery | Profile</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <style>
-    :root {
-      --premium-purple: #7c3aed;
-      --premium-indigo: #6366f1;
-      --premium-dark: #1e1b4b;
-      --glass-bg: rgba(255, 255, 255, 0.8);
-      --glass-border: rgba(255, 255, 255, 0.4);
-      --card-radius: 24px;
+<!DOCTYPE html> <!-- Declares the document as HTML5 -->
+<html lang="en"> <!-- Sets the document language to English -->
+<head> <!-- Contains metadata, titles, and links to external resources -->
+  <meta charset="UTF-8"> <!-- Specifies the character encoding for the HTML document -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- Ensures proper rendering and touch zooming on mobile devices -->
+  <title>Smart Grocery | Profile</title> <!-- The text that appears in the browser tab -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"> <!-- Links Bootstrap CSS framework -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css"> <!-- Links Bootstrap Icons font -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"> <!-- Links to the project's custom CSS file -->
+  <style> /* Internal CSS for page-specific styling */
+    :root { /* Defines global CSS variables for easy maintenance */
+      --premium-purple: #7c3aed; /* Primary theme color */
+      --premium-indigo: #6366f1; /* Secondary theme color */
+      --premium-dark: #1e1b4b; /* Dark background/text color */
+      --glass-bg: rgba(255, 255, 255, 0.8); /* Semi-transparent background for glassmorphism */
+      --glass-border: rgba(255, 255, 255, 0.4); /* Subtle border for glass elements */
+      --card-radius: 24px; /* Standard corner rounding for cards */
     }
 
-    body {
-      background: radial-gradient(circle at top left, #f3f4ff 0%, #ffffff 50%);
-      min-height: 100vh;
+    body { /* Main content styling */
+      background: radial-gradient(circle at top left, #f3f4ff 0%, #ffffff 50%); /* Soft background gradient */
+      min-height: 100vh; /* Ensures the background covers the full viewport height */
     }
 
-    /* Premium Header */
+    /* Premium Header */ /* Section for the top visual header */
     .profile-header {
-      /* Vibrant animated gradient */
-      background: linear-gradient(-45deg, #7c3aed, #6366f1, #8b5cf6, #d946ef);
-      background-size: 400% 400%;
-      animation: gradientBG 15s ease infinite;
-      color: white;
-      padding: 6rem 0 10rem;
-      margin-bottom: -5rem;
-      border-radius: 0 0 50% 50% / 0 0 40px 40px;
-      position: relative;
-      overflow: hidden;
-      z-index: 10;
-      box-shadow: 0 10px 40px rgba(124, 58, 237, 0.4);
+      /* Vibrant animated gradient */ /* Uses multiple colors and animation */
+      background: linear-gradient(-45deg, #7c3aed, #6366f1, #8b5cf6, #d946ef); /* Multi-color gradient */
+      background-size: 400% 400%; /* Enlarges the background for smooth movement */
+      animation: gradientBG 15s ease infinite; /* Triggers the background animation */
+      color: white; /* White text for contrast */
+      padding: 6rem 0 10rem; /* Large vertical padding */
+      margin-bottom: -5rem; /* Negative margin to create overlap effect */
+      border-radius: 0 0 50% 50% / 0 0 40px 40px; /* Curved bottom edge */
+      position: relative; /* Allows absolute positioning of child elements */
+      overflow: hidden; /* Clips any content spilling outside the curves */
+      z-index: 10; /* Keeps the header above normal elements */
+      box-shadow: 0 10px 40px rgba(124, 58, 237, 0.4); /* Deep colored shadow */
     }
     
-    @keyframes gradientBG {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
+    @keyframes gradientBG { /* Keyframes for the moving background effect */
+      0% { background-position: 0% 50%; } /* Start state */
+      50% { background-position: 100% 50%; } /* Mid state (moved) */
+      100% { background-position: 0% 50%; } /* End state (return) */
     }
 
-    /* Floating shapes for fun */
+    /* Floating shapes for fun */ /* Decorative elements in the background */
     .bg-shape {
-      position: absolute;
-      background: rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(5px);
-      border-radius: 20%;
-      animation: float 10s infinite ease-in-out;
+      position: absolute; /* Positions shapes relative to the header */
+      background: rgba(255, 255, 255, 0.1); /* Very subtle white color */
+      backdrop-filter: blur(5px); /* Blurs the background behind the shape */
+      border-radius: 20%; /* Rounded corners for the shapes */
+      animation: float 10s infinite ease-in-out; /* Triggers drifting animation */
     }
     
-    .shape-1 { top: 20%; left: 10%; width: 100px; height: 100px; animation-delay: 0s; }
-    .shape-2 { top: 60%; right: 10%; width: 150px; height: 150px; animation-delay: -2s; border-radius: 50%; }
-    .shape-3 { bottom: 10%; left: 30%; width: 60px; height: 60px; animation-delay: -5s; }
+    .shape-1 { top: 20%; left: 10%; width: 100px; height: 100px; animation-delay: 0s; } /* Position and size for shape 1 */
+    .shape-2 { top: 60%; right: 10%; width: 150px; height: 150px; animation-delay: -2s; border-radius: 50%; } /* Position and size for shape 2 */
+    .shape-3 { bottom: 10%; left: 30%; width: 60px; height: 60px; animation-delay: -5s; } /* Position and size for shape 3 */
     
-    @keyframes float {
-      0%, 100% { transform: translateY(0) rotate(0deg); }
-      50% { transform: translateY(-30px) rotate(10deg); }
+    @keyframes float { /* Keyframes for the floating movement */
+      0%, 100% { transform: translateY(0) rotate(0deg); } /* Initial and final position */
+      50% { transform: translateY(-30px) rotate(10deg); } /* Peak of the float movement */
     }
     
-    .profile-avatar-xl {
-      width: 120px;
-      height: 120px;
-      border: 5px solid rgba(255, 255, 255, 0.5);
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    .profile-avatar-xl { /* Extra large avatar styling */
+      width: 120px; /* Fixed width */
+      height: 120px; /* Fixed height */
+      border: 5px solid rgba(255, 255, 255, 0.5); /* Semi-transparent border */
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); /* Shadow for depth */
     }
 
-    /* Layout Structure */
+    /* Layout Structure */ /* Defines the main layout of the page */
     .profile-shell {
-      display: grid;
+      display: grid; /* Uses CSS Grid for layout */
       grid-template-columns: 1fr; /* Full width for the main content now that we have a big header */
-      gap: 30px;
-      margin-top: -60px; /* Slight overlap */
-      position: relative;
-      z-index: 20;
-      max-width: 900px;
-      margin-left: auto;
-      margin-right: auto;
+      gap: 30px; /* Space between grid items */
+      margin-top: -60px; /* Slight overlap */ /* Pulls the content up into the header */
+      position: relative; /* Positioning for z-index control */
+      z-index: 20; /* Places content above the background shapes */
+      max-width: 900px; /* Maximum width for readability */
+      margin-left: auto; /* Centers the grid */
+      margin-right: auto; /* Centers the grid */
     }
 
-    /* Cards with Bootstrap-y Feel */
+    /* Cards with Bootstrap-y Feel */ /* Styling for the information containers */
     .fun-card {
-      background: white;
-      border: none;
-      border-radius: 20px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.08); /* Soft shadow */
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
-      overflow: hidden;
-      margin-bottom: 2rem;
+      background: white; /* White background */
+      border: none; /* Removes default borders */
+      border-radius: 20px; /* Modern rounded corners */
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08); /* Soft shadow */ /* Subtle elevation */
+      transition: transform 0.3s ease, box-shadow 0.3s ease; /* Smooth hover effects */
+      overflow: hidden; /* Keeps contents within rounded corners */
+      margin-bottom: 2rem; /* Spacing between cards */
     }
     
-    .fun-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 15px 35px rgba(0,0,0,0.12);
+    .fun-card:hover { /* Interactive effect on hover */
+      transform: translateY(-5px); /* Lifts the card slightly */
+      box-shadow: 0 15px 35px rgba(0,0,0,0.12); /* Deepens the shadow */
     }
     
-    .fun-card-header {
-      background: white;
-      padding: 1.5rem 2rem;
-      border-bottom: 2px solid #f8f9fa;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
+    .fun-card-header { /* Header part of the card */
+      background: white; /* White background */
+      padding: 1.5rem 2rem; /* Generous padding */
+      border-bottom: 2px solid #f8f9fa; /* Subtle separator line */
+      display: flex; /* Flexbox for alignment */
+      align-items: center; /* Vertical centering */
+      justify-content: space-between; /* Pushes title and button to edges */
     }
     
-    .fun-card-title {
-      font-weight: 800;
-      color: var(--premium-dark);
-      margin: 0;
-      font-size: 1.25rem;
-      display: flex;
-      align-items: center;
-      gap: 10px;
+    .fun-card-title { /* Title of the information section */
+      font-weight: 800; /* Extra bold font */
+      color: var(--premium-dark); /* Uses the dark theme color */
+      margin: 0; /* Removes default margins */
+      font-size: 1.25rem; /* Larger font size */
+      display: flex; /* Flexbox for icon alignment */
+      align-items: center; /* Centers icon with text */
+      gap: 10px; /* Space between icon and text */
     }
     
-    .fun-card-body {
-      padding: 2rem;
+    .fun-card-body { /* Main content area of the card */
+      padding: 2rem; /* Standard padding for text/fields */
     }
     
-    /* Hide old layout stuff if conflicting */
-    .column-sidebar { display: none; }
+    /* Hide old layout stuff if conflicting */ /* Cleanup for legacy content */
+    .column-sidebar { display: none; } /* Hides the old sidebar class */
 
-    /* Identity Card (Sidebar Version) */
+    /* Identity Card (Sidebar Version) */ /* Card used for logging in/status */
     .identity-card {
-      background: rgba(255, 255, 255, 0.9);
-      backdrop-filter: blur(10px);
-      border-radius: 30px;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.05);
-      border: 1px solid rgba(255,255,255,0.3);
-      padding: 2.5rem 2rem;
-      transition: all 0.3s ease;
-      position: sticky;
-      top: 100px;
+      background: rgba(255, 255, 255, 0.9); /* Glass-like background */
+      backdrop-filter: blur(10px); /* Blurs content behind card */
+      border-radius: 30px; /* More rounded corners */
+      box-shadow: 0 20px 40px rgba(0,0,0,0.05); /* Very soft shadow */
+      border: 1px solid rgba(255,255,255,0.3); /* Subtle glass border */
+      padding: 2.5rem 2rem; /* Padding for internal components */
+      transition: all 0.3s ease; /* Smooth state changes */
+      position: sticky; /* Keeps the card visible while scrolling */
+      top: 100px; /* Offset for sticky positioning */
     }
 
-    .identity-header {
-      text-align: center;
-      margin-bottom: 2rem;
+    .identity-header { /* Top portion of the identity card */
+      text-align: center; /* Centers the text */
+      margin-bottom: 2rem; /* Spacing below the header */
     }
 
-    .identity-body {
-      display: flex;
-      flex-direction: column;
-      gap: 1.5rem;
+    .identity-body { /* Content portion of the identity card */
+      display: flex; /* Flexbox container */
+      flex-direction: column; /* Vertical stacking */
+      gap: 1.5rem; /* Space between items */
     }
 
-    .info-item {
-      display: flex;
-      align-items: center;
-      gap: 15px;
-      padding: 12px 15px;
-      background: #f8fafc;
-      border-radius: 18px;
-      border: 1px solid #f1f5f9;
+    .info-item { /* Individual information rows */
+      display: flex; /* Flexbox for icon and text */
+      align-items: center; /* Centers items vertically */
+      gap: 15px; /* Space between icon and text */
+      padding: 12px 15px; /* Padding for the row */
+      background: #f8fafc; /* Very light gray background */
+      border-radius: 18px; /* Rounded corners */
+      border: 1px solid #f1f5f9; /* Subtle border */
     }
 
-    .info-item .icon-box {
-      width: 40px;
-      height: 40px;
-      background: white;
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--premium-purple);
-      box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+    .info-item .icon-box { /* Box containing the icon */
+      width: 40px; /* Fixed width */
+      height: 40px; /* Fixed height */
+      background: white; /* White background for icon */
+      border-radius: 12px; /* Rounded corners */
+      display: flex; /* Centers the icon */
+      align-items: center; /* Centers the icon */
+      justify-content: center; /* Centers the icon */
+      color: var(--premium-purple); /* Purple icon color */
+      box-shadow: 0 4px 10px rgba(0,0,0,0.02); /* Very subtle shadow */
     }
 
-    .avatar-outer {
-      position: relative;
-      width: 100px;
-      height: 100px;
-      margin: 0 auto 0.75rem;
+    .avatar-outer { /* Outer container for the profile picture */
+      position: relative; /* Allows absolute positioning of the badge */
+      width: 100px; /* Fixed width */
+      height: 100px; /* Fixed height */
+      margin: 0 auto 0.75rem; /* Centers the container */
     }
 
-    .profile-avatar {
-      width: 100%;
-      height: 100%;
-      border-radius: 30px;
-      background-size: cover;
-      background-position: center;
-      border: 4px solid white;
-      box-shadow: 0 12px 30px rgba(124, 58, 237, 0.2);
-      background-color: #f5f3ff;
-      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    .profile-avatar { /* The actual profile image styling */
+      width: 100%; /* Fills the outer container */
+      height: 100%; /* Fills the outer container */
+      border-radius: 30px; /* Rounded corners */
+      background-size: cover; /* Ensures image covers the area */
+      background-position: center; /* Centers the image */
+      border: 4px solid white; /* White frame around the image */
+      box-shadow: 0 12px 30px rgba(124, 58, 237, 0.2); /* Glow effect */
+      background-color: #f5f3ff; /* Fallback background color */
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Bouncy transition effect */
     }
 
-    .avatar-edit-badge {
-      position: absolute;
-      bottom: -5px;
-      right: -5px;
-      width: 34px;
-      height: 34px;
-      background: #7c3aed;
-      color: white;
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border: 3px solid white;
-      cursor: pointer;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-      transition: all 0.2s ease;
+    .avatar-edit-badge { /* Small button to change the photo */
+      position: absolute; /* Sits on top of the avatar */
+      bottom: -5px; /* Overlaps bottom edge */
+      right: -5px; /* Overlaps right edge */
+      width: 34px; /* Small fixed width */
+      height: 34px; /* Small fixed height */
+      background: #7c3aed; /* Purple button color */
+      color: white; /* White icon color */
+      border-radius: 10px; /* Rounded button */
+      display: flex; /* Centers the icon */
+      align-items: center; /* Centers the icon */
+      justify-content: center; /* Centers the icon */
+      border: 3px solid white; /* White border to separate from avatar */
+      cursor: pointer; /* Indicates clickable element */
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1); /* Shadow for depth */
+      transition: all 0.2s ease; /* Smooth hover state */
     }
 
-    .avatar-edit-badge:hover {
-      transform: scale(1.1) rotate(15deg);
+    .avatar-edit-badge:hover { /* Animation on hover */
+      transform: scale(1.1) rotate(15deg); /* Enlarges and rotates slightly */
     }
 
-    /* Favorites Delete Button Hover Effect */
+    /* Favorites Delete Button Hover Effect */ /* Styling for the "remove" button on favorite items */
     .delete-fav-btn {
-      width: 36px !important;
-      height: 36px !important;
-      border-radius: 50% !important;
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-      opacity: 0.7;
-      transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-      background-color: white !important;
-      color: #dc3545 !important; /* Bootstrap danger red */
+      width: 36px !important; /* High priority fixed width */
+      height: 36px !important; /* High priority fixed height */
+      border-radius: 50% !important; /* Circular button */
+      display: flex !important; /* Centers the 'X' or trash icon */
+      align-items: center !important; /* Centers the icon */
+      justify-content: center !important; /* Centers the icon */
+      opacity: 0.7; /* Slightly faded by default */
+      transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Bouncy transition */
+      background-color: white !important; /* White background */
+      color: #dc3545 !important; /* Bootstrap danger red */ /* Red icon color */
     }
 
-    .delete-fav-btn:hover {
-      background-color: #f1f5f9 !important; /* Light gray background */
-      opacity: 1;
-      transform: scale(1.1);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
+    .delete-fav-btn:hover { /* Visual feedback when mouse is over */
+      background-color: #f1f5f9 !important; /* Light gray background */ /* Changes color */
+      opacity: 1; /* Becomes fully visible */
+      transform: scale(1.1); /* Grows slightly */
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important; /* Adds shadow */
     }
 
-    /* Avatar Picker Grid */
+    /* Avatar Picker Grid */ /* Grid layout for the avatar selection modal */
     .avatar-grid {
-      display: grid !important;
-      grid-template-columns: repeat(4, 1fr) !important;
-      gap: 20px !important;
-      padding: 10px;
+      display: grid !important; /* Uses CSS Grid for the layout */
+      grid-template-columns: repeat(4, 1fr) !important; /* 4 images per row */
+      gap: 20px !important; /* 20px spacing between options */
+      padding: 10px; /* Inner padding for the grid */
     }
 
-    .avatar-option {
-      aspect-ratio: 1 / 1 !important;
-      width: 100% !important;
-      height: auto !important;
-      border-radius: 24px !important;
-      border: 3px solid #f1f5f9 !important;
-      cursor: pointer !important;
-      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
-      position: relative !important;
-      padding: 12px !important;
-      background: white !important;
-      margin: 0 !important;
+    .avatar-option { /* Individual avatar image in the list */
+      aspect-ratio: 1 / 1 !important; /* Keeps options square */
+      width: 100% !important; /* Responsive width */
+      height: auto !important; /* Maintains aspect ratio */
+      border-radius: 24px !important; /* Rounded corners */
+      border: 3px solid #f1f5f9 !important; /* Subtle border */
+      cursor: pointer !important; /* Clickable indicator */
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important; /* Bouncy animation */
+      position: relative !important; /* For internal positioning */
+      padding: 12px !important; /* Space around the image */
+      background: white !important; /* White background */
+      margin: 0 !important; /* Resets margins */
     }
 
-    /* Store & Category Tiles Base */
+    /* Store & Category Tiles Base */ /* Base styling for small interactive tiles */
     .stores-masonry {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 1.25rem;
+      display: grid; /* Uses CSS Grid */
+      grid-template-columns: repeat(2, 1fr); /* 2 columns per row */
+      gap: 1.25rem; /* Spacing between tiles */
     }
     
-    @media (max-width: 576px) {
+    @media (max-width: 576px) { /* Responsive rule for mobile phones */
       .stores-masonry {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr; /* Switch to 1 column on mobile screens */
       }
     }
 
-    /* Fixed Input Focus for all forms */
+    /* Fixed Input Focus for all forms */ /* Styles the appearance of inputs when clicked */
     .form-control:focus, 
     .input-group-text:focus,
     .input-group:focus-within,
     textarea:focus {
-      box-shadow: none !important;
-      outline: none !important;
-      border-color: #f1f5f9 !important; /* Extremely subtle */
+      box-shadow: none !important; /* Removes standard blue shadow */
+      outline: none !important; /* Removes default browser outline */
+      border-color: #f1f5f9 !important; /* Extremely subtle */ /* Very light border */
     }
 
-    /* Categories Section Layout */
+    /* Categories Section Layout */ /* Grid layout for product categories */
     .categories-masonry {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-      gap: 1.25rem;
+      display: grid; /* Uses CSS Grid */
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); /* Auto-sizing columns */
+      gap: 1.25rem; /* Spacing between category tiles */
     }
 
-    .store-tile {
-      background: #f8fafc;
-      border: 1px solid #f1f5f9;
-      border-radius: 20px;
-      padding: 1rem;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      position: relative;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 120px;
+    .store-tile { /* Styling for store selector tiles */
+      background: #f8fafc; /* Light blue-gray background */
+      border: 1px solid #f1f5f9; /* Subtle border */
+      border-radius: 20px; /* Rounded corners */
+      padding: 1rem; /* Standard padding */
+      cursor: pointer; /* Shows the link pointer on hover */
+      transition: all 0.3s ease; /* Smooth animation for all changes */
+      position: relative; /* Context for absolute positioning of children */
+      overflow: hidden; /* Keeps everything inside the border */
+      display: flex; /* Flexbox layout */
+      flex-direction: column; /* Stacks icon and text vertically */
+      align-items: center; /* Centers items horizontally */
+      justify-content: center; /* Centers items vertically */
+      min-height: 120px; /* Ensures a consistent tile size */
     }
 
-    .store-tile:hover {
-      background: white;
-      border-color: #7c3aed;
-      transform: translateY(-5px);
-      box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+    .store-tile:hover { /* Interactive effect when mouse is over */
+      background: white; /* Brightens background */
+      border-color: #7c3aed; /* Purple border pops out */
+      transform: translateY(-5px); /* Lifts the tile up */
+      box-shadow: 0 10px 25px rgba(0,0,0,0.05); /* Adds a shadow under the lift */
     }
 
-    .store-tile.selected {
-      background: #f5f3ff;
-      border-color: #7c3aed;
+    .store-tile.selected { /* Styling for tiles representing chosen stores */
+      background: #f5f3ff; /* Very light purple background */
+      border-color: #7c3aed; /* Bold purple border */
     }
 
-    .store-logo-box {
-      width: 60px;
-      height: 60px;
-      background: white;
-      border-radius: 15px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 0.75rem;
-      padding: 8px;
-      border: 1px solid #f1f5f9;
-      transition: all 0.3s ease;
+    .store-logo-box { /* Container for the supermarket brand logo */
+      width: 60px; /* Fixed width */
+      height: 60px; /* Fixed height */
+      background: white; /* White background for logo clarity */
+      border-radius: 15px; /* Rounded square shape */
+      display: flex; /* Centers the image */
+      align-items: center; /* Centers the image */
+      justify-content: center; /* Centers the image */
+      margin-bottom: 0.75rem; /* Spacing below the logo */
+      padding: 8px; /* Inner padding around logo image */
+      border: 1px solid #f1f5f9; /* Subtle border */
+      transition: all 0.3s ease; /* Smooth hover state */
     }
 
-    .store-tile.selected .store-logo-box {
-      border-color: rgba(124, 58, 237, 0.3);
-      box-shadow: 0 5px 15px rgba(124, 58, 237, 0.1);
+    .store-tile.selected .store-logo-box { /* Highlight for logo box when tile is selected */
+      border-color: rgba(124, 58, 237, 0.3); /* Faint purple border */
+      box-shadow: 0 5px 15px rgba(124, 58, 237, 0.1); /* Soft purple glow */
     }
 
-    .store-check {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      width: 24px;
-      height: 24px;
-      background: #7c3aed;
-      color: white;
-      border-radius: 50%;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      font-size: 12px;
-      border: 2px solid white;
+    .store-check { /* Small checkmark icon for selected tiles */
+      position: absolute; /* Positions it in the corner of the tile */
+      top: 10px; /* Distance from top */
+      right: 10px; /* Distance from right */
+      width: 24px; /* Fixed diameter */
+      height: 24px; /* Fixed diameter */
+      background: #7c3aed; /* Purple background */
+      color: white; /* White check icon */
+      border-radius: 50%; /* Circular shape */
+      display: none; /* Hidden by default */
+      align-items: center; /* Centers the check icon */
+      justify-content: center; /* Centers the check icon */
+      font-size: 12px; /* Fits icon inside circle */
+      border: 2px solid white; /* White ring for visibility */
     }
 
-    .store-tile.selected .store-check {
-      display: flex;
+    .store-tile.selected .store-check { /* Logic to show checkmark only when selected */
+      display: flex; /* Makes the element visible */
     }
 
-    .category-tile {
-      background: white;
-      border: 1px solid #f1f5f9;
-      border-radius: 16px;
-      padding: 0.75rem 1rem;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      position: relative;
+    .category-tile { /* Compact tile for product categories */
+      background: white; /* Clean white background */
+      border: 1px solid #f1f5f9; /* Light border */
+      border-radius: 16px; /* Rounded corners */
+      padding: 0.75rem 1rem; /* Comfortable padding */
+      cursor: pointer; /* Indicates clickability */
+      transition: all 0.2s ease; /* Snap-to-transition animation */
+      display: flex; /* Layout container */
+      align-items: center; /* Align icon and text vertically */
+      gap: 10px; /* Space between icon and text */
+      position: relative; /* Context for child elements */
     }
 
-    .category-tile:hover {
-      border-color: #7c3aed;
-      background: #f8fafc;
+    .category-tile:hover { /* Hover state for category */
+      border-color: #7c3aed; /* Purple border */
+      background: #f8fafc; /* Faint gray-blue background */
     }
 
-    .category-tile.selected {
-      background: #7c3aed;
-      border-color: #7c3aed;
-      color: white;
+    .category-tile.selected { /* Highlighted state for category */
+      background: #7c3aed; /* Solid purple background */
+      border-color: #7c3aed; /* Solid purple border */
+      color: white; /* White text for contrast */
     }
 
-    .category-name {
-      font-weight: 600;
-      font-size: 0.9rem;
+    .category-name { /* Formatting for the text inside category tiles */
+      font-weight: 600; /* Semi-bold weight */
+      font-size: 0.9rem; /* Clean, readable size */
     }
 
-    .stat-pill {
-      background: #f8fafc;
-      border-radius: 15px;
-      padding: 0.5rem 1rem;
-      text-align: center;
-      min-width: 80px;
+    .stat-pill { /* Small pill-shaped stat display */
+      background: #f8fafc; /* Light background */
+      border-radius: 15px; /* Pill shape */
+      padding: 0.5rem 1rem; /* Standard horizontal spacing */
+      text-align: center; /* Centers labels and values */
+      min-width: 80px; /* Prevents collapsing with small numbers */
     }
 
-    .stat-val {
-      display: block;
-      font-weight: 800;
-      color: #1e293b;
-      line-height: 1;
+    .stat-val { /* Numerical value within the stat pill */
+      display: block; /* Takes its own line */
+      font-weight: 800; /* Extra bold */
+      color: #1e293b; /* Dark gray-blue text */
+      line-height: 1; /* Tight vertical fit */
     }
 
-    .stat-lbl {
-      color: #64748b;
-      text-transform: uppercase;
-      font-weight: 700;
-      letter-spacing: 0.05em;
+    .stat-lbl { /* Descriptive text for the numerical value */
+      color: #64748b; /* Muted text color */
+      text-transform: uppercase; /* All caps for professionalism */
+      font-weight: 700; /* Bold text */
+      letter-spacing: 0.05em; /* Slightly wider characters */
     }
 
-    /* Favorites */
+    /* Favorites */ /* Section for styling favorited items */
     .favorites-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 1.5rem;
+      display: grid; /* Responsive layout grid */
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); /* Dynamic column counts */
+      gap: 1.5rem; /* Spacing between cards */
     }
 
-    .favorite-card {
-      background: #f8fafc;
-      border-radius: 20px;
-      padding: 1.25rem;
-      display: flex;
-      gap: 1.25rem;
-      align-items: center;
-      transition: all 0.3s ease;
-      border: 1px solid #f1f5f9;
+    .favorite-card { /* Card representing a favorited product */
+      background: #f8fafc; /* Light background */
+      border-radius: 20px; /* Rounded corners */
+      padding: 1.25rem; /* Inner padding */
+      display: flex; /* Side-by-side layout */
+      gap: 1.25rem; /* Space between picture and details */
+      align-items: center; /* Vertical alignment */
+      transition: all 0.3s ease; /* Smooth animations */
+      border: 1px solid #f1f5f9; /* Subtle border */
     }
 
-    .favorite-card:hover {
-      background: white;
-      transform: scale(1.02);
-      box-shadow: 0 10px 30px rgba(0,0,0,0.05);
-      border-color: #7c3aed;
+    .favorite-card:hover { /* Interactive effect on product card hover */
+      background: white; /* Highlights background */
+      transform: scale(1.02); /* Subtle zoom effect */
+      box-shadow: 0 10px 30px rgba(0,0,0,0.05); /* Soft drop shadow */
+      border-color: #7c3aed; /* Purple border on focus */
     }
 
-    .favorite-card img {
-      width: 70px;
-      height: 70px;
-      object-fit: contain;
-      border-radius: 15px;
-      background: white;
-      padding: 5px;
+    .favorite-card img { /* Formatting for the favorited product photo */
+      width: 70px; /* Fixed width image */
+      height: 70px; /* Fixed height image */
+      object-fit: contain; /* Ensures product is visible without cropping */
+      border-radius: 15px; /* Rounded corners for image */
+      background: white; /* White background for contrast */
+      padding: 5px; /* Gutter around image */
     }
 
-    .pill-badge {
-      background: #eceaf3;
-      color: #7c3aed;
-      padding: 4px 10px;
-      border-radius: 8px;
-      font-size: 0.7rem;
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      gap: 4px;
+    .pill-badge { /* Small badge for categories or tags */
+      background: #eceaf3; /* Soft purple background */
+      color: #7c3aed; /* Contrast purple text */
+      padding: 4px 10px; /* Small compact padding */
+      border-radius: 8px; /* Rounded square look */
+      font-size: 0.7rem; /* Miniature text size */
+      font-weight: 700; /* Bold for visibility */
+      display: flex; /* Centers icon and text */
+      align-items: center; /* Alignment */
+      gap: 4px; /* Gap */
     }
 
-    .avatar-option.selected {
-      border-color: var(--premium-purple) !important;
-      background: #f5f3ff !important;
-      box-shadow: 0 10px 20px rgba(124, 58, 237, 0.1) !important;
+    .avatar-option.selected { /* Highlighting for the chosen profile picture */
+      border-color: var(--premium-purple) !important; /* Explicit purple border */
+      background: #f5f3ff !important; /* Faint background color */
+      box-shadow: 0 10px 20px rgba(124, 58, 237, 0.1) !important; /* Purple glow shadow */
     }
 
-    .avatar-check {
-      position: absolute;
-      top: -8px;
-      right: -8px;
-      background: #22c55e;
-      color: white;
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 12px;
-      border: 3px solid white;
-      opacity: 0;
-      transform: scale(0);
-      transition: all 0.3s ease;
+    .avatar-check { /* Checkmark for chosen profile image */
+      position: absolute; /* Floats in corner */
+      top: -8px; /* Overlaps edge top */
+      right: -8px; /* Overlaps edge right */
+      background: #22c55e; /* Success-green color */
+      color: white; /* White icon */
+      width: 24px; /* Circle size */
+      height: 24px; /* Circle size */
+      border-radius: 50%; /* Full circle */
+      display: flex; /* Centers icon */
+      align-items: center; /* Alignment */
+      justify-content: center; /* Alignment */
+      font-size: 12px; /* Fits icon */
+      border: 3px solid white; /* White frame for separation */
+      opacity: 0; /* Invisible by default */
+      transform: scale(0); /* Tiny size by default */
+      transition: all 0.3s ease; /* Animated pop-in */
     }
 
-    .avatar-option.selected .avatar-check {
-      opacity: 1;
-      transform: scale(1);
+    .avatar-option.selected .avatar-check { /* Shows checkmark icon when image is chosen */
+      opacity: 1; /* Becomes visible */
+      transform: scale(1); /* Grows to full size */
     }
 
-    @media (max-width: 576px) {
+    @media (max-width: 576px) { /* Mobile responsiveness for avatar selection */
       .avatar-grid {
-        grid-template-columns: repeat(2, 1fr) !important;
+        grid-template-columns: repeat(2, 1fr) !important; /* Only 2 items per row on mobile */
       }
     }
 
-    /* Premium Buttons */
+    /* Premium Buttons */ /* Styling for custom action buttons */
     .btn-premium {
-      border-radius: 14px;
-      padding: 0.75rem 1.75rem;
-      font-weight: 700;
-      letter-spacing: -0.2px;
-      transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-      border: none;
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
+      border-radius: 14px; /* Modern corner roundness */
+      padding: 0.75rem 1.75rem; /* Clickable surface area */
+      font-weight: 700; /* Heavy font weight */
+      letter-spacing: -0.2px; /* Tighter character spacing */
+      transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Bouncy interaction */
+      border: none; /* Defaults to no border */
+      display: inline-flex; /* Wraps content tightly */
+      align-items: center; /* Centers icons and text vertically */
+      gap: 10px; /* Spacing between icon and label */
     }
 
-    .btn-premium-primary {
-      background: linear-gradient(135deg, var(--premium-purple), #6366f1);
-      background-size: 200% auto;
-      color: white;
-      box-shadow: 0 10px 25px rgba(124, 58, 237, 0.3);
-      border: none;
-      transition: all 0.4s ease;
+    .btn-premium-primary { /* High priority action button */
+      background: linear-gradient(135deg, var(--premium-purple), #6366f1); /* Animated color gradient */
+      background-size: 200% auto; /* For animated shimmer effect */
+      color: white; /* Bold white text */
+      box-shadow: 0 10px 25px rgba(124, 58, 237, 0.3); /* Deep branding shadow */
+      border: none; /* No frame */
+      transition: all 0.4s ease; /* Smooth transition for gradient */
     }
 
-    .btn-premium-primary:hover {
-      background-position: right center;
-      transform: translateY(-3px);
-      box-shadow: 0 12px 28px rgba(124, 58, 237, 0.4);
-      color: white !important;
+    .btn-premium-primary:hover { /* Interactive effect on primary button */
+      background-position: right center; /* Shifts gradient on hover */
+      transform: translateY(-3px); /* Lifts button */
+      box-shadow: 0 12px 28px rgba(124, 58, 237, 0.4); /* Deepen shadow */
+      color: white !important; /* Force white text */
     }
 
-    .btn-premium-danger {
-      background: #fff1f2;
-      color: #e11d48;
-      border: none;
-      transition: all 0.3s ease;
+    .btn-premium-danger { /* Destructive action button (e.g. Delete/Logout) */
+      background: #fff1f2; /* Soft red background */
+      color: #e11d48; /* Bright red text */
+      border: none; /* Transparent frame */
+      transition: all 0.3s ease; /* Soft fade animation */
     }
 
-    .btn-premium-danger:hover {
-      background: #e11d48;
-      color: white !important;
-      transform: translateY(-3px);
+    .btn-premium-danger:hover { /* Hover for destructive actions */
+      background: #e11d48; /* Solid red background */
+      color: white !important; /* Bold white text */
+      transform: translateY(-3px); /* Lifts button */
     }
 
-    /* Preference Tiles Combined */
+    /* Preference Tiles Combined */ /* Containers for setting groups */
     .preference-card {
-      background: white;
-      border-radius: var(--card-radius);
-      padding: 2rem;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.03);
-      border: 1px solid #f1f5f9;
+      background: white; /* Simple white body */
+      border-radius: var(--card-radius); /* Standard rounding */
+      padding: 2rem; /* Inner space */
+      box-shadow: 0 10px 30px rgba(0,0,0,0.03); /* Minimal elevation */
+      border: 1px solid #f1f5f9; /* Light gray border */
     }
 
-    .store-tile {
-      cursor: pointer;
-      background: white;
-      border: 2px solid #e2e8f0;
-      border-radius: 24px;
-      padding: 1.25rem 1.5rem;
-      transition: all 0.4e cubic-bezier(0.175, 0.885, 0.32, 1.275);
-      position: relative;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.02);
-      overflow: visible;
+    .store-tile { /* Re-declaring for priority/layout */
+      cursor: pointer; /* Indicates interactive */
+      background: white; /* Background state */
+      border: 2px solid #e2e8f0; /* Standard gray-blue border */
+      border-radius: 24px; /* High-end rounded corners */
+      padding: 1.25rem 1.5rem; /* Large click area */
+      transition: all 0.4e cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Bouncy scaling */
+      position: relative; /* Parent context */
+      box-shadow: 0 4px 6px rgba(0,0,0,0.02); /* Tiny default shadow */
+      overflow: visible; /* Allows checkmark to pop out */
     }
 
     .store-tile:hover {
-      transform: translateY(-8px);
-      border-color: var(--premium-purple);
-      box-shadow: 0 15px 30px rgba(124, 58, 237, 0.1);
+      transform: translateY(-8px); /* Large lift distance */
+      border-color: var(--premium-purple); /* purple identifier */
+      box-shadow: 0 15px 30px rgba(124, 58, 237, 0.1); /* branded shadow glow */
     }
 
     .store-tile.selected {
-      border-color: var(--premium-purple);
-      background: #fdfcff;
-      border-width: 2px;
+      border-color: var(--premium-purple); /* Chosen purple */
+      background: #fdfcff; /* Clean branded white */
+      border-width: 2px; /* Normal border size */
     }
 
     .store-tile .store-inner {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      gap: 12px;
+      display: flex; /* stacking contents */
+      flex-direction: column; /* Top to bottom */
+      align-items: center; /* Side to side centering */
+      text-align: center; /* Label centering */
+      gap: 12px; /* Spacing objects */
     }
 
     .store-tile .store-logo-box {
-      width: 70px;
-      height: 70px;
-      background: #f8fafc;
-      border-radius: 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.3s ease;
-      overflow: hidden;
-      border: 1px solid #f1f5f9;
+      width: 70px; /* larger logo Box */
+      height: 70px; /* larger logo Box */
+      background: #f8fafc; /* Box light background */
+      border-radius: 20px; /* Square rounding */
+      display: flex; /* Centers icon */
+      align-items: center; /* Centers icon */
+      justify-content: center; /* Centers icon */
+      transition: all 0.3s ease; /* Visual feedback speed */
+      overflow: hidden; /* Image clipping */
+      border: 1px solid #f1f5f9; /* Subtle indicator */
     }
 
     .store-tile .store-logo-box img {
-      width: 85%;
-      height: 85%;
-      object-fit: contain;
+      width: 85%; /* Image fill factor */
+      height: 85%; /* Image fill factor */
+
+      object-fit: contain; /* Ensures logo image fits inside without stretching */
     }
 
-    .store-tile.selected .store-logo-box {
-      background: white;
-      border-color: var(--premium-purple);
-      transform: scale(1.05);
-      box-shadow: 0 8px 20px rgba(124, 58, 237, 0.1);
+    .store-tile.selected .store-logo-box { /* Highlight for selected brand icon */
+      background: white; /* Ensures clean white backdrop */
+      border-color: var(--premium-purple); /* Purple border to match theme */
+      transform: scale(1.05); /* Slightly grows for attention */
+      box-shadow: 0 8px 20px rgba(124, 58, 237, 0.1); /* Purple glow effect */
     }
 
-    .store-check {
-      position: absolute;
-      top: -10px;
-      right: -10px;
-      background: var(--premium-purple);
-      color: white;
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1rem;
-      border: 4px solid white;
-      opacity: 0;
-      transform: scale(0);
-      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-      box-shadow: 0 5px 15px rgba(124, 58, 237, 0.3);
-      z-index: 5;
+    .store-check { /* Verification icon for selection */
+      position: absolute; /* Floats atop the tile */
+      top: -10px; /* Protrudes slightly above top edge */
+      right: -10px; /* Protrudes slightly outside right edge */
+      background: var(--premium-purple); /* Solid purple circle */
+      color: white; /* White checkmark icon */
+      width: 32px; /* Large circular base */
+      height: 32px; /* Large circular base */
+      border-radius: 50% ; /* Perfect circle */
+      display: flex; /* Centers the checkmark internally */
+      align-items: center; /* Alignment */
+      justify-content: center; /* Alignment */
+      font-size: 1rem; /* Visible checkmark size */
+      border: 4px solid white; /* Thick white border for pop */
+      opacity: 0; /* Starts hidden */
+      transform: scale(0); /* Starts tiny */
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Bouncy pop-in animation */
+      box-shadow: 0 5px 15px rgba(124, 58, 237, 0.3); /* Deep branding shadow */
+      z-index: 5; /* Sits above all tile content */
     }
 
-    .store-tile.selected .store-check {
-      opacity: 1;
-      transform: scale(1);
+    .store-tile.selected .store-check { /* Triggers the checkmark visibility */
+      opacity: 1; /* Fades in */
+      transform: scale(1); /* Pops to full size */
     }
 
-    /* Category Tiles Layout Fixed */
+    /* Category Tiles Layout Fixed */ /* Standardizing the category look */
     .category-tile {
-      cursor: pointer;
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      border-radius: 18px;
-      padding: 1rem;
-      text-align: center;
-      transition: all 0.3s ease;
+      cursor: pointer; /* Interactive hand cursor */
+      background: #f8fafc; /* Faint gray base */
+      border: 1px solid #e2e8f0; /* Standard divider border */
+      border-radius: 18px; /* Rounded appearance */
+      padding: 1rem; /* Standard inner spacing */
+      text-align: center; /* Centers label and icon */
+      transition: all 0.3s ease; /* Smooth state switching */
     }
 
-    .category-tile:hover {
-      background: white;
-      border-color: var(--premium-purple);
-      transform: translateY(-3px);
+    .category-tile:hover { /* Visual response to mouse presence */
+      background: white; /* Highlight background */
+      border-color: var(--premium-purple); /* Brand identifier */
+      transform: translateY(-3px); /* Small lift effect */
     }
 
-    .category-tile.selected {
-      background: var(--premium-purple);
-      color: white;
-      border-color: var(--premium-purple);
-      box-shadow: 0 8px 20px rgba(124, 58, 237, 0.2);
+    .category-tile.selected { /* Permanent highlight for selected category */
+      background: var(--premium-purple); /* Solid theme color background */
+      color: white; /* Bright contrast text */
+      border-color: var(--premium-purple); /* Matches background */
+      box-shadow: 0 8px 20px rgba(124, 58, 237, 0.2); /* Branded elevation shadow */
     }
 
-    .category-tile .cat-icon {
-      font-size: 1.5rem;
-      margin-bottom: 5px;
-      display: block;
+    .category-tile .cat-icon { /* Styling for the category visual icon */
+      font-size: 1.5rem; /* Emphasized icon size */
+      margin-bottom: 5px; /* Space above label text */
+      display: block; /* Forced onto its own line */
     }
 
-    .category-tile .cat-name {
-      font-size: 0.85rem;
-      font-weight: 700;
+    .category-tile .cat-name { /* Label text for categories */
+      font-size: 0.85rem; /* Clean secondary text size */
+      font-weight: 700; /* Heavy bold for visibility */
     }
 
-    /* Modal Polish Improvements */
+    /* Modal Polish Improvements */ /* High-end styles for popup windows */
     .modal-content-premium {
-      border-radius: 35px;
-      border: none;
-      overflow: hidden;
-      box-shadow: 0 30px 70px rgba(0,0,0,0.2);
+      border-radius: 35px; /* Luxurious deep corners */
+      border: none; /* Removes default Bootstrap borders */
+      overflow: hidden; /* Clips anything bleeding out of the curves */
+      box-shadow: 0 30px 70px rgba(0,0,0,0.2); /* Massive professional drop shadow */
     }
 
-    .modal-input-group {
-      background: #f8fafc;
-      border: 2px solid #f1f5f9;
-      border-radius: 20px;
-      transition: all 0.3s ease;
-      overflow: hidden;
+    .modal-input-group { /* Styled container for form fields */
+      background: #f8fafc; /* Muted input background */
+      border: 2px solid #f1f5f9; /* Subtle frame */
+      border-radius: 20px; /* Matches overall theme roundedness */
+      transition: all 0.3s ease; /* Smooth focus states */
+      overflow: hidden; /* Keeps borders clean */
     }
 
-    .modal-input-group:focus-within {
-      border-color: var(--premium-purple);
-      background: white;
-      box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.1);
+    .modal-input-group:focus-within { /* Response when an input is clicked inside */
+      border-color: var(--premium-purple); /* Purple focus border */
+      background: white; /* Brightens to white */
+      box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.1); /* Purple glow ring */
     }
 
-    .modal-input-group label {
-      padding: 12px 20px 0;
-      color: #94a3b8;
-      font-weight: 700;
-      font-size: 0.65rem;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
+    .modal-input-group label { /* Hidden/Floating label styling */
+      padding: 12px 20px 0; /* Top and side padding */
+      color: #94a3b8; /* Muted color */
+      font-weight: 700; /* Bold text */
+      font-size: 0.65rem; /* Tiny metadata size */
+      text-transform: uppercase; /* All caps for clean look */
+      letter-spacing: 0.5px; /* Professional spacing */
     }
 
     .modal-input-group input, 
-    .modal-input-group select {
-      background: transparent !important;
-      border: none !important;
-      padding: 8px 20px 15px !important;
-      font-weight: 600;
-      color: #1e293b;
-      box-shadow: none !important;
+    .modal-input-group select { /* Actual data entry fields */
+      background: transparent !important; /* Prevents background conflicts */
+      border: none !important; /* Removes internal borders */
+      padding: 8px 20px 15px !important; /* Consistent spacing with label */
+      font-weight: 600; /* Strong input text */
+      color: #1e293b; /* Deep dark text color */
+      box-shadow: none !important; /* Eliminates default browser shadows */
     }
 
-    .modal-input-group i {
-      padding-left: 20px;
-      color: #6366f1;
+    .modal-input-group i { /* Icons inside input fields */
+      padding-left: 20px; /* Indented from edge */
+      color: #6366f1; /* Indigo icon color */
     }
 
-    /* Improved Profile Info Fields */
+    /* Improved Profile Info Fields */ /* High-end display for user details */
     .info-field-glass {
-        display: flex;
-        align-items: center;
-        background: #f8fafc;
-        border: 1px solid #f1f5f9;
-        border-radius: 20px;
-        padding: 15px 20px;
-        gap: 18px;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        height: 100%;
-        text-decoration: none; /* Ensure it works for anchors */
-        color: inherit;
+        display: flex; /* Flexbox allows horizontal layout */
+        align-items: center; /* Centers icon and text vertically */
+        background: #f8fafc; /* Professional mute background */
+        border: 1px solid #f1f5f9; /* Faint border frame */
+        border-radius: 20px; /* Modern corner roundness */
+        padding: 15px 20px; /* Comfortable internal spacing */
+        gap: 18px; /* Distance between icon and info */
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Hyper-smooth expansion */
+        height: 100%; /* Uniformity in grids */
+        text-decoration: none; /* Ensure it works for anchors */ /* Clean link style */
+        color: inherit; /* Respects parent text color */
     }
     
-    .info-field-glass:hover {
-        background: #ffffff;
-        border-color: #7c3aed; /* Pop of color on hover */
-        box-shadow: 0 10px 25px rgba(124, 58, 237, 0.08); /* Colored shadow */
-        transform: translateY(-3px);
+    .info-field-glass:hover { /* Interactive response on hover */
+        background: #ffffff; /* Pop to white */
+        border-color: #7c3aed; /* Pop of color on hover */ /* Purple frame appears */
+        box-shadow: 0 10px 25px rgba(124, 58, 237, 0.08); /* Colored shadow */ /* Purple drop shadow */
+        transform: translateY(-3px); /* Lift effect */
     }
     
-    .info-field-glass .icon-wrapper {
-        width: 48px;
-        height: 48px;
-        border-radius: 14px;
-        background: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--premium-purple);
-        font-size: 1.35rem;
-        box-shadow: 0 4px 12px rgba(124, 58, 237, 0.1);
-        flex-shrink: 0;
-        transition: all 0.3s ease;
+    .info-field-glass .icon-wrapper { /* The colored box containing the icon (e.g. envelope) */
+        width: 48px; /* Fixed diameter */
+        height: 48px; /* Fixed diameter */
+        border-radius: 14px; /* Matches overall rounded theme */
+        background: white; /* Stand out backdrop */
+        display: flex; /* Center individual icon */
+        align-items: center; /* Vertical centering */
+        justify-content: center; /* Horizontal centering */
+        color: var(--premium-purple); /* Theme colored icon */
+        font-size: 1.35rem; /* Clear, visible icon size */
+        box-shadow: 0 4px 12px rgba(124, 58, 237, 0.1); /* Subtle elevation shadow */
+        flex-shrink: 0; /* Prevents icon from squishing */
+        transition: all 0.3s ease; /* Smooth scaling */
     }
     
-    .info-field-glass:hover .icon-wrapper {
+    .info-field-glass:hover .icon-wrapper { /* Special icon feedback on hover */
         /* background: var(--premium-purple); Removed as per user request */
         /* color: white; Removed as per user request */
-        transform: scale(1.1);
+        transform: scale(1.1); /* Little pop animation */
     }
     
-    .info-field-glass .text-content {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        overflow: hidden;
+    .info-field-glass .text-content { /* Container for Label and Value */
+        display: flex; /* Stacks text elements */
+        flex-direction: column; /* Vertical order */
+        justify-content: center; /* Middle alignment */
+        overflow: hidden; /* Prevent text overflow */
     }
     
-    .info-field-glass .label {
-        font-size: 0.7rem;
-        font-weight: 800;
-        text-transform: uppercase;
-        color: #94a3b8;
-        letter-spacing: 0.5px;
-        margin-bottom: 4px;
+    .info-field-glass .label { /* Field identifier (e.g. EMAIL) */
+        font-size: 0.7rem; /* Tiny auxiliary text */
+        font-weight: 800; /* Very heavy for readability */
+        text-transform: uppercase; /* Clean metadata look */
+        color: #94a3b8; /* Muted color */
+        letter-spacing: 0.5px; /* Wide spacing */
+        margin-bottom: 4px; /* Gap above the actual value */
     }
     
-    .info-field-glass .value {
-        font-size: 1.05rem;
-        font-weight: 700;
-        color: #1e293b;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+    .info-field-glass .value { /* Actual data value (e.g. user@email.com) */
+        font-size: 1.05rem; /* Bold main text size */
+        font-weight: 700; /* Strong font weight */
+        color: #1e293b; /* Dark professional color */
+        white-space: nowrap; /* Keeps on one line */
+        overflow: hidden; /* Clips if too long */
+        text-overflow: ellipsis; /* Adds '...' if text is cut off */
     }
     
-    .info-field-glass .value.empty {
-        color: #cbd5e1;
-        font-weight: 500;
-        font-style: italic;
+    .info-field-glass .value.empty { /* Styling for missing information */
+        color: #cbd5e1; /* Grayed out color */
+        font-weight: 500; /* Lighter weight */
+        font-style: italic; /* Indicates absence */
     }
 
-    /* Standard Card Neo */
+    /* Standard Card Neo */ /* Modern card variation */
     .card-neo {
-      border: none;
-      border-radius: var(--card-radius);
-      background: #ffffff;
-      box-shadow: 0 12px 30px rgba(0,0,0,0.05);
+      border: none; /* Transparent frame */
+      border-radius: var(--card-radius); /* Uses global variable for consistency */
+      background: #ffffff; /* Clean white background */
+      box-shadow: 0 12px 30px rgba(0,0,0,0.05); /* Soft modern shadow */
     }
     
-    .favorite-card {
-      border: 1px solid #f1f5f9;
-      border-radius: 22px;
-      padding: 1.25rem;
-      display: flex;
-      gap: 18px;
-      align-items: center;
-      transition: all 0.3s ease;
-      background: white;
+    .favorite-card { /* Card layout within favorites list */
+      border: 1px solid #f1f5f9; /* Subtle frame border */
+      border-radius: 22px; /* Rounded corners */
+      padding: 1.25rem; /* Comfortable inner space */
+      display: flex; /* Side-by-side components */
+      gap: 18px; /* Space between image and text */
+      align-items: center; /* Centers elements vertically */
+      transition: all 0.3s ease; /* Smooth state changes */
+      background: white; /* White body */
     }
 
-    .favorite-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 15px 35px rgba(0,0,0,0.07);
-      border-color: var(--premium-purple);
+    .favorite-card:hover { /* Interactive hover for favorites */
+      transform: translateY(-5px); /* Lift animation */
+      box-shadow: 0 15px 35px rgba(0,0,0,0.07); /* Deep elevation shadow */
+      border-color: var(--premium-purple); /* Purple focus frame */
     }
 
-    .favorite-card img {
-      width: 85px;
-      height: 85px;
-      object-fit: contain;
-      border-radius: 16px;
-      background: #f8fafc;
-      padding: 8px;
-      border: 1px solid #f1f5f9;
+    .favorite-card img { /* Product image within favorites grid */
+      width: 85px; /* Fixed image width */
+      height: 85px; /* Fixed image height */
+      object-fit: contain; /* Prevents distortion */
+      border-radius: 16px; /* Rounded frame */
+      background: #f8fafc; /* Slight background tint */
+      padding: 8px; /* Frame around the picture */
+      border: 1px solid #f1f5f9; /* Subtle border */
     }
 
-    .favorites-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
+    .favorites-grid { /* Layout grid specifically for saved items */
+      display: grid; /* Responsive grid container */
+      grid-template-columns: 1fr 1fr; /* Two equal columns */
+      gap: 20px; /* 20px space between cards */
     }
 
-    @media (max-width: 992px) {
+    @media (max-width: 992px) { /* Layout change for tablet/large phone */
       .favorites-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr; /* Shifts to single column layout */
       }
     }
 
-    .pill-badge {
-      font-size: 0.7rem;
-      padding: 0.3rem 0.7rem;
-      background: #f1f5f9;
-      border-radius: 20px;
-      font-weight: 600;
-      color: #64748b;
+    .pill-badge { /* Small identifier tag (e.g. Category tag) */
+      font-size: 0.7rem; /* Auxiliary info size */
+      padding: 0.3rem 0.7rem; /* Compact pill shape */
+      background: #f1f5f9; /* Neutral background */
+      border-radius: 20px; /* Round ends */
+      font-weight: 600; /* Semi-bold */
+      color: #64748b; /* Muted text color */
     }
 
-    .btn-favorite {
-      width: 40px;
-      height: 40px;
-      border-radius: 12px;
-      border: none;
-      background: #f8fafc;
-      color: #94a3b8;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-      font-size: 1.1rem;
+    .btn-favorite { /* Iconic heart button for toggling favorites */
+      width: 40px; /* Fixed diameter */
+      height: 40px; /* Fixed diameter */
+      border-radius: 12px; /* Rounded square shape */
+      border: none; /* Removes border */
+      background: #f8fafc; /* Default state color */
+      color: #94a3b8; /* Uncolored state */
+      display: flex; /* Centers icon */
+      align-items: center; /* Vertical alignment */
+      justify-content: center; /* Horizontal alignment */
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Bouncy pop */
+      font-size: 1.1rem; /* Standard icon size */
     }
 
-    .btn-favorite:hover {
-      background: #f1f5f9;
-      color: var(--premium-purple);
-      transform: scale(1.1);
+    .btn-favorite:hover { /* Interactive heart hover */
+      background: #f1f5f9; /* Slight darken */
+      color: var(--premium-purple); /* Purple color on hover */
+      transform: scale(1.1); /* Pop growth */
     }
 
-    .btn-favorite.active {
-      background: #fff1f2;
-      color: #e11d48;
-      box-shadow: 0 5px 15px rgba(225, 29, 72, 0.15);
+    .btn-favorite.active { /* Active "Liked" state */
+      background: #fff1f2; /* Soft red backdrop */
+      color: #e11d48; /* Solid heart-red icon */
+      box-shadow: 0 5px 15px rgba(225, 29, 72, 0.15); /* Colored glow shadow */
     }
 
-    .btn-view-product {
-      width: 40px;
-      height: 40px;
-      border-radius: 12px;
-      border: 1px solid #e2e8f0;
-      background: white;
-      color: #64748b;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.3s ease;
-      font-size: 1.1rem;
+    .btn-view-product { /* Action button to go to product details */
+      width: 40px; /* Fixed diameter */
+      height: 40px; /* Fixed diameter */
+      border-radius: 12px; /* Rounded square shape */
+      border: 1px solid #e2e8f0; /* Standard gray-blue frame */
+      background: white; /* White base */
+      color: #64748b; /* Muted icon */
+      display: flex; /* Centers icon */
+      align-items: center; /* Alignment */
+      justify-content: center; /* Alignment */
+      transition: all 0.3s ease; /* Smooth transition */
+      font-size: 1.1rem; /* Standard icon size */
     }
 
-    .btn-view-product:hover {
-      border-color: var(--premium-purple);
-      color: var(--premium-purple);
-      background: #f5f3ff;
-      transform: scale(1.1);
+    .btn-view-product:hover { /* Hover for details link */
+      border-color: var(--premium-purple); /* Purple branding on hover */
+      color: var(--premium-purple); /* Matches border */
+      background: #f5f3ff; /* Very light purple tint */
+      transform: scale(1.1); /* Growth feedback */
     }
 
-    .stat-bar {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 2rem;
+    .stat-bar { /* Horizontal bar for showing quantity/usage stats */
+      display: flex; /* Aligns items side-by-side */
+      gap: 10px; /* Spacing between stats */
+      margin-bottom: 2rem; /* Space below the bar */
     }
 
     .stat-pill {
-      flex: 1;
-      background: #f8fafc;
-      padding: 12px;
-      border-radius: 16px;
-      text-align: center;
+      flex: 1; /* Allow each statistic pill to take up equal space in a row */
+      background: #f8fafc; /* Light background color for the stats cards */
+      padding: 12px; /* Internal spacing for the content of the pill */
+      border-radius: 16px; /* Rounded corners to match the premium UI style */
+      text-align: center; /* Center-align the value and label text */
     }
 
     .stat-val {
-      display: block;
-      font-weight: 800;
-      color: var(--premium-purple);
-      font-size: 1.1rem;
+      display: block; /* Make the value an independent block for vertical stacking */
+      font-weight: 800; /* Bold weight for the important statistical number */
+      color: var(--premium-purple); /* Brand color used for important metrics */
+      font-size: 1.1rem; /* Font size for the value display */
     }
 
     .stat-lbl {
-      font-size: 0.75rem;
-      color: #64748b;
-      font-weight: 600;
-      text-transform: uppercase;
+      font-size: 0.75rem; /* Smaller font for the descriptive label */
+      color: #64748b; /* Soft gray color for secondary descriptive text */
+      font-weight: 600; /* Semi-bold weight for readability at small sizes */
+      text-transform: uppercase; /* Uppercase styling for a clean header-like look */
     }
   </style>
 </head>
-<body>
+<body> <!-- Body of the HTML document containing visible elements -->
 
-  <!-- Navigation -->
-  <nav class="navbar navbar-expand-lg navbar-premium">
-    <div class="container">
-      <a class="navbar-brand d-flex align-items-center" href="{{ url_for('main.home') }}">
-        <div class="brand-icon me-3">
-          <i class="bi bi-cart-check-fill fs-5"></i>
+  <!-- Navigation --> <!-- Navigation section of the website -->
+  <nav class="navbar navbar-expand-lg navbar-premium"> <!-- Bootstrap navbar with custom premium styling -->
+    <div class="container"> <!-- Container to center the navbar content horizontally -->
+      <a class="navbar-brand d-flex align-items-center" href="{{ url_for('main.home') }}"> <!-- Brand logo link leading home -->
+        <div class="brand-icon me-3"> <!-- Wrapper for the brand icon with margin -->
+          <i class="bi bi-cart-check-fill fs-5"></i> <!-- Shopping cart icon within the brand logo -->
         </div>
-        <span>Smart<span class="brand-grocery-text">Grocery</span></span>
+        <span>Smart<span class="brand-grocery-text">Grocery</span></span> <!-- Text-based brand name with highlighted grocery keyword -->
       </a>
-      <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-        <span class="navbar-toggler-icon"></span>
+      <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"> <!-- Burger menu button for mobile views -->
+        <span class="navbar-toggler-icon"></span> <!-- Default Bootstrap hamburger icon -->
       </button>
-      <div class="collapse navbar-collapse" id="navbarNav">
-        {% set cart_count = shopping_list_count or 0 %}
-        <ul class="navbar-nav ms-auto align-items-center">
-          <li class="nav-item">
-            <a class="nav-link {% if request.endpoint == 'main.home' %}active{% endif %}" href="{{ url_for('main.home') }}">
-              <i class="bi bi-house-door me-1"></i> Home
+      <div class="collapse navbar-collapse" id="navbarNav"> <!-- Wrapper for collapsible navbar content -->
+        {% set cart_count = shopping_list_count or 0 %} <!-- Define variable for the number of items in the list -->
+        <ul class="navbar-nav ms-auto align-items-center"> <!-- List of navigation links aligned to the right -->
+          <li class="nav-item"> <!-- List item for the Home link -->
+            <a class="nav-link {% if request.endpoint == 'main.home' %}active{% endif %}" href="{{ url_for('main.home') }}"> <!-- Home link, highlighted if currently on home -->
+              <i class="bi bi-house-door me-1"></i> Home <!-- Home link icon and text -->
             </a>
           </li>
-          <li class="nav-item">
-            <a class="nav-link {% if 'stores' in request.path or request.endpoint == 'main.stores_page' %}active{% endif %}" href="{{ url_for('main.stores_page') }}">
-              <i class="bi bi-shop me-1"></i> Stores
+          <li class="nav-item"> <!-- List item for the Stores link -->
+            <a class="nav-link {% if 'stores' in request.path or request.endpoint == 'main.stores_page' %}active{% endif %}" href="{{ url_for('main.stores_page') }}"> <!-- Stores link, highlighted if on stores-related pages -->
+              <i class="bi bi-shop me-1"></i> Stores <!-- Stores link icon and text -->
             </a>
           </li>
-          <li class="nav-item">
-            <a class="nav-link {% if 'featured-deals' in request.path or request.endpoint == 'main.featured_deals_page' %}active{% endif %}" href="{{ url_for('main.featured_deals_page') }}">
-              <i class="bi bi-tags me-1"></i> Deals
+          <li class="nav-item"> <!-- List item for the Deals link -->
+            <a class="nav-link {% if 'featured-deals' in request.path or request.endpoint == 'main.featured_deals_page' %}active{% endif %}" href="{{ url_for('main.featured_deals_page') }}"> <!-- Deals link, highlighted if on deals pages -->
+              <i class="bi bi-tags me-1"></i> Deals <!-- Deals link icon and text -->
             </a>
           </li>
-          <li class="nav-item">
-            <a class="nav-link {% if 'compare' in request.path or request.endpoint == 'main.compare_prices' %}active{% endif %}" href="{{ url_for('main.compare_prices') }}">
-              <i class="bi bi-arrow-left-right me-1"></i> Compare
+          <li class="nav-item"> <!-- List item for the Compare link -->
+            <a class="nav-link {% if 'compare' in request.path or request.endpoint == 'main.compare_prices' %}active{% endif %}" href="{{ url_for('main.compare_prices') }}"> <!-- Compare link, highlighted if on comparison page -->
+              <i class="bi bi-arrow-left-right me-1"></i> Compare <!-- Compare link icon and text -->
             </a>
           </li>
-          <li class="nav-item">
-            <a class="nav-link d-flex align-items-center position-relative {% if 'shopping-list' in request.path or request.endpoint == 'main.shopping_list' %}active{% endif %}" href="{{ url_for('main.shopping_list') }}">
-              <i class="bi bi-list-check me-1"></i> Lists
+          <li class="nav-item"> <!-- List item for the Shopping List link -->
+            <a class="nav-link d-flex align-items-center position-relative {% if 'shopping-list' in request.path or request.endpoint == 'main.shopping_list' %}active{% endif %}" href="{{ url_for('main.shopping_list') }}"> <!-- List link, highlighted if on list page -->
+              <i class="bi bi-list-check me-1"></i> Lists <!-- Lists link icon and text -->
             </a>
           </li>
-          <li class="nav-item ms-lg-1">
-            <a class="nav-link nav-icon-btn position-relative {% if 'notifications' in request.path %}active{% endif %}" href="{{ url_for('main.notifications_page') }}" aria-label="Notifications">
-              <i class="bi bi-bell fs-5"></i>
-              {% if (unread_notifications_count or 0) > 0 %}
+          <li class="nav-item ms-lg-1"> <!-- List item for the Notifications link with margin -->
+            <a class="nav-link nav-icon-btn position-relative {% if 'notifications' in request.path %}active{% endif %}" href="{{ url_for('main.notifications_page') }}" aria-label="Notifications"> <!-- Notifications link -->
+              <i class="bi bi-bell fs-5"></i> <!-- Bell icon for notifications -->
+              {% if (unread_notifications_count or 0) > 0 %} <!-- Display badge if there are unread notifications -->
               <span class="position-absolute badge rounded-pill bg-danger" style="font-size: 0.65rem; padding: 0.45em 0.7em; top: -5px; right: -10px; border: 2px solid white; box-shadow: 0 4px 10px rgba(220, 53, 69, 0.4); min-width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;">
-                {{ unread_notifications_count }}
+                {{ unread_notifications_count }} <!-- Number representing the unread messages -->
               </span>
               {% endif %}
             </a>
           </li>
-          <li class="nav-item ms-lg-2">
-            <a class="nav-link nav-icon-btn nav-profile-btn {% if 'profile' in request.path %}active{% endif %}" href="{{ url_for('main.profile') }}" aria-label="User Profile">
-              <i class="bi bi-person-circle fs-5"></i>
+          <li class="nav-item ms-lg-2"> <!-- List item for the User Profile icon -->
+            <a class="nav-link nav-icon-btn nav-profile-btn {% if 'profile' in request.path %}active{% endif %}" href="{{ url_for('main.profile') }}" aria-label="User Profile"> <!-- Profile link button -->
+              <i class="bi bi-person-circle fs-5"></i> <!-- User icon for profile access -->
             </a>
           </li>
         </ul>
@@ -983,115 +984,115 @@ Requires: User must be logged in
     </div>
   </nav>
 
-  {% if session.get('user') %}
-  <!-- Premium Profile Header -->
-  <header class="premium-hero">
-    <div class="bg-shape shape-1"></div>
-    <div class="bg-shape shape-2"></div>
-    <div class="bg-shape shape-3"></div>
+  {% if session.get('user') %} <!-- Check if user session data is available to display the header -->
+  <!-- Premium Profile Header --> <!-- High-end header for the user profile -->
+  <header class="premium-hero"> <!-- Styled container for the user's hero section -->
+    <div class="bg-shape shape-1"></div> <!-- Background decorative element 1 -->
+    <div class="bg-shape shape-2"></div> <!-- Background decorative element 2 -->
+    <div class="bg-shape shape-3"></div> <!-- Background decorative element 3 -->
     
-    <div class="container position-relative" style="z-index: 2; text-align: center;">
-      <div class="d-inline-block position-relative mb-3">
-         <div class="mx-auto d-flex align-items-center justify-content-center bg-white rounded-circle profile-avatar-xl text-primary overflow-hidden shadow-lg border-4 border-white">
-             {% if user_data.avatar %}
-                <img src="{{ user_data.avatar }}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover;">
+    <div class="container position-relative" style="z-index: 2; text-align: center;"> <!-- Main content area of the hero header -->
+      <div class="d-inline-block position-relative mb-3"> <!-- Inline wrapper for positioning the avatar and badge -->
+         <div class="mx-auto d-flex align-items-center justify-content-center bg-white rounded-circle profile-avatar-xl text-primary overflow-hidden shadow-lg border-4 border-white"> <!-- Circle container for user avatar image or icon -->
+             {% if user_data.avatar %} <!-- Condition to check if an avatar image is set -->
+                <img src="{{ user_data.avatar }}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover;"> <!-- The user's uploaded profile picture -->
              {% else %}
-                <i class="bi bi-person-fill" style="font-size: 4rem; color: #7c3aed;"></i>
+                <i class="bi bi-person-fill" style="font-size: 4rem; color: #7c3aed;"></i> <!-- Default profile icon if no image is present -->
              {% endif %}
          </div>
-         <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark border border-2 border-white shadow-sm p-2">
-            <i class="bi bi-star-fill"></i> PRO
+         <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark border border-2 border-white shadow-sm p-2"> <!-- Floating status badge -->
+            <i class="bi bi-star-fill"></i> PRO <!-- Premium status label for the user -->
          </span>
       </div>
       
-      <h1 class="fw-bold mb-1 display-5 text-white text-shadow">{{ user_data.name if user_data and user_data.get('name') else 'Valued Shopper' }}</h1>
-      <p class="text-white-50 fs-5 mb-0"><i class="bi bi-envelope-fill me-2"></i>{{ user_data.email }}</p>
+      <h1 class="fw-bold mb-1 display-5 text-white text-shadow">{{ user_data.name if user_data and user_data.get('name') else 'Valued Shopper' }}</h1> <!-- Name of the user with fallback text -->
+      <p class="text-white-50 fs-5 mb-0"><i class="bi bi-envelope-fill me-2"></i>{{ user_data.email }}</p> <!-- User's email displayed as a subheader -->
       
-      <div class="d-flex justify-content-center gap-3 mt-4">
-        <div class="badge bg-white bg-opacity-25 backdrop-blur px-3 py-2 rounded-pill">
-            <i class="bi bi-heart-fill text-danger me-1"></i> {{ user_data.favorites|length if user_data.favorites else 0 }} Favorites
+      <div class="d-flex justify-content-center gap-3 mt-4"> <!-- Flexbox container for user statistics pills -->
+        <div class="badge bg-white bg-opacity-25 backdrop-blur px-3 py-2 rounded-pill"> <!-- Pill displaying number of favorited items -->
+            <i class="bi bi-heart-fill text-danger me-1"></i> {{ user_data.favorites|length if user_data.favorites else 0 }} Favorites <!-- Calculated length of the favorites list -->
         </div>
-        <div class="badge bg-white bg-opacity-25 backdrop-blur px-3 py-2 rounded-pill">
-            <i class="bi bi-shop text-info me-1"></i> {{ user_data.get('preferred_stores', [])|length }} Stores
+        <div class="badge bg-white bg-opacity-25 backdrop-blur px-3 py-2 rounded-pill"> <!-- Pill displaying number of preferred stores -->
+            <i class="bi bi-shop text-info me-1"></i> {{ user_data.get('preferred_stores', [])|length }} Stores <!-- Calculated length of preferred stores list -->
         </div>
       </div>
     </div>
   </header>
   {% endif %}
 
-  <!-- Profile Content -->
-  <section class="container py-5">
-    {% if not session.get('user') %}
-      <div class="row justify-content-center">
-        <div class="col-lg-6">
-          <div class="identity-card p-5">
-            <div class="modal-icon-circle bg-light text-primary mb-4">
-              <i class="bi bi-shield-lock-fill"></i>
+  <!-- Profile Content --> <!-- Main body content area for the profile view -->
+  <section class="container py-5"> <!-- Section with vertical padding for content clarity -->
+    {% if not session.get('user') %} <!-- Check if a user session is active -->
+      <div class="row justify-content-center"> <!-- Center the row content in the screen -->
+        <div class="col-lg-6"> <!-- Column spanning 6 grid units on large screens -->
+          <div class="identity-card p-5"> <!-- Identity block for unauthenticated users -->
+            <div class="modal-icon-circle bg-light text-primary mb-4"> <!-- Graphic element icon wrapper -->
+              <i class="bi bi-shield-lock-fill"></i> <!-- Lock icon representing secure private space -->
             </div>
-            <h3 class="mb-3 fw-bold">Sign in to your space</h3>
-            <p class="text-muted mb-4">Access your favorites, personalized preferences, and smart shopping features.</p>
-            <div class="d-flex gap-3 justify-content-center">
-              <a href="{{ url_for('auth.login') }}" class="btn btn-premium btn-premium-primary">Login Now</a>
-              <a href="{{ url_for('auth.signup') }}" class="btn btn-premium btn-light border">Create Account</a>
+            <h3 class="mb-3 fw-bold">Sign in to your space</h3> <!-- Main heading for guest view -->
+            <p class="text-muted mb-4">Access your favorites, personalized preferences, and smart shopping features.</p> <!-- Feature description for guests -->
+            <div class="d-flex gap-3 justify-content-center"> <!-- Container for authentication buttons -->
+              <a href="{{ url_for('auth.login') }}" class="btn btn-premium btn-premium-primary">Login Now</a> <!-- Primary action button to login -->
+              <a href="{{ url_for('auth.signup') }}" class="btn btn-premium btn-light border">Create Account</a> <!-- Secondary action button to signup -->
             </div>
           </div>
         </div>
       </div>
-    {% else %}
-      <div class="profile-shell">
+    {% else %} <!-- Display personal user data if logged in -->
+      <div class="profile-shell"> <!-- Wrapper for personal dashboard elements -->
         
-        <!-- Account Settings Card -->
-        <div class="fun-card">
-            <div class="fun-card-header">
-                <h4 class="fun-card-title">
-                    <i class="bi bi-gear-fill text-primary"></i> Account Settings
+        <!-- Account Settings Card --> <!-- Card containing basic user account info -->
+        <div class="fun-card"> <!-- Individual dashboard module -->
+            <div class="fun-card-header"> <!-- Header block for the dashboard module -->
+                <h4 class="fun-card-title"> <!-- Title of the dashboard section -->
+                    <i class="bi bi-gear-fill text-primary"></i> Account Settings <!-- Heading with settings icon -->
                 </h4>
-                <button class="btn btn-premium-primary rounded-pill py-2 px-4 shadow-sm" data-bs-toggle="modal" data-bs-target="#profileModal" style="font-size: 0.9rem;">
-                  <i class="bi bi-pencil-square me-2"></i>Edit Profile
+                <button class="btn btn-premium-primary rounded-pill py-2 px-4 shadow-sm" data-bs-toggle="modal" data-bs-target="#profileModal" style="font-size: 0.9rem;"> <!-- Trigger for the profile edit modal -->
+                  <i class="bi bi-pencil-square me-2"></i>Edit Profile <!-- Action text to edit details -->
                 </button>
             </div>
-            <div class="fun-card-body">
-                <div class="row g-4">
-                    <div class="col-md-6">
-                        <div class="info-field-glass">
-                            <div class="icon-wrapper"><i class="bi bi-person-fill"></i></div>
-                            <div class="text-content">
-                                <span class="label">Full Name</span>
-                                <span class="value">{{ user_data.name }}</span>
+            <div class="fun-card-body"> <!-- Main body for account details -->
+                <div class="row g-4"> <!-- Grid row with spacing for child elements -->
+                    <div class="col-md-6"> <!-- Half-width column on medium+ devices -->
+                        <div class="info-field-glass"> <!-- Glassmorphism wrapper for a data field -->
+                            <div class="icon-wrapper"><i class="bi bi-person-fill"></i></div> <!-- Icon identifying the name field -->
+                            <div class="text-content"> <!-- Wrapper for the actual data -->
+                                <span class="label">Full Name</span> <!-- Description of the data field -->
+                                <span class="value">{{ user_data.name }}</span> <!-- Value rendered from the Python dictionary -->
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-6">
-                        <div class="info-field-glass">
-                            <div class="icon-wrapper"><i class="bi bi-envelope-fill"></i></div>
-                            <div class="text-content">
-                                <span class="label">Email Address</span>
-                                <span class="value">{{ user_data.email }}</span>
+                    <div class="col-md-6"> <!-- Half-width column for email field -->
+                        <div class="info-field-glass"> <!-- Glassmorphism wrapper for email data -->
+                            <div class="icon-wrapper"><i class="bi bi-envelope-fill"></i></div> <!-- Icon identifying the email field -->
+                            <div class="text-content"> <!-- Wrapper for email content -->
+                                <span class="label">Email Address</span> <!-- Description of data field -->
+                                <span class="value">{{ user_data.email }}</span> <!-- Actual user email string -->
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-6">
-                        <div class="info-field-glass">
-                             <div class="icon-wrapper"><i class="bi bi-telephone-fill"></i></div>
-                             <div class="text-content">
-                                 <span class="label">Phone Number</span>
-                                 {% if user_data.phone %}
-                                    <span class="value">{{ user_data.phone }}</span>
+                    <div class="col-md-6"> <!-- Half-width column for phone field -->
+                        <div class="info-field-glass"> <!-- Glassmorphism wrapper for phone data -->
+                             <div class="icon-wrapper"><i class="bi bi-telephone-fill"></i></div> <!-- Icon identifying the phone field -->
+                             <div class="text-content"> <!-- Wrapper for phone content -->
+                                 <span class="label">Phone Number</span> <!-- Description of phone field -->
+                                 {% if user_data.phone %} <!-- Check if user has provided a phone number -->
+                                    <span class="value">{{ user_data.phone }}</span> <!-- Show provided number -->
                                  {% else %}
-                                    <span class="value empty">No phone number set</span>
+                                    <span class="value empty">No phone number set</span> <!-- Fallback placeholder if missing -->
                                  {% endif %}
                              </div>
                         </div>
                     </div>
-                     <div class="col-md-6">
-                        <div class="info-field-glass">
-                             <div class="icon-wrapper"><i class="bi bi-geo-alt-fill"></i></div>
-                             <div class="text-content">
-                                 <span class="label">Delivery Address</span>
-                                 {% if user_data.address %}
-                                    <span class="value">{{ user_data.address }}</span>
+                     <div class="col-md-6"> <!-- Half-width column for address field -->
+                        <div class="info-field-glass"> <!-- Glassmorphism wrapper for address -->
+                             <div class="icon-wrapper"><i class="bi bi-geo-alt-fill"></i></div> <!-- Icon identifying the address field -->
+                             <div class="text-content"> <!-- Wrapper for address content -->
+                                 <span class="label">Delivery Address</span> <!-- Description of location field -->
+                                 {% if user_data.address %} <!-- Check if user has provided an address -->
+                                    <span class="value">{{ user_data.address }}</span> <!-- Show provided address string -->
                                  {% else %}
-                                    <span class="value empty">No address set</span>
+                                    <span class="value empty">No address set</span> <!-- Fallback placeholder if missing -->
                                  {% endif %}
                              </div>
                         </div>
@@ -1100,140 +1101,140 @@ Requires: User must be logged in
             </div>
         </div>
 
-        <!-- Favorites Section Card -->
-        <div class="fun-card mt-4">
-             <div class="fun-card-header">
-                <h4 class="fun-card-title">
-                    <i class="bi bi-heart-fill text-danger"></i> My Favorites
+        <!-- Favorites Section Card --> <!-- Card containing user's favorite products -->
+        <div class="fun-card mt-4"> <!-- Dashboard module for favorites with top margin -->
+             <div class="fun-card-header"> <!-- Header for favorites section -->
+                <h4 class="fun-card-title"> <!-- Title with favorite icon -->
+                    <i class="bi bi-heart-fill text-danger"></i> My Favorites <!-- Section heading text -->
                 </h4>
-                <span class="badge bg-danger rounded-pill">{{ user_data.favorites|length if user_data.favorites else 0 }} Items</span>
+                <span class="badge bg-danger rounded-pill">{{ user_data.favorites|length if user_data.favorites else 0 }} Items</span> <!-- Count badge for items -->
             </div>
-            <div class="fun-card-body">
-                {% if user_data.favorites %}
-                    <div class="row row-cols-1 row-cols-md-2 g-4">
-                        {% for fav in user_data.favorites %}
-                            <div class="col">
-                                <div class="position-relative h-100 group">
-                                    {% set view_url = url_for('main.product_info', product_id=fav.id, store_name=fav.store, store_price=fav.best_price or fav.price) %}
+            <div class="fun-card-body"> <!-- Section for scrolling through favorite products -->
+                {% if user_data.favorites %} <!-- Only render favorites if they exist -->
+                    <div class="row row-cols-1 row-cols-md-2 g-4"> <!-- Create a responsive grid for items -->
+                        {% for fav in user_data.favorites %} <!-- Loop through each item in the favorites list -->
+                            <div class="col"> <!-- Individual grid column for the favorite item -->
+                                <div class="position-relative h-100 group"> <!-- Styled wrapper for item card -->
+                                    {% set view_url = url_for('main.product_info', product_id=fav.id, store_name=fav.store, store_price=fav.best_price or fav.price) %} <!-- Construct product link URL -->
                                     
-                                    <!-- Delete Button (Top Right) -->
+                                    <!-- Delete Button (Top Right) --> <!-- Control to remove item from list -->
                                     <button class="btn btn-light shadow-sm position-absolute top-0 end-0 m-3 z-3 border-0 delete-fav-btn" 
                                             onclick="removeProfileFavorite(event, '{{ fav.id }}', this)"
-                                            title="Remove from favorites">
-                                        <i class="bi bi-trash-fill"></i>
+                                            title="Remove from favorites"> <!-- Button triggering asynchronous removal -->
+                                        <i class="bi bi-trash-fill"></i> <!-- Trash bin icon -->
                                     </button>
                                     
-                                    <a href="{{ view_url }}" class="info-field-glass p-3 h-100 align-items-center text-decoration-none">
-                                        <div class="icon-wrapper" style="width: 80px; height: 80px; padding: 10px;">
+                                    <a href="{{ view_url }}" class="info-field-glass p-3 h-100 align-items-center text-decoration-none"> <!-- Link to view details -->
+                                        <div class="icon-wrapper" style="width: 80px; height: 80px; padding: 10px;"> <!-- Image wrapper for product thumb -->
                                             <img src="{{ fav.image or url_for('static', filename='placeholder.svg') }}" 
                                                  alt="{{ fav.name }}" 
-                                                 style="width: 100%; height: 100%; object-fit: contain;">
+                                                 style="width: 100%; height: 100%; object-fit: contain;"> <!-- Product image or generic icon -->
                                         </div>
-                                        <div class="text-content flex-grow-1 ps-2 overflow-hidden pe-4">
-                                            <div class="d-flex justify-content-between align-items-start mb-1">
-                                                 <h6 class="fw-bold text-dark text-truncate mb-0" style="font-size: 1.1rem; max-width: 90%;" title="{{ fav.name }}">{{ fav.name }}</h6>
+                                        <div class="text-content flex-grow-1 ps-2 overflow-hidden pe-4"> <!-- Description container of the product -->
+                                            <div class="d-flex justify-content-between align-items-start mb-1"> <!-- Row for product name title -->
+                                                 <h6 class="fw-bold text-dark text-truncate mb-0" style="font-size: 1.1rem; max-width: 90%;" title="{{ fav.name }}">{{ fav.name }}</h6> <!-- Truncated product name -->
                                             </div>
                                             
-                                            <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
-                                                {% if fav.category %}
-                                                    <span class="badge bg-light text-muted border" style="font-size: 0.6rem;">{{ fav.category }}</span>
+                                            <div class="d-flex flex-wrap align-items-center gap-2 mb-1"> <!-- Metadata row for product attributes -->
+                                                {% if fav.category %} <!-- Display category if it exists -->
+                                                    <span class="badge bg-light text-muted border" style="font-size: 0.6rem;">{{ fav.category }}</span> <!-- Category label -->
                                                 {% endif %}
-                                                {% if fav.store %}
+                                                {% if fav.store %} <!-- Display origin store if it exists -->
                                                     <span class="badge bg-white text-primary border shadow-sm d-flex align-items-center gap-1 rounded-pill px-2">
-                                                        <i class="bi bi-shop"></i> {{ fav.store }}
+                                                        <i class="bi bi-shop"></i> {{ fav.store }} <!-- Store name text -->
                                                     </span>
                                                 {% endif %}
                                             </div>
 
-                                            <div class="mt-1">
-                                                {% if fav.best_price %}
-                                                    <span class="fw-bold text-primary fs-5">€{{ fav.best_price }}</span>
-                                                {% elif fav.price %}
-                                                     <span class="fw-bold text-primary fs-5">€{{ fav.price }}</span>
+                                            <div class="mt-1"> <!-- Price section for the favorited item -->
+                                                {% if fav.best_price %} <!-- Prefer 'best_price' metric -->
+                                                    <span class="fw-bold text-primary fs-5">€{{ fav.best_price }}</span> <!-- Formatted best price -->
+                                                {% elif fav.price %} <!-- Fallback to generic price -->
+                                                     <span class="fw-bold text-primary fs-5">€{{ fav.price }}</span> <!-- Formatted price -->
                                                 {% endif %}
                                             </div>
                                         </div>
                                     </a>
                                 </div>
                             </div>
-                        {% endfor %}
+                        {% endfor %} <!-- Ends the loop for favorite elements -->
                     </div>
-                {% else %}
-                    <div class="text-center py-5">
-                        <div class="mb-3">
-                            <i class="bi bi-heart text-muted display-4"></i>
+                {% else %} <!-- Display fallback if favorites list empty -->
+                    <div class="text-center py-5"> <!-- Centered message section -->
+                        <div class="mb-3"> <!-- Wrapper for empty state graphic -->
+                            <i class="bi bi-heart text-muted display-4"></i> <!-- Grayed out heart icon -->
                         </div>
-                        <h5 class="text-muted">No favorites yet</h5>
-                        <p class="small text-muted mb-4">Save products you love to see them here.</p>
-                        <a href="{{ url_for('main.home') }}" class="btn btn-sm btn-outline-primary rounded-pill px-4">Browse Products</a>
+                        <h5 class="text-muted">No favorites yet</h5> <!-- Messaging for no content -->
+                        <p class="small text-muted mb-4">Save products you love to see them here.</p> <!-- Instructional subtext -->
+                        <a href="{{ url_for('main.home') }}" class="btn btn-sm btn-outline-primary rounded-pill px-4">Browse Products</a> <!-- Actionable link to find items -->
                     </div>
-                {% endif %}
+                {% endif %} <!-- End of favorites length condition -->
             </div>
         </div>
 
-        <!-- Store Preferences Card -->
-        <div class="fun-card">
-             <div class="fun-card-header">
-                <h4 class="fun-card-title">
-                    <i class="bi bi-shop text-success"></i> My Stores
+        <!-- Store Preferences Card --> <!-- Section where users pick favorite retailers -->
+        <div class="fun-card"> <!-- Individual dashboard module -->
+             <div class="fun-card-header"> <!-- Header block for store preferences -->
+                <h4 class="fun-card-title"> <!-- Title for the retailer list -->
+                    <i class="bi bi-shop text-success"></i> My Stores <!-- Title with shop icon -->
                 </h4>
-                <span class="badge bg-success rounded-pill">{{ user_data.get('preferred_stores', [])|length }} Selected</span>
+                <span class="badge bg-success rounded-pill">{{ user_data.get('preferred_stores', [])|length }} Selected</span> <!-- Total selected stores count -->
             </div>
-            <div class="fun-card-body">
-                <p class="text-muted mb-4">Select the stores you shop at to see relevant deals.</p>
-                <form id="storesForm" class="stores-masonry">
-                  {% if stores %}
-                    {% for store in stores %}
-                    <label class="store-tile {{ 'selected' if store.name in user_data.get('preferred_stores', []) else '' }}">
+            <div class="fun-card-body"> <!-- Main body for selecting store tiles -->
+                <p class="text-muted mb-4">Select the stores you shop at to see relevant deals.</p> <!-- Instructional guidance text -->
+                <form id="storesForm" class="stores-masonry"> <!-- Form to handle store preference submission -->
+                  {% if stores %} <!-- Check if general store database is populated -->
+                    {% for store in stores %} <!-- Iterating through available retailers -->
+                    <label class="store-tile {{ 'selected' if store.name in user_data.get('preferred_stores', []) else '' }}"> <!-- Clickable tile with conditional selection state -->
                       <input type="checkbox" name="stores" value="{{ store.name }}" 
                              {{ 'checked' if store.name in user_data.get('preferred_stores', []) else '' }} 
-                             hidden onchange="toggleStore(this)">
-                      <div class="store-check"><i class="bi bi-check"></i></div>
-                      <div class="store-inner">
-                        <div class="store-logo-box">
-                           {% if store.image %}
-                              <img src="{{ store.image }}" alt="{{ store.name }}" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                             hidden onchange="toggleStore(this)"> <!-- Hidden checkbox for selection logic -->
+                      <div class="store-check"><i class="bi bi-check"></i></div> <!-- Visual indicator when checked -->
+                      <div class="store-inner"> <!-- Inner container for retailer branding -->
+                        <div class="store-logo-box"> <!-- Square container for store image logo -->
+                           {% if store.image %} <!-- Use uploaded retailer image if available -->
+                              <img src="{{ store.image }}" alt="{{ store.name }}" style="max-width: 100%; max-height: 100%; object-fit: contain;"> <!-- Retailer logo graphics -->
                            {% else %}
-                              <span class="fw-bold text-primary">{{ store.name[0] }}</span>
+                              <span class="fw-bold text-primary">{{ store.name[0] }}</span> <!-- Initial letter fallback -->
                            {% endif %}
                         </div>
-                        <span class="fw-bold">{{ store.name }}</span>
+<span class="fw-bold">{{ store.name }}</span> <!-- Display the retailer's brand name in bold font -->
                       </div>
                     </label>
-                    {% endfor %}
-                  {% else %}
-                    {% for store_name in ['Billa', 'Spar', 'Hofer', 'Lidl', 'Penny', 'Unimarkt'] %}
-                    <label class="store-tile {{ 'selected' if store_name in user_data.get('preferred_stores', []) else '' }}">
+                    {% endfor %} <!-- Exit the loop after rendering all retrieved store locations -->
+                  {% else %} <!-- Fallback logic if the stores list is empty or unavailable -->
+                    {% for store_name in ['Billa', 'Spar', 'Hofer', 'Lidl', 'Penny', 'Unimarkt'] %} <!-- Iterating through a hardcoded list of major retailers -->
+                    <label class="store-tile {{ 'selected' if store_name in user_data.get('preferred_stores', []) else '' }}"> <!-- Repeated tile layout for fallback retailers -->
                       <input type="checkbox" name="stores" value="{{ store_name }}" 
                              {{ 'checked' if store_name in user_data.get('preferred_stores', []) else '' }} 
-                             hidden onchange="toggleStore(this)">
-                      <div class="store-check"><i class="bi bi-check"></i></div>
-                      <div class="store-inner">
-                        <div class="store-logo-box text-uppercase">
-                          <span class="fw-bold text-primary">{{ store_name[:2] }}</span>
+                             hidden onchange="toggleStore(this)"> <!-- Checkbox for selection state management -->
+                      <div class="store-check"><i class="bi bi-check"></i></div> <!-- Visual overlay showing a checkmark when active -->
+                      <div class="store-inner"> <!-- Interior content layout for each store card -->
+                        <div class="store-logo-box text-uppercase"> <!-- Box intended for retailer branding -->
+                          <span class="fw-bold text-primary">{{ store_name[:2] }}</span> <!-- Display first two letters as a synthetic logo -->
                         </div>
-                        <span class="fw-bold">{{ store_name }}</span>
+                        <span class="fw-bold">{{ store_name }}</span> <!-- Full brand name of the retailer -->
                       </div>
                     </label>
-                    {% endfor %}
-                  {% endif %}
-                </form>
+                    {% endfor %} <!-- Conclude the iterative fallback retailers loop -->
+                  {% endif %} <!-- Finalize the conditional block for stores -->
+                </form> <!-- Close the retailer preference form -->
             </div>
         </div>
 
-        <!-- Category Preferences Card -->
-        <div class="fun-card">
-             <div class="fun-card-header">
-                <h4 class="fun-card-title">
-                    <i class="bi bi-tags text-warning"></i> My Categories
+        <!-- Category Preferences Card --> <!-- Dashboard section for product category selection -->
+        <div class="fun-card"> <!-- Decorative card wrapper for category interests -->
+             <div class="fun-card-header"> <!-- Header block for the category module -->
+                <h4 class="fun-card-title"> <!-- Module title with descriptive icon -->
+                    <i class="bi bi-tags text-warning"></i> My Categories <!-- Label for the category preferences -->
                 </h4>
-                <span class="badge bg-warning text-dark rounded-pill">{{ user_data.get('preferred_categories', [])|length }} Selected</span>
+                <span class="badge bg-warning text-dark rounded-pill">{{ user_data.get('preferred_categories', [])|length }} Selected</span> <!-- Badge indicating total selected categories -->
             </div>
-            <div class="fun-card-body">
-                <p class="text-muted mb-4">Select the categories you're interested in for personalized recommendations.</p>
-                <form id="categoriesForm" class="categories-masonry">
-                  {% set category_icons = {
-                    'dairy': 'bi-egg-fried',
+            <div class="fun-card-body"> <!-- Main interaction area for product categories -->
+                <p class="text-muted mb-4">Select the categories you're interested in for personalized recommendations.</p> <!-- Instructional subtext -->
+                <form id="categoriesForm" class="categories-masonry"> <!-- Form layout for category selection using grid/masonry -->
+                  {% set category_icons = { 
+                    'dairy': 'bi-egg-fried', 
                     'dairy & eggs': 'bi-egg-fried',
                     'produce': 'bi-apple',
                     'fresh produce': 'bi-apple',
@@ -1253,56 +1254,56 @@ Requires: User must be logged in
                     'pantry staples': 'bi-archive',
                     'household': 'bi-house-heart',
                     'personal care': 'bi-sparkles'
-                  } %}
+                  } %} <!-- Dictionary mapping category keys to Bootstrap ICON classes -->
                   
-                  {% if category_options %}
-                    {% for category in category_options %}
-                    <label class="store-tile {{ 'selected' if category in user_data.get('preferred_categories', []) else '' }}" style="min-height: 100px;">
+                  {% if category_options %} <!-- Check if a list of category options was passed to the template -->
+                    {% for category in category_options %} <!-- Loop through each available product category -->
+                    <label class="store-tile {{ 'selected' if category in user_data.get('preferred_categories', []) else '' }}" style="min-height: 100px;"> <!-- Interactive tile for a single category -->
                       <input type="checkbox" name="categories" value="{{ category }}" 
                              {{ 'checked' if category in user_data.get('preferred_categories', []) else '' }} 
-                             hidden onchange="toggleCategory(this)">
-                      <div class="store-check"><i class="bi bi-check"></i></div>
-                      <div class="store-inner text-center">
-                        <div class="fs-2 mb-2">
-                           <i class="{{ category_icons.get(category|lower, 'bi-tag') }} text-primary"></i>
+                             hidden onchange="toggleCategory(this)"> <!-- Input to handle selection logic -->
+                      <div class="store-check"><i class="bi bi-check"></i></div> <!-- Checkmark icon for active state -->
+                      <div class="store-inner text-center"> <!-- Internal content for the category tile -->
+                        <div class="fs-2 mb-2"> <!-- Sizing container for the category icon -->
+                           <i class="{{ category_icons.get(category|lower, 'bi-tag') }} text-primary"></i> <!-- Dynamically load icon class from dictionary -->
                         </div>
-                        <span class="fw-bold small">{{ category }}</span>
+                        <span class="fw-bold small">{{ category }}</span> <!-- Display category name text -->
                       </div>
                     </label>
-                    {% endfor %}
-                  {% else %}
-                     <p class="text-center text-muted my-4 w-100" style="grid-column: 1/-1;">No categories found in database.</p>
-                  {% endif %}
-                </form>
+                    {% endfor %} <!-- Close category iteration loop -->
+                  {% else %} <!-- Fallback displayed if no categories exist in database -->
+                     <p class="text-center text-muted my-4 w-100" style="grid-column: 1/-1;">No categories found in database.</p> <!-- Empty state message -->
+                  {% endif %} <!-- End of category availability check -->
+                </form> <!-- Close category selection form -->
             </div>
         </div>
 
-        <!-- Danger Zone -->
-        <div class="text-center mt-5 mb-5 pt-4">
-             <button type="button" class="btn btn-lg btn-logout-premium rounded-pill shadow-lg" data-bs-toggle="modal" data-bs-target="#logoutConfirmModal">
-                 <i class="bi bi-box-arrow-right me-2"></i> <span>Log Out From Account</span>
+        <!-- Danger Zone --> <!-- Section for critical account actions like logging out -->
+        <div class="text-center mt-5 mb-5 pt-4"> <!-- Centered container with significant spacing -->
+             <button type="button" class="btn btn-lg btn-logout-premium rounded-pill shadow-lg" data-bs-toggle="modal" data-bs-target="#logoutConfirmModal"> <!-- Main logout button -->
+                 <i class="bi bi-box-arrow-right me-2"></i> <span>Log Out From Account</span> <!-- Icon and text for the logout action -->
              </button>
         </div>
 
       </div>
-    {% endif %}
+    {% endif %} <!-- Close original authenticated user content block -->
   </section>
 
-  <!-- Logout Confirmation Modal -->
-  <div class="modal fade modal-confirm-logout" id="logoutConfirmModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
-      <div class="modal-content shadow-2xl border-0">
-        <div class="modal-body p-5 text-center">
-          <div class="logout-icon-circle animate__animated animate__pulse animate__infinite">
-            <i class="bi bi-door-open-fill fs-1"></i>
+  <!-- Logout Confirmation Modal --> <!-- Pop-up dialogue to prevent accidental logout -->
+  <div class="modal fade modal-confirm-logout" id="logoutConfirmModal" tabindex="-1" aria-hidden="true"> <!-- Bootstrap modal definition -->
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;"> <!-- Centered modal container with fixed width -->
+      <div class="modal-content shadow-2xl border-0"> <!-- Modal interior with heavy shadow and no border -->
+        <div class="modal-body p-5 text-center"> <!-- Modal body with large padding and centered text -->
+          <div class="logout-icon-circle animate__animated animate__pulse animate__infinite"> <!-- Pulsing animation effect on icon -->
+            <i class="bi bi-door-open-fill fs-1"></i> <!-- Door icon representing exit -->
           </div>
-          <h3 class="fw-bold mb-3">Ready to leave?</h3>
-          <p class="text-muted mb-4">Are you sure you want to log out? You will need to sign in again to access your lists and deals.</p>
-          <div class="d-grid gap-2">
-            <a href="{{ url_for('auth.logout') }}" class="btn btn-danger btn-lg rounded-pill fw-bold py-3 shadow-sm">
+          <h3 class="fw-bold mb-3">Ready to leave?</h3> <!-- Prominent question for user confirmation -->
+          <p class="text-muted mb-4">Are you sure you want to log out? You will need to sign in again to access your lists and deals.</p> <!-- Descriptive confirmation subtext -->
+          <div class="d-grid gap-2"> <!-- Grid layout for modal buttons -->
+            <a href="{{ url_for('auth.logout') }}" class="btn btn-danger btn-lg rounded-pill fw-bold py-3 shadow-sm"> <!-- Final confirmation link -->
               Yes, Log Me Out
             </a>
-            <button type="button" class="btn btn-link text-muted fw-semibold text-decoration-none" data-bs-dismiss="modal">
+            <button type="button" class="btn btn-link text-muted fw-semibold text-decoration-none" data-bs-dismiss="modal"> <!-- Button to cancel logout -->
               Stay Signed In
             </button>
           </div>
@@ -1313,88 +1314,88 @@ Requires: User must be logged in
   
   <!-- Old content hidden/removed -->
 
-  <!-- Profile Edit Modal -->
-  <div class="modal fade" id="profileModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content modal-content-premium border-0">
-        <div class="modal-header border-0 p-4 pb-0">
+  <!-- Profile Edit Modal --> <!-- Dialog allowing users to modify personal information -->
+  <div class="modal fade" id="profileModal" tabindex="-1" aria-hidden="true"> <!-- Bootstrap modal for editing profile -->
+    <div class="modal-dialog modal-dialog-centered"> <!-- Centered modal dialog wrapper -->
+      <div class="modal-content modal-content-premium border-0"> <!-- Premium themed modal content box -->
+        <div class="modal-header border-0 p-4 pb-0"> <!-- Modal top header without bottom border -->
           <div>
-            <h4 class="fw-bold mb-1">Edit Profile</h4>
-            <p class="text-muted small mb-0">Update your personal preferences</p>
+            <h4 class="fw-bold mb-1">Edit Profile</h4> <!-- Modal header title -->
+            <p class="text-muted small mb-0">Update your personal preferences</p> <!-- Descriptive subtext -->
           </div>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button> <!-- Close button for modal -->
         </div>
-        <div class="modal-body p-4 pt-3">
-          <form action="{{ url_for('main.profile') }}" method="POST">
+        <div class="modal-body p-4 pt-3"> <!-- Interactive area of the edit modal -->
+          <form action="{{ url_for('main.profile') }}" method="POST"> <!-- POST form to update profile data -->
             
-            <!-- Avatar Section -->
-            <div class="text-center mb-4">
-              <label class="form-label text-muted fw-bold small d-block mb-3">PROFILE AVATAR</label>
-              <div class="position-relative d-inline-block">
-                <div class="profile-avatar-preview rounded-circle overflow-hidden border border-4 border-light shadow-sm" style="width: 100px; height: 100px;">
-                   {% if user_data.avatar %}
-                      <img src="{{ user_data.avatar }}" id="modalAvatarPreview" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover;">
+            <!-- Avatar Section --> <!-- Area of the modal dedicated to changing the profile picture -->
+            <div class="text-center mb-4"> <!-- Centered container for avatar preview -->
+              <label class="form-label text-muted fw-bold small d-block mb-3">PROFILE AVATAR</label> <!-- Capitalized label for avatar section -->
+              <div class="position-relative d-inline-block"> <!-- Wrapper for avatar and edit button overlay -->
+                <div class="profile-avatar-preview rounded-circle overflow-hidden border border-4 border-light shadow-sm" style="width: 100px; height: 100px;"> <!-- Circle wrapper for image -->
+                   {% if user_data.avatar %} <!-- Conditional display based on presence of current avatar -->
+                      <img src="{{ user_data.avatar }}" id="modalAvatarPreview" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover;"> <!-- Current user image -->
                    {% else %}
-                      <div class="d-flex align-items-center justify-content-center h-100 bg-light text-primary" id="modalAvatarFallback">
-                        <i class="bi bi-person-fill fs-1"></i>
+                      <div class="d-flex align-items-center justify-content-center h-100 bg-light text-primary" id="modalAvatarFallback"> <!-- Default placeholder UI -->
+                        <i class="bi bi-person-fill fs-1"></i> <!-- User icon for anonymous profiles -->
                       </div>
-                      <img src="" id="modalAvatarPreview" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover; display: none;">
+                      <img src="" id="modalAvatarPreview" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover; display: none;"> <!-- Hidden img tag for future selections -->
                    {% endif %}
                 </div>
-                <!-- Edit Pencil Icon -->
+                <!-- Edit Pencil Icon --> <!-- Action button that opens the second modal to select avatars -->
                 <button type="button" class="btn btn-primary rounded-circle position-absolute bottom-0 end-0 border border-2 border-white shadow-sm p-0" 
                         style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;"
-                        data-bs-toggle="modal" data-bs-target="#avatarPickerModal">
-                  <i class="bi bi-pencil-fill" style="font-size: 0.8rem;"></i>
+                        data-bs-toggle="modal" data-bs-target="#avatarPickerModal"> <!-- Button to launch avatar selector -->
+                  <i class="bi bi-pencil-fill" style="font-size: 0.8rem;"></i> <!-- Edit icon -->
                 </button>
               </div>
-              <input type="hidden" name="avatar" id="selectedAvatarInput" value="{{ user_data.avatar if user_data.avatar else '' }}">
+              <input type="hidden" name="avatar" id="selectedAvatarInput" value="{{ user_data.avatar if user_data.avatar else '' }}"> <!-- Hidden input to store chosen image URL for form submission -->
             </div>
 
-            <!-- Inputs -->
-            <div class="mb-3">
-              <div class="modal-input-group">
-                <label>Full Name</label>
-                <input type="text" class="form-control" name="name" value="{{ user_data.name }}" required>
+            <!-- Inputs --> <!-- Text data entry section of the form -->
+            <div class="mb-3"> <!-- Wrapper for the name input -->
+              <div class="modal-input-group"> <!-- Styled group for the individual input field -->
+                <label>Full Name</label> <!-- Input label descriptive text -->
+                <input type="text" class="form-control" name="name" value="{{ user_data.name }}" required> <!-- Field for user's full name -->
               </div>
             </div>
 
-            <div class="mb-3">
+            <div class="mb-3"> <!-- Wrapper for the phone number input -->
               <div class="modal-input-group">
-                 <label>Phone Number</label>
-                 <input type="text" class="form-control" name="phone_number" value="{{ user_data.phone }}" placeholder="+1 234 567 8900">
+                 <label>Phone Number</label> <!-- Descriptor for phone data -->
+                 <input type="text" class="form-control" name="phone_number" value="{{ user_data.phone }}" placeholder="+1 234 567 8900"> <!-- Field to enter mobile/landline -->
               </div>
             </div>
 
-            <div class="mb-4">
+            <div class="mb-4"> <!-- Wrapper for the address input -->
               <div class="modal-input-group">
-                <label>Delivery Address</label>
-                <input type="text" class="form-control" name="address" value="{{ user_data.address }}" placeholder="Street, City, Zip">
+                <label>Delivery Address</label> <!-- Descriptor for location data -->
+                <input type="text" class="form-control" name="address" value="{{ user_data.address }}" placeholder="Street, City, Zip"> <!-- Field for shipping address -->
               </div>
             </div>
 
-            <div class="d-grid">
-              <button type="submit" class="btn btn-premium btn-premium-primary py-3 rounded-4 shadow-sm">
-                Save Changes <i class="bi bi-check-lg ms-2"></i>
+            <div class="d-grid"> <!-- Container to make button span full width -->
+              <button type="submit" class="btn btn-premium btn-premium-primary py-3 rounded-4 shadow-sm"> <!-- Submit button for the profile changes -->
+                Save Changes <i class="bi bi-check-lg ms-2"></i> <!-- Confirmation text and check icon -->
               </button>
             </div>
-          </form>
+          </form> 
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Avatar Picker Modal -->
-  <div class="modal fade" id="avatarPickerModal" tabindex="-1" aria-hidden="true" style="z-index: 1060;">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content overflow-hidden border-0 shadow-lg rounded-5">
-        <div class="modal-header border-0 bg-light p-4">
-          <h5 class="modal-title fw-bold">Select Avatar</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+  <!-- Avatar Picker Modal --> <!-- Secondary pop-up for choosing a specific profile illustration -->
+  <div class="modal fade" id="avatarPickerModal" tabindex="-1" aria-hidden="true" style="z-index: 1060;"> <!-- Modal with higher z-index to overlay on top of edit modal -->
+    <div class="modal-dialog modal-dialog-centered"> <!-- Centered container for avatar choices -->
+      <div class="modal-content overflow-hidden border-0 shadow-lg rounded-5"> <!-- Card layout for options -->
+        <div class="modal-header border-0 bg-light p-4"> <!-- Subtle header for selections -->
+          <h5 class="modal-title fw-bold">Select Avatar</h5> <!-- Directive text -->
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button> <!-- Dismiss button -->
         </div>
-        <div class="modal-body p-4">
-          <div class="avatar-grid justify-content-center mb-4" style="grid-template-columns: repeat(3, 1fr) !important; gap: 15px !important;">
-            {% set avatars = [
+        <div class="modal-body p-4"> <!-- Main area containing the image grid -->
+          <div class="avatar-grid justify-content-center mb-4" style="grid-template-columns: repeat(3, 1fr) !important; gap: 15px !important;"> <!-- Grid system to display choice options -->
+            {% set avatars = [ 
               'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix&backgroundColor=b6e3f4',
               'https://api.dicebear.com/7.x/avataaars/svg?seed=Aneka&backgroundColor=ffdfbf',
               'https://api.dicebear.com/7.x/avataaars/svg?seed=Jasper&backgroundColor=c0aede',
@@ -1404,16 +1405,16 @@ Requires: User must be logged in
               'https://api.dicebear.com/7.x/avataaars/svg?seed=Oliver&backgroundColor=d1d4f9',
               'https://api.dicebear.com/7.x/avataaars/svg?seed=Luna&backgroundColor=ffdfbf',
               'https://api.dicebear.com/7.x/avataaars/svg?seed=Milo&backgroundColor=c0e6ff'
-            ] %}
-            {% for url in avatars %}
-              <div class="avatar-option {% if user_data.avatar == url %}selected{% endif %}" onclick="selectAvatar('{{ url }}', this)">
-                <img src="{{ url }}" alt="Avatar Option" style="width: 100%;">
-                <div class="avatar-check"><i class="bi bi-check-lg"></i></div>
+            ] %} <!-- Array containing hardcoded URLs to generated SVG avatars -->
+            {% for url in avatars %} <!-- Iterate through each provided avatar URL -->
+              <div class="avatar-option {% if user_data.avatar == url %}selected{% endif %}" onclick="selectAvatar('{{ url }}', this)"> <!-- Interactive option for each image -->
+                <img src="{{ url }}" alt="Avatar Option" style="width: 100%;"> <!-- Representation of the avatar -->
+                <div class="avatar-check"><i class="bi bi-check-lg"></i></div> <!-- Checkmark overlay for selection clarity -->
               </div>
-            {% endfor %}
+            {% endfor %} <!-- Exit loop for avatar list -->
           </div>
-          <div class="text-center">
-            <button class="btn btn-premium btn-premium-primary px-5" data-bs-target="#profileModal" data-bs-toggle="modal">
+          <div class="text-center"> <!-- Row for confirming choice -->
+            <button class="btn btn-premium btn-premium-primary px-5" data-bs-target="#profileModal" data-bs-toggle="modal"> <!-- Button to confirm choice and return to main modal -->
               Confirm Selection
             </button>
           </div>
@@ -1422,204 +1423,198 @@ Requires: User must be logged in
     </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script> <!-- Includes official Bootstrap JS bundle -->
+  <script> // Begins JavaScript logic for interactive page features
     // Global variable to persist selection across modal toggles
-    let globalSelectedAvatar = "{{ user_data.avatar if user_data.avatar else '' }}";
+    let globalSelectedAvatar = "{{ user_data.avatar if user_data.avatar else '' }}"; // Initialize with current user avatar from Python session
 
-    function selectAvatar(url, element) {
-      console.log('Avatar selected:', url);
-      globalSelectedAvatar = url;
+    function selectAvatar(url, element) { // Handler for clicking an individual avatar image
+      console.log('Avatar selected:', url); // Debugging log to console
+      globalSelectedAvatar = url; // Store chosen URL in the global variable
       
       // Visual feedback
-      if (element) {
-        document.querySelectorAll('.avatar-option').forEach(el => el.classList.remove('selected'));
-        element.classList.add('selected');
+      if (element) { // Check if an element object was passed
+        document.querySelectorAll('.avatar-option').forEach(el => el.classList.remove('selected')); // Remove highlight from all other options
+        element.classList.add('selected'); // Apply visual highlight to the chosen element
       }
       
       // Update the hidden input immediately
-      updateHiddenInput(url);
+      updateHiddenInput(url); // Synchronize hidden form field with the new image URL
       
       // Update visuals
-      updateAvatarPreview(url);
+      updateAvatarPreview(url); // Refresh the preview image on the main profile modal
     }
 
-    function updateHiddenInput(url) {
-      const input = document.getElementById('selectedAvatarInput');
-      if (input) {
-        input.value = url;
-        console.log('Hidden input updated to:', url);
+    function updateHiddenInput(url) { // Function to update the DOM value for form submission
+      const input = document.getElementById('selectedAvatarInput'); // Locate the hidden field by numeric ID
+      if (input) { // If field exists
+        input.value = url; // Update attribute with the new URL
+        console.log('Hidden input updated to:', url); // Log the change
       }
     }
 
-    function updateAvatarPreview(url) {
-      const preview = document.getElementById('modalAvatarPreview');
-      const fallback = document.getElementById('modalAvatarFallback');
+    function updateAvatarPreview(url) { // Function to update the visible image element in the UI
+      const preview = document.getElementById('modalAvatarPreview'); // Locate image tag for preview
+      const fallback = document.getElementById('modalAvatarFallback'); // Locate default icon container
       
-      if (preview) {
-        preview.src = url;
-        preview.style.display = 'block';
-        if (fallback) fallback.style.display = 'none';
+      if (preview) { // If image tag exists
+        preview.src = url; // Change image source attribute
+        preview.style.display = 'block'; // Make image visible
+        if (fallback) fallback.style.display = 'none'; // Hide the default icon if present
       }
     }
 
     // AJAX Store Update
-    async function toggleStore(checkbox) {
-      const label = checkbox.parentElement;
-      label.classList.toggle('selected');
+    async function toggleStore(checkbox) { // Handler for updating retailer preferences without page reload
+      const label = checkbox.parentElement; // Get wrapper element for styling
+      label.classList.toggle('selected'); // Toggle active background class
       
-      const formData = new FormData();
+      const formData = new FormData(); // Create a new payload object for the request
       const checkedStores = Array.from(document.querySelectorAll('#storesForm input[name="stores"]:checked'))
-                                 .map(input => input.value);
+                                 .map(input => input.value); // Gather list of all checked store names
       
-      checkedStores.forEach(store => formData.append('stores', store));
+      checkedStores.forEach(store => formData.append('stores', store)); // Append each store to the form data
       
-      try {
-        const response = await fetch("{{ url_for('main.update_stores') }}", {
-          method: 'POST',
-          body: formData
+      try { // Attempt the network request
+        const response = await fetch("{{ url_for('main.update_stores') }}", { // Send data to the Flask route
+          method: 'POST', // Use POST method for data modification
+          body: formData // Body contains the list of selected stores
         });
-        if (response.ok) {
-          console.log('Stores updated successfully');
+        if (response.ok) { // Check for successful server response
+          console.log('Stores updated successfully'); // Log success
           // Update badge
-          const badge = document.querySelector('.fun-card .bg-success');
-          if (badge) badge.textContent = checkedStores.length + ' Selected';
+          const badge = document.querySelector('.fun-card .bg-success'); // Find the count badge in the DOM
+          if (badge) badge.textContent = checkedStores.length + ' Selected'; // Update text with new count
         }
-      } catch (err) {
-        console.error('Failed to update stores:', err);
+      } catch (err) { // Handle network or server failures
+        console.error('Failed to update stores:', err); // Log the error message
       }
     }
 
     // AJAX Category Update
-    async function toggleCategory(checkbox) {
-      const label = checkbox.parentElement;
-      label.classList.toggle('selected');
+    async function toggleCategory(checkbox) { // Handler for updating product type interests asynchronously
+      const label = checkbox.parentElement; // Get tile wrapper
+      label.classList.toggle('selected'); // Visual state update
       
       // Update local icons color/opacity
-      const icon = label.querySelector('i');
-      if (checkbox.checked) {
-          // Logic for dynamic color change if needed, otherwise just let the refreshed loop handle it
-          // For now we just use the selected class CSS
+      const icon = label.querySelector('i'); // Locate the icon element inside the tile
+      if (checkbox.checked) { // Logic check for state
+          // Placeholder for extra effects on selection
       }
       
-      const formData = new FormData();
+      const formData = new FormData(); // Prepare data container
       const checkedCats = Array.from(document.querySelectorAll('#categoriesForm input[name="categories"]:checked'))
-                               .map(input => input.value);
+                               .map(input => input.value); // Gather list of currently active category IDs
       
-      checkedCats.forEach(cat => formData.append('categories', cat));
+      checkedCats.forEach(cat => formData.append('categories', cat)); // Populate data for the server
       
-      try {
-        const response = await fetch("{{ url_for('main.update_categories') }}", {
-          method: 'POST',
-          body: formData
+      try { // Perform the API call
+        const response = await fetch("{{ url_for('main.update_categories') }}", { // Endpoint for category updates
+          method: 'POST', // standard method for updates
+          body: formData // payload containing categories
         });
-        if (response.ok) {
-          console.log('Categories updated successfully');
-          const badge = document.querySelector('.fun-card .bg-warning');
-          if (badge) badge.textContent = checkedCats.length + ' Selected';
-          
-          // Small delay before reloading icons to look smooth
-          // location.reload(); // Removed to allow "no refresh" experience
+        if (response.ok) { // Success handling
+          console.log('Categories updated successfully'); // Log event
+          const badge = document.querySelector('.fun-card .bg-warning'); // Locate count badge
+          if (badge) badge.textContent = checkedCats.length + ' Selected'; // Update the UI count
         }
-      } catch (err) {
-        console.error('Failed to update categories:', err);
+      } catch (err) { // Failure handling
+        console.error('Failed to update categories:', err); // Log details
       }
     }
 
     // Delete Favorite Function
-    async function removeProfileFavorite(event, productId, btn) {
-        if (event) {
-            event.preventDefault();
-            event.stopPropagation();
+    async function removeProfileFavorite(event, productId, btn) { // Function to remove a product from user favorites list
+        if (event) { // Check if an event object exists
+            event.preventDefault(); // Stop default browser navigation
+            event.stopPropagation(); // Stop event bubbling to parent elements
         }
 
-        try {
-           const response = await fetch('/api/toggle-favorite', {
-                method: 'POST',
+        try { // Attempt removal request
+           const response = await fetch('/api/toggle-favorite', { // Internal API endpoint for favorite toggling
+                method: 'POST', // POST request required
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json' // Declare JSON payload
                 },
-                body: JSON.stringify({ product_id: productId })
+                body: JSON.stringify({ product_id: productId }) // Pass the id of the product to toggle
             });
 
-            const data = await response.json();
+            const data = await response.json(); // Wait for JSON response from server
 
             // If action was 'removed' or successful
-            if (response.ok && (data.action === 'removed' || data.success)) {
+            if (response.ok && (data.action === 'removed' || data.success)) { // Verify logical success
                 
                 // Animate removal
-                const col = btn.closest('.col');
-                if (col) {
-                    col.style.transition = 'all 0.3s ease';
-                    col.style.opacity = '0';
-                    col.style.transform = 'scale(0.9)';
+                const col = btn.closest('.col'); // Locate the parent grid column for removal animation
+                if (col) { // If column exists
+                    col.style.transition = 'all 0.3s ease'; // Apply smooth transition properties
+                    col.style.opacity = '0'; // Change opacity to hidden
+                    col.style.transform = 'scale(0.9)'; // Apply shrinking effect
                     
-                    setTimeout(() => {
-                        col.remove();
+                    setTimeout(() => { // Wait for animation to finish
+                        col.remove(); // Delete the element from the DOM entirely
                         // Update the Favorites count badge
-                        const badge = document.querySelector('.fun-card .bg-danger.rounded-pill');
-                        if (badge) {
-                            const currentText = badge.textContent.trim();
-                            const match = currentText.match(/(\d+)/);
-                            if (match) {
-                                const count = Math.max(0, parseInt(match[1]) - 1);
-                                badge.textContent = count + ' Items';
+                        const badge = document.querySelector('.fun-card .bg-danger.rounded-pill'); // Find count badge
+                        if (badge) { // If container exists
+                            const currentText = badge.textContent.trim(); // Extract raw text
+                            const match = currentText.match(/(\d+)/); // RegEx to find the numerical count
+                            if (match) { // If number found
+                                const count = Math.max(0, parseInt(match[1]) - 1); // Decrease count by one
+                                badge.textContent = count + ' Items'; // Update badge text
                                 
                                 // Clean up if empty
-                                if (count === 0) {
-                                    // Optional: reload or show 'No favorites' message if desired
-                                    // location.reload(); 
+                                if (count === 0) { // If no items remain
+                                    // Optional logic for empty state UI
                                 }
                             }
                         }
-                    }, 300);
+                    }, 300); // 300ms delay matches the CSS transition time
                 }
                 
-                if (typeof showNotification === 'function') {
-                    showNotification('Removed from favorites', 'info');
+                if (typeof showNotification === 'function') { // Check for notification utility existence
+                    showNotification('Removed from favorites', 'info'); // Alert user of success
                 }
-            } else {
-                 if (typeof showNotification === 'function') {
-                    showNotification(data.error || 'Could not remove favorite', 'danger');
+            } else { // Handle logical failures or error codes
+                 if (typeof showNotification === 'function') { // Alert if possible
+                    showNotification(data.error || 'Could not remove favorite', 'danger'); // Display error message
                 }
             }
 
-        } catch (e) {
-            console.error(e);
-            if (typeof showNotification === 'function') {
+        } catch (e) { // Handle network level exceptions
+            console.error(e); // Log console error
+            if (typeof showNotification === 'function') { // Alert user of connectivity issues
                 showNotification('Connection error', 'danger');
             }
         }
     }
 
     // Robustness: Re-apply the value when the profile modal is shown or form submitted
-    document.addEventListener('DOMContentLoaded', () => {
-      const profileModalEl = document.getElementById('profileModal');
-      if (profileModalEl) {
-        profileModalEl.addEventListener('shown.bs.modal', () => {
-          console.log('Profile modal shown, restoring avatar:', globalSelectedAvatar);
-          if (globalSelectedAvatar) {
-            updateHiddenInput(globalSelectedAvatar);
-            updateAvatarPreview(globalSelectedAvatar);
+    document.addEventListener('DOMContentLoaded', () => { // Wait for full page load
+      const profileModalEl = document.getElementById('profileModal'); // Get reference to modal element
+      if (profileModalEl) { // If modal exists in current DOM
+        profileModalEl.addEventListener('shown.bs.modal', () => { // Trigger when modal visibility is complete
+          console.log('Profile modal shown, restoring avatar:', globalSelectedAvatar); // Debug log
+          if (globalSelectedAvatar) { // If an avatar was previously selected
+            updateHiddenInput(globalSelectedAvatar); // Sync hidden field for form safety
+            updateAvatarPreview(globalSelectedAvatar); // Sync visual preview
           }
         });
       }
 
-      const form = document.querySelector('#profileModal form');
-      if (form) {
-        form.addEventListener('submit', (e) => {
-          console.log('Form submitting with avatar:', globalSelectedAvatar);
-          const input = document.getElementById('selectedAvatarInput');
-          if (input) {
-             input.value = globalSelectedAvatar || '';
+      const form = document.querySelector('#profileModal form'); // Get main edit form
+      if (form) { // If found
+        form.addEventListener('submit', (e) => { // Intercept form submission
+          console.log('Form submitting with avatar:', globalSelectedAvatar); // Log state
+          const input = document.getElementById('selectedAvatarInput'); // Check hidden field again
+          if (input) { // Ensure final value is present
+             input.value = globalSelectedAvatar || ''; // Set value to current global selection
           }
         });
       }
-    });
+    }); // End of event listener initialization
   </script>
-</body>
+</body> 
 </html>
-
 
 
 

@@ -109,6 +109,7 @@
       position: relative;
       display: flex;
       flex-direction: column;
+      cursor: pointer;
     }
 
     .product-card-premium:hover {
@@ -125,6 +126,7 @@
       align-items: center;
       justify-content: center;
       position: relative;
+      cursor: pointer;
     }
 
     .card-img-container img {
@@ -177,6 +179,7 @@
       line-height: 1.4;
       display: -webkit-box;
       -webkit-line-clamp: 2;
+      line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
       min-height: 3.2em;
@@ -404,10 +407,11 @@
                 store_name=store_name, store_price=product.store_price or product.price or '', store_image=product.store_image
                 or product.image or '', store_url=product.get('url') or store.get('website') or store.get('url') or '') %}
             
-            <div class="product-card-premium">
+            <div class="product-card-premium" onclick="window.location.href='{{ detail_url }}'">
               <!-- Favorite Button -->
               <button class="btn-favorite-premium {{ 'active' if product.get('is_favorited') else '' }}" 
-                      onclick="toggleFavorite(event, '{{ product.get('_id') or product.get('id') }}', this); event.stopPropagation();" 
+                      data-id="{{ product.get('_id') or product.get('id') }}"
+                      onclick="toggleFavorite(event, this.dataset.id, this); event.stopPropagation();" 
                       title="Add to Favorites">
                 <i class="bi bi-heart{{ '-fill' if product.get('is_favorited') else '' }}"></i>
               </button>
@@ -418,7 +422,7 @@
               </div>
 
               <!-- Product Image -->
-              <div class="card-img-container" onclick="window.location.href='{{ detail_url }}'">
+              <div class="card-img-container">
                 <img src="{{ product.store_image or product.image or '/static/images/placeholder.png' }}" 
                      alt="{{ product.name }}" 
                      onerror="this.src='/static/images/placeholder.png'">
@@ -427,7 +431,7 @@
               <!-- Product Details -->
               <div class="product-details">
                 <div class="product-cat-label">{{ product.category or 'General' }}</div>
-                <h5 class="product-name-premium" onclick="window.location.href='{{ detail_url }}'" style="cursor: pointer;">
+                <h5 class="product-name-premium">
                   {{ product.name }}
                 </h5>
                 
@@ -441,7 +445,7 @@
                     data-tier-json='{{ product.discount_tiers|tojson|forceescape if product.discount_tiers else "" }}'
                     data-offer-json='{{ product.offer|tojson|forceescape if product.offer else "" }}'
                     data-special-offer="{{ product.special_offer_type or product.offer_type or '' }}"
-                    onclick="window.showListSelector(this);">
+                    onclick="window.showListSelector(this); event.stopPropagation();">
                     <i class="bi bi-plus-circle-fill"></i> Add to List
                   </button>
                   <a href="{{ detail_url }}" class="btn btn-outline-secondary" style="border-radius: 12px; font-weight: 600;" onclick="event.stopPropagation();">

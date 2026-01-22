@@ -404,8 +404,10 @@ Used: When clicking on a product in a specific store's listing
         <!-- Image Column -->
         <div class="col-lg-6 order-1 order-lg-2">
           <div class="image-card position-relative bg-white p-5 rounded-4 shadow-lg h-100 d-flex align-items-center justify-content-center">
-            <button class="favorite-btn-floating" 
-                    onclick="toggleFavorite(event, '{{ product.get('_id') or product.get('id') }}', this)">
+            {% set fv_id = product.get('_id') or product.get('id') %}
+            <button class="favorite-btn-floating btn-favorite {{ 'active' if is_favorited else '' }}" 
+                    data-product-id="{{ fv_id }}"
+                    onclick="toggleFavorite(event, this.dataset.productId, this)">
               <i class="bi {{ 'bi-heart-fill' if is_favorited else 'bi-heart' }}"></i>
             </button>
             {% set img_url = request.args.get('store_image') or product.get('store_image') or product.get('image') or 'https://via.placeholder.com/420?text=No+Image' %}
