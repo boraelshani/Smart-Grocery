@@ -20,6 +20,9 @@ import certifi
 
 load_dotenv()
 
+# ═══════════════════════════════════════════════════════════════════════════
+# CATEGORY: INITIALIZATION
+# ═══════════════════════════════════════════════════════════════════════════
 
 class StoresModel:
     def __init__(self):
@@ -29,14 +32,16 @@ class StoresModel:
         Connection Strategy:
         We lazy-load the 'get_db' import inside method calls or init to avoid 
         circular dependency issues if 'utils.db' imports models elsewhere.
-        We grab the database handler but don't hold a persistent client connection
-        ourselves to allow Flask-PyMongo to manage the pool.
         """
         # Use centralized database connection logic
         from utils.db import get_db
         self.db = get_db()
         self._client = None
 
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # CATEGORY: LIST OPERATIONS
+    # ═══════════════════════════════════════════════════════════════════════════
 
     def list_stores(self) -> List[dict]:
         """
@@ -72,6 +77,11 @@ class StoresModel:
         """
         return self.db.stores.count_documents({})
 
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # CATEGORY: READ OPERATIONS (SINGLE STORE)
+    # ═══════════════════════════════════════════════════════════════════════════
+
     def get_store_by_name(self, name: str) -> Optional[dict]:
         """
         Lookup a store by its exact name.
@@ -79,9 +89,6 @@ class StoresModel:
         Case Sensitivity:
         This performs an exact match. If you need "Costco" to match "costco",
         use a regex query or normalized search elsewhere.
-        
-        Returns:
-            dict or None: The store document if found.
         """
         if not name:
             return None
@@ -116,6 +123,11 @@ class StoresModel:
         except Exception:
             # Return None if ID format is invalid or DB error occurs
             return None
+
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # CATEGORY: ADMIN OPERATIONS (C.U.D)
+    # ═══════════════════════════════════════════════════════════════════════════
 
     def insert_store(self, doc: dict) -> str:
         """
@@ -174,10 +186,15 @@ class StoresModel:
             self._client.close()
 
 
+# ═══════════════════════════════════════════════════════════════════════════
+# CATEGORY: MODULE EXPORTS (SINGLETON & HELPERS)
+# ═══════════════════════════════════════════════════════════════════════════
+
 # Singleton Instance to be imported by routes
 stores_model = StoresModel()
 
 # Wrapper functions for older code references
+# These provide backwards compatibility if older routes import functions directly
 def list_stores() -> List[dict]:
     return stores_model.list_stores()
 
@@ -189,4 +206,3 @@ def get_store_count() -> int:
 
 def insert_store(doc: dict):
     return stores_model.insert_store(doc)
-

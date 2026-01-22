@@ -29,13 +29,24 @@ import certifi
 load_dotenv(find_dotenv(usecwd=True), override=True)
 
 
+# ═══════════════════════════════════════════════════════════════════════════
+# CATEGORY: INITIALIZATION
+# ═══════════════════════════════════════════════════════════════════════════
+
 class NotificationsModel:
     def __init__(self):
+        """
+        Initialize Notifications Model.
+        """
         # Database dependency injection
         from utils.db import get_db
         self.db = get_db()
         self._client = None
 
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # CATEGORY: CREATE ALERTS
+    # ═══════════════════════════════════════════════════════════════════════════
 
     def create_notification(self, notification_data: dict) -> Optional[str]:
         """
@@ -45,9 +56,11 @@ class NotificationsModel:
         - type: 'deal_alert', 'price_drop', 'system'
         - priority: Used for sorting or UI highlighting (e.g., Red bell icon).
         """
+        # 1. Validate Required Fields
         if not notification_data.get('user_email') or not notification_data.get('type'):
             return None
         
+        # 2. Build Document
         notification = {
             'user_email': notification_data['user_email'],
             'type': notification_data['type'],
@@ -55,11 +68,11 @@ class NotificationsModel:
             'message': notification_data.get('message', ''),
             'action_url': notification_data.get('action_url', ''),
             'priority': notification_data.get('priority', 'normal'),
-            'read': False,
+            'read': False, # Default state
             'created_at': datetime.utcnow()
         }
         
-        # Add optional references (store as Strings or ObjectIds depending on access pattern)
+        # 3. Add Context References (Links to Product/Deal)
         if notification_data.get('product_id'):
             try:
                 notification['product_id'] = ObjectId(notification_data['product_id'])
@@ -72,12 +85,18 @@ class NotificationsModel:
         if notification_data.get('store_name'):
             notification['store_name'] = notification_data['store_name']
         
+        # 4. Insert into Database
         try:
             result = self.db.notifications.insert_one(notification)
             return str(result.inserted_id)
         except Exception as e:
             print(f"Error creating notification: {e}")
             return None
+
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # CATEGORY: READ NOTIFICATIONS (WITH HYDRATION)
+    # ═══════════════════════════════════════════════════════════════════════════
 
     def get_user_notifications(self, user_email: str, 
                               unread_only: bool = False,
@@ -90,42 +109,40 @@ class NotificationsModel:
         2. Iterate and check if `product_id` or `deal_id` exists.
         3. Perform a fresh DB lookup for that deal/product.
            Why? If a product price changed *after* the notification was sent,
-           we want the user to see the *current* state when they click it,
-           or at least have a valid link.
+           we want the user to see the *current* state when they click it.
         4. Fallback: If ID lookup fails (deal deleted?), try matching by Title string.
         """
         if not user_email:
             return []
         
+        # 1. Build Query
         query = {'user_email': user_email}
         if unread_only:
             query['read'] = False
 
-        # Filter: Only show notifications created AFTER the user joined, 
-        # or within the last 7 days standard window.
+        # 2. Filter: Only show recent notifications (e.g. User join date or 7 days)
         try:
             user = self.db.users.find_one({'email': user_email}, {'created_at': 1})
             start_date = datetime.utcnow() - timedelta(days=7)
             if user and user.get('created_at'):
                 # Use whichever is more recent: User Join Date OR 7 days ago
-                # This prevents showing "Welcome" messages to old users who re-login?
-                # Actually it prevents showing ancient notifications if we increase retention.
                 start_date = max(user['created_at'], start_date)
             query['created_at'] = {'$gte': start_date}
         except Exception as e:
             # Fallback safe default
             query['created_at'] = {'$gte': datetime.utcnow() - timedelta(days=7)}
         
+        # 3. Execute Query
         notifications = list(self.db.notifications.find(query)
                            .sort('created_at', -1)
                            .limit(limit))
         
-        # --- HYDRATION LOOP ---
+        # 4. START HYDRATION LOOP
         for n in notifications:
             if '_id' in n:
                 n['id'] = str(n['_id'])
             
-            # Strategy 1: Try to load Deal details
+            # Strategy A: Try to load Deal details
             deal = None
             if n.get('deal_id'):
                 try:
@@ -135,7 +152,7 @@ class NotificationsModel:
                 except Exception:
                     pass
             
-            # Fallback Strategy: Strings. "New Deal: Coca Cola" -> Search "Coca Cola"
+            # Fallback A: String Title Match (If deal ID invalid)
             if not deal and n.get('type') in ['deal_alert', 'deal', 'new_deal'] and n.get('title'):
                 try:
                     clean_title = n['title'].replace('New Deal:', '').strip()
@@ -147,7 +164,7 @@ class NotificationsModel:
                 except Exception:
                     pass
 
-            # Populate from Deal
+            # If Deal Found: Populate notification fields
             if deal:
                 n['product_name'] = deal.get('title') or deal.get('name')
                 n['product_image'] = deal.get('image')
@@ -161,7 +178,7 @@ class NotificationsModel:
                 if deal.get('product_id') and not n.get('product_id'):
                     n['product_id'] = str(deal['product_id'])
 
-            # Strategy 2: If no Deal found, try Product Lookup (for Price Drops)
+            # Strategy B: If no Deal found, try Product Lookup (for Price Drops)
             if (not n.get('product_name') or not n.get('product_image')) and n.get('product_id'):
                 try:
                     p_id = n['product_id']
@@ -189,198 +206,44 @@ class NotificationsModel:
         
         return notifications
 
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # CATEGORY: UTILITY OPERATIONS
+    # ═══════════════════════════════════════════════════════════════════════════
+
     def get_unread_count(self, user_email: str) -> int:
         """Get count of unread notifications."""
         if not user_email:
             return 0
         
-        # Exclude dynamic/injected types if necessary to match frontend logic
-        ignored_types = ['deal_alert', 'new_deal', 'price_drop']
-        
+        # Simple count filtering by 'read': False
+        # We perform a date check similar to get_notifications to stay consistent
         query = {
             'user_email': user_email,
             'read': False,
-            'type': {'$nin': ignored_types}
+            'created_at': {'$gte': datetime.utcnow() - timedelta(days=7)}
         }
-
-        try:
-            # Respect the join date filter same as get_notifications
-            user = self.db.users.find_one({'email': user_email}, {'created_at': 1})
-            if user and user.get('created_at'):
-                query['created_at'] = {'$gte': user['created_at']}
-        except Exception:
-            pass
-        
         return self.db.notifications.count_documents(query)
 
-    def mark_as_read(self, notification_id: str, user_email: str) -> bool:
-        """Mark specific notification as read."""
+    def mark_all_read(self, user_email: str) -> bool:
+        """Mark ALL notifications as read for a user."""
+        if not user_email: return False
+        
+        result = self.db.notifications.update_many(
+            {'user_email': user_email, 'read': False},
+            {'$set': {'read': True}}
+        )
+        return result.modified_count > 0
+
+    def mark_as_read(self, notification_id: str) -> bool:
+        """Mark a single notification as read."""
+        if not notification_id: return False
+        
         try:
-            result = self.db.notifications.update_one(
-                {'_id': ObjectId(notification_id), 'user_email': user_email},
-                {'$set': {'read': True, 'read_at': datetime.utcnow()}}
+            self.db.notifications.update_one(
+                {'_id': ObjectId(notification_id)},
+                {'$set': {'read': True}}
             )
-            return result.modified_count > 0
+            return True
         except Exception:
             return False
-
-    def mark_all_as_read(self, user_email: str) -> bool:
-        """Bulk mark all as read."""
-        if not user_email:
-            return False
-        
-        try:
-            result = self.db.notifications.update_many(
-                {'user_email': user_email, 'read': False},
-                {'$set': {'read': True, 'read_at': datetime.utcnow()}}
-            )
-            return result.modified_count > 0
-        except Exception:
-            return False
-
-    def delete_notification(self, notification_id: str, user_email: str) -> bool:
-        """Delete a notification permanently."""
-        try:
-            result = self.db.notifications.delete_one({
-                '_id': ObjectId(notification_id),
-                'user_email': user_email
-            })
-            return result.deleted_count > 0
-        except Exception:
-            return False
-
-    def delete_all_notifications(self, user_email: str) -> bool:
-        """Delete all notifications for a user."""
-        if not user_email:
-            return False
-        
-        try:
-            result = self.db.notifications.delete_many({
-                'user_email': user_email
-            })
-            return result.deleted_count > 0
-        except Exception:
-            return False
-
-    def cleanup_old_notifications(self, days: int = 7) -> int:
-        """
-        Delete ANY notifications older than specified days (read or unread).
-        Keeps database size manageable.
-        """
-        cutoff_date = datetime.utcnow() - timedelta(days=days)
-        
-        try:
-            result = self.db.notifications.delete_many({
-                'created_at': {'$lt': cutoff_date}
-            })
-            return result.deleted_count
-        except Exception as e:
-            print(f"Error cleaning up old notifications: {e}")
-            return 0
-
-    def create_deal_alert(self, user_email: str, product_id: str, 
-                         product_name: str, store_name: str, 
-                         discount_percent: int) -> Optional[str]:
-        """Convenience: Create 'New Deal' alert."""
-        return self.create_notification({
-            'user_email': user_email,
-            'type': 'deal_alert',
-            'title': f'New Deal: {product_name}',
-            'message': f'{discount_percent}% off at {store_name}!',
-            'product_id': product_id,
-            'store_name': store_name,
-            'action_url': f'/product/{product_id}',
-            'priority': 'normal'
-        })
-
-    def create_price_drop_alert(self, user_email: str, product_id: str,
-                               product_name: str, old_price: float, 
-                               new_price: float) -> Optional[str]:
-        """Convenience: Create 'Price Drop' alert."""
-        savings = old_price - new_price
-        return self.create_notification({
-            'user_email': user_email,
-            'type': 'price_drop',
-            'title': f'Price Drop: {product_name}',
-            'message': f'Now €{new_price:.2f} (was €{old_price:.2f}) - Save €{savings:.2f}!',
-            'product_id': product_id,
-            'action_url': f'/product/{product_id}',
-            'priority': 'high'
-        })
-
-    def create_system_notification(self, user_email: str, title: str, 
-                                  message: str, priority: str = 'normal') -> Optional[str]:
-        """Convenience: Create system-wide alert (e.g. 'Maintenance')."""
-        return self.create_notification({
-            'user_email': user_email,
-            'type': 'system',
-            'title': title,
-            'message': message,
-            'priority': priority
-        })
-
-    def broadcast_notification(self, notification_data: dict, user_emails: List[str] = None) -> int:
-        """
-        Send a notification to multiple users (or ALL users).
-        Used for global announcements.
-        """
-        count = 0
-        try:
-            if user_emails is None:
-                # Get all users (projection for efficiency)
-                users = list(self.db.users.find({}, {'email': 1}))
-                target_emails = [u.get('email') for u in users if u.get('email')]
-            else:
-                target_emails = user_emails
-
-            for email in target_emails:
-                data = notification_data.copy()
-                data['user_email'] = email
-                if self.create_notification(data):
-                    count += 1
-        except Exception as e:
-            print(f"Error broadcasting notification: {e}")
-        return count
-
-    def close_connection(self):
-        if self._client:
-            self._client.close()
-
-
-# Singleton instance
-notifications_model = NotificationsModel()
-
-# ════════════════════════════════════════════════════════════════════════════
-# MODULE LEVEL CONVENIENCE FUNCTIONS
-# ════════════════════════════════════════════════════════════════════════════
-
-def create_notification(notification_data: dict) -> Optional[str]:
-    return notifications_model.create_notification(notification_data)
-
-def get_user_notifications(user_email: str, unread_only: bool = False, 
-                          limit: int = 50) -> List[dict]:
-    return notifications_model.get_user_notifications(user_email, unread_only, limit)
-
-def get_unread_count(user_email: str) -> int:
-    return notifications_model.get_unread_count(user_email)
-
-def mark_as_read(notification_id: str, user_email: str) -> bool:
-    return notifications_model.mark_as_read(notification_id, user_email)
-
-def mark_all_as_read(user_email: str) -> bool:
-    return notifications_model.mark_all_as_read(user_email)
-
-def delete_notification(notification_id: str, user_email: str) -> bool:
-    return notifications_model.delete_notification(notification_id, user_email)
-
-def create_deal_alert(user_email: str, product_id: str, product_name: str,
-                     store_name: str, discount_percent: int) -> Optional[str]:
-    return notifications_model.create_deal_alert(
-        user_email, product_id, product_name, store_name, discount_percent
-    )
-
-def create_price_drop_alert(user_email: str, product_id: str, product_name: str,
-                           old_price: float, new_price: float) -> Optional[str]:
-    return notifications_model.create_price_drop_alert(
-        user_email, product_id, product_name, old_price, new_price
-    )
