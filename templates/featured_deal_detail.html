@@ -2,6 +2,12 @@
 <html lang="en">
 
 <head>
+  <!-- 
+  ===========================================
+  CATEGORY: HEAD & STYLES
+  ===========================================
+  Meta tags for responsiveness and links to external CSS libraries.
+  -->
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{ deal.get('title') or deal.get('name') }} | Featured Deal</title>
@@ -33,7 +39,10 @@
       pointer-events: none;
     }
 
-    /* Improved Back Button */
+    /* 
+    Improved Back Button 
+    Uses "Glassmorphism" style (.btn-glass-back) to look like frosted glass.
+    */
     .btn-glass-back {
       background: rgba(255, 255, 255, 0.15);
       backdrop-filter: blur(10px);
@@ -55,7 +64,11 @@
       transform: translateX(-4px);
     }
     
-    /* Page-Specific Navbar Overrides for "Live" Look */
+    /* 
+    Page-Specific Navbar Overrides for "Live" Look 
+    Explanation: The navbar starts invisible (transparent) so the purple gradient shows through.
+    JavaScript detects scrolling and adds the .scrolled class to verify readability.
+    */
     .navbar {
       position: fixed !important;
       top: 0;
@@ -200,7 +213,13 @@
 </head>
 
 <body>
-  <!-- Navigation -->
+  <!-- 
+  ===========================================
+  CATEGORY: NAVIGATION BAR
+  ===========================================
+  The main menu at the top. Uses Bootstrap classes for layout.
+  The 'active' logic highlights the current page tab.
+  -->
   <nav class="navbar navbar-expand-lg navbar-premium">
     <div class="container">
       <a class="navbar-brand d-flex align-items-center" href="{{ url_for('main.home') }}">
@@ -261,6 +280,12 @@
   </nav>
 
   <section class="product-detail-hero">
+    <!-- 
+    ===========================================
+    CATEGORY: HERO SECTION (HEADER)
+    ===========================================
+    The big purple top section containing the Back button, Breadcrumbs (path), and Title.
+    -->
     <div class="container position-relative" style="z-index: 1;">
       <div class="d-flex justify-content-start mb-3">
         <a href="{{ url_for('main.featured_deals_page') }}" class="btn-glass-back">
@@ -269,6 +294,10 @@
       </div>
 
       <nav aria-label="breadcrumb" class="mb-3">
+        <!-- 
+        Active Breadcrumbs: 
+        Shows path (Home > Deals > Product) to help users navigate back easily.
+        -->
         <ol class="breadcrumb">
           {% set trail = deal.get('category_path') if deal.get('category_path') else [] %}
           {% if not trail and deal.get('category') %}
@@ -287,15 +316,28 @@
         </ol>
       </nav>
 
+      <!-- 
+      Category Badge: 
+      Meta info displayed prominently to give context (e.g., "Frozen Food").
+      -->
       <div class="mb-4">
         <h1 class="display-4 fw-bold text-white mb-2">{{ deal.get('title') or deal.get('name') }}</h1>
         {% if deal.get('category') or (deal.get('category_path') and deal.get('category_path')|length) %}
+        <!-- 
+        Logic: Only show the category badge if a category actually exists in the data. 
+        It prioritizes the last item in a category path (like "Food > Frozen" -> shows "Frozen")
+        -->
         <span class="category-badge mt-1">{{ (deal.get('category_path') and deal.get('category_path')[-1]) or deal.get('category') }}</span>
         {% endif %}
       </div>
 
       <div class="row g-4">
-        <!-- Deal Info Column -->
+        <!-- 
+        ===========================================
+        CATEGORY: DEAL INFO COLUMN (LEFT/TOP)
+        ===========================================
+        Contains all text details: Price, Description, Size, and Buttons.
+        -->
         <div class="col-lg-6 order-2 order-lg-1">
           <div class="glass-card p-4">
         
@@ -309,6 +351,7 @@
               </div>
                <!-- Discount Badge -->
                {% if deal.get('discount_label') or deal.get('discount_percent') %}
+               <!-- Shows visual tags like "50% OFF" only if that data exists -->
                <span class="badge bg-white text-primary deal-badge-lg shadow-sm">
                  {{ deal.get('discount_label') or (deal.get('discount_percent') ~ '% OFF') }}
                </span>
@@ -316,6 +359,7 @@
             </div>
 
             <!-- Meta Chips -->
+            <!-- Extra details like "Unit Size" or secondary tags displayed as small pills -->
             <div class="d-flex flex-wrap gap-2 mb-4">
                {% if deal.get('unit') %}
                  <span class="badge bg-white-glass text-white border border-white-50"><i class="bi bi-box2 me-1"></i> {{ deal.get('unit') }}</span>
@@ -326,6 +370,7 @@
             </div>
 
             <div class="mb-4">
+              <!-- Description Section: Handles cases where description might be missing -->
               <div class="fw-bold text-white mb-2"><i class="bi bi-file-text me-2"></i>Description</div>
               <div class="text-white opacity-75">
                 {% if deal.get('description') %}
@@ -343,6 +388,10 @@
                </div>
             </div>
 
+            <!-- 
+            Variable Prep: extracting deal logic in Python syntax before using it.
+            We check if it's a special "Buy X Get Y" offer to pass correct data to the button.
+            -->
             {% set offer_obj = deal.get('offer') if deal.get('offer') is mapping else None %}
             {% set offer_x = offer_obj.x if offer_obj is not none else (deal.get('buy_quantity') or
             deal.get('multibuy_buy') or '') %}
@@ -351,6 +400,11 @@
             {% set offer_type = offer_obj.type if offer_obj is not none else ('buyXgetY' if offer_x and offer_y else '')
             %}
             <div class="d-flex flex-row gap-3">
+              <!-- 
+              Action Button:
+              The data-* attributes hold all the product info.
+              JavaScript reads these when you click "Add to List".
+              -->
               <button type="button" class="btn btn-light fw-bold flex-fill py-3 shadow-lg" style="color: #7c3aed;"
                 data-id="{{ deal.get('id') or deal.get('title','') }}"
                 data-title="{{ deal.get('title') or deal.get('name','') }}" data-price="{{ deal.get('price','') }}"
@@ -362,6 +416,10 @@
                 <i class="bi bi-cart-plus-fill me-2"></i> Add to List
               </button>
               
+              <!-- 
+              Store Link Logic:
+              If we have a real URL, use it. If not, create a Google Search link so the button always works.
+              -->
               {% set store_url = deal.get('url') or deal.get('link') or deal.get('product_url') or deal.get('store_url') %}
               {% if not store_url %}
                  {% set store_url = 'https://www.google.com/search?q=' ~ (deal.get('title') or deal.get('name') or 'Grocery Deal') ~ ' ' ~ (deal.get('store') or '') %}
@@ -375,9 +433,19 @@
           </div>
         </div>
 
-        <!-- Image Column -->
+        <!-- 
+        ===========================================
+        CATEGORY: IMAGE COLUMN (RIGHT/BOTTOM)
+        ===========================================
+        Displays the large product image and the Heart icon.
+        -->
         <div class="col-lg-6 order-1 order-lg-2">
           <div class="image-card position-relative bg-white p-5 rounded-4 shadow-lg h-100 d-flex align-items-center justify-content-center">
+            <!-- 
+            Favorite Button:
+            Absolute positioned heart icon.
+            'toggleFavorite' JS function handles the server update without page reload.
+            -->
             <button class="favorite-btn btn-favorite position-absolute {{ 'active' if is_favorited else '' }}" 
                     data-product-id="{{ deal.get('id') or deal.get('_id') }}"
                     style="top: 1.5rem; right: 1.5rem; width: 45px; height: 45px; border-radius: 50%; border:none; background: #fff; color: #ff5e62; font-size:1.5rem; box-shadow: 0 5px 15px rgba(0,0,0,0.1);"
@@ -392,6 +460,12 @@
     </div>
   </section>
 
+  <!-- 
+  ===========================================
+  CATEGORY: FOOTER & SCRIPTS
+  ===========================================
+  Standard copyright footer and loading of JavaScript files.
+  -->
   <footer class="text-center py-4 bg-light border-top">
     <p class="mb-0 text-muted">&copy; 2025 Smart Grocery Team</p>
   </footer>
@@ -399,14 +473,15 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="{{ url_for('static', filename='js/script.js') }}"></script>
   <script>
+    // Simple inline script to handle navbar transparency on scroll
     document.addEventListener('DOMContentLoaded', function() {
       const navbar = document.querySelector('.navbar');
       if(navbar) {
         window.addEventListener('scroll', () => {
           if (window.scrollY > 50) {
-            navbar.classList.add('scrolled');
+            navbar.classList.add('scrolled'); // Add purple background
           } else {
-            navbar.classList.remove('scrolled');
+            navbar.classList.remove('scrolled'); // Make transparent again
           }
         });
       }

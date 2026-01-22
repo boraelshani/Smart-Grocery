@@ -38,6 +38,7 @@ Styling:
   ═══════════════════════════════════════════════════════════════════════════
   -->
   <meta charset="UTF-8">
+   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Smart Grocery | Featured Deals</title>
   
@@ -113,6 +114,8 @@ Styling:
   ═══════════════════════════════════════════════════════════════════════════
   Standard Bootstrap navbar with Jinja logic to highlight the active page.
   Uses 'request.endpoint' to determine which link gets the 'active' class.
+  Explanation: Checks "Where am I?" If the current URL is /featured-deals, 
+  it adds the CSS class active to the button so the user knows which page they are on.
   -->
   <nav class="navbar navbar-expand-lg navbar-premium">
     <div class="container">
@@ -156,6 +159,11 @@ Styling:
           </li>
           
           <!-- Compare Link -->
+          <!-- 
+          Active State Logic: 
+          Checks if 'compare' is in the URL path OR if the endpoint matches.
+          This ensures the tab stays highlighted even on sub-pages.
+          -->
           <li class="nav-item">
             <a class="nav-link {% if 'compare' in request.path or request.endpoint == 'main.compare_prices' %}active{% endif %}" href="{{ url_for('main.compare_prices') }}">
               <i class="bi bi-arrow-left-right me-1"></i> Compare
@@ -173,7 +181,11 @@ Styling:
           <li class="nav-item ms-lg-1">
             <a class="nav-link nav-icon-btn position-relative {% if 'notifications' in request.path %}active{% endif %}" href="{{ url_for('main.notifications_page') }}" aria-label="Notifications">
               <i class="bi bi-bell fs-5"></i>
-              <!-- Jinja Logic: Only show badge if unread count > 0 -->
+              <!-- 
+              Jinja Logic for Badge: 
+              Only renders the red span if unread_notifications_count > 0.
+              This prevents an empty red dot from appearing.
+              -->
               {% if (unread_notifications_count or 0) > 0 %}
               <span class="position-absolute badge rounded-pill bg-danger" style="font-size: 0.65rem; padding: 0.45em 0.7em; top: -5px; right: -10px; border: 2px solid white; box-shadow: 0 4px 10px rgba(220, 53, 69, 0.4); min-width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;">
                 {{ unread_notifications_count }}
@@ -198,6 +210,8 @@ Styling:
   HERO HEADER
   ═══════════════════════════════════════════════════════════════════════════
   Decorative header area with abstract shapes and introductory text.
+  Visual Flair: Uses absolute positioned divs (.bg-shape) to create the background pattern 
+  behind the text.
   -->
   <header class="premium-hero">
     <!-- Animated shapes defined in CSS (see style.css) -->
@@ -229,14 +243,20 @@ Styling:
           <!-- Search Icon -->
           <span class="ps-4 pe-2 text-muted" style="font-size: 1.2rem;"><i class="bi bi-search"></i></span>
           
-          <!-- SEARCH INPUT: ID 'featured-search-input' targeted by script.js -->
+          <!-- 
+          SEARCH INPUT: 
+          ID 'featured-search-input' is crucial - the script.js file listens for 'input' events 
+          on this specific ID to trigger potential real-time client-side filtering.
+          value="{{ search_query or '' }}" ensures the input stays filled after a page reload.
+          -->
           <input id="featured-search-input" type="text" class="form-control border-0 shadow-none bg-transparent"
             placeholder="Search by product name..." autocomplete="off" value="{{ search_query or '' }}"
             style="outline: none !important; box-shadow: none !important; font-size: 1.1rem; height: 100%;">
 
           <!-- 
           FILTER DROPDOWN
-          Bootstrap dropdown component containing form controls 
+          Bootstrap dropdown component containing form controls.
+          Acts as the control center: filtering by Category, Store, Price, or Sort Order.
           -->
           <div class="dropdown ms-2 me-1">
             <button class="btn btn-smooth rounded-pill px-4" type="button" id="filtersDropdownBtn"
@@ -320,6 +340,7 @@ Styling:
     <!-- 
     CATEGORY CHIPS ROW
     Quick filters displayed as pill buttons below the search bar.
+    It loops through categories: {% for cat_obj in cats %} to create a button for every category available in the database.
     -->
     <div class="category-chip-row mt-4 mb-3 position-relative" style="z-index: 1;">
       <!-- 'All' Button -->
@@ -343,6 +364,8 @@ Styling:
   RESULTS STATUS
   ═══════════════════════════════════════════════════════════════════════════
   Shows "Showing 1-30 of 150 Active Deals" logic.
+  Variables like 'showing_start', 'showing_end', and 'total_products' are calculated 
+  in Python before being sent here.
   -->
   <section class="container mt-2">
     <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
@@ -371,6 +394,8 @@ Styling:
   SEARCH RESULTS CONTAINER
   Initially hidden 'display:none', revealed by JS when search is active.
   Populated dynamically without page reload.
+  Why Hidden? We only show this when the user types in the search bar. 
+  Otherwise, we show the standard "Main Deals Grid" below.
   -->
   <section class="container py-4" id="featured-search-results-section" style="display:none;">
     <h3 class="mb-3">Search Results</h3>
@@ -382,6 +407,9 @@ Styling:
   MAIN DEALS GRID
   ═══════════════════════════════════════════════════════════════════════════
   Loop through the 'deals' list passed from backend and render cards.
+  The Loop: {% for p in deals %} - If the list contains 20 items, this block runs 20 times.
+  This loop duplicates the HTML card code for every single product in that list. 
+  If there are 20 products, it creates 20 cards.
   -->
   <section class="container py-5">
     <div class="row g-4" id="products-grid">
@@ -390,6 +418,8 @@ Styling:
         <!-- 
         PRODUCT CARD CONTAINER
         Includes data attributes for JS filtering (data-store, data-price, etc.)
+        Data Attributes: Prints the price/category deeply into HTML (invisible to user)
+        so JavaScript can read them later for instant filtering.
         -->
         <div class="col-md-6 col-lg-4 product-card" 
           data-stores='{{ p.get("stores")|tojson }}'
@@ -446,6 +476,7 @@ Styling:
               'free' in offer|lower or '+' in offer)) %}
               
               <!-- TITLE & BADGE -->
+              <!-- Badges: Shows a badge (like "20% OFF") only {% if discount_label %} exists. -->
               <div class="d-flex justify-content-between align-items-start mb-3">
                 <h5 class="card-title mb-0 fw-bold">{{ p.get('title') or p.get('name','') }}</h5>
                 {% if discount_label %}
@@ -459,6 +490,7 @@ Styling:
               <p class="text-muted small mb-2">{{ p.get('store') or p.get('source','') }}</p>
               
               <!-- PRICE DISPLAY LOGIC -->
+              <!-- Smart Display Logic: Checks 'is_buy_get_deal' to decide between showing "Buy 1 Get 1" vs "Was/Now" prices. -->
               <div class="mb-3">
                 {% if is_buy_get_deal %}
                 <div class="fw-bold fs-5"
@@ -478,7 +510,11 @@ Styling:
               
               <!-- ACTION BUTTONS -->
               <div class="mt-auto d-flex flex-column gap-2">
-                <!-- Add to List Button -->
+                <!-- 
+                Add to List Button:
+                Has onclick="event.stopPropagation()" to prevent clicking the button from also clicking the whole card.
+                Passes all product details (id, title, price, image) so script.js can read them.
+                -->
                 <button type="button" class="btn btn-premium btn-premium-add w-100"
                   data-id="{{ pid }}" data-title="{{ p.get('title') or p.get('name','') }}"
                   data-price="{{ p.get('price','') }}" data-original-price="{{ p.get('original_price','') }}"
@@ -502,7 +538,11 @@ Styling:
       {% endfor %}
       {% else %}
       
-      <!-- EMPTY STATE -->
+      <!-- 
+      EMPTY STATE 
+      Displayed only if the 'deals' list is empty or None.
+      Provides user feedback instead of just showing a blank page.
+      -->
       <div class="col-12 text-center py-5">
         <div class="empty-state-icon mb-3">
           <i class="bi bi-basket text-muted" style="font-size: 4rem; opacity: 0.3;"></i>
@@ -519,6 +559,7 @@ Styling:
     ═══════════════════════════════════════════════════════════════════════════
     Standard Bootstrap pagination component.
     Logic handles Previous/Next buttons and page numbers.
+    It calculates which page numbers to show using math logic {% set start_page = ... %}
     -->
     {% if total_pages and total_pages > 1 %}
     <div class="custom-pagination-container">
@@ -558,6 +599,8 @@ Styling:
 
   <!-- 
   FOOTER & SCRIPTS
+  Loads Bootstrap JS for interactive components (modals, dropdowns).
+  Loads our custom 'script.js' which handles the shopping list logic and search.
   -->
   <footer class="text-center py-4 bg-light border-top">
     <p class="mb-0 text-muted">&copy; 2025 Smart Grocery Team</p>
@@ -582,6 +625,10 @@ Styling:
   </script>
 
   <!-- Global List Selector Modal -->
+  <!-- 
+  This modal is hidden by default. 
+  It pops up via JavaScript when a user needs to choose which shopping list to add an item to.
+  -->
   <div class="modal fade" id="globalListSelectorModal" tabindex="-1" aria-labelledby="globalListSelectorModalLabel"
     aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">

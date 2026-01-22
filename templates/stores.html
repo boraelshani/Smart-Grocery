@@ -16,7 +16,17 @@ Data: Fetches store list and products by store from database
 <!DOCTYPE html>
 <html lang="en">
 
+
 <head>
+  <!-- 
+  ===========================================
+  CATEGORY: HEAD SECTION
+  - This part handles the page settings.
+  - It loads the 'Bootstrap' library for layout.
+  - It loads our own 'style.css' for colors.
+  - It contains custom CSS specifically for this page (the purple gradient).
+  ===========================================
+  -->
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Smart Grocery | Stores</title>
@@ -342,7 +352,14 @@ Data: Fetches store list and products by store from database
 </head>
 
 <body>
-  <!-- Navigation -->
+  <!-- 
+  ===========================================
+  CATEGORY: NAVIGATION BAR
+  - This is the top menu of the website.
+  - It uses 'Jinja2' logic (the {% if %} parts) to show which page is active.
+  - It links to Home, Stores, Deals, Compare Prices, Shopping Lists, etc.
+  ===========================================
+  -->
   <nav class="navbar navbar-expand-lg navbar-premium">
     <div class="container">
       <a class="navbar-brand d-flex align-items-center" href="{{ url_for('main.home') }}">
@@ -402,11 +419,25 @@ Data: Fetches store list and products by store from database
     </div>
   </nav>
 
-  <!-- Premium Hero Section -->
+  
+  <!-- 
+  ===========================================
+  CATEGORY: HERO SECTION
+  - The big colorful banner at the top.
+  - It uses CSS animations (gradientBG) to look modern.
+  ===========================================
+  -->
   <section class="hero-gradient text-center">
     <div class="bg-shape shape-1"></div>
     <div class="bg-shape shape-2"></div>
-    <div class="bg-shape shape-3"></div>
+  
+  <!-- 
+  ===========================================
+  CATEGORY: STATS SECTION
+  - Displays quick numbers (Statistics).
+  - Uses Jinja2 {{ stores|length }} to count how many stores we have.
+  ===========================================
+ /div>
     <div class="container hero-content">
       <h1 class="display-3 fw-bold mb-3 text-white">Discover Local Stores</h1>
       <p class="lead mb-0 fs-4 text-white opacity-90">Browse your favorite grocery stores and explore their products</p>
@@ -440,7 +471,14 @@ Data: Fetches store list and products by store from database
           </div>
         </div>
         <div class="col-md-4">
-          <div class="stat-card">
+       
+  ===========================================
+  CATEGORY: MAIN CONTENT (STORES GRID)
+  - This is where we show the list of stores.
+  - We use a 'For Loop' ({% for store in stores %}) to make a card for each store.
+  - If there are no stores, we show a 'No stores available' message.
+  ===========================================
+ rd">
             <div class="stat-icon" style="background: #fff5f5; color: #f56565;">
               <i class="bi bi-lightning-fill"></i>
             </div>
@@ -508,7 +546,14 @@ Data: Fetches store list and products by store from database
             </div>
           </div>
         </div>
-      </div>
+  
+  <!-- 
+  ===========================================
+  CATEGORY: FOOTER & SCRIPTS
+  - simple copyright message at the bottom.
+  - Loads JavaScript files to make the page interactive.
+  ===========================================
+ 
       {% endfor %}
       {% else %}
       <div class="col-12">

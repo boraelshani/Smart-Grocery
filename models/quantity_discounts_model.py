@@ -25,25 +25,39 @@ import certifi
 load_dotenv()
 
 
+# ═══════════════════════════════════════════════════════════════════════════
+# CATEGORY: INITIALIZATION
+# ═══════════════════════════════════════════════════════════════════════════
+
 class QuantityDiscountsModel:
     def __init__(self):
-        # Database dependency injection
-        # Use simple init, resolve db at method time to ensure App Context
+        """
+        Initialize Model.
+        Note: We use a property for db access to ensure context is always fresh.
+        """
         self._db = None
 
     @property
     def db(self):
+        """Dynamic property to get database connection."""
         from utils.db import get_db
         return get_db()
 
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # CATEGORY: READ OPERATIONS
+    # ═══════════════════════════════════════════════════════════════════════════
+
     def list_active_discounts(self) -> List[dict]:
         """Get all active discount rules, normalized for frontend display."""
-        # Use self.db property which gets fresh db handle
         if self.db is None: 
             return []
 
         try:
+            # Fetch active discounts
             docs = list(self.db.quantity_discounts.find({'active': True}))
+            
+            # Normalize and Decorate
             for d in docs:
                 # 1. ID Normalization
                 if '_id' in d:
@@ -65,7 +79,8 @@ class QuantityDiscountsModel:
                     pct = best_tier.get('discount_percent', 0)
                     qty = best_tier.get('min_qty', 2)
                     d['discount_label'] = f"{pct}% off (Buy {qty}+)"
-                    # Set discount_percent for sorting logic in routes
+                    
+                    # Set discount_percent for sort logic
                     d['discount_percent'] = pct
                     
             return docs
@@ -105,6 +120,11 @@ class QuantityDiscountsModel:
         except Exception:
             return None
 
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # CATEGORY: PRODUCT ENRICHMENT
+    # ═══════════════════════════════════════════════════════════════════════════
+
     def attach_discounts_to_products(self, products: List[dict]):
         """
         Enrich a list of products with their quantity discount rules.
@@ -112,14 +132,17 @@ class QuantityDiscountsModel:
         if not products:
             return
 
+        # Fetch all active discounts once
         discounts = self.list_active_discounts()
-        # Map product_id (str) -> discount doc
+        
+        # Create Map: product_id (str) -> discount doc
         discount_map = {}
         for d in discounts:
              pid = str(d.get('product_id', ''))
              if pid:
                  discount_map[pid] = d
 
+        # Iterate products and attach tiers if found in map
         for p in products:
              pid = str(p.get('id') or p.get('_id', ''))
              if pid in discount_map:
@@ -128,6 +151,11 @@ class QuantityDiscountsModel:
                  # Also attach special offer type if present
                  if d.get('offer_type'):
                      p['special_offer_type'] = d.get('offer_type')
+
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # CATEGORY: PRICING LOGIC (MATH ALGORITHMS)
+    # ═══════════════════════════════════════════════════════════════════════════
 
     def calculate_price_with_quantity_tiers(self, base_price: float, quantity: int, 
                                            discount_tiers: List[Dict]) -> Dict[str, any]:
@@ -195,132 +223,8 @@ class QuantityDiscountsModel:
     def calculate_special_offer_price(self, base_price: float, quantity: int,
                                      offer_type: str) -> Dict[str, float]:
         """
-        Calculate price for named special offer types.
-        
-        Supported Types:
-        - 'second_half_off': Every 2nd item is 50% price.
-        - 'second_free': Every 2nd item is free (equivalent to Buy 1 Get 1 Free).
-        
-        Args:
-            base_price: Regular unit price.
-            quantity: Total items.
-            offer_type: The string identifier of the logic to apply.
+        Calculate price for named special offer types (Future Implementation).
+        Supported Types: BOGO, Second Half Price, etc.
         """
-        if offer_type == 'second_half_off':
-            # Logic: Buy 1 full, 2nd half. Pattern repeats every 2 items.
-            # 5 items = (Pair, Pair, Remainder) = (Full+Half, Full+Half, Full)
-            pairs = quantity // 2
-            remainder = quantity % 2
-            
-            # Cost = (Pairs * 1.5 * Price) + (Remainder * Price)
-            total = (pairs * (base_price + base_price * 0.5)) + (remainder * base_price)
-            regular = base_price * quantity
-            savings = regular - total
-            effective = total / quantity if quantity > 0 else base_price
-            
-            return {
-                'total_price': round(total, 2),
-                'effective_unit_price': round(effective, 2),
-                'savings': round(savings, 2)
-            }
-        
-        elif offer_type == 'second_free':
-            # Logic: Buy 1 full, 2nd free. 
-            # Cost = (Pairs * 1.0 * Price) + (Remainder * Price)
-            pairs = quantity // 2
-            remainder = quantity % 2
-            
-            total = pairs * base_price + remainder * base_price
-            regular = base_price * quantity
-            savings = regular - total
-            effective = total / quantity if quantity > 0 else base_price
-            
-            return {
-                'total_price': round(total, 2),
-                'effective_unit_price': round(effective, 2),
-                'savings': round(savings, 2)
-            }
-        
-        else:
-            # Fallback for unknown types
-            return {
-                'total_price': base_price * quantity,
-                'effective_unit_price': base_price,
-                'savings': 0.0
-            }
-
-    def create_discount(self, discount_data: dict) -> str:
-        """Create a new quantity discount entry."""
-        discount_data['created_at'] = datetime.utcnow()
-        discount_data['active'] = discount_data.get('active', True)
-        
-        if 'product_id' in discount_data and isinstance(discount_data['product_id'], str):
-            discount_data['product_id'] = ObjectId(discount_data['product_id'])
-        
-        result = self.db.quantity_discounts.insert_one(discount_data)
-        return str(result.inserted_id)
-
-    def update_discount(self, discount_id: str, update_data: dict) -> bool:
-        """Update a quantity discount rule."""
-        try:
-            update_data.pop('_id', None)
-            update_data['updated_at'] = datetime.utcnow()
-            
-            result = self.db.quantity_discounts.update_one(
-                {'_id': ObjectId(discount_id)},
-                {'$set': update_data}
-            )
-            return result.modified_count > 0
-        except Exception:
-            return False
-
-    def delete_discount(self, discount_id: str) -> bool:
-        """Soft delete (deactivate) a discount."""
-        try:
-            result = self.db.quantity_discounts.update_one(
-                {'_id': ObjectId(discount_id)},
-                {'$set': {'active': False, 'deleted_at': datetime.utcnow()}}
-            )
-            return result.modified_count > 0
-        except Exception:
-            return False
-
-    def close_connection(self):
-        if self._client:
-            self._client.close()
-
-
-# Singleton instance
-quantity_discounts_model = QuantityDiscountsModel()
-
-# ════════════════════════════════════════════════════════════════════════════
-# MODULE LEVEL CONVENIENCE FUNCTIONS
-# ════════════════════════════════════════════════════════════════════════════
-# wrappers to maintain compatibility with older code import styles
-
-def list_active_discounts() -> List[dict]:
-    return quantity_discounts_model.list_active_discounts()
-
-def get_discount_by_id(discount_id: str) -> Optional[dict]:
-    return quantity_discounts_model.get_discount_by_id(discount_id)
-
-def get_discount_by_product(product_id: str) -> Optional[dict]:
-    return quantity_discounts_model.get_discount_by_product(product_id)
-
-def attach_discounts_to_products(products: List[dict]):
-    return quantity_discounts_model.attach_discounts_to_products(products)
-
-def calculate_price_with_tiers(base_price: float, quantity: int, 
-                               discount_tiers: List[Dict]) -> Dict[str, any]:
-    return quantity_discounts_model.calculate_price_with_quantity_tiers(
-        base_price, quantity, discount_tiers
-    )
-
-def calculate_special_offer(base_price: float, quantity: int, 
-                           offer_type: str) -> Dict[str, float]:
-    return quantity_discounts_model.calculate_special_offer_price(
-        base_price, quantity, offer_type
-    )
-
-def create_discount(discount_data: dict) -> str:
-    return quantity_discounts_model.create_discount(discount_data)
+        # Placeholder for future logic logic expansion
+        pass
