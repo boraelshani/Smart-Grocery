@@ -356,7 +356,7 @@ Data: Fetches store list and products by store from database
   ===========================================
   CATEGORY: NAVIGATION BAR
   - This is the top menu of the website.
-  - It uses 'Jinja2' logic (the {% if %} parts) to show which page is active.
+  - It uses 'Jinja2' logic (the if blocks) to show which page is active.
   - It links to Home, Stores, Deals, Compare Prices, Shopping Lists, etc.
   ===========================================
   -->
@@ -471,14 +471,15 @@ Data: Fetches store list and products by store from database
           </div>
         </div>
         <div class="col-md-4">
-       
-  ===========================================
-  CATEGORY: MAIN CONTENT (STORES GRID)
-  - This is where we show the list of stores.
-  - We use a 'For Loop' ({% for store in stores %}) to make a card for each store.
-  - If there are no stores, we show a 'No stores available' message.
-  ===========================================
- rd">
+          <!-- 
+          ===========================================
+          CATEGORY: MAIN CONTENT (STORES GRID)
+          - This is where we show the list of stores.
+          - We use a 'For Loop' (For each store...) to make a card for each store.
+          - If there are no stores, we show a 'No stores available' message.
+          ===========================================
+          -->
+          <div class="stat-card">
             <div class="stat-icon" style="background: #fff5f5; color: #f56565;">
               <i class="bi bi-lightning-fill"></i>
             </div>
@@ -546,14 +547,7 @@ Data: Fetches store list and products by store from database
             </div>
           </div>
         </div>
-  
-  <!-- 
-  ===========================================
-  CATEGORY: FOOTER & SCRIPTS
-  - simple copyright message at the bottom.
-  - Loads JavaScript files to make the page interactive.
-  ===========================================
- 
+      </div>
       {% endfor %}
       {% else %}
       <div class="col-12">

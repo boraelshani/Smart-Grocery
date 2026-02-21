@@ -372,3 +372,7 @@ class ProductsModel:
                     seen_ids.add(pid)
                     
         return recommended_products
+
+
+# Initialize the singleton instance
+products_model = ProductsModel()

@@ -174,3 +174,35 @@ class FavoritesModel:
         except Exception as e:
             print(f'ERROR fetching favorites: {e}')
             return []
+
+
+    def is_favorited(self, user_email: str, product_id: str) -> bool:
+        """
+        Check if a product is in the user's favorites list.
+        """
+        if not user_email or not product_id or self.db is None:
+            return False
+            
+        try:
+            count = self.db.favorites.count_documents({
+                'user_email': user_email,
+                'product_id': str(product_id)
+            })
+            return count > 0
+        except Exception as e:
+            print(f'ERROR checking is_favorited: {e}')
+            return False
+
+
+# Initialize the singleton instance
+favorites_model = FavoritesModel()
+
+# Module-level aliases for backward compatibility
+def get_user_favorites(user_email):
+    return favorites_model.get_user_favorites(user_email)
+
+def is_favorited(user_email, product_id):
+    return favorites_model.is_favorited(user_email, product_id)
+
+def add_favorite(user_email, product_id, product_data):
+    return favorites_model.add_favorite(user_email, product_id, product_data)

@@ -228,3 +228,7 @@ class QuantityDiscountsModel:
         """
         # Placeholder for future logic logic expansion
         pass
+
+
+# Initialize the singleton instance
+quantity_discounts_model = QuantityDiscountsModel()

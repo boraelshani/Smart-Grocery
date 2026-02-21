@@ -226,3 +226,7 @@ class MultibuyOffersModel:
             # Fallback: Return original products if enrichment crashes
             print(f"Error attaching offers: {e}")
             return products
+
+
+# Initialize the singleton instance
+multibuy_offers_model = MultibuyOffersModel()

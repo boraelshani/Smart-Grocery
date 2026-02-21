@@ -458,14 +458,13 @@
 		}
 	</style>
 </head>
-
+<!-- 
   ===========================================
   CATEGORY: NAVIGATION BAR
   - The top menu (Home, Stores, Deals, etc.).
   - Uses Jinja2 checks to highlight the 'Lists' tab as active.
   ===========================================
-  -->
-  <!-- 
+-->
 <body>
   <!-- Navigation -->
   <nav class="navbar navbar-expand-lg navbar-premium">
@@ -735,11 +734,6 @@
 					{% set raw_price = (it.price_val if it.price_val is defined else (it.price if it.price is defined
 					else '')) %}
 					{% set raw_price = (raw_price|string).replace('$','').replace('€','').replace(',','') if raw_price
-					<!-- 
-					ROBUST DATA EXTRACTION:
-					- The backend might send data in different formats (direct properties or nested 'offer' objects).
-					- These checks ensure we find the discount info (Buy X Get Y) regardless of data shape.
-					-->
 					is not none else '' %}
 					{% set unit = (it.price_val if it.price_val is defined else (raw_price|float if raw_price is defined
 					else 0.0)) %}

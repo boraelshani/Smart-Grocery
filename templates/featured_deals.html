@@ -340,7 +340,7 @@ Styling:
     <!-- 
     CATEGORY CHIPS ROW
     Quick filters displayed as pill buttons below the search bar.
-    It loops through categories: {% for cat_obj in cats %} to create a button for every category available in the database.
+    It loops through categories to create a button for every category available in the database.
     -->
     <div class="category-chip-row mt-4 mb-3 position-relative" style="z-index: 1;">
       <!-- 'All' Button -->
@@ -407,7 +407,7 @@ Styling:
   MAIN DEALS GRID
   ═══════════════════════════════════════════════════════════════════════════
   Loop through the 'deals' list passed from backend and render cards.
-  The Loop: {% for p in deals %} - If the list contains 20 items, this block runs 20 times.
+  The Loop: &#123;% for p in deals %&#125; - If the list contains 20 items, this block runs 20 times.
   This loop duplicates the HTML card code for every single product in that list. 
   If there are 20 products, it creates 20 cards.
   -->
@@ -476,7 +476,7 @@ Styling:
               'free' in offer|lower or '+' in offer)) %}
               
               <!-- TITLE & BADGE -->
-              <!-- Badges: Shows a badge (like "20% OFF") only {% if discount_label %} exists. -->
+              <!-- Badges: Shows a badge (like "20% OFF") only if discount_label exists. -->
               <div class="d-flex justify-content-between align-items-start mb-3">
                 <h5 class="card-title mb-0 fw-bold">{{ p.get('title') or p.get('name','') }}</h5>
                 {% if discount_label %}
@@ -559,7 +559,7 @@ Styling:
     ═══════════════════════════════════════════════════════════════════════════
     Standard Bootstrap pagination component.
     Logic handles Previous/Next buttons and page numbers.
-    It calculates which page numbers to show using math logic {% set start_page = ... %}
+    It calculates which page numbers to show using math logic.
     -->
     {% if total_pages and total_pages > 1 %}
     <div class="custom-pagination-container">

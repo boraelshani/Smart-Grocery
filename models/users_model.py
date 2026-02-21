@@ -25,6 +25,8 @@ from dotenv import load_dotenv
 from typing import List, Optional
 import certifi
 import bcrypt
+from datetime import datetime
+import uuid
 
 load_dotenv()
 
@@ -258,6 +260,106 @@ def update_shopping_list(email, new_list):
     return False
 
 
+def get_user_lists(email):
+    """
+    Retrieve all shopping lists for a user.
+    Returns a dict with 'lists' array and 'active_list_id'.
+    """
+    user = get_user_by_email(email)
+    if not user:
+        return {'lists': [], 'active_list_id': None}
+        
+    # Default structure if 'lists' field doesn't exist
+    if 'lists' not in user:
+        # Check if there is a legacy 'shopping_list' and migrate it
+        legacy_list = user.get('shopping_list', [])
+        default_lists = []
+        active_id = None
+        
+        if legacy_list:
+            import uuid
+            list_id = str(uuid.uuid4())
+            default_lists.append({
+                'id': list_id,
+                'name': 'My Shopping List',
+                'items': legacy_list,
+                'created_at': datetime.utcnow() if get_db() else None
+            })
+            active_id = list_id
+            
+        return {'lists': default_lists, 'active_list_id': active_id}
+        
+    return {
+        'lists': user.get('lists', []),
+        'active_list_id': user.get('active_list_id')
+    }
+
+
+def create_shopping_list(email: str, name: str) -> str:
+    """Create a new shopping list and return its ID."""
+    list_id = str(uuid.uuid4())
+    new_list = {
+        'id': list_id,
+        'name': name,
+        'items': [],
+        'created_at': datetime.utcnow()
+    }
+    
+    if get_db() is not None:
+        get_db().users.update_one(
+            {'email': email},
+            {
+                '$push': {'lists': new_list},
+                '$set': {'active_list_id': list_id}
+            }
+        )
+    elif getattr(mock_models, 'users', None):
+        user = mock_models.users.get(email)
+        if user:
+            user.setdefault('lists', []).append(new_list)
+            user['active_list_id'] = list_id
+            
+    return list_id
+
+def update_user(email: str, update_data: dict) -> bool:
+    """Update arbitrary fields on a user document."""
+    if get_db() is not None:
+        result = get_db().users.update_one(
+            {'email': email},
+            {'$set': update_data}
+        )
+        return result.modified_count > 0
+        
+    if getattr(mock_models, 'users', None):
+        user = mock_models.users.get(email)
+        if user:
+            user.update(update_data)
+            return True
+    return False
+
+def update_list_items(email: str, list_id: str, items: list) -> bool:
+    """Update the items in a specific shopping list."""
+    if get_db() is not None:
+        result = get_db().users.update_one(
+            {'email': email, 'lists.id': list_id},
+            {'$set': {'lists.$.items': items}}
+        )
+        return result.modified_count > 0
+
+    if getattr(mock_models, 'users', None):
+        user = mock_models.users.get(email)
+        if user and 'lists' in user:
+            for lst in user['lists']:
+                if lst['id'] == list_id:
+                    lst['items'] = items
+                    return True
+    return False
+
+def set_active_list(email: str, list_id: str) -> bool:
+    """Set the active shopping list for a user."""
+    return update_user(email, {'active_list_id': list_id})
+
+
 # ═══════════════════════════════════════════════════════════════════════════
 # CATEGORY: CLASS WRAPPER (FOR NAMESPACE)
 # ═══════════════════════════════════════════════════════════════════════════
@@ -287,6 +389,11 @@ class UsersModel:
         
     def update_shopping_list(self, email, new_list):
         return update_shopping_list(email, new_list)
+        
+    def get_user_lists(self, email):
+        """Get all shopping lists for a user"""
+        user_lists = get_user_lists(email)
+        return user_lists
 
 # Export Singleton
 users_model = UsersModel()

@@ -247,3 +247,52 @@ class NotificationsModel:
             return True
         except Exception:
             return False
+
+
+    def cleanup_old_notifications(self, days=7):
+        """
+        Delete notifications older than X days.
+        """
+        if self.db is None: return False
+        
+        try:
+            cutoff = datetime.utcnow() - timedelta(days=days)
+            res = self.db.notifications.delete_many({'created_at': {'$lt': cutoff}})
+            return getattr(res, 'deleted_count', 0) > 0
+        except Exception:
+            return False
+
+    def delete_notification(self, notification_id: str, user_email: str) -> bool:
+        """Delete a notification."""
+        try:
+             # Add user_email check for security
+             result = self.db.notifications.delete_one({'_id': ObjectId(notification_id), 'user_email': user_email})
+             return result.deleted_count > 0
+        except Exception:
+             return False
+
+
+# Initialize the singleton instance
+notifications_model = NotificationsModel()
+
+# Module-level aliases
+def cleanup_old_notifications(days=7):
+    return notifications_model.cleanup_old_notifications(days)
+
+def get_user_notifications(user_email, unread_only=False, limit=50):
+    return notifications_model.get_user_notifications(user_email, unread_only, limit)
+
+def get_unread_count(user_email):
+    return notifications_model.get_unread_count(user_email)
+
+def mark_all_read(user_email):
+    return notifications_model.mark_all_read(user_email)
+
+def mark_as_read(notification_id):
+    return notifications_model.mark_as_read(notification_id)
+
+def create_notification(data):
+    return notifications_model.create_notification(data)
+
+def delete_notification(notification_id, user_email):
+    return notifications_model.delete_notification(notification_id, user_email)

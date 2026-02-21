@@ -170,3 +170,7 @@ class FeaturedDealsModel:
             if '_id' in d:
                 d['id'] = str(d['_id'])
         return docs
+
+
+# Initialize the singleton instance
+featured_deals_model = FeaturedDealsModel()

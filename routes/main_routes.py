@@ -283,6 +283,11 @@ def home(): # Define the view function for the dashboard
         """Removes spaces and special characters for fuzzy matching (e.g., 'Lidl' matches 'Lidl US')"""
         return re.sub(r'[^a-zA-Z0-9]', '', str(name or '').lower()) # Strip non-alphanumeric chars
 
+    def _norm_compact(name):
+        """Prepare store name for substring matching (remove spaces/punctuation)"""
+        s = _norm_store(name)
+        return re.sub(r'[^a-z0-9]', '', s)
+
     # Initialize a dictionary that defaults to 0 for missing keys
     store_counts = defaultdict(int) # Create integer-default map
     total_product_count = 0 # Initialize global catalog item counter
