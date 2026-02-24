@@ -1469,8 +1469,8 @@ def shopping_list(): # Logic for cart and inventory view
         # Reset 'is_new' status for items in the currently active list view
         requested_list_id = request.args.get('list_id') or lists_data.get('active_list_id') # Determine focused list
         if user_email and requested_list_id: # Valid target?
-            from models.users_model import mark_items_as_seen # Status helper
-            mark_items_as_seen(user_email, requested_list_id) # Update status in DB
+            from models.users_model import users_model # Status helper
+            users_model.mark_items_as_seen(user_email, requested_list_id) # Update status in DB
             # Refresh data to reflect the cleared status flags in the UI
             lists_data = get_user_lists(user_email) # Re-fetch
             all_lists = lists_data.get('lists', []) # Sync array
@@ -1556,8 +1556,12 @@ def shopping_list(): # Logic for cart and inventory view
         # 8. SANITIZATION
         # Convert BSON/ObjectId to JSON safe strings for Jinja2
         all_lists = helpers.sanitize_mongo_doc(all_lists) # Clean all
-        if active_list: # Clean active
-            active_list = helpers.sanitize_mongo_doc(active_list) # Clean active list
+
+        # Re-fetch active_list from the sanitized all_lists to ensure consistency
+        if active_list_id:
+            active_list = next((l for l in all_lists if str(l.get('id')) == str(active_list_id)), all_lists[0] if all_lists else None)
+        else:
+            active_list = all_lists[0] if all_lists else None
 
         # 9. ITEM AGGREGATION & PRICE SYNC
         # Deep-enrich each item in the shopping list with live catalog prices

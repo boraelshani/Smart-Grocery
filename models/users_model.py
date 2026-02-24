@@ -360,6 +360,87 @@ def set_active_list(email: str, list_id: str) -> bool:
     return update_user(email, {'active_list_id': list_id})
 
 
+def add_item_to_list(email: str, list_id: str, item: dict) -> bool:
+    """Add an item to a specific list."""
+    if get_db() is not None:
+        result = get_db().users.update_one(
+            {'email': email, 'lists.id': list_id},
+            {'$push': {'lists.$.items': item}}
+        )
+        return result.modified_count > 0
+        
+    if getattr(mock_models, 'users', None):
+        user = mock_models.users.get(email)
+        if user and 'lists' in user:
+            for lst in user['lists']:
+                if lst['id'] == list_id:
+                    lst.setdefault('items', []).append(item)
+                    return True
+    return False
+
+
+def remove_item_from_list(email: str, list_id: str, item_name: str) -> bool:
+    """Remove an item by name from a specific list."""
+    if get_db() is not None:
+        # First, pull the item from the array
+        # Note: We match by name for simplicity
+        result = get_db().users.update_one(
+            {'email': email, 'lists.id': list_id},
+            {'$pull': {'lists.$.items': {'name': item_name}}}
+        )
+        return result.modified_count > 0
+        
+    if getattr(mock_models, 'users', None):
+        user = mock_models.users.get(email)
+        if user and 'lists' in user:
+            for lst in user['lists']:
+                if lst['id'] == list_id:
+                    items = lst.get('items', [])
+                    # Filter out items with matching name
+                    new_items = [i for i in items if not (isinstance(i, dict) and i.get('name') == item_name) and not (isinstance(i, str) and i == item_name)]
+                    if len(items) != len(new_items):
+                        lst['items'] = new_items
+                        return True
+    return False
+
+
+def mark_items_as_seen(email: str, list_id: str) -> bool:
+    """Clear 'is_new' flag from all items in a list."""
+    # 1. Mongo
+    if get_db() is not None:
+        # Fetch the user document to process in memory (easiest for nested array logic)
+        user = get_db().users.find_one({'email': email})
+        if not user or 'lists' not in user:
+            return False
+            
+        updated = False
+        lists = user.get('lists', [])
+        for lst in lists:
+            if lst.get('id') == list_id:
+                for item in lst.get('items', []):
+                    if isinstance(item, dict) and item.get('is_new'):
+                        item['is_new'] = False # or pop it
+                        updated = True
+                break # Found list
+        
+        if updated:
+            # Save the specific list back
+            return update_list_items(email, list_id, lst['items'])
+        return True # Nothing to update is still success
+        
+    # 2. Mock
+    if getattr(mock_models, 'users', None):
+        user = mock_models.users.get(email)
+        if user and 'lists' in user:
+            for lst in user['lists']:
+                if lst['id'] == list_id:
+                    for item in lst.get('items', []):
+                        if isinstance(item, dict) and item.get('is_new'):
+                            item['is_new'] = False
+                    return True
+    return False
+
+
 # ═══════════════════════════════════════════════════════════════════════════
 # CATEGORY: CLASS WRAPPER (FOR NAMESPACE)
 # ═══════════════════════════════════════════════════════════════════════════
@@ -394,6 +475,18 @@ class UsersModel:
         """Get all shopping lists for a user"""
         user_lists = get_user_lists(email)
         return user_lists
+    
+    def add_item_to_list(self, email, list_id, item):
+        return add_item_to_list(email, list_id, item)
+        
+    def remove_item_from_list(self, email, list_id, item_name):
+        return remove_item_from_list(email, list_id, item_name)
+    
+    def mark_items_as_seen(self, email, list_id):
+        return mark_items_as_seen(email, list_id)
+        
+    def set_active_list(self, email, list_id):
+        return set_active_list(email, list_id)
 
 # Export Singleton
 users_model = UsersModel()

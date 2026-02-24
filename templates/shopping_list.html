@@ -599,7 +599,7 @@
 							</h5>
 							<div class="text-muted small">
 								<i class="bi bi-calendar3 me-1"></i>
-								{{ shopping_list.created_at[:10] if shopping_list.created_at else 'No date' }}
+								{{ (shopping_list.created_at|string)[:10] if shopping_list.created_at else 'No date' }}
 							</div>
 						</div>
 						<div class="d-flex gap-2">

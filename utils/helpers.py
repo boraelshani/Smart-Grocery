@@ -178,6 +178,8 @@ def sanitize_mongo_doc(doc):
     if isinstance(doc, Decimal128):
         # Convert to string first to avoid precision issues, then float
         return float(str(doc))
+    if isinstance(doc, datetime):
+        return doc.isoformat()
         
     # 4. Return standard types (str, int, bool) as-is
     return doc
