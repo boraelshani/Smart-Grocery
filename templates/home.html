@@ -132,6 +132,131 @@ Shown at route: / (The default entry point for authenticated users)
       box-shadow: 0 20px 25px -5px rgba(124, 58, 237, 0.5); /* Enhanced glow on hover */
     }
 
+    /* Live Search Results Dropdown */
+    .search-box {
+      /* Added position relative for dropdown absolute positioning */
+      position: relative;
+      z-index: 1001;
+    }
+    
+    .search-results-dropdown {
+      position: absolute;
+      top: calc(100% + 15px);
+      left: 0;
+      right: 0;
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(0, 0, 0, 0.05); /* Slight border for separation */
+      max-height: 400px;
+      overflow-y: auto;
+      z-index: 1000;
+      display: none; /* Hidden by default */
+      text-align: left; /* Fix global alignment */
+      animation: fadeIn 0.2s ease-out; /* Match premium feel */
+      padding: 10px 0; /* Vertical spacing */
+    }
+
+    /* Target webkit scrollbar specifically for the results box */
+    .search-results-dropdown::-webkit-scrollbar {
+      width: 8px;
+    }
+    .search-results-dropdown::-webkit-scrollbar-track {
+      background: rgba(0,0,0,0.02);
+      border-radius: 0 20px 20px 0;
+    }
+    .search-results-dropdown::-webkit-scrollbar-thumb {
+      background: rgba(0,0,0,0.1);
+      border-radius: 4px;
+    }
+
+    .search-result-item {
+      display: flex; /* Format inline item layout */
+      align-items: center;
+      padding: 12px 20px; /* Comfortable hit area */
+      text-decoration: none !important; /* Remove a-tag styling */
+      color: var(--premium-dark); /* Global dark color */
+      transition: all 0.2s ease;
+      gap: 15px; /* Spacing between image and text */
+      cursor: pointer;
+    }
+
+    .search-result-item a {
+      color: inherit;
+      text-decoration: none !important;
+      display: flex;
+      align-items: center;
+      width: 100%;
+      gap: 15px;
+    }
+
+    .search-result-item:hover {
+      background: rgba(124, 58, 237, 0.05); /* Light purple highlight */
+      color: var(--premium-purple); /* Active state brand color */
+      text-decoration: none !important;
+    }
+
+    .search-result-item:hover .search-result-name {
+      text-decoration: underline;
+    }
+
+    .search-result-img {
+      width: 45px;
+      height: 45px;
+      object-fit: contain;
+      border-radius: 8px;
+      background: white; /* Avoid transparent fallback issues */
+      border: 1px solid rgba(0,0,0,0.05); /* Outline framing */
+      padding: 3px;
+    }
+
+    .search-result-info {
+      display: flex;
+      flex-direction: column;
+      flex: 1; /* Claim available space */
+      overflow: hidden; /* Hide overflowing text */
+    }
+
+    .search-result-name {
+      font-weight: 600;
+      font-size: 1rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis; /* Trim long titles gracefully */
+    }
+
+    .search-result-price {
+      font-size: 0.9rem;
+      color: var(--premium-purple);
+      font-weight: 700;
+      margin-top: 2px;
+    }
+
+    .search-result-category {
+      font-size: 0.8rem;
+      color: #6c757d; /* Standard muted text */
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .search-empty-state {
+      padding: 20px;
+      text-align: center;
+      color: #6c757d;
+      font-size: 0.95rem;
+    }
+
+    .search-loading {
+      padding: 20px;
+      text-align: center;
+      color: var(--premium-purple);
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
     /* Stats Section with Glassmorphism */
     .stats-section {
       margin-top: -3.5rem; /* Overlaps with circular hero bottom for visual integration */
@@ -642,10 +767,15 @@ Shown at route: / (The default entry point for authenticated users)
       
       <div class="search-box mx-auto"> <!-- Centered Global Search Input -->
         <i class="bi bi-search ms-3 text-muted fs-5"></i> <!-- Decorative magnifying glass -->
-        <input type="text" placeholder="Search brands, products, or stores..." id="hero-search"> <!-- Interactive user query field -->
+        <div style="flex:1; position:relative; display:flex;">
+          <input type="text" placeholder="Search brands, products, or stores..." id="hero-search" autocomplete="off"> <!-- Interactive user query field -->
+        </div>
         <button onclick="handleHeroSearch()" class="me-1"> <!-- Trigger for JavaScript search handler -->
           Explore Deals
         </button>
+        <!-- The live results absolute container -->
+        <div class="search-results-dropdown" id="search-results">
+        </div>
       </div>
 
       <div class="mt-5 d-flex justify-content-center gap-4 flex-wrap opacity-75"> <!-- Key feature value tags -->
@@ -883,7 +1013,7 @@ Shown at route: / (The default entry point for authenticated users)
                 {% endif %}
               </div>
               <div class="d-grid gap-2"> <!-- Multiple action row -->
-                <button type="button" class="btn btn-premium-action w-100" 
+                <button type="button" class="btn btn-premium btn-premium-add w-100" 
                         data-id="{{ deal_id }}" 
                         data-name="{{ deal.get('title') or deal.get('name') }}" 
                         data-price="{{ deal.get('price') }}"
@@ -894,7 +1024,7 @@ Shown at route: / (The default entry point for authenticated users)
                         data-offer-type="{{ offer_type }}"
                         data-offer-x="{{ offer_x }}"
                         data-offer-y="{{ offer_y }}"> <!-- Primary Add button with huge payload for list persistence -->
-                  <i class="bi bi-plus-circle me-1"></i> Add to List <!-- "Quick-add" label -->
+                  <i class="bi bi-cart-plus-fill me-1"></i> Add to List <!-- "Quick-add" label -->
                 </button>
                 <a href="{{ url_for('main.featured_deal_detail', deal_id=deal_id) }}" class="btn btn-premium btn-premium-view btn-sm w-100"> <!-- Link to logic page -->
                   <i class="bi bi-info-circle me-1"></i> View Details <!-- Education label -->
@@ -966,7 +1096,7 @@ Shown at route: / (The default entry point for authenticated users)
               </div>
 
               <div class="d-grid gap-2 mt-auto"> <!-- Action buttons -->
-                <button type="button" class="btn btn-premium-action w-100" 
+                <button type="button" class="btn btn-premium btn-premium-add w-100" 
                         data-id="{{ pid }}" 
                         data-name="{{ product.name }}" 
                         data-price="{{ product.price or store_data.get('price') or '0.00' }}"
@@ -978,7 +1108,7 @@ Shown at route: / (The default entry point for authenticated users)
                         data-offer-x="{{ offer_x }}"
                         data-offer-y="{{ offer_y }}"
                         onclick="event.stopPropagation(); window.showListSelector(this);"> <!-- Added stopPropagation and handler -->
-                  <i class="bi bi-plus-circle me-1"></i> Add to List
+                  <i class="bi bi-cart-plus-fill me-1"></i> Add to List
                 </button>
                 <a href="{{ url_for('main.product_detail', product_id=pid) }}" class="btn btn-premium btn-premium-view btn-sm w-100" onclick="event.stopPropagation();"> <!-- Detail navigation -->
                   <i class="bi bi-eye me-1"></i> Details
@@ -1084,7 +1214,7 @@ Shown at route: / (The default entry point for authenticated users)
               <div class="product-price">€{{ '%.2f'|format((product.price or 0)|float) }}</div> <!-- Price label -->
               
               <div class="d-grid gap-2"> <!-- Action area -->
-                <button type="button" class="btn btn-premium-action w-100" 
+                <button type="button" class="btn btn-premium btn-premium-add w-100" 
                         data-name="{{ product.name }}"
                         data-price="{{ product.price or '0.00' }}"
                         data-original-price="{{ product.original_price or '' }}"
@@ -1095,7 +1225,7 @@ Shown at route: / (The default entry point for authenticated users)
                         data-offer-type="{{ offer_type }}"
                         data-offer-x="{{ offer_x }}"
                         data-offer-y="{{ offer_y }}"> <!-- Global List adder UI trigger -->
-                  <i class="bi bi-plus-circle me-1"></i> Add to List
+                  <i class="bi bi-cart-plus-fill me-1"></i> Add to List
                 </button>
                 {% if product.id %}
                 <a href="{{ detail_url }}" class="btn btn-premium btn-premium-view btn-sm w-100" onclick="event.stopPropagation();"> <!-- Full details navigator -->
@@ -1168,7 +1298,7 @@ Shown at route: / (The default entry point for authenticated users)
               <div class="product-price">€{{ store_data.get('price') or product.get('best_price') or product.get('price') or '0.00' }}</div> <!-- Recommendation price -->
               
               <div class="d-grid gap-2"> <!-- Execution layer -->
-                <button type="button" class="btn btn-premium-action w-100" onclick="handleAddToCart(event, this)"
+                <button type="button" class="btn btn-premium btn-premium-add w-100" onclick="handleAddToCart(event, this)"
                         data-name="{{ product.get('name', 'Product') }}"
                         data-price="{{ store_data.get('price') or product.get('best_price') or product.get('price') or '0.00' }}"
                         data-original-price="{{ product.original_price or '' }}"
@@ -1179,7 +1309,7 @@ Shown at route: / (The default entry point for authenticated users)
                         data-offer-type="{{ offer_type }}"
                         data-offer-x="{{ offer_x }}"
                         data-offer-y="{{ offer_y }}"> <!-- Global List adder UI trigger -->
-                  <i class="bi bi-plus-circle me-1"></i> Add to List
+                  <i class="bi bi-cart-plus-fill me-1"></i> Add to List
                 </button>
                 <a href="{{ detail_url }}" class="btn btn-premium btn-premium-view btn-sm w-100" onclick="event.stopPropagation();"> <!-- Full details view Navigator -->
                   <i class="bi bi-eye me-1"></i> Details
@@ -1281,6 +1411,112 @@ Shown at route: / (The default entry point for authenticated users)
         window.location.href = `{{ url_for('main.compare_prices') }}?search=${encodeURIComponent(searchTerm)}`; // Redirect to search route with params
       }
     }
+
+    // Live search auto-complete functionality
+    document.addEventListener('DOMContentLoaded', function() {
+      const searchInput = document.getElementById('hero-search');
+      const resultsContainer = document.getElementById('search-results');
+      let debounceTimer = null;
+
+      // Handle Enter key cleanly to avoid redirecting multiple times
+      searchInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          window.handleHeroSearch();
+        }
+      });
+
+      searchInput.addEventListener('input', function(e) {
+        const query = e.target.value.trim();
+        
+        clearTimeout(debounceTimer);
+        
+        if (query.length < 2) {
+          resultsContainer.style.display = 'none';
+          resultsContainer.innerHTML = '';
+          return;
+        }
+
+        // Show loading state
+        resultsContainer.style.display = 'block';
+        resultsContainer.innerHTML = '<div class="search-loading"><div class="spinner-border spinner-border-sm" role="status"></div><span class="ms-2">Searching...</span></div>';
+
+        debounceTimer = setTimeout(() => {
+          fetch(`/api/search-products?q=${encodeURIComponent(query)}`)
+            .then(response => response.json())
+            .then(data => {
+              resultsContainer.innerHTML = '';
+              
+              if (!data.items || data.items.length === 0) {
+                resultsContainer.innerHTML = '<div class="search-empty-state">No products found. Try different keywords.</div>';
+                return;
+              }
+
+              // Take top 8 results to keep dropdown clean
+              const resultsDisplay = data.items.slice(0, 8);
+              
+              resultsDisplay.forEach(item => {
+                // Get display price from item logic (copied from product mapping handling)
+                let price = item.price;
+                if (!price && item.cheapest && item.cheapest.price) price = item.cheapest.price;
+                if (!price && item.stores && item.stores.length > 0 && item.stores[0].price) price = item.stores[0].price;
+                
+                const displayPrice = price ? `$${parseFloat(price).toFixed(2)}` : '';
+                
+                // Construct safe image url
+                const imageSrc = item.image || item.image_url || 'https://via.placeholder.com/60';
+                
+                // Build link target directly to product info
+                let targetUrl = item.url;
+                if (!targetUrl) {
+                    targetUrl = `/product/${item.id || item._id}`;
+                    if (item.id === undefined && item._id === undefined) {
+                        targetUrl = `{{ url_for('main.compare_prices') }}?search=${encodeURIComponent(item.name || query)}`;
+                    }
+                }
+
+                // Badges for deals/stores
+                let badgeHtml = '';
+                if (item.is_deal) badgeHtml = '<span class="badge bg-danger ms-2" style="font-size: 0.7em;">Deal</span>';
+                if (item.is_store) badgeHtml = '<span class="badge bg-primary ms-2" style="font-size: 0.7em;">Store</span>';
+
+                // Append item HTML
+                const itemDiv = document.createElement('a');
+                itemDiv.href = targetUrl;
+                itemDiv.className = 'search-result-item';
+                
+                itemDiv.innerHTML = `
+                  <img src="${imageSrc}" alt="Product" class="search-result-img" onerror="this.src='https://via.placeholder.com/60'">
+                  <div class="search-result-info">
+                    <div class="search-result-name">${item.name || item.product_name || 'Unknown Product'}${badgeHtml}</div>
+                    ${displayPrice ? `<div class="search-result-price">${displayPrice}</div>` : ''}
+                  </div>
+                `;
+                
+                resultsContainer.appendChild(itemDiv);
+              });
+              
+            })
+            .catch(error => {
+              console.error('Error fetching search results:', error);
+              resultsContainer.innerHTML = '<div class="search-empty-state text-danger">Error loading results. Please try again.</div>';
+            });
+        }, 300); // 300ms debounce
+      });
+
+      // Hide dropdown when clicking outside
+      document.addEventListener('click', function(e) {
+        if (!searchInput.contains(e.target) && !resultsContainer.contains(e.target)) {
+          resultsContainer.style.display = 'none';
+        }
+      });
+      // Show again if clicking back into valid search
+      searchInput.addEventListener('focus', function() {
+        if (searchInput.value.trim().length >= 2 && resultsContainer.innerHTML !== '') {
+          resultsContainer.style.display = 'block';
+        }
+      });
+    });
   </script>
   <!-- Third party logic integration (Bootstrap core) -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

@@ -931,7 +931,8 @@ def compare_prices():
                 {'name': search_regex},
                 {'title': search_regex},
                 {'category': search_regex},
-                {'store': search_regex}
+                {'stores.store': search_regex},
+                {'stores.name': search_regex}
             ]
         
         # 4. EXECUTE MODEL QUERY
@@ -2156,7 +2157,43 @@ def api_search_products(): # JSON search endpoint for dynamic UI components
                 if not _has_price(d): # Essential info missing?
                     # skip legacy/broken entries that don't have usable price info
                     continue # Ignore
-                results.append(helpers.sanitize_mongo_doc(d)) # Sanitize BSON and add to final list
+                
+                p_doc = dict(d)
+                p_doc['url'] = f"/product/{p_doc.get('_id') or p_doc.get('id')}"
+                results.append(helpers.sanitize_mongo_doc(p_doc)) # Sanitize BSON and add to final list
+                
+            # SUPPLEMENT WITH DEALS
+            try:
+                import models.featured_deals_model as featured_deals_model_local
+                all_deals = featured_deals_model_local.list_featured_deals()
+                for d in all_deals:
+                    name = d.get('title') or d.get('name') or ''
+                    if q.lower() in name.lower() or q.lower() in (d.get('store') or '').lower():
+                        deal_doc = dict(d)
+                        deal_doc['is_deal'] = True
+                        deal_doc['name'] = name
+                        deal_doc['url'] = f"/featured-deal/{str(deal_doc['_id'])}"
+                        deal_doc['price'] = deal_doc.get('deal_price') or deal_doc.get('price')
+                        results.append(helpers.sanitize_mongo_doc(deal_doc))
+            except Exception as e:
+                pass
+
+            # SUPPLEMENT WITH STORES
+            try:
+                import models.stores_model as stores_model_local
+                all_s = stores_model_local.list_stores()
+                for s in all_s:
+                    name = s.get('name') or ''
+                    if q.lower() in name.lower():
+                        store_doc = dict(s)
+                        store_doc['is_store'] = True
+                        store_doc['name'] = name
+                        store_doc['url'] = f"/store/{name}"
+                        store_doc['image'] = s.get('image') or s.get('logo') or s.get('logo_url') or 'https://via.placeholder.com/60'
+                        results.append(helpers.sanitize_mongo_doc(store_doc))
+            except Exception as e:
+                pass
+
         else: # FALLBACK: DB Disconnected
             # fallback to in-memory search (log this so it's visible)
             print('WARNING: api_search_products used fallback in-memory products (DB unavailable)') # Warn

@@ -161,7 +161,7 @@ GOAL: Styles for the Navbar, including the dynamic "Glass" effect.
 }
 
 /* Active Tab Styles */
-.navbar-premium .nav-link.active {
+.navbar-premium .nav-link:not(.nav-icon-btn):not(.nav-profile-btn).active {
   background: rgba(255, 255, 255, 0.15) !important;
   border: 1px solid rgba(255, 255, 255, 0.25) !important;
   border-radius: 12px;
@@ -170,7 +170,7 @@ GOAL: Styles for the Navbar, including the dynamic "Glass" effect.
   padding-right: 1rem !important;
 }
 
-.navbar-premium.scrolled .nav-link.active {
+.navbar-premium.scrolled .nav-link:not(.nav-icon-btn):not(.nav-profile-btn).active {
   background: #f5f3ff !important;
   border: 1px solid #7c3aed !important;
   color: #7c3aed !important;
@@ -252,8 +252,8 @@ GOAL: Styles for the Navbar, including the dynamic "Glass" effect.
 
 .nav-link i { font-size: 1.1rem; }
 .nav-link:hover {
-  color: #667eea !important;
-  background: rgba(102, 126, 234, 0.05) !important;
+  color: #7c3aed !important;
+  background: rgba(124, 58, 237, 0.05) !important;
 }
 
 /* Profile Menu Special Buttons */
@@ -927,3 +927,10 @@ GOAL: Adjustments for mobile devices.
 
 /* End of Stylesheet */
 
+
+.navbar-premium .nav-link:not(.nav-icon-btn):not(.nav-profile-btn):hover:not(.active) { color: white !important; background: rgba(255,255,255,0.1) !important; border-radius: 12px; }
+.navbar-premium.scrolled .nav-link:not(.nav-icon-btn):not(.nav-profile-btn):hover:not(.active) { color: #7c3aed !important; background: rgba(124,58,237,0.05) !important; border-radius: 12px; }
+.navbar-premium .nav-icon-btn.nav-link { color: #7c3aed !important; }
+.navbar-premium .nav-profile-btn.nav-link { color: white !important; }
+/* Hover rules for premium nav */
+.navbar-premium .nav-icon-btn.nav-link:hover { color: #5b21b6 !important; background: white !important; }

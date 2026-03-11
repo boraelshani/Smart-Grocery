@@ -111,7 +111,7 @@ def get_db():
         # 'get_default_database' uses the DB name from the connection string
         # e.g. mongodb://.../smart_grocery -> smart_grocery
         db = client.get_default_database()
-        if db: return db
+        if db is not None: return db
     except Exception:
         pass
         

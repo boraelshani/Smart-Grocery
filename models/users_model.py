@@ -283,7 +283,7 @@ def get_user_lists(email):
                 'id': list_id,
                 'name': 'My Shopping List',
                 'items': legacy_list,
-                'created_at': datetime.utcnow() if get_db() else None
+                'created_at': datetime.utcnow() if get_db() is not None else None
             })
             active_id = list_id
             
@@ -382,15 +382,23 @@ def add_item_to_list(email: str, list_id: str, item: dict) -> bool:
 def remove_item_from_list(email: str, list_id: str, item_name: str) -> bool:
     """Remove an item by name from a specific list."""
     if get_db() is not None:
-        # First, pull the item from the array
-        # Note: We match by name for simplicity
-        result = get_db().users.update_one(
+        db = get_db()
+        # First try to pull if it's a dictionary with 'name'
+        res1 = db.users.update_one(
             {'email': email, 'lists.id': list_id},
             {'$pull': {'lists.$.items': {'name': item_name}}}
         )
-        return result.modified_count > 0
-        
-    if getattr(mock_models, 'users', None):
+        if res1.modified_count > 0:
+            return True
+            
+        # Try to pull if it's a simple string (legacy)
+        res2 = db.users.update_one(
+            {'email': email, 'lists.id': list_id},
+            {'$pull': {'lists.$.items': item_name}}
+        )
+        return res2.modified_count > 0
+
+    if getattr(mock_models, 'users', None) is not None:
         user = mock_models.users.get(email)
         if user and 'lists' in user:
             for lst in user['lists']:
@@ -401,6 +409,47 @@ def remove_item_from_list(email: str, list_id: str, item_name: str) -> bool:
                     if len(items) != len(new_items):
                         lst['items'] = new_items
                         return True
+    return False
+
+def rename_shopping_list(email: str, list_id: str, new_name: str) -> bool:
+    """Rename a specific shopping list."""
+    if get_db() is not None:
+        result = get_db().users.update_one(
+            {'email': email, 'lists.id': list_id},
+            {'$set': {'lists.$.name': new_name}}
+        )
+        return result.modified_count > 0
+        
+    if getattr(mock_models, 'users', None) is not None:
+        user = mock_models.users.get(email)
+        if user and 'lists' in user:
+            for lst in user['lists']:
+                if lst['id'] == list_id:
+                    lst['name'] = new_name
+                    return True
+    return False
+
+def delete_shopping_list(email: str, list_id: str) -> bool:
+    """Delete a specific shopping list."""
+    if get_db() is not None:
+        result = get_db().users.update_one(
+            {'email': email},
+            {'$pull': {'lists': {'id': list_id}}}
+        )
+        get_db().users.update_one(
+            {'email': email, 'active_list_id': list_id},
+            {'$unset': {'active_list_id': ''}}
+        )
+        return result.modified_count > 0
+        
+    if getattr(mock_models, 'users', None) is not None:
+        user = mock_models.users.get(email)
+        if user and 'lists' in user:
+            initial_len = len(user['lists'])
+            user['lists'] = [l for l in user['lists'] if l['id'] != list_id]
+            if user.get('active_list_id') == list_id:
+                user['active_list_id'] = None
+            return len(user['lists']) < initial_len
     return False
 
 

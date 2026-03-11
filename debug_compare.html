@@ -22,7 +22,7 @@ Data: Fetches all products and their store prices from database
   <title>Smart Grocery | Compare Prices</title> <!-- Tab title -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"> <!-- Core UI framework -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css"> <!-- iconography set -->
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=9"> <!-- Main site-wide styles -->
+  <link rel="stylesheet" href="/static/style.css?v=9"> <!-- Main site-wide styles -->
   <style>
     /* 
      * COMPARE PAGE STYLES
@@ -310,7 +310,7 @@ Data: Fetches all products and their store prices from database
   <!-- Navigation Header (Responsive Bootstrap Navbar) -->
   <nav class="navbar navbar-expand-lg navbar-premium"> <!-- Premium variant with custom styling -->
     <div class="container"> <!-- Inner alignment wrapper -->
-      <a class="navbar-brand d-flex align-items-center" href="{{ url_for('main.home') }}"> <!-- Home link -->
+      <a class="navbar-brand d-flex align-items-center" href="/"> <!-- Home link -->
         <div class="brand-icon me-3"> <!-- Icon container -->
           <i class="bi bi-cart-check-fill fs-5"></i> <!-- Marketplace check-mark icon -->
         </div>
@@ -320,45 +320,41 @@ Data: Fetches all products and their store prices from database
         <span class="navbar-toggler-icon"></span>
       </button>
       <div class="collapse navbar-collapse" id="navbarNav"> <!-- Nav segment that collapses on mobile -->
-        {% set cart_count = shopping_list_count or 0 %} <!-- Local count of user items -->
+         <!-- Local count of user items -->
         <ul class="navbar-nav ms-auto align-items-center"> <!-- Links pushed to right edge -->
           <li class="nav-item">
-            <a class="nav-link {% if request.endpoint == 'main.home' %}active{% endif %}" href="{{ url_for('main.home') }}"> <!-- Conditional activity -->
+            <a class="nav-link " href="/"> <!-- Conditional activity -->
               <i class="bi bi-house-door me-1"></i> Home
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link {% if 'stores' in request.path or request.endpoint == 'main.stores_page' %}active{% endif %}" href="{{ url_for('main.stores_page') }}">
+            <a class="nav-link " href="/stores">
               <i class="bi bi-shop me-1"></i> Stores
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link {% if 'featured-deals' in request.path or request.endpoint == 'main.featured_deals_page' %}active{% endif %}" href="{{ url_for('main.featured_deals_page') }}">
+            <a class="nav-link " href="/featured-deals">
               <i class="bi bi-tags me-1"></i> Deals
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link {% if 'compare' in request.path or request.endpoint == 'main.compare_prices' %}active{% endif %}" href="{{ url_for('main.compare_prices') }}">
+            <a class="nav-link active" href="/compare-prices">
               <i class="bi bi-arrow-left-right me-1"></i> Compare
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link d-flex align-items-center position-relative {% if 'shopping-list' in request.path or request.endpoint == 'main.shopping_list' %}active{% endif %}" href="{{ url_for('main.shopping_list') }}">
+            <a class="nav-link d-flex align-items-center position-relative " href="/shopping-list">
               <i class="bi bi-list-check me-1"></i> Lists
             </a>
           </li>
           <li class="nav-item ms-lg-1">
-            <a class="nav-link nav-icon-btn position-relative {% if 'notifications' in request.path %}active{% endif %}" href="{{ url_for('main.notifications_page') }}" aria-label="Notifications">
+            <a class="nav-link nav-icon-btn position-relative " href="/notifications" aria-label="Notifications">
               <i class="bi bi-bell fs-5"></i>
-              {% if (unread_notifications_count or 0) > 0 %} <!-- Show badge only if there are alerts -->
-              <span class="position-absolute badge rounded-pill bg-danger" style="font-size: 0.65rem; padding: 0.45em 0.7em; top: -5px; right: -10px; border: 2px solid white; box-shadow: 0 4px 10px rgba(220, 53, 69, 0.4); min-width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;">
-                {{ unread_notifications_count }}
-              </span>
-              {% endif %}
+              
             </a>
           </li>
           <li class="nav-item ms-lg-2"> <!-- Direct access to user settings and history -->
-            <a class="nav-link nav-icon-btn nav-profile-btn {% if 'profile' in request.path %}active{% endif %}" href="{{ url_for('main.profile') }}" aria-label="User Profile">
+            <a class="nav-link nav-icon-btn nav-profile-btn " href="/profile" aria-label="User Profile">
               <i class="bi bi-person-circle fs-5"></i>
             </a>
           </li>
@@ -391,7 +387,7 @@ Data: Fetches all products and their store prices from database
           style="border-radius: 50px; border: 1px solid #e2e8f0; height: 60px;"> <!-- Modern white capsule -->
           <span class="ps-4 pe-2 text-muted" style="font-size: 1.2rem;"><i class="bi bi-search"></i></span> <!-- Visual cue: Magnifying glass -->
           <input id="product-search-input" type="text" class="form-control border-0 shadow-none bg-transparent"
-            placeholder="Search by product name..." autocomplete="off" value="{{ search_query or '' }}"
+            placeholder="Search by product name..." autocomplete="off" value="milk"
             style="outline: none !important; box-shadow: none !important; font-size: 1.1rem; height: 100%;"> <!-- Core input for string-matching products -->
 
           <!-- Dropdown Filter Access System -->
@@ -411,13 +407,63 @@ Data: Fetches all products and their store prices from database
                 <label class="form-label"><i class="bi bi-grid"></i> Category</label>
                 <select id="category-filter" class="form-select"> <!-- Dropdown populated from DB -->
                   <option value="">All Categories</option> <!-- Null filter -->
-                  {% set cats = category_options if category_options is defined else [] %}
-                  {% for cat_obj in cats %} <!-- Building individual selector entries -->
-                  {% set cat_name = cat_obj.name if cat_obj is mapping else cat_obj %}
-                  {% set val = cat_name|lower %}
-                  <option value="{{ val }}" {% if category_filter and val==category_filter|lower %}selected{% endif %}>
-                    {{ cat_name }}</option>
-                  {% endfor %}
+                  
+                   <!-- Building individual selector entries -->
+                  
+                  
+                  <option value="produce" >
+                    Produce</option>
+                   <!-- Building individual selector entries -->
+                  
+                  
+                  <option value="pantry" >
+                    Pantry</option>
+                   <!-- Building individual selector entries -->
+                  
+                  
+                  <option value="dairy" >
+                    Dairy</option>
+                   <!-- Building individual selector entries -->
+                  
+                  
+                  <option value="meat" >
+                    Meat</option>
+                   <!-- Building individual selector entries -->
+                  
+                  
+                  <option value="frozen" >
+                    Frozen</option>
+                   <!-- Building individual selector entries -->
+                  
+                  
+                  <option value="bakery" >
+                    Bakery</option>
+                   <!-- Building individual selector entries -->
+                  
+                  
+                  <option value="baby food" >
+                    Baby food</option>
+                   <!-- Building individual selector entries -->
+                  
+                  
+                  <option value="snacks" >
+                    Snacks</option>
+                   <!-- Building individual selector entries -->
+                  
+                  
+                  <option value="fast food &amp; to go" >
+                    Fast Food &amp; To Go</option>
+                   <!-- Building individual selector entries -->
+                  
+                  
+                  <option value="household" >
+                    Household</option>
+                   <!-- Building individual selector entries -->
+                  
+                  
+                  <option value="beverages" >
+                    Beverages</option>
+                  
                 </select>
               </div>
 
@@ -483,16 +529,76 @@ Data: Fetches all products and their store prices from database
 
       <!-- Quick-access category selection chips -->
       <div class="category-chip-row mt-4 mb-3">
-        {% set cats = category_options if category_options is defined else [] %}
-        <button type="button" class="category-chip {% if not category_filter %}active{% endif %}" data-category-chip=""
+        
+        <button type="button" class="category-chip active" data-category-chip=""
           data-category-label="All">All</button> <!-- Reset to global view -->
-        {% for cat_obj in cats %}
-        {% set cat_name = cat_obj.name if cat_obj is mapping else cat_obj %}
-        {% set slug = cat_name|lower %}
+        
+        
+        
         <button type="button"
-          class="category-chip {% if category_filter and slug==category_filter|lower %}active{% endif %}"
-          data-category-chip="{{ slug }}" data-category-label="{{ cat_name }}">{{ cat_name }}</button> <!-- One-click filter -->
-        {% endfor %}
+          class="category-chip "
+          data-category-chip="produce" data-category-label="Produce">Produce</button> <!-- One-click filter -->
+        
+        
+        
+        <button type="button"
+          class="category-chip "
+          data-category-chip="pantry" data-category-label="Pantry">Pantry</button> <!-- One-click filter -->
+        
+        
+        
+        <button type="button"
+          class="category-chip "
+          data-category-chip="dairy" data-category-label="Dairy">Dairy</button> <!-- One-click filter -->
+        
+        
+        
+        <button type="button"
+          class="category-chip "
+          data-category-chip="meat" data-category-label="Meat">Meat</button> <!-- One-click filter -->
+        
+        
+        
+        <button type="button"
+          class="category-chip "
+          data-category-chip="frozen" data-category-label="Frozen">Frozen</button> <!-- One-click filter -->
+        
+        
+        
+        <button type="button"
+          class="category-chip "
+          data-category-chip="bakery" data-category-label="Bakery">Bakery</button> <!-- One-click filter -->
+        
+        
+        
+        <button type="button"
+          class="category-chip "
+          data-category-chip="baby food" data-category-label="Baby food">Baby food</button> <!-- One-click filter -->
+        
+        
+        
+        <button type="button"
+          class="category-chip "
+          data-category-chip="snacks" data-category-label="Snacks">Snacks</button> <!-- One-click filter -->
+        
+        
+        
+        <button type="button"
+          class="category-chip "
+          data-category-chip="fast food &amp; to go" data-category-label="Fast Food &amp; To Go">Fast Food &amp; To Go</button> <!-- One-click filter -->
+        
+        
+        
+        <button type="button"
+          class="category-chip "
+          data-category-chip="household" data-category-label="Household">Household</button> <!-- One-click filter -->
+        
+        
+        
+        <button type="button"
+          class="category-chip "
+          data-category-chip="beverages" data-category-label="Beverages">Beverages</button> <!-- One-click filter -->
+        
       </div>
 
       <!-- Real-time status bar for search results -->
@@ -503,148 +609,184 @@ Data: Fetches all products and their store prices from database
         <div class="results-status-bar"> <!-- Right-hand pagination indicators -->
           <span class="results-status-text">
             <i class="bi bi-info-circle me-1"></i>
-            {% if total_products %}
-            Showing {{ showing_start }}-{{ showing_end }} <!-- Range calculation from backend logic -->
-            {% else %}
-            No products found <!-- Empty state fallback -->
-            {% endif %}
+            
+            Showing 1-1 <!-- Range calculation from backend logic -->
+            
           </span>
-          {% if total_products %}
+          
           <span class="results-status-count">
-            {{ total_products }} Total <!-- DB collection global count -->
+            1 Total <!-- DB collection global count -->
           </span>
-          {% endif %}
+          
         </div>
       </div>
 
       <div class="row g-4" id="products-grid">
-        {% if products %}
         
-        {# 
-           MAIN PRODUCT LOOP
-           Iterates through the paginated list of products to display them in a grid.
-           Each product card contains:
-           1. Product Image & Main Price Badge (Cheapest found)
-           2. Metadata (Name, Category)
-           3. Nested Loop of Stores where it's available
-           4. "Add to List" CTA
-           
-           Data Attributes (data-stores, data-price, etc.) are used by JavaScript 
-           for client-side sorting and filtering without reloading.
-        #}
-        {% for p in products %}
+        
+        
+        
         <div class="col-md-6 col-lg-4 product-card" 
-          data-stores='{{ p.get("stores")|tojson }}'
-          data-price="{{ (p.get('cheapest') and p.get('cheapest').get('price')) or p.get('price','') }}"
-          data-name="{{ p.get('name','') |lower }}" 
-          data-category="{{ p.get('category','') |lower }}">
+          data-stores='[{"store": "SPAR", "price": 1.69, "url": "https://www.spar.at/produktwelt/spar-natur-pur-bio-berbauern-leichtmilch-laenger-frisch-p2020005458611", "image": null, "store_image": "https://res.cloudinary.com/drljgepgy/image/upload/v1764895551/Spar_a85aaba9f536b5e9281509aa6d47f310_hbajrc.jpg"}, {"store": "Hofer", "price": 1.39, "url": "https://www.hofer.at/de/p.milsani-vollmilch-laenger-frisch.000000000000106876.html?search=milch+frische", "image": "https://res.cloudinary.com/drljgepgy/image/upload/v1765043337/202505190111_xih6od.avif", "store_image": "https://res.cloudinary.com/drljgepgy/image/upload/v1764895059/5be3a7464e2c5_image_dilwgq.jpg"}, {"store": "BILLA", "price": "1.39", "url": "https://shop.billa.at/produkte/clever-vollmilch-laenger-frisch-35-00504029", "image": "https://res.cloudinary.com/drljgepgy/image/upload/v1765043005/00-504029-60827286-cXNlje1k_hsarxt.jpg", "store_image": "https://res.cloudinary.com/drljgepgy/image/upload/v1764894572/Billa_db8dac99a87163840ea5d6df9415da4f_m03hso.jpg"}]'
+          data-price="1.39"
+          data-name="milk 3.5%" 
+          data-category="dairy">
           
           <div class="card product-card-inner h-100" style="background-color: #ffffff;">
-            {# 
-               LINK TO DETAILS
-               The entire top section is a link to the detailed view.
-            #}
-            <a href="{{ url_for('main.product_detail', product_id=p.get('id')) }}"
+            
+            <a href="/product/693467c5c0a02845c4e15a86"
               class="product-link text-decoration-none text-dark d-block">
               <div class="position-relative">
                 <img
-                  src="{{ prefer_processed(p.get('image') or (p.get('images') and p.get('images')[0]) or url_for('static', filename='placeholder.svg')) }}"
-                  class="card-img-top product-image" alt="{{ p.get('name') or p.get('title','Product') }}">
+                  src="https://res.cloudinary.com/drljgepgy/image/upload/v1765042817/HB_500px-2_efjxjz.jpg"
+                  class="card-img-top product-image" alt="Milk 3.5%">
                 
-                {# Price Badge: Shows cheapest available price #}
+                
                 <span class="price-badge">
-                  <i class="bi bi-tag-fill"></i> €{{ (p.get('cheapest') and p.get('cheapest').get('price')) or
-                  p.get('price','N/A') }}
+                  <i class="bi bi-tag-fill"></i> €1.39
                 </span>
               </div>
             </a>
             
             <div class="card-body pb-0" style="background-color: #fff;">
               <div class="d-flex justify-content-between align-items-start mb-3">
-                <h5 class="card-title mb-0 fw-bold">{{ p.get('name') or p.get('title','') }}</h5>
-                {% if p.get('category') %}
-                <span class="badge category-badge ms-2">{{ p.get('category') }}</span>
-                {% endif %}
+                <h5 class="card-title mb-0 fw-bold">Milk 3.5%</h5>
+                
+                <span class="badge category-badge ms-2">Dairy</span>
+                
               </div>
 
-              {% if p.get('stores') %}
+              
               <div class="mb-3">
                 <h6 class="text-muted mb-2 fw-semibold">
-                  <i class="bi bi-shop"></i> Available at {{ p.get('stores')|length }} store{{ 's' if
-                  p.get('stores')|length != 1 else '' }}
+                  <i class="bi bi-shop"></i> Available at 3 stores
                 </h6>
                 
-                {# 
-                   NESTED LOOP: STORES
-                   Shows the top 3 stores where this product is found.
-                   Sorted by price usually (backend logic).
-                #}
-                {% for s in p.get('stores')[:3] %}
-                {# Store Item: Clickable to select specific store price #}
-                <div class="store-item" data-store-name="{{ s.get('store') or s.get('name') }}"
-                  data-store-price="{{ s.get('price') }}" data-product-id="{{ p.get('id') }}"
-                  data-image="{{ prefer_processed(s.get('image') if (s.get('image') and 'logo' not in s.get('image')|lower and 'brand' not in s.get('image')|lower) else p.get('image') or (p.get('images') and p.get('images')[0]) or url_for('static', filename='placeholder.svg')) }}">
+                
+                
+                
+                <div class="store-item" data-store-name="SPAR"
+                  data-store-price="1.69" data-product-id="693467c5c0a02845c4e15a86"
+                  data-image="https://res.cloudinary.com/drljgepgy/image/upload/v1765042817/HB_500px-2_efjxjz.jpg">
                   <div class="d-flex justify-content-between align-items-center gap-1">
                     <div class="d-flex align-items-center gap-2 flex-grow-1" style="min-width:0;">
                       <img
-                        src="{{ prefer_processed(s.get('logo') or s.get('store_image') or url_for('static', filename='placeholder.svg')) }}"
-                        alt="{{ s.get('store') or s.get('name') }}"
+                        src="https://res.cloudinary.com/drljgepgy/image/upload/v1764895551/Spar_a85aaba9f536b5e9281509aa6d47f310_hbajrc.jpg"
+                        alt="SPAR"
                         style="width: 24px; height: 24px; object-fit: contain; border-radius: 4px; background: white; padding: 2px; border: 1px solid #eee;"
-                        data-fallback-src="{{ url_for('static', filename='placeholder.svg') }}"
+                        data-fallback-src="/static/placeholder.svg"
                         onerror="this.src=this.dataset.fallbackSrc">
                       <div class="lh-sm overflow-hidden">
-                        <span class="fw-semibold text-truncate d-block" style="color: #7c3aed;">{{ s.get('store') or
-                          s.get('name')
-                          }}</span>
+                        <span class="fw-semibold text-truncate d-block" style="color: #7c3aed;">SPAR</span>
                       </div>
                     </div>
                     <div class="text-end d-flex align-items-center gap-2" style="min-width: 68px;">
                       <span class="text-success fw-bold fs-5">
-                        {# Add Star Icon for "Cheapest" option #}
-                        {% if p.get('cheapest') and (s.get('price')|string) ==
-                        (p.get('cheapest').get('price')|string) %}<i class="bi bi-star-fill"
-                          style="color: #ffc107; margin-right: 4px;"></i>{% endif %}€{{ s.get('price') }}
+                        
+                        €1.69
                       </span>
-                      {% if s.get('url') %}
-                      <a href="{{ s.get('url') }}" target="_blank" rel="noopener noreferrer"
+                      
+                      <a href="https://www.spar.at/produktwelt/spar-natur-pur-bio-berbauern-leichtmilch-laenger-frisch-p2020005458611" target="_blank" rel="noopener noreferrer"
                         class="btn btn-sm btn-go-store p-1" title="Go to official store"
                         style="background: #f0f0ff; border-radius: 6px; color: #7c3aed; border: 1px solid #dadaff; line-height: 1;">
                         <i class="bi bi-box-arrow-up-right" style="font-size: 0.85rem;"></i>
                       </a>
-                      {% endif %}
+                      
                     </div>
                   </div>
                 </div>
-                {% endfor %}
+                
+                
+                <div class="store-item" data-store-name="Hofer"
+                  data-store-price="1.39" data-product-id="693467c5c0a02845c4e15a86"
+                  data-image="https://res.cloudinary.com/drljgepgy/image/upload/v1765043337/202505190111_xih6od.avif">
+                  <div class="d-flex justify-content-between align-items-center gap-1">
+                    <div class="d-flex align-items-center gap-2 flex-grow-1" style="min-width:0;">
+                      <img
+                        src="https://res.cloudinary.com/drljgepgy/image/upload/v1764895059/5be3a7464e2c5_image_dilwgq.jpg"
+                        alt="Hofer"
+                        style="width: 24px; height: 24px; object-fit: contain; border-radius: 4px; background: white; padding: 2px; border: 1px solid #eee;"
+                        data-fallback-src="/static/placeholder.svg"
+                        onerror="this.src=this.dataset.fallbackSrc">
+                      <div class="lh-sm overflow-hidden">
+                        <span class="fw-semibold text-truncate d-block" style="color: #7c3aed;">Hofer</span>
+                      </div>
+                    </div>
+                    <div class="text-end d-flex align-items-center gap-2" style="min-width: 68px;">
+                      <span class="text-success fw-bold fs-5">
+                        
+                        <i class="bi bi-star-fill"
+                          style="color: #ffc107; margin-right: 4px;"></i>€1.39
+                      </span>
+                      
+                      <a href="https://www.hofer.at/de/p.milsani-vollmilch-laenger-frisch.000000000000106876.html?search=milch+frische" target="_blank" rel="noopener noreferrer"
+                        class="btn btn-sm btn-go-store p-1" title="Go to official store"
+                        style="background: #f0f0ff; border-radius: 6px; color: #7c3aed; border: 1px solid #dadaff; line-height: 1;">
+                        <i class="bi bi-box-arrow-up-right" style="font-size: 0.85rem;"></i>
+                      </a>
+                      
+                    </div>
+                  </div>
+                </div>
+                
+                
+                <div class="store-item" data-store-name="BILLA"
+                  data-store-price="1.39" data-product-id="693467c5c0a02845c4e15a86"
+                  data-image="https://res.cloudinary.com/drljgepgy/image/upload/v1765043005/00-504029-60827286-cXNlje1k_hsarxt.jpg">
+                  <div class="d-flex justify-content-between align-items-center gap-1">
+                    <div class="d-flex align-items-center gap-2 flex-grow-1" style="min-width:0;">
+                      <img
+                        src="https://res.cloudinary.com/drljgepgy/image/upload/v1764894572/Billa_db8dac99a87163840ea5d6df9415da4f_m03hso.jpg"
+                        alt="BILLA"
+                        style="width: 24px; height: 24px; object-fit: contain; border-radius: 4px; background: white; padding: 2px; border: 1px solid #eee;"
+                        data-fallback-src="/static/placeholder.svg"
+                        onerror="this.src=this.dataset.fallbackSrc">
+                      <div class="lh-sm overflow-hidden">
+                        <span class="fw-semibold text-truncate d-block" style="color: #7c3aed;">BILLA</span>
+                      </div>
+                    </div>
+                    <div class="text-end d-flex align-items-center gap-2" style="min-width: 68px;">
+                      <span class="text-success fw-bold fs-5">
+                        
+                        <i class="bi bi-star-fill"
+                          style="color: #ffc107; margin-right: 4px;"></i>€1.39
+                      </span>
+                      
+                      <a href="https://shop.billa.at/produkte/clever-vollmilch-laenger-frisch-35-00504029" target="_blank" rel="noopener noreferrer"
+                        class="btn btn-sm btn-go-store p-1" title="Go to official store"
+                        style="background: #f0f0ff; border-radius: 6px; color: #7c3aed; border: 1px solid #dadaff; line-height: 1;">
+                        <i class="bi bi-box-arrow-up-right" style="font-size: 0.85rem;"></i>
+                      </a>
+                      
+                    </div>
+                  </div>
+                </div>
+                
               </div>
             </div>
-            {% endif %}
+            
 
             <div class="card-body pt-2 mt-auto" style="background-color: #fff;">
               <div class="mt-auto">
-                {% if p.get('expires') %}
-                <p class="text-muted small mb-3">
-                  <i class="bi bi-clock-history"></i> Expires in {{ p.get('expires') }}
-                </p>
-                {% endif %}
+                
                 <div class="d-flex flex-column gap-2">
                   <button type="button" class="btn btn-premium btn-premium-add w-100"
-                    data-name="{{ p.get('name') or p.get('title','')|e }}" data-id="{{ p.get('id') }}"
-                    data-price="{{ (p.get('cheapest') and p.get('cheapest').get('price')) or p.get('price','N/A')|e }}"
-                    data-initial-price="{{ (p.get('cheapest') and p.get('cheapest').get('price')) or p.get('price','N/A')|e }}"
-                    data-original-price="{{ p.original_price|e if p.original_price else '' }}"
-                    data-image="{{ prefer_processed(p.get('image') or (p.get('images') and p.get('images')[0]) or url_for('static', filename='placeholder.svg'))|e }}"
+                    data-name="Milk 3.5%" data-id="693467c5c0a02845c4e15a86"
+                    data-price="1.39"
+                    data-initial-price="1.39"
+                    data-original-price=""
+                    data-image="https://res.cloudinary.com/drljgepgy/image/upload/v1765042817/HB_500px-2_efjxjz.jpg"
                     data-store=""
-                    data-offer-json='{{ p.offer|tojson|forceescape if p.offer else "" }}'
-                    data-tier-json='{{ p.discount_tiers|tojson|forceescape if p.discount_tiers else "" }}'
-                    data-special-offer="{{ p.special_offer_type or '' }}"
-                    data-offer-type="{{ p.offer_type or '' }}"
-                    data-offer-x="{{ p.offer_x or '' }}"
-                    data-offer-y="{{ p.offer_y or '' }}"
+                    data-offer-json=''
+                    data-tier-json=''
+                    data-special-offer=""
+                    data-offer-type=""
+                    data-offer-x=""
+                    data-offer-y=""
                     onclick="event.stopPropagation(); handleAddToCart(event, this);">
                     <i class="bi bi-cart-plus-fill"></i>Add to List
                   </button>
-                  <a href="{{ url_for('main.product_detail', product_id=p.get('id')) }}"
+                  <a href="/product/693467c5c0a02845c4e15a86"
                     class="btn btn-premium btn-premium-view w-100"
                     onclick="event.stopPropagation();">
                     <i class="bi bi-info-circle-fill"></i> View Details
@@ -654,141 +796,73 @@ Data: Fetches all products and their store prices from database
             </div>
           </div>
         </div>
-        {% endfor %}
-        {% else %}
-        <div class="col-12">
-          <p class="text-muted">No products available.</p>
-        </div>
-        {% endif %}
+        
+        
       </div>
 
       <!-- Supplementary Results: Matching Retailers -->
-      {% if search_query and stores and stores|length > 0 %}
-      <div class="mt-5">
-        <h4 class="mb-3 fw-bold">
-          <i class="bi bi-shop"></i> Stores matching "{{ search_query }}" <!-- Header for direct store hits -->
-          <span class="badge bg-primary ms-2">{{ stores|length }}</span>
-        </h4>
-        <div class="row g-4">
-          {% for store in stores %}
-          <div class="col-md-6 col-lg-4">
-            <a href="{{ url_for('main.store_products_page', store_name=store.get('name')) }}"
-              class="text-decoration-none"> <!-- Link to full catalog from this specific retailer -->
-              <div class="card h-100 shadow-sm hover-lift"> <!-- Visual elevation on interaction -->
-                <img src="{{ store.get('image') or 'https://via.placeholder.com/250x150' }}" class="card-img-top"
-                  alt="{{ store.get('name') }}" style="height: 150px; object-fit: cover;"> <!-- Storefront branding -->
-                <div class="card-body"> <!-- Retailer metadata -->
-                  <h5 class="card-title text-dark">{{ store.get('name') }}</h5>
-                  {% if store.get('description') %}
-                  <p class="text-muted small">{{ store.get('description')[:100] }}...</p> <!-- Truncated overview -->
-                  {% endif %}
-                  <div class="text-muted small">
-                    <i class="bi bi-box-seam"></i> {{ store.get('product_count', 0) }} products <!-- Inventory volume context -->
-                  </div>
-                </div>
-              </div>
-            </a>
-          </div>
-          {% endfor %}
-        </div>
-      </div>
-      {% endif %}
+      
 
       <!-- Supplementary Results: Promotional Content -->
-      {% if search_query and deals and deals|length > 0 %}
+      
       <div class="mt-5">
         <h4 class="mb-3 fw-bold">
-          <i class="bi bi-lightning-fill text-warning"></i> Deals matching "{{ search_query }}" <!-- Header for promotional matches -->
-          <span class="badge bg-primary ms-2">{{ deals|length }}</span>
+          <i class="bi bi-lightning-fill text-warning"></i> Deals matching "milk" <!-- Header for promotional matches -->
+          <span class="badge bg-primary ms-2">1</span>
         </h4>
         <div class="row g-4">
-          {% for deal in deals %}
+          
           <div class="col-md-6 col-lg-4">
-            <div class="card h-100 shadow-sm position-relative hover-lift" style="background-color: #ffffff;"> <!-- White promotional card -->
-              <a href="{{ url_for('main.featured_deal_detail', deal_id=deal.get('id') or deal.get('_id')) }}" class="position-absolute w-100 h-100" style="left:0; top:0; z-index: 1;"></a>
-              {% if deal.get('discount_label') or deal.get('discount_percent') %}
-              <div class="position-absolute top-0 end-0 m-2" style="z-index: 2;"> <!-- Absolute badge for "Sale" urgency -->
+            <div class="card h-100 shadow-sm" style="background-color: #ffffff;"> <!-- White promotional card -->
+              
+              <div class="position-absolute top-0 end-0 m-2"> <!-- Absolute badge for "Sale" urgency -->
                 <span class="badge" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
-                  {{ deal.get('discount_label') or (deal.get('discount_percent') ~ '% OFF') }}
+                  50% off
                 </span>
               </div>
-              {% endif %}
-              <img src="{{ deal.get('image') or url_for('static', filename='placeholder.svg') }}" class="card-img-top"
-                alt="{{ deal.get('title') or deal.get('name') }}"
-                style="height: 200px; object-fit: contain; padding: 1rem; background-color: #ffffff; position: relative; z-index: 2;"> <!-- High-visibility product image -->
-              <div class="card-body d-flex flex-column" style="background-color: #ffffff; position: relative; z-index: 2;"> <!-- Promotional data -->
-                <h5 class="card-title">{{ deal.get('title') or deal.get('name') }}</h5>
+              
+              <img src="https://res.cloudinary.com/drljgepgy/image/upload/v1768918601/milka_cookies_th0jhq.avif" class="card-img-top"
+                alt="Milka Cookies"
+                style="height: 200px; object-fit: contain; padding: 1rem; background-color: #ffffff;"> <!-- High-visibility product image -->
+              <div class="card-body" style="background-color: #ffffff;"> <!-- Promotional data -->
+                <h5 class="card-title">Milka Cookies</h5>
                 <p class="text-muted mb-2">
-                  <i class="bi bi-shop"></i> {{ deal.get('store') or deal.get('source', 'Store') }} <!-- Where the deal originates -->
+                  <i class="bi bi-shop"></i> Hofer <!-- Where the deal originates -->
                 </p>
-                <div class="d-flex justify-content-between align-items-center mb-auto"> <!-- Financial breakdown -->
-                  <span class="h4 mb-0 text-primary">€{{ deal.get('price', 'N/A') }}</span> <!-- Discounted price -->
-                  {% if deal.get('original_price') %}
-                  <span class="text-muted text-decoration-line-through">€{{ deal.get('original_price') }}</span> <!-- MSRP context -->
-                  {% endif %}
+                <div class="d-flex justify-content-between align-items-center"> <!-- Financial breakdown -->
+                  <span class="h4 mb-0 text-primary">€1.74</span> <!-- Discounted price -->
+                  
+                  <span class="text-muted text-decoration-line-through">€3.49</span> <!-- MSRP context -->
+                  
                 </div>
-                
-                <div class="mt-3">
-                  <!-- Direct injection into the active shopping list -->
-                  <button type="button" class="btn btn-premium btn-premium-add w-100 position-relative" style="z-index: 3;"
-                    data-name="{{ deal.get('title') or deal.get('name') }}"
-                    data-id="{{ deal.get('id') or deal.get('_id') }}"
-                    data-price="{{ deal.get('price', '0') }}"
-                    data-initial-price="{{ deal.get('price', '0') }}"
-                    data-store="{{ deal.get('store', '') }}"
-                    data-image="{{ deal.get('image') or url_for('static', filename='placeholder.svg') }}"
-                    data-tier-json='{{ (deal.get("tiers") or deal.get("discount_tiers"))|tojson|forceescape if (deal.get("tiers") or deal.get("discount_tiers")) else "" }}'
-                    data-special-offer="{{ deal.get('offer_type') or deal.get('special_offer_type') or '' }}"
-                    onclick="event.stopPropagation(); handleAddToCart(event, this);">
-                    <i class="bi bi-cart-plus-fill"></i> Add to List
-                  </button>
-                  <!-- Detailed view for multi-buy or complex offers -->
-                  <a href="{{ url_for('main.featured_deal_detail', deal_id=deal.get('id') or deal.get('_id')) }}"
-                    class="btn btn-premium btn-premium-view w-100 mt-2 position-relative" style="z-index: 3;">
-                    <i class="bi bi-info-circle-fill"></i> View Deal
-                  </a>
-                </div>
+                <!-- Detailed view for multi-buy or complex offers -->
+                <a href="/featured-deal/696eebbbd650c15059b6cbe7"
+                  class="btn btn-premium btn-premium-view w-100 mt-3">
+                  <i class="bi bi-info-circle-fill"></i> View Deal
+                </a>
+                <!-- Direct injection into the active shopping list -->
+                <button type="button" class="btn btn-premium btn-premium-add w-100 mt-2"
+                  data-name="Milka Cookies"
+                  data-id="696eebbbd650c15059b6cbe7"
+                  data-price="1.74"
+                  data-initial-price="1.74"
+                  data-store="Hofer"
+                  data-image="https://res.cloudinary.com/drljgepgy/image/upload/v1768918601/milka_cookies_th0jhq.avif"
+                  data-tier-json=''
+                  data-special-offer=""
+                  onclick="event.stopPropagation(); handleAddToCart(event, this);">
+                  <i class="bi bi-cart-plus-fill"></i> Add to List
+                </button>
               </div>
             </div>
           </div>
-          {% endfor %}
+          
         </div>
       </div>
-      {% endif %}
+      
 
       <!-- Site-wide dynamic pagination controls -->
-      {% if total_pages and total_pages > 1 %}
-      <div class="custom-pagination-container"> <!-- Wrapper for centered positioning -->
-        <ul class="pagination-pills"> <!-- Modern "Pill" style navigation buttons -->
-          <li class="page-item {{ 'disabled' if not has_prev }}"> <!-- Navigation toggle: Back -->
-            <a class="page-link nav-link"
-              href="{% if has_prev %}{{ url_for('main.compare_prices', page=page-1, category=category_filter, search=search_query) }}{% else %}#{% endif %}">
-              <i class="bi bi-arrow-left"></i> <span>Prev</span>
-            </a>
-          </li>
-
-          <!-- Dynamic Sliding Window logic for page numbers -->
-          {% set start_page = [1, page - 2]|max %}
-          {% set end_page = [total_pages, start_page + 4]|min %}
-          {% set start_page = [1, end_page - 4]|max %}
-
-          {% for pnum in range(start_page, end_page + 1) %} <!-- Loops through active page range -->
-          <li class="page-item {{ 'active' if pnum == page }}"> <!-- Highlight current location -->
-            <a class="page-link"
-              href="{{ url_for('main.compare_prices', page=pnum, category=category_filter, search=search_query) }}">{{
-              pnum }}</a>
-          </li>
-          {% endfor %}
-
-          <li class="page-item {{ 'disabled' if not has_next }}"> <!-- Navigation toggle: Forward -->
-            <a class="page-link nav-link"
-              href="{% if has_next %}{{ url_for('main.compare_prices', page=page+1, category=category_filter, search=search_query) }}{% else %}#{% endif %}">
-              <span>Next</span> <i class="bi bi-arrow-right"></i>
-            </a>
-          </li>
-        </ul>
-      </div>
-      {% endif %}
+      
 
 
       <!-- Interactive Modal: Shopping List Picker -->
@@ -809,7 +883,7 @@ Data: Fetches all products and their store prices from database
               <!-- Visual summary of the item being added -->
               <div class="d-flex align-items-center gap-3 mb-3 p-3"
                 style="background:#f6f7fb; border:1px solid #e6e8f0; border-radius:12px;">
-                <img id="itemThumb" src="{{ url_for('static', filename='placeholder.svg') }}" alt="product"
+                <img id="itemThumb" src="/static/placeholder.svg" alt="product"
                   style="width:64px; height:64px; object-fit:contain; background:white; border-radius:10px; border:1px solid #e9ecef;"> <!-- Preview thumbnail -->
                 <div class="flex-grow-1">
                   <div class="fw-bold" id="itemNameDisplay" style="color:#2d2f3a; font-size:1rem; line-height:1.2;">
@@ -838,16 +912,16 @@ Data: Fetches all products and their store prices from database
 
       <!-- JavaScript Dependencies -->
       <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script> <!-- Bootstrap interactivity engine -->
-      <script src="{{ url_for('static', filename='js/script.js') }}?v=11"></script> <!-- Core business logic and AJAX handlers -->
+      <script src="/static/js/script.js?v=11"></script> <!-- Core business logic and AJAX handlers -->
       <script>
         // Trigger logic for keyword-based comparative search
         // Essential for server-side persistence of search state across pages
         function handleCompareSearch() {
           const searchInput = document.getElementById('product-search-input');
           const searchTerm = (searchInput ? searchInput.value : '').trim(); // Extract User intent
-          const categoryFilter = '{{ category_filter or "" }}'; // Preserve current filter context
+          const categoryFilter = ''; // Preserve current filter context
 
-          let url = '{{ url_for("main.compare_prices") }}'; // Execution target
+          let url = '/compare-prices'; // Execution target
           const params = new URLSearchParams(); // Modern URL query constructor
 
           if (searchTerm) params.set('search', searchTerm); // Append search key

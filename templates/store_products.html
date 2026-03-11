@@ -436,7 +436,7 @@
                 </h5>
                 
                 <div class="mt-auto d-grid gap-2">
-                  <button class="btn btn-premium-action" 
+                  <button class="btn btn-premium btn-premium-add" 
                     data-name="{{ product.name }}"
                     data-price="{{ product.store_price or product.price or '0.00' }}"
                     data-image="{{ product.store_image or product.image or '' }}" 
@@ -446,7 +446,7 @@
                     data-offer-json='{{ product.offer|tojson|forceescape if product.offer else "" }}'
                     data-special-offer="{{ product.special_offer_type or product.offer_type or '' }}"
                     onclick="window.showListSelector(this); event.stopPropagation();">
-                    <i class="bi bi-plus-circle-fill"></i> Add to List
+                    <i class="bi bi-cart-plus-fill"></i> Add to List
                   </button>
                   <a href="{{ detail_url }}" class="btn btn-outline-secondary" style="border-radius: 12px; font-weight: 600;" onclick="event.stopPropagation();">
                     <i class="bi bi-info-circle"></i> View Details

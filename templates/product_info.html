@@ -246,58 +246,58 @@ Used: When clicking on a product in a specific store's listing
 
 <body>
   <!-- Navigation -->
-  <nav class="navbar navbar-expand-lg navbar-premium">
-    <div class="container">
-      <a class="navbar-brand d-flex align-items-center" href="{{ url_for('main.home') }}">
-        <div class="brand-icon me-3">
-          <i class="bi bi-cart-check-fill fs-5"></i>
+  <nav class="navbar navbar-expand-lg navbar-premium"> <!-- Modern premium styled navbar using custom variables -->
+    <div class="container"> <!-- Centers the navbar content within the viewport -->
+      <a class="navbar-brand d-flex align-items-center" href="{{ url_for('main.home') }}"> <!-- Home link containing brand visual -->
+        <div class="brand-icon me-3"> <!-- Rounded symbol container -->
+          <i class="bi bi-cart-check-fill fs-5"></i> <!-- Internal brand icon -->
         </div>
-        <span>Smart<span class="brand-grocery-text">Grocery</span></span>
+        <span>Smart<span class="brand-grocery-text">Grocery</span></span> <!-- Text brand label with color highlighting -->
       </a>
-      <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-        <span class="navbar-toggler-icon"></span>
+      <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"> <!-- Burger menu for smaller screens -->
+        <span class="navbar-toggler-icon"></span> <!-- Standardized toggle symbol -->
       </button>
-      <div class="collapse navbar-collapse" id="navbarNav">
-        {% set cart_count = shopping_list_count or 0 %}
-        <ul class="navbar-nav ms-auto align-items-center">
-          <li class="nav-item">
-            <a class="nav-link {% if request.endpoint == 'main.home' %}active{% endif %}" href="{{ url_for('main.home') }}">
-              <i class="bi bi-house-door me-1"></i> Home
+      <div class="collapse navbar-collapse" id="navbarNav"> <!-- Wrapper for collapsible navigation links -->
+        {% set cart_count = shopping_list_count or 0 %} <!-- Variable for calculating and displaying current list totals -->
+        <ul class="navbar-nav ms-auto align-items-center"> <!-- List of links pushed to the right side -->
+          <li class="nav-item"> <!-- Home link nav item -->
+            <a class="nav-link {% if request.endpoint == 'main.home' %}active{% endif %}" href="{{ url_for('main.home') }}"> <!-- Home link with active detection logic -->
+              <i class="bi bi-house-door me-1"></i> Home <!-- Icon and core label -->
             </a>
           </li>
-          <li class="nav-item">
-            <a class="nav-link {% if 'stores' in request.path or request.endpoint == 'main.stores_page' %}active{% endif %}" href="{{ url_for('main.stores_page') }}">
-              <i class="bi bi-shop me-1"></i> Stores
+          <li class="nav-item"> <!-- Stores link nav item -->
+            <a class="nav-link {% if 'stores' in request.path or request.endpoint == 'main.stores_page' %}active{% endif %}" href="{{ url_for('main.stores_page') }}"> <!-- Specific active check for stores routes -->
+              <i class="bi bi-shop me-1"></i> Stores <!-- Store discovery link -->
             </a>
           </li>
-          <li class="nav-item">
-            <a class="nav-link {% if 'featured-deals' in request.path or request.endpoint == 'main.featured_deals_page' %}active{% endif %}" href="{{ url_for('main.featured_deals_page') }}">
-              <i class="bi bi-tags me-1"></i> Deals
+          <li class="nav-item"> <!-- Deals link nav item -->
+            <a class="nav-link {% if 'featured-deals' in request.path or request.endpoint == 'main.featured_deals_page' %}active{% endif %}" href="{{ url_for('main.featured_deals_page') }}"> <!-- Targeted check for deals route active state -->
+              <i class="bi bi-tags me-1"></i> Deals <!-- High-value items link -->
             </a>
           </li>
-          <li class="nav-item">
-            <a class="nav-link {% if 'compare' in request.path or request.endpoint == 'main.compare_prices' %}active{% endif %}" href="{{ url_for('main.compare_prices') }}">
-              <i class="bi bi-arrow-left-right me-1"></i> Compare
+          <li class="nav-item"> <!-- Compare Prices nav item -->
+            <a class="nav-link {% if 'compare' in request.path or request.endpoint == 'main.compare_prices' %}active{% endif %}" href="{{ url_for('main.compare_prices') }}"> <!-- Active state logic for comparison engine -->
+              <i class="bi bi-arrow-left-right me-1"></i> Compare <!-- Manual search and logic link -->
             </a>
           </li>
-          <li class="nav-item">
-            <a class="nav-link d-flex align-items-center position-relative {% if 'shopping-list' in request.path or request.endpoint == 'main.shopping_list' %}active{% endif %}" href="{{ url_for('main.shopping_list') }}">
-              <i class="bi bi-list-check me-1"></i> Lists
+          <li class="nav-item"> <!-- Shopping Lists Link -->
+            <a class="nav-link d-flex align-items-center position-relative {% if 'shopping-list' in request.path or request.endpoint == 'main.shopping_list' %}active{% endif %}" href="{{ url_for('main.shopping_list') }}"> <!-- Dynamic active path highlighting -->
+              <i class="bi bi-list-check me-1"></i> Lists <!-- List management label -->
             </a>
           </li>
-          <li class="nav-item ms-lg-1">
-            <a class="nav-link nav-icon-btn position-relative {% if 'notifications' in request.path %}active{% endif %}" href="{{ url_for('main.notifications_page') }}" aria-label="Notifications">
-              <i class="bi bi-bell fs-5"></i>
-              {% if (unread_notifications_count or 0) > 0 %}
+          <li class="nav-item ms-lg-1"> <!-- Notifications Link -->
+            <a class="nav-link nav-icon-btn position-relative {% if 'notifications' in request.path %}active{% endif %}" href="{{ url_for('main.notifications_page') }}" aria-label="Notifications"> <!-- Active detection for alerts -->
+              <i class="bi bi-bell fs-5"></i> <!-- Bell symbol -->
+              {% if (unread_notifications_count or 0) > 0 %} <!-- Logic for unread badge visibility -->
               <span class="position-absolute badge rounded-pill bg-danger" style="font-size: 0.65rem; padding: 0.45em 0.7em; top: -5px; right: -10px; border: 2px solid white; box-shadow: 0 4px 10px rgba(220, 53, 69, 0.4); min-width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;">
-                {{ unread_notifications_count }}
+                {{ unread_notifications_count }} <!-- Count of unviewed alerts -->
               </span>
               {% endif %}
             </a>
           </li>
-          <li class="nav-item ms-lg-2">
-            <a class="nav-link nav-icon-btn nav-profile-btn {% if 'profile' in request.path %}active{% endif %}" href="{{ url_for('main.profile') }}" aria-label="User Profile">
-              <i class="bi bi-person-circle fs-5"></i>
+          <li class="nav-item ms-lg-2"> <!-- User Profile and Settings -->
+            <a class="nav-link nav-icon-btn nav-profile-btn {% if 'profile' in request.path %}active{% endif %}" href="{{ url_for('main.profile') }}" aria-label="User Profile"> <!-- Circular button for personal dashboard -->
+              <i class="bi bi-person-circle fs-5"></i> <!-- Profile head symbol -->
             </a>
           </li>
         </ul>

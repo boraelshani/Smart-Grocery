@@ -693,6 +693,8 @@ function setupSearchFunctionality() { // Search hub
   const maxPrice = document.getElementById('max-price'); // Number input
   const sortOrder = document.getElementById('sort-order'); // Sort select
 
+  if (!input || !resultsSection) return; // Exit if not on the search view where these apply
+
   let allProducts = []; // Memory cache for SSR items
 
   /**
@@ -1836,7 +1838,7 @@ window.handleAddToCart = async function (event, name, price, image, store) { // 
             // Prefer the price specific to the selected store badge
             let itemPrice = selectedStoreItem.getAttribute('data-store-price') || btn.getAttribute('data-price') || '';
             const itemStore = selectedStoreItem.getAttribute('data-store-name') || btn.getAttribute('data-store') || '';
-            const itemImage = btn.getAttribute('data-image') || '';
+            const itemImage = selectedStoreItem.getAttribute('data-image') || btn.getAttribute('data-image') || '';
             const itemId = btn.getAttribute('data-id') || null;
             
             // Extract complex Offer meta-data
