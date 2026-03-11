@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Smart Grocery{% endblock %}</title>
+
+  <!-- Core Libraries -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+
+  <!-- Core Application Styles -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/global.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/navbar.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/hero.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cards.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/buttons.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/shopping_list.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/misc.css') }}">
+
+  <!-- Custom Page Styles Inserted Here -->
+  {% block styles %}{% endblock %}
+</head>
+<body class="{% block body_class %}bg-light{% endblock %}">
+
+  <!-- ========================================== -->
+  <!-- MAIN NAVIGATION BAR (Global across app)    -->
+  <!-- ========================================== -->
+  <nav class="navbar navbar-expand-lg navbar-dark navbar-premium fixed-top shadow-sm">
+    <div class="container">
+      <a class="navbar-brand fw-bold mb-0 d-flex align-items-center gap-2" href="{{ url_for('main.home') }}">
+        <i class="bi bi-cart4 text-white" style="font-size: 1.5rem;"></i> Smart Grocery
+      </a>
+      <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse"
+              data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" 
+              aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav me-auto mb-1 mb-lg-0 align-items-center">
+          <li class="nav-item">
+            <a class="nav-link {% if request.endpoint == 'main.home' %}active{% endif %} rounded-pill px-3 py-2" 
+               href="{{ url_for('main.home') }}"><i class="bi bi-house-door me-1"></i>Home</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.endpoint == 'main.compare_prices' %}active{% endif %} rounded-pill px-3 py-2" 
+               href="{{ url_for('main.compare_prices') }}"><i class="bi bi-search me-1"></i>Compare</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.endpoint == 'main.featured_deals_page' %}active{% endif %} rounded-pill px-3 py-2" 
+               href="{{ url_for('main.featured_deals_page') }}"><i class="bi bi-tags me-1"></i>Deals</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.endpoint == 'main.stores_page' %}active{% endif %} rounded-pill px-3 py-2" 
+               href="{{ url_for('main.stores_page') }}"><i class="bi bi-shop me-1"></i>Stores</a>
+          </li>
+          {% if session.get('user') %}
+          <li class="nav-item">
+            <a class="nav-link {% if request.endpoint == 'main.shopping_list' %}active{% endif %} rounded-pill px-3 py-2" 
+               href="{{ url_for('main.shopping_list') }}"><i class="bi bi-card-list me-1"></i>Lists</a>
+          </li>
+          {% endif %}
+        </ul>
+        <ul class="navbar-nav align-items-center gap-2">
+          {% if session.get('user') %}
+          <li class="nav-item">
+            <a href="{{ url_for('main.notifications_page') }}" 
+               class="btn btn-icon btn-notification rounded-circle position-relative" 
+               aria-label="Notifications">
+              <i class="bi bi-bell"></i>
+              {% set unread_count = unread_count|default(0) %}
+              {% if unread_count and unread_count > 0 %}
+              <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" 
+                    id="nav-unread-badge">
+                {{ unread_count }}<span class="visually-hidden">unread messages</span>
+              </span>
+              {% endif %}
+            </a>
+          </li>
+          
+          <!-- User Dropdown Menu -->
+          <li class="nav-item dropdown ms-2">
+            <a class="nav-link dropdown-toggle text-white d-flex align-items-center gap-2" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <!-- Inline SVG for User Profile Avatar / Or a text fallback -->
+              <span class="d-none d-lg-block">Hello, {{ session['user'].split('@')[0][:8] }}</span>
+              <i class="bi bi-person-circle fs-5 lh-1"></i>
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2" aria-labelledby="navbarDropdown" style="border-radius: 12px; overflow: hidden; min-width: 200px;">
+              <li>
+                <div class="px-3 py-2 text-muted small border-bottom mb-1">
+                  Signed in as<br>
+                  <strong class="text-dark text-truncate d-block" style="max-width: 170px;">{{ session['user'] }}</strong>
+                </div>
+              </li>
+              <li>
+                <a class="dropdown-item py-2 dropdown-item-premium d-flex align-items-center gap-2" href="{{ url_for('main.profile') }}">
+                  <i class="bi bi-person-gear text-primary"></i> My Profile
+                </a>
+              </li>
+              <li>
+                <a class="dropdown-item py-2 dropdown-item-premium d-flex align-items-center gap-2" href="{{ url_for('main.shopping_list') }}">
+                  <i class="bi bi-card-list text-success"></i> Shopping Lists
+                </a>
+              </li>
+              <li><hr class="dropdown-divider"></li>
+              <li>
+                <a class="dropdown-item py-2 dropdown-item-premium text-danger fw-medium d-flex align-items-center gap-2" href="{{ url_for('auth.logout') }}">
+                  <i class="bi bi-box-arrow-right"></i> Logout
+                </a>
+              </li>
+            </ul>
+          </li>
+
+          <!-- Optional generic logout button if you want it explicitly out of the dropdown 
+          <li class="nav-item ms-2">
+            <a class="btn btn-outline-light rounded-pill px-3 fw-bold btn-sm" href="{{ url_for('auth.logout') }}">Logout</a>
+          </li>
+          -->
+          {% else %}
+          <li class="nav-item mb-2 mb-lg-0 w-100">
+            <a class="btn btn-outline-light rounded-pill px-4 fw-bold w-100" href="{{ url_for('auth.login') }}">Login</a>
+          </li>
+          <li class="nav-item w-100">
+            <a class="btn btn-light text-primary rounded-pill px-4 fw-bold w-100" href="{{ url_for('auth.signup') }}">Sign Up</a>
+          </li>
+          {% endif %}
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ========================================== -->
+  <!-- FLASH MESSAGES / NOTIFICATIONS            -->
+  <!-- ========================================== -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <div class="container mt-4 pt-5" style="position:relative; z-index: 1050;">
+    {% for category, message in messages %}
+    <div class="alert alert-{{ 'success' if category == 'success' else 'danger' if category == 'error' else category }} alert-dismissible fade show shadow-sm border-0" role="alert">
+      <div class="d-flex align-items-center gap-2">
+        <i class="bi {% if category == 'success' %}bi-check-circle-fill text-success{% elif category == 'error' %}bi-exclamation-triangle-fill text-danger{% else %}bi-info-circle-fill text-info{% endif %} ms-1 fs-5"></i>
+        <div class="fw-medium">{{ message }}</div>
+      </div>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% endwith %}
+
+  <!-- ========================================== -->
+  <!-- MAIN PAGE CONTENT (Injected via Jinja)     -->
+  <!-- ========================================== -->
+  {% block content %}
+  {% endblock %}
+
+  <!-- ========================================== -->
+  <!-- GLOBAL LIST SELECTOR MODAL                 -->
+  <!-- (Reused efficiently across all card clicks)-->
+  <!-- ========================================== -->
+  <div class="modal fade px-0" id="globalListSelectorModal" tabindex="-1" aria-labelledby="globalListSelectorModalLabel" aria-hidden="true" style="z-index: 1060;">
+    <div class="modal-dialog modal-dialog-centered modal-sm mx-auto w-100" style="max-width: 380px;">
+      <div class="modal-content overflow-hidden border-0 shadow" style="border-radius: 20px;">
+        <div class="modal-header border-0 pb-0">
+          <h5 class="modal-title fw-bold" id="globalListSelectorModalLabel">
+            <i class="bi bi-plus-circle-fill me-2 text-primary"></i>Select List
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-4">
+          <p class="text-white mb-4">Select a list to add <span id="pendingItemName" class="fw-bold text-white"></span> to:</p>
+          <div id="globalListSelectorBody" class="d-grid gap-2">
+            <!-- Modal body content goes here (populated by JS) -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript Libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Core Application Scripts -->
+  <script src="{{ url_for('static', filename='js/modules/core.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/modules/ui.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/modules/compare.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/modules/search.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/modules/stores.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/modules/shopping_list.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/modules/deals.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/modules/product_modal.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/modules/profile.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/modules/main.js') }}"></script>
+
+  <!-- Page Specific JavaScript / Inline Scripts -->
+  {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,180 @@
+/* 
+═══════════════════════════════════════════════════════════════════════════
+CATEGORY: COMPARISON TABLE
+GOAL: Layout for the price comparison page.
+═══════════════════════════════════════════════════════════════════════════
+*/
+
+.compare-container {
+  padding: 40px 0;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.06) !important;
+  margin: 20px auto;
+  max-width: 1200px;
+  width: 100%;
+}
+.product-header {
+  background-color: #f5f7fa;
+  padding: 15px 0;
+  background: #f3e8ff;
+  border-bottom: 1px solid #e9d5ff;
+}
+.product-header h2 { font-size: 1.5rem; color: #5b21b6; margin-bottom: 10px; }
+
+.product-table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 14px; }
+.product-table th, .product-table td { padding: 12px; text-align: left; border-bottom: 1px solid #e9d5ff; }
+.product-table th { background: #e9d5ff; font-weight: 600; color: #5b21b6; }
+.product-table tr:nth-child(even) { background: #faf5ff; }
+
+.cheapest { background: #7c3aed; color: white; padding: 5px 10px; border-radius: 4px; font-weight: bold; }
+.compare-search-row {
+  --search-height: 46px; margin-bottom: 1.5rem; height: var(--search-height) !important;
+  box-sizing: border-box !important; display: flex !important; align-items: center; justify-content: center;
+}
+
+/* 
+═══════════════════════════════════════════════════════════════════════════
+CATEGORY: PROFILE SECTION
+GOAL: User dashboard styling.
+═══════════════════════════════════════════════════════════════════════════
+*/
+
+.profile-container {
+  padding: 40px 0;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.06) !important;
+  margin: 20px auto;
+  max-width: 800px;
+}
+.profile-container h2 { text-align: center; font-size: 1.5rem; color: #5b21b6; margin-bottom: 30px; }
+.profile-card { padding: 20px; background: #faf5ff; border-radius: 8px; margin: 20px 0; border: 1px solid #e9d5ff; }
+.profile-card h3 { margin-bottom: 10px; color: #7c3aed; }
+.profile-card p { margin: 5px 0; color: #555; }
+
+.profile-avatar-xl {
+  width: 120px; height: 120px;
+  border: 5px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+.favorite-mini-card {
+  background: white; border-radius: 16px; overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05); transition: all 0.3s ease; border: 1px solid #f1f5f9; height: 100%;
+}
+.favorite-mini-card:hover { transform: translateY(-5px); box-shadow: 0 12px 20px rgba(0,0,0,0.1); }
+.fav-img-container { height: 120px; background: #f8fafc; padding: 15px; display: flex; align-items: center; justify-content: center; }
+.fav-img-container img { max-width: 100%; max-height: 100%; object-fit: contain; }
+
+/* 
+═══════════════════════════════════════════════════════════════════════════
+CATEGORY: SEARCH & PAGINATION
+GOAL: Search entry and page navigation controls.
+═══════════════════════════════════════════════════════════════════════════
+*/
+.search-container {
+  background: linear-gradient(135deg, #f3e8ff, #ede9fe);
+  padding: 30px 0; margin: 20px 0; border-radius: 8px;
+}
+.search-bar { display: flex; gap: 10px; justify-content: center; align-items: center; flex-wrap: wrap; }
+.search-bar input {
+  padding: 12px 20px; border: 2px solid #7c3aed; border-radius: 25px; width: 100%; max-width: 400px;
+}
+.search-bar input:focus { outline: none; border-color: #6d28d9; box-shadow: 0 0 10px rgba(124, 58, 237, 0.3); }
+.search-bar button {
+  padding: 12px 30px; background-color: #7c3aed; color: white; border: none; border-radius: 25px; font-weight: 600; cursor: pointer; transition: 0.3s;
+}
+.search-bar button:hover { background-color: #6d28d9; transform: translateY(-2px); }
+
+/* Results Metadata */
+.results-status-bar {
+  background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 50px; padding: 10px 24px;
+  display: inline-flex; align-items: center; gap: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+}
+.results-status-text { color: #64748b; font-weight: 500; font-size: 0.95rem; }
+.results-status-count {
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+  color: white; padding: 4px 12px; border-radius: 50px; font-weight: 700;
+}
+
+/* Pagination Pills */
+.custom-pagination-container { display: flex; justify-content: center; margin-top: 3rem; padding-bottom: 2rem; }
+.pagination-pills {
+  display: flex; gap: 8px; list-style: none; padding: 8px;
+  background: #fff !important; border-radius: 50px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08); border: 1px solid #f1f5f9;
+}
+.pagination-pills .page-link {
+  width: 44px; height: 44px; border-radius: 50% !important; border: none !important;
+  color: #64748b !important; display: flex; align-items: center; justify-content: center; font-weight: 600;
+}
+.pagination-pills .page-item.active .page-link {
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%) !important; color: white !important; transform: scale(1.1);
+}
+
+/* 
+═══════════════════════════════════════════════════════════════════════════
+CATEGORY: MODALS & OVERLAYS
+GOAL: Customized Bootstrap modals.
+═══════════════════════════════════════════════════════════════════════════
+*/
+
+/* List Selector Modal */
+#globalListSelectorModal .modal-content {
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+  border: 3px solid #7c3aed; border-radius: 20px; color: white;
+}
+#globalListSelectorModal .modal-header .btn-close { filter: brightness(0) invert(1); opacity: 0.9; }
+.list-selector-option {
+  background: #fdfaff; border-radius: 16px; margin-bottom: 12px; cursor: pointer;
+  transition: all 0.3s; position: relative; overflow: hidden;
+}
+.list-selector-option:hover { transform: translateY(-4px) scale(1.01); background: white; }
+.list-selector-icon {
+  width: 48px; height: 48px; border-radius: 12px; background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+  color: white; display: flex; align-items: center; justify-content: center; margin-right: 16px;
+}
+.list-title { font-weight: 700; color: #4c1d95; }
+
+/* Logout Confirmation (Red Theme) */
+.modal-confirm-logout .modal-header { background: #fef2f2; color: #b91c1c; border: none; }
+.logout-icon-circle {
+  width: 80px; height: 80px; background: #fee2e2; color: #ef4444; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;
+}
+
+/* 
+═══════════════════════════════════════════════════════════════════════════
+CATEGORY: RESPONSIVE
+GOAL: Adjustments for mobile devices.
+═══════════════════════════════════════════════════════════════════════════
+*/
+@media (max-width: 768px) {
+  .hero h1 { font-size: 1.8rem; }
+  .product-table th, .product-table td { padding: 8px; }
+  .featured-deals .deal-card { padding: 15px; }
+  .card { margin: 0 8px; }
+  .search-bar { flex-direction: column; }
+  .search-bar input, .search-bar button { width: 100%; }
+}
+
+@media (max-width: 480px) {
+  .hero h1 { font-size: 1.5rem; }
+  .compare-container, .featured-deals, .shopping-list, .profile-container { padding: 20px; }
+  .product-thumb { height: 120px; }
+}
+
+/* Footer & Extras */
+.footer { background: linear-gradient(135deg, #7c3aed, #6d28d9); color: white; padding: 30px 0; text-align: center; }
+.footer .social-links a { color: #fff; margin: 0 10px; font-size: 1.2rem; }
+.store-card { padding: 15px; background: #fff; border-radius: 8px; margin: 10px 0; box-shadow: 0 2px 5px rgba(124, 58, 237, 0.08); }
+.store-card h4 { font-size: 1.2rem; color: #5b21b6; }
+
+/* End of Stylesheet */
+
+
+.navbar-premium .nav-link:not(.nav-icon-btn):not(.nav-profile-btn):hover:not(.active) { color: white !important; background: rgba(255,255,255,0.1) !important; border-radius: 12px; }
+.navbar-premium.scrolled .nav-link:not(.nav-icon-btn):not(.nav-profile-btn):hover:not(.active) { color: #7c3aed !important; background: rgba(124,58,237,0.05) !important; border-radius: 12px; }
+.navbar-premium .nav-icon-btn.nav-link { color: #7c3aed !important; }
+.navbar-premium .nav-profile-btn.nav-link { color: white !important; }
+/* Hover rules for premium nav */
+.navbar-premium .nav-icon-btn.nav-link:hover { color: #5b21b6 !important; background: white !important; }

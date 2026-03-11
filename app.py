@@ -48,12 +48,13 @@ def ensure_venv():
         # Check two conditions before switching:
         # 1. Does the virtual environment python executable actually exist at that path?
         # 2. Is the currently running python interpreter (sys.executable) DIFFERENT from the venv python?
-        if os.path.exists(venv_python) and sys.executable != venv_python:
+        if os.path.exists(venv_python) and sys.executable != venv_python and not os.environ.get('VENV_RESTARTED'):
             print(f"INFO: Auto-switching to virtual environment: {venv_python}")
             try:
                 # Use os.execv to replace the current process image with a new process.
                 # This effectively restarts the script using the correct Python interpreter.
                 # The arguments passed are [venv_python, script_name, ...other_args].
+                os.environ['VENV_RESTARTED'] = '1'
                 os.execv(venv_python, [venv_python] + sys.argv)
             except Exception as e:
                 # If something goes wrong (e.g., permission error), catch the exception 
@@ -157,8 +158,7 @@ except Exception as e:
     print('INFO: Running in fallback mode with local JSON data.')
 
 # Now import the blueprints (after PyMongo attempted initialization)
-from routes import main_bp, auth_bp
-from routes.admin_routes import admin_bp
+from routes import main_bp, auth_bp, admin_bp
 
 # Log connection info
 try:

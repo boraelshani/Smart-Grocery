@@ -1,24 +1,6 @@
-<!--
-═══════════════════════════════════════════════════════════════════════════
-SIGNUP PAGE (User Registration)
-═══════════════════════════════════════════════════════════════════════════
-Purpose: New user account creation form
-Features:
-- Premium Glassmorphism UI
-- Name/Email/Password inputs
-- Validation feedback
-- Authentication flow consistent with Entry/Login
-Route: POST /signup
-═══════════════════════════════════════════════════════════════════════════
--->
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Smart Grocery | Sign Up</title>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+{% extends "base.html" %}
+
+{% block styles %}
 <style>
     body {
       margin: 0;
@@ -160,8 +142,10 @@ Route: POST /signup
         transform: translateX(-3px);
     }
 </style>
-</head>
-<body class="d-flex align-items-center justify-content-center"> <!-- Centers the card in the middle of the screen -->
+{% endblock %}
+
+{% block content %}
+<!-- Centers the card in the middle of the screen -->
 
   <div class="bg-pattern"></div> <!-- Decorative background pattern -->
   <div class="shape shape-1"></div> <!-- Floating decorative circle -->
@@ -182,20 +166,7 @@ Route: POST /signup
       </div>
 
       <!-- Flash Messages - Error/Success alerts from Python logic -->
-	  {% with messages = get_flashed_messages(with_categories=true) %} <!-- Fetch messages sent via Flask flash() -->
-        {% if messages %}
-          {% for category, message in messages %}
-            <div class="alert alert-{{ category }} border-0 shadow-sm rounded-3 mb-4 d-flex align-items-center"> <!-- Styled alert based on category -->
-              {% if category == 'success' %}
-                <i class="bi bi-check-circle-fill me-2 fs-5"></i> <!-- Green check for success -->
-              {% else %}
-                <i class="bi bi-exclamation-circle-fill me-2 fs-5"></i> <!-- Red exclamation for error -->
-              {% endif %}
-              {{ message }} <!-- Display the text of the message -->
-            </div>
-          {% endfor %}
-        {% endif %}
-      {% endwith %}
+	  
 
       <form method="POST" action="{{ url_for('auth.signup') }}"> <!-- Submits data to the /signup Python route -->
 		<div class="form-floating mb-3"> <!-- Container for floating name input -->
@@ -225,7 +196,4 @@ Route: POST /signup
       </form>
     </div>
   </div>
-
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+{% endblock %}
