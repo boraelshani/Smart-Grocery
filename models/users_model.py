@@ -337,6 +337,11 @@ def update_user(email: str, update_data: dict) -> bool:
             return True
     return False
 
+
+def update_user_profile(email: str, update_data: dict) -> bool:
+    """Backward-compatible alias used by existing profile update routes."""
+    return update_user(email, update_data)
+
 def update_list_items(email: str, list_id: str, items: list) -> bool:
     """Update the items in a specific shopping list."""
     if get_db() is not None:

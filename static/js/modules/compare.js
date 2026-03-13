@@ -517,3 +517,594 @@ function setupPaginationSmoothTransition() { // UI Polish
  *    - Iterates over existing DOM elements already rendered.
  *    - Toggles `display: none` for faster interaction.
  */
+
+function setupCompareExperience() {
+  const tray = document.getElementById('comparison-tray');
+  if (!tray) return;
+
+  const trayItemsEl = document.getElementById('comparison-tray-items');
+  const openInsightsBtn = document.getElementById('tray-open-insights');
+  const bestBasketBtn = document.getElementById('tray-best-basket');
+  const clearBtn = document.getElementById('tray-clear');
+  const compareBody = document.getElementById('compare-table-body');
+  const bestBasketPanel = document.getElementById('best-basket-panel');
+  const alertsPanel = document.getElementById('alerts-panel');
+
+  const insightsModal = document.getElementById('compareInsightsModal');
+  const alertModalEl = document.getElementById('priceAlertModal');
+  const reportModalEl = document.getElementById('priceReportModal');
+
+  const alertProductName = document.getElementById('alert-product-name');
+  const alertTargetInput = document.getElementById('alert-target-price');
+  const saveAlertBtn = document.getElementById('save-alert-btn');
+
+  const reportProductName = document.getElementById('report-product-name');
+  const reportStoreSelect = document.getElementById('report-store-select');
+  const reportPriceInput = document.getElementById('report-price-input');
+  const reportNoteInput = document.getElementById('report-note-input');
+  const reportFeedback = document.getElementById('report-feedback');
+  const submitReportBtn = document.getElementById('submit-report-btn');
+
+  const bsInsightsModal = insightsModal ? bootstrap.Modal.getOrCreateInstance(insightsModal) : null;
+  const bsAlertModal = alertModalEl ? bootstrap.Modal.getOrCreateInstance(alertModalEl) : null;
+  const bsReportModal = reportModalEl ? bootstrap.Modal.getOrCreateInstance(reportModalEl) : null;
+
+  const STORAGE_KEY = 'sg_compare_tray_v1';
+  const ALERTS_KEY = 'sg_price_alerts_v1';
+
+  let trayItems = [];
+  let pendingAlertItem = null;
+  let pendingReportItem = null;
+
+  const escapeHtml = (value) => String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
+  const renderStoreRowsFromPayload = (card, stores, bestPrice) => {
+    const list = card.querySelector('.js-store-list');
+    if (!list) return;
+
+    const placeholder = '/static/placeholder.svg';
+    const productImage = card.querySelector('.product-image')?.getAttribute('src') || placeholder;
+    const rendered = [];
+
+    (stores || []).forEach((storeNode) => {
+      const storeName = String(storeNode.store || storeNode.name || '').trim();
+      const price = Number(storeNode.price);
+      if (!storeName || !Number.isFinite(price)) return;
+
+      const isCheapest = Number.isFinite(bestPrice) && price === Number(bestPrice);
+      const unitPrice = Number(storeNode.normalized_unit_price);
+      const unitLabel = String(storeNode.normalized_unit_label || '').trim();
+      const hasUnit = Number.isFinite(unitPrice) && unitLabel;
+      const storeFallback = placeholder;
+      const storeLogo = storeNode.logo || storeNode.store_image || storeFallback;
+      const storeImage = storeNode.image || productImage;
+      const storeUrl = String(storeNode.url || '').trim();
+
+      rendered.push(`
+        <div class="store-item" data-store-name="${escapeHtml(storeName)}"
+          data-store-price="${price.toFixed(2)}"
+          data-store-unit-price="${hasUnit ? unitPrice.toFixed(2) : ''}"
+          data-store-unit-label="${escapeHtml(hasUnit ? unitLabel : '')}"
+          data-image="${escapeHtml(storeImage)}">
+          <div class="d-flex justify-content-between align-items-center gap-1">
+            <div class="d-flex align-items-center gap-2 flex-grow-1" style="min-width:0;">
+              <img src="${escapeHtml(storeLogo)}" alt="${escapeHtml(storeName)}"
+                style="width: 24px; height: 24px; object-fit: contain; border-radius: 4px; background: white; padding: 2px; border: 1px solid #eee;"
+                data-fallback-src="${escapeHtml(storeFallback)}"
+                onerror="this.src=this.dataset.fallbackSrc">
+              <div class="lh-sm overflow-hidden">
+                <span class="fw-semibold text-truncate d-block" style="color: #7c3aed;">${escapeHtml(storeName)}</span>
+              </div>
+            </div>
+            <div class="text-end d-flex align-items-center gap-2" style="min-width: 130px;">
+              <div>
+                <span class="text-success fw-bold fs-5 d-block price-main">
+                  ${isCheapest
+                    ? '<span class="star-slot"><i class="bi bi-star-fill" style="color: #ffc107;"></i></span>'
+                    : '<span class="star-slot empty"><i class="bi bi-star-fill"></i></span>'}
+                  €${price.toFixed(2)}
+                </span>
+                <small class="text-muted js-store-unit-price" ${hasUnit ? '' : 'style="display:none;"'}>${hasUnit ? `(${escapeHtml(unitLabel)}: €${unitPrice.toFixed(2)})` : ''}</small>
+              </div>
+              ${storeUrl ? `<a href="${escapeHtml(storeUrl)}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-go-store p-1" title="Go to official store" style="background: #f0f0ff; border-radius: 6px; color: #7c3aed; border: 1px solid #dadaff; line-height: 1;"><i class="bi bi-box-arrow-up-right" style="font-size: 0.85rem;"></i></a>` : ''}
+            </div>
+          </div>
+        </div>
+      `);
+    });
+
+    if (rendered.length) {
+      list.innerHTML = rendered.join('');
+    }
+  };
+
+  const hydrateCompareCardsFromApi = async () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('legacyCompare') === '1') return;
+
+    const cards = Array.from(document.querySelectorAll('.product-card[data-product-id]'));
+    if (!cards.length) return;
+
+    const params = new URLSearchParams(window.location.search);
+    const query = new URLSearchParams({
+      page: params.get('page') || '1',
+      per_page: String(cards.length),
+      category: params.get('category') || '',
+      search: params.get('search') || '',
+    });
+
+    try {
+      const res = await fetch(`/api/compare/list?${query.toString()}`, { credentials: 'same-origin' });
+      if (!res.ok) return;
+      const data = await res.json();
+      const products = Array.isArray(data.products) ? data.products : [];
+      if (!products.length) return;
+
+      const byId = new Map(products.map((p) => [String(p.id || ''), p]));
+
+      cards.forEach((card) => {
+        const id = String(card.getAttribute('data-product-id') || '');
+        const payload = byId.get(id);
+        if (!payload) return;
+
+        const cheapest = payload.cheapest || {};
+        const bestPrice = Number.isFinite(Number(cheapest.price)) ? Number(cheapest.price) : Number(payload.price);
+        if (Number.isFinite(bestPrice)) {
+          card.setAttribute('data-price', String(bestPrice));
+        }
+
+        const storesJson = JSON.stringify(payload.stores || []);
+        card.setAttribute('data-stores', storesJson);
+
+        const priceNode = card.querySelector('.js-compare-price');
+        if (priceNode && Number.isFinite(bestPrice)) {
+          priceNode.textContent = bestPrice.toFixed(2);
+        }
+
+        const reportCount = Number(payload.community_report_count || 0);
+        const storesCount = Array.isArray(payload.stores) ? payload.stores.length : 0;
+        const confidenceLabel = ((payload.confidence || {}).label || 'Unknown').toLowerCase();
+        let statusText = 'Estimated';
+        if (reportCount > 0) statusText = `Community Reported (${reportCount})`;
+        else if (confidenceLabel === 'high confidence') statusText = 'Confirmed';
+
+        const priceStatusNode = card.querySelector('.js-price-status');
+        if (priceStatusNode) {
+          priceStatusNode.innerHTML = `<i class="bi bi-shield-check"></i> Price: ${statusText}`;
+        }
+
+        const storeCountNode = card.querySelector('.js-store-count');
+        if (storeCountNode) {
+          storeCountNode.innerHTML = `<i class="bi bi-shop"></i> ${storesCount} store${storesCount === 1 ? '' : 's'}`;
+          storeCountNode.setAttribute('data-store-count', String(storesCount));
+        }
+
+        renderStoreRowsFromPayload(card, payload.stores || [], bestPrice);
+
+        const addBtn = card.querySelector('.btn-premium-add');
+        if (addBtn && Number.isFinite(bestPrice)) {
+          addBtn.setAttribute('data-price', String(bestPrice));
+          addBtn.setAttribute('data-initial-price', String(bestPrice));
+        }
+
+        const compareBtn = card.querySelector('.btn-add-compare');
+        if (compareBtn) {
+          compareBtn.setAttribute('data-product-stores', storesJson);
+          if (Number.isFinite(bestPrice)) compareBtn.setAttribute('data-product-price', String(bestPrice));
+          if (payload.normalized_unit_price !== null && payload.normalized_unit_price !== undefined) {
+            compareBtn.setAttribute('data-product-unit-price', String(payload.normalized_unit_price));
+          }
+          compareBtn.setAttribute('data-product-unit-label', payload.normalized_unit_label || '');
+          compareBtn.setAttribute('data-product-confidence', (payload.confidence || {}).label || 'Unknown');
+        }
+
+        const alertBtn = card.querySelector('.btn-set-alert');
+        if (alertBtn && Number.isFinite(bestPrice)) {
+          alertBtn.setAttribute('data-product-price', String(bestPrice));
+        }
+
+        const reportBtn = card.querySelector('.btn-report-price');
+        if (reportBtn) {
+          reportBtn.setAttribute('data-product-stores', storesJson);
+        }
+      });
+    } catch (_) {
+      // Silent fallback to server-rendered data.
+    }
+  };
+
+  const parseNum = (v) => {
+    const n = Number(String(v || '').replace(/[^0-9.\-]/g, ''));
+    return Number.isFinite(n) ? n : null;
+  };
+
+  const readJSON = (raw, fallback) => {
+    try { return JSON.parse(raw); } catch (_) { return fallback; }
+  };
+
+  const loadTray = () => {
+    trayItems = readJSON(localStorage.getItem(STORAGE_KEY) || '[]', []);
+    if (!Array.isArray(trayItems)) trayItems = [];
+    trayItems = trayItems.slice(0, 4);
+  };
+
+  const saveTray = () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(trayItems));
+  };
+
+  const getCurrentCardPriceMap = () => {
+    const map = {};
+    document.querySelectorAll('.product-card[data-product-id]').forEach((card) => {
+      const pid = card.getAttribute('data-product-id');
+      const price = parseNum(card.getAttribute('data-price'));
+      if (pid && price !== null) map[pid] = price;
+    });
+    return map;
+  };
+
+  const renderTray = () => {
+    const currentPrices = getCurrentCardPriceMap();
+    trayItemsEl.innerHTML = '';
+
+    trayItems.forEach((item) => {
+      const current = currentPrices[item.id] ?? item.price;
+      const node = document.createElement('div');
+      node.className = 'tray-item';
+      node.innerHTML = `
+        <button type="button" class="btn-close btn-close-white position-absolute top-0 end-0 m-2 remove-tray-item" data-id="${item.id}" aria-label="Remove"></button>
+        <div class="tray-item-title mb-1">${item.name}</div>
+        <div class="small">Best: <strong>EUR ${Number(current || 0).toFixed(2)}</strong></div>
+        <div class="small opacity-75">${item.unitPrice !== null ? `Unit EUR ${Number(item.unitPrice).toFixed(2)} ${item.unitLabel || ''}` : 'Unit n/a'}</div>
+      `;
+      trayItemsEl.appendChild(node);
+    });
+
+    tray.classList.toggle('active', trayItems.length > 0);
+  };
+
+  const refreshCompareButtons = () => {
+    const ids = new Set(trayItems.map((x) => x.id));
+    document.querySelectorAll('.btn-add-compare').forEach((btn) => {
+      const id = btn.getAttribute('data-product-id');
+      const active = ids.has(id);
+      btn.classList.toggle('active', active);
+      btn.innerHTML = active ? '<i class="bi bi-check2-circle"></i> Added' : '<i class="bi bi-columns-gap"></i> Compare';
+    });
+  };
+
+  const upsertTrayItem = (item) => {
+    const idx = trayItems.findIndex((x) => x.id === item.id);
+    if (idx >= 0) {
+      trayItems.splice(idx, 1);
+    } else {
+      if (trayItems.length >= 4) trayItems.shift();
+      trayItems.push(item);
+    }
+    saveTray();
+    renderTray();
+    refreshCompareButtons();
+  };
+
+  const renderCompareTable = () => {
+    compareBody.innerHTML = '';
+    trayItems.forEach((item) => {
+      let cheapestStore = '-';
+      let cheapest = null;
+      (item.stores || []).forEach((s) => {
+        const p = parseNum(s.price);
+        if (p !== null && (cheapest === null || p < cheapest)) {
+          cheapest = p;
+          cheapestStore = s.store || s.name || '-';
+        }
+      });
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><div class="fw-semibold">${item.name}</div></td>
+        <td>${cheapest !== null ? `EUR ${cheapest.toFixed(2)}` : 'n/a'}</td>
+        <td>${item.unitPrice !== null ? `EUR ${Number(item.unitPrice).toFixed(2)} ${item.unitLabel || ''}` : 'n/a'}</td>
+        <td>${item.confidence || 'Unknown'}</td>
+        <td>${cheapestStore}</td>
+      `;
+      compareBody.appendChild(tr);
+    });
+
+    if (!trayItems.length) {
+      compareBody.innerHTML = '<tr><td colspan="5" class="text-muted">Add up to 4 products to compare.</td></tr>';
+    }
+  };
+
+  const computeBestBasket = () => {
+    if (!trayItems.length) {
+      bestBasketPanel.innerHTML = '<p class="text-muted mb-0">Add products to the tray to compute the basket.</p>';
+      return Promise.resolve();
+    }
+
+    const productIds = trayItems.map((x) => x.id).filter(Boolean);
+    return fetch('/api/compare/best-basket', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({ product_ids: productIds }),
+    })
+      .then(async (res) => {
+        if (!res.ok) throw new Error('Failed best basket request');
+        const data = await res.json();
+
+        const options = Array.isArray(data.single_store_options) ? data.single_store_options : [];
+        const mixed = data.mixed || { total: 0, breakdown: [] };
+
+        let html = `
+          <div class="card border-0 shadow-sm mb-3">
+            <div class="card-body">
+              <h6 class="fw-bold mb-2">Mixed-store optimum</h6>
+              <p class="mb-2 text-muted">Best store selected per product.</p>
+              <div class="fw-bold fs-5 mb-2">Total: EUR ${Number(mixed.total || 0).toFixed(2)}</div>
+            </div>
+          </div>
+        `;
+
+        if (!options.length) {
+          html += '<div class="alert alert-info">No single store currently covers all selected products.</div>';
+          bestBasketPanel.innerHTML = html;
+          return;
+        }
+
+        const bestTotal = Number(options[0].total || 0);
+        html += `
+          <div class="card border-0 shadow-sm">
+            <div class="card-body">
+              <h6 class="fw-bold mb-3">Single-store basket ranking</h6>
+              <div class="table-responsive">
+                <table class="table table-striped align-middle mb-0">
+                  <thead><tr><th>Store</th><th>Basket Price</th><th>Savings</th></tr></thead>
+                  <tbody>
+                    ${options.slice(0, 8).map((row, idx) => {
+                      const total = Number(row.total || 0);
+                      const savings = total - bestTotal;
+                      const savingsText = idx === 0 ? 'BEST' : `+EUR ${savings.toFixed(2)}`;
+                      const savingsClass = idx === 0 ? 'badge bg-success' : 'text-muted';
+                      return `<tr><td><strong>${row.store}</strong></td><td>EUR ${total.toFixed(2)}</td><td><span class="${savingsClass}">${savingsText}</span></td></tr>`;
+                    }).join('')}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        `;
+        bestBasketPanel.innerHTML = html;
+      })
+      .catch(() => {
+        bestBasketPanel.innerHTML = '<div class="alert alert-warning">Could not compute best basket right now. Try again in a moment.</div>';
+      });
+  };
+
+  const getAlerts = () => readJSON(localStorage.getItem(ALERTS_KEY) || '[]', []);
+  const saveAlerts = (alerts) => localStorage.setItem(ALERTS_KEY, JSON.stringify(alerts));
+
+  const renderAlertsPanel = () => {
+    const alerts = getAlerts();
+    if (!alerts.length) {
+      alertsPanel.innerHTML = '<p class="text-muted mb-0">No alerts yet. Use the Alert button on any card.</p>';
+      return;
+    }
+    alertsPanel.innerHTML = `
+      <div class="list-group">${alerts.map((a) => `
+        <div class="list-group-item d-flex justify-content-between align-items-center">
+          <div>
+            <div class="fw-semibold">${a.name}</div>
+            <small class="text-muted">Target: EUR ${Number(a.target).toFixed(2)}</small>
+          </div>
+          <button class="btn btn-sm btn-outline-danger remove-alert" data-id="${a.id}">Remove</button>
+        </div>`).join('')}
+      </div>
+    `;
+  };
+
+  const checkTriggeredAlerts = () => {
+    const alerts = getAlerts();
+    if (!alerts.length) return;
+    const currentMap = getCurrentCardPriceMap();
+    const triggered = alerts.filter((a) => currentMap[a.id] !== undefined && currentMap[a.id] <= a.target);
+    if (!triggered.length) return;
+
+    const holderId = 'compare-alert-toast-holder';
+    let holder = document.getElementById(holderId);
+    if (!holder) {
+      holder = document.createElement('div');
+      holder.id = holderId;
+      holder.className = 'toast-container position-fixed top-0 end-0 p-3';
+      holder.style.zIndex = '1100';
+      document.body.appendChild(holder);
+    }
+
+    triggered.forEach((t) => {
+      const div = document.createElement('div');
+      div.className = 'toast align-items-center text-bg-success border-0';
+      div.setAttribute('role', 'status');
+      div.innerHTML = `<div class="d-flex"><div class="toast-body"><strong>${t.name}</strong> reached your alert target.</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button></div>`;
+      holder.appendChild(div);
+      bootstrap.Toast.getOrCreateInstance(div, { delay: 4500 }).show();
+    });
+  };
+
+  document.addEventListener('click', (e) => {
+    const compareBtn = e.target.closest('.btn-add-compare');
+    if (compareBtn) {
+      e.preventDefault();
+      const stores = readJSON(compareBtn.getAttribute('data-product-stores') || '[]', []);
+      const item = {
+        id: compareBtn.getAttribute('data-product-id'),
+        name: compareBtn.getAttribute('data-product-name') || 'Product',
+        price: parseNum(compareBtn.getAttribute('data-product-price')) || 0,
+        unitPrice: parseNum(compareBtn.getAttribute('data-product-unit-price')),
+        unitLabel: compareBtn.getAttribute('data-product-unit-label') || '',
+        confidence: compareBtn.getAttribute('data-product-confidence') || 'Unknown',
+        image: compareBtn.getAttribute('data-product-image') || '',
+        stores,
+      };
+      if (item.id) upsertTrayItem(item);
+      return;
+    }
+
+    const removeTrayBtn = e.target.closest('.remove-tray-item');
+    if (removeTrayBtn) {
+      const id = removeTrayBtn.getAttribute('data-id');
+      trayItems = trayItems.filter((x) => x.id !== id);
+      saveTray();
+      renderTray();
+      refreshCompareButtons();
+      return;
+    }
+
+    const alertBtn = e.target.closest('.btn-set-alert');
+    if (alertBtn) {
+      pendingAlertItem = {
+        id: alertBtn.getAttribute('data-product-id'),
+        name: alertBtn.getAttribute('data-product-name') || 'Product',
+        current: parseNum(alertBtn.getAttribute('data-product-price')) || 0,
+      };
+      alertProductName.textContent = `${pendingAlertItem.name} current best: EUR ${pendingAlertItem.current.toFixed(2)}`;
+      alertTargetInput.value = pendingAlertItem.current > 0 ? Math.max(0.01, pendingAlertItem.current - 0.2).toFixed(2) : '';
+      bsAlertModal && bsAlertModal.show();
+      return;
+    }
+
+    const reportBtn = e.target.closest('.btn-report-price');
+    if (reportBtn) {
+      pendingReportItem = {
+        id: reportBtn.getAttribute('data-product-id'),
+        name: reportBtn.getAttribute('data-product-name') || 'Product',
+        stores: readJSON(reportBtn.getAttribute('data-product-stores') || '[]', []),
+      };
+      reportProductName.textContent = pendingReportItem.name;
+      reportFeedback.textContent = '';
+      reportPriceInput.value = '';
+      reportNoteInput.value = '';
+      reportStoreSelect.innerHTML = '';
+      const seen = new Set();
+      pendingReportItem.stores.forEach((s) => {
+        const name = (s.store || s.name || '').trim();
+        if (!name || seen.has(name.toLowerCase())) return;
+        seen.add(name.toLowerCase());
+        const opt = document.createElement('option');
+        opt.value = name;
+        opt.textContent = name;
+        reportStoreSelect.appendChild(opt);
+      });
+      if (!reportStoreSelect.options.length) {
+        const opt = document.createElement('option');
+        opt.value = 'Unknown Store';
+        opt.textContent = 'Unknown Store';
+        reportStoreSelect.appendChild(opt);
+      }
+      bsReportModal && bsReportModal.show();
+      return;
+    }
+
+    const removeAlertBtn = e.target.closest('.remove-alert');
+    if (removeAlertBtn) {
+      const id = removeAlertBtn.getAttribute('data-id');
+      const next = getAlerts().filter((a) => a.id !== id);
+      saveAlerts(next);
+      renderAlertsPanel();
+    }
+  });
+
+  saveAlertBtn && saveAlertBtn.addEventListener('click', () => {
+    if (!pendingAlertItem) return;
+    const target = parseNum(alertTargetInput.value);
+    if (target === null || target <= 0) return;
+
+    const alerts = getAlerts();
+    const idx = alerts.findIndex((a) => a.id === pendingAlertItem.id);
+    const record = {
+      id: pendingAlertItem.id,
+      name: pendingAlertItem.name,
+      target: Number(target.toFixed(2)),
+      created_at: new Date().toISOString(),
+    };
+    if (idx >= 0) alerts[idx] = record;
+    else alerts.push(record);
+    saveAlerts(alerts);
+    renderAlertsPanel();
+    bsAlertModal && bsAlertModal.hide();
+  });
+
+  submitReportBtn && submitReportBtn.addEventListener('click', async () => {
+    if (!pendingReportItem) return;
+    const observed_price = parseNum(reportPriceInput.value);
+    if (observed_price === null || observed_price <= 0) {
+      reportFeedback.textContent = 'Enter a valid price.';
+      reportFeedback.className = 'text-danger d-block mt-2';
+      return;
+    }
+
+    const payload = {
+      product_id: pendingReportItem.id,
+      store_name: reportStoreSelect.value,
+      observed_price,
+      note: (reportNoteInput.value || '').trim(),
+    };
+
+    try {
+      submitReportBtn.disabled = true;
+      const res = await fetch('/api/community-price-report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        reportFeedback.textContent = data.error || 'Failed to submit report.';
+        reportFeedback.className = 'text-danger d-block mt-2';
+      } else {
+        reportFeedback.textContent = 'Thanks, your report was submitted.';
+        reportFeedback.className = 'text-success d-block mt-2';
+      }
+    } catch (_) {
+      reportFeedback.textContent = 'Network error while submitting report.';
+      reportFeedback.className = 'text-danger d-block mt-2';
+    } finally {
+      submitReportBtn.disabled = false;
+    }
+  });
+
+  openInsightsBtn && openInsightsBtn.addEventListener('click', async () => {
+    renderCompareTable();
+    await computeBestBasket();
+    renderAlertsPanel();
+    bsInsightsModal && bsInsightsModal.show();
+  });
+
+  bestBasketBtn && bestBasketBtn.addEventListener('click', async () => {
+    await computeBestBasket();
+    bsInsightsModal && bsInsightsModal.show();
+    const tabBtn = document.querySelector('[data-bs-target="#tab-basket"]');
+    tabBtn && bootstrap.Tab.getOrCreateInstance(tabBtn).show();
+  });
+
+  clearBtn && clearBtn.addEventListener('click', () => {
+    trayItems = [];
+    saveTray();
+    renderTray();
+    refreshCompareButtons();
+  });
+
+  const boot = async () => {
+    await hydrateCompareCardsFromApi();
+    loadTray();
+    renderTray();
+    refreshCompareButtons();
+    renderAlertsPanel();
+    checkTriggeredAlerts();
+  };
+
+  boot();
+}

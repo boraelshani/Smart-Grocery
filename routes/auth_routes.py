@@ -17,6 +17,7 @@ from models.products_model import products_model # Import product database metho
 from models.featured_deals_model import featured_deals_model # Import deals database methods for promotional item lookup
 from models.multibuy_offers_model import multibuy_offers_model # Import multibuy offers database methods
 from utils import helpers # Import utility helpers for JWT generation and email extraction
+from comparison.cheapest_finder import get_cheapest_from_product
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -230,7 +231,7 @@ def add_shopping_item(): # Define view function for list addition
                             pass # Proceed without image enrichment
                         
                         # determine price from product if available
-                        cheapest = prod.get('cheapest') or {} # Get cheapest price object from product data
+                        cheapest = get_cheapest_from_product(prod)
                         price_field = cheapest.get('price') if isinstance(cheapest, dict) else prod.get('price') # Extract numeric price
                         if price_field is None: # If price is missing from standard fields
                             try: # Try store-specific extraction

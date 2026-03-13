@@ -14,6 +14,10 @@ import json # Import standard JSON library for data parsing
 import os # Import operating system library for file path management
 import random # Import random library for data shuffling/selection
 import re # Import regular expressions for string manipulation
+import uuid
+from datetime import datetime, timezone, timedelta
+from utils.db import get_db
+from comparison.cheapest_finder import get_cheapest_from_product
 
 # ═══════════════════════════════════════════════════════════════════════════
 # CONSTANTS
@@ -109,8 +113,8 @@ def api_search_products(): # JSON search endpoint for dynamic UI components
                     if prod is None: return False # Sanity check
                     if prod.get('price') not in (None, ''): # Simple price field?
                         return True # Valid
-                    c = prod.get('cheapest') or {} # Check 'cheapest' object
-                    if isinstance(c, dict) and c.get('price') not in (None, ''): # Nested price?
+                    c = get_cheapest_from_product(prod)
+                    if isinstance(c, dict) and c.get('price') is not None:
                         return True # Valid
                     stores_list = prod.get('stores') or [] # Check store arrays
                     try: # Access check
@@ -208,7 +212,6 @@ def api_get_product(): # Detailed info for one product
             return jsonify({'item': None}), 404 # Not found in mocks
     except Exception as e: # Handle lookup errors
         return jsonify({'error': str(e)}), 500 # Internal error
-
 
 
 
@@ -319,8 +322,8 @@ def api_get_store_products(store_name): # Fetch products filtered by retailer
         if matched_stores: # Found local store info?
             price_val = matched_stores[0].get('price') # Extract local price
         if price_val in (None, ''): # No local price?
-            # Fallback to general 'cheapest' or primary 'price' field
-            price_val = (shaped.get('cheapest') or {}).get('price') or shaped.get('price')
+            cheapest = get_cheapest_from_product(shaped)
+            price_val = cheapest.get('price') if cheapest.get('price') is not None else shaped.get('price')
         
         # Ensure price is serializable (handle BSON Decimal128)
         try: # Type conversion block
@@ -547,19 +550,15 @@ def toggle_favorite(): # Handles heart icon interaction
                 return jsonify({'error': 'Product not found'}), 404 # 404
             
             # Resolve store info for the favorite snapshot
-            store_name = product.get('store') or product.get('source', '') # Direct check
-            if not store_name and product.get('stores') and len(product.get('stores', [])) > 0: # Check array
-                # Strategy: Map to the cheapest store currently offering it
-                stores_pool = product.get('stores', []) # Access array
-                cheapest_node = min(stores_pool, key=lambda s: float(s.get('price', float('inf')))) # Calc min
-                store_name = cheapest_node.get('store') or cheapest_node.get('name', '') # Extract name
+            cheapest = get_cheapest_from_product(product)
+            store_name = cheapest.get('store') or product.get('store') or product.get('source', '')
             
             # Formulate the document to be saved in favorited_products collection
             product_data = { # Snapshot
                 'name': product.get('name') or product.get('title', ''), # Name
                 'image': product.get('image', ''), # Asset
                 'category': product.get('category', ''), # Context
-                'best_price': (product.get('cheapest') and product.get('cheapest').get('price')) or product.get('price', 'N/A'),
+                'best_price': cheapest.get('price') if cheapest.get('price') is not None else product.get('price', 'N/A'),
                 'store': store_name, # Origin
                 'discount_tiers': product.get('discount_tiers'), # Meta
                 'offer': product.get('offer') # Meta
@@ -645,4 +644,92 @@ def save_preferences():
 
 
 # Shopping List API Endpoints
+
+
+def _resolve_reporter_identity():
+    """Resolve user/guest reporter identity without requiring authentication."""
+    user_email = helpers.get_user_email()
+    if user_email:
+        return {'reporter_type': 'user', 'reporter_id': user_email}
+
+    anon_id = session.get('anon_reporter_id')
+    if not anon_id:
+        anon_id = f"guest-{uuid.uuid4().hex[:16]}"
+        session['anon_reporter_id'] = anon_id
+    return {'reporter_type': 'guest', 'reporter_id': anon_id}
+
+
+@main_bp.route('/api/community-price-report', methods=['POST'])
+def api_community_price_report_create():
+    """Create community price report (guest-friendly)."""
+    try:
+        payload = request.get_json() or {}
+        product_id = str(payload.get('product_id') or '').strip()
+        store_name = str(payload.get('store_name') or '').strip()
+        note = str(payload.get('note') or '').strip()
+
+        try:
+            observed_price = float(payload.get('observed_price'))
+        except Exception:
+            observed_price = None
+
+        if not product_id or not store_name or observed_price is None:
+            return jsonify({'error': 'product_id, store_name and observed_price are required'}), 400
+        if observed_price <= 0 or observed_price > 10000:
+            return jsonify({'error': 'observed_price is out of accepted range'}), 400
+        if len(note) > 220:
+            return jsonify({'error': 'note is too long'}), 400
+
+        identity = _resolve_reporter_identity()
+        now = datetime.now(timezone.utc)
+
+        db = get_db()
+
+        # Basic anti-spam: same reporter/product/store once per 10 minutes.
+        dedupe_since = now - timedelta(minutes=10)
+        existing = db.community_price_reports.find_one({
+            'reporter_id': identity['reporter_id'],
+            'product_id': product_id,
+            'store_name': store_name,
+            'created_at': {'$gte': dedupe_since},
+        })
+        if existing:
+            return jsonify({'success': False, 'error': 'duplicate_recent_report'}), 429
+
+        doc = {
+            'product_id': product_id,
+            'store_name': store_name,
+            'observed_price': round(observed_price, 2),
+            'note': note,
+            'reporter_type': identity['reporter_type'],
+            'reporter_id': identity['reporter_id'],
+            'source': 'web_compare',
+            'created_at': now,
+        }
+        res = db.community_price_reports.insert_one(doc)
+
+        return jsonify({'success': True, 'report_id': str(res.inserted_id)})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@main_bp.route('/api/community-price-report-summary', methods=['GET'])
+def api_community_price_report_summary():
+    """Return report counts and latest report for a product (guest-friendly)."""
+    product_id = str(request.args.get('product_id') or '').strip()
+    if not product_id:
+        return jsonify({'error': 'product_id required'}), 400
+
+    try:
+        db = get_db()
+        count = db.community_price_reports.count_documents({'product_id': product_id})
+        latest = db.community_price_reports.find_one(
+            {'product_id': product_id},
+            sort=[('created_at', -1)],
+        )
+        if latest:
+            latest = helpers.sanitize_mongo_doc(latest)
+        return jsonify({'success': True, 'count': count, 'latest': latest})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 

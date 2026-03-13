@@ -102,3 +102,14 @@ node_modules/
 *.bak
 *.tmp
 
+# Generated scraper/debug artifacts
+logs/*.json
+*_out.txt
+nuxt_dump.json
+output.txt
+billa_tree.json
+compare_page.html
+hofer.png
+hofer_home.png
+
+

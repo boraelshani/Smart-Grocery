@@ -4,6 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}Smart Grocery{% endblock %}</title>
+  <link rel="icon" type="image/svg+xml" sizes="any" href="{{ url_for('static', filename='sg-favicon.svg') }}?v=2">
+  <link rel="shortcut icon" href="{{ url_for('static', filename='sg-favicon.svg') }}?v=2">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='sg-favicon.svg') }}?v=2">
+  <meta name="theme-color" content="#0ea5a3">
 
   <!-- Core Libraries -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -23,13 +27,34 @@
 </head>
 <body class="{% block body_class %}bg-light{% endblock %}">
 
+  {% set account_name = current_user_nav.display_name if current_user_nav else (session.get('user', '').split('@')[0] if session.get('user') else 'Account') %}
+  {% set account_email = current_user_nav.email if current_user_nav else session.get('user', '') %}
+  {% set account_avatar = current_user_nav.avatar if current_user_nav else '' %}
+  {% set account_initials = current_user_nav.initials if current_user_nav else account_name[:1]|upper %}
+
   <!-- ========================================== -->
   <!-- MAIN NAVIGATION BAR (Global across app)    -->
   <!-- ========================================== -->
   <nav class="navbar navbar-expand-lg navbar-dark navbar-premium fixed-top shadow-sm">
     <div class="container">
       <a class="navbar-brand fw-bold mb-0 d-flex align-items-center gap-2" href="{{ url_for('main.home') }}">
-        <i class="bi bi-cart4 text-white" style="font-size: 1.5rem;"></i> Smart Grocery
+        <svg viewBox="0 0 64 64" aria-hidden="true" style="width: 28px; height: 28px; border-radius: 8px; flex: 0 0 auto;">
+          <defs>
+            <linearGradient id="brand-bg" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#f97316"/>
+              <stop offset="100%" stop-color="#0ea5a3"/>
+            </linearGradient>
+            <linearGradient id="brand-leaf" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#22c55e"/>
+              <stop offset="100%" stop-color="#16a34a"/>
+            </linearGradient>
+          </defs>
+          <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#brand-bg)"/>
+          <path d="M32 12c-8.3 0-15 6.7-15 15 0 10.8 13.1 22.7 14.2 23.7a1.2 1.2 0 0 0 1.6 0C33.9 49.7 47 37.8 47 27c0-8.3-6.7-15-15-15z" fill="#ffffff"/>
+          <path d="M32.2 20.5c4.6-3.6 9.1-2.1 11.4 1.2-4 3.3-8.9 4.2-12.6 2.9-1.9 1.4-3.3 3.6-4 6.2 1.2.4 2.6.6 4 .6 4 0 7.5-1.4 10.1-3.7-.3 6.6-4.3 11.4-10.3 11.4-5.9 0-10.8-4.4-10.8-10.2 0-5.6 4.7-10.2 10.7-10.2.5 0 1 0 1.5.1z" fill="url(#brand-leaf)"/>
+          <circle cx="46.5" cy="16.5" r="2.3" fill="#ffffff" opacity="0.95"/>
+        </svg>
+        Smart Grocery
       </a>
       <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse"
               data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" 
@@ -37,7 +62,7 @@
         <span class="navbar-toggler-icon"></span>
       </button>
       <div class="collapse navbar-collapse" id="navbarNav">
-        <ul class="navbar-nav me-auto mb-1 mb-lg-0 align-items-center">
+        <ul class="navbar-nav ms-auto mb-1 mb-lg-0 align-items-center me-4 gap-1">
           <li class="nav-item">
             <a class="nav-link {% if request.endpoint == 'main.home' %}active{% endif %} rounded-pill px-3 py-2" 
                href="{{ url_for('main.home') }}"><i class="bi bi-house-door me-1"></i>Home</a>
@@ -50,28 +75,28 @@
             <a class="nav-link {% if request.endpoint == 'main.featured_deals_page' %}active{% endif %} rounded-pill px-3 py-2" 
                href="{{ url_for('main.featured_deals_page') }}"><i class="bi bi-tags me-1"></i>Deals</a>
           </li>
-          <li class="nav-item">
-            <a class="nav-link {% if request.endpoint == 'main.stores_page' %}active{% endif %} rounded-pill px-3 py-2" 
-               href="{{ url_for('main.stores_page') }}"><i class="bi bi-shop me-1"></i>Stores</a>
-          </li>
           {% if session.get('user') %}
           <li class="nav-item">
             <a class="nav-link {% if request.endpoint == 'main.shopping_list' %}active{% endif %} rounded-pill px-3 py-2" 
                href="{{ url_for('main.shopping_list') }}"><i class="bi bi-card-list me-1"></i>Lists</a>
           </li>
           {% endif %}
+          <li class="nav-item">
+            <a class="nav-link {% if request.endpoint == 'main.stores_page' %}active{% endif %} rounded-pill px-3 py-2" 
+               href="{{ url_for('main.stores_page') }}"><i class="bi bi-shop me-1"></i>Stores</a>
+          </li>
         </ul>
-        <ul class="navbar-nav align-items-center gap-2">
+        <ul class="navbar-nav align-items-center gap-3 d-none d-lg-flex">
           {% if session.get('user') %}
           <li class="nav-item">
             <a href="{{ url_for('main.notifications_page') }}" 
-               class="btn btn-icon btn-notification rounded-circle position-relative" 
+               class="nav-bell-btn position-relative"
                aria-label="Notifications">
-              <i class="bi bi-bell"></i>
+              <i class="bi bi-bell-fill fs-5"></i>
               {% set unread_count = unread_count|default(0) %}
               {% if unread_count and unread_count > 0 %}
-              <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" 
-                    id="nav-unread-badge">
+              <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-light"
+                    id="nav-unread-badge" style="font-size: 0.75rem; padding: 0.35em 0.5em;">
                 {{ unread_count }}<span class="visually-hidden">unread messages</span>
               </span>
               {% endif %}
@@ -79,43 +104,79 @@
           </li>
           
           <!-- User Dropdown Menu -->
-          <li class="nav-item dropdown ms-2">
-            <a class="nav-link dropdown-toggle text-white d-flex align-items-center gap-2" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-              <!-- Inline SVG for User Profile Avatar / Or a text fallback -->
-              <span class="d-none d-lg-block">Hello, {{ session['user'].split('@')[0][:8] }}</span>
-              <i class="bi bi-person-circle fs-5 lh-1"></i>
+          <li class="nav-item dropdown ms-2 position-relative">
+            <a class="nav-link d-flex align-items-center gap-2 dropdown-toggle py-1 px-3 rounded-pill profile-dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="border: 1px solid rgba(255,255,255,0.2); transition: all 0.2s;">
+              <span class="profile-toggle-copy d-none d-xl-block">
+                <strong class="profile-toggle-name">{{ account_name }}</strong>
+              </span>
+              <div class="navbar-avatar navbar-avatar-sm">
+                {% if account_avatar %}
+                <img src="{{ account_avatar }}" alt="{{ account_name }} avatar">
+                {% else %}
+                <span>{{ account_initials }}</span>
+                {% endif %}
+              </div>
             </a>
-            <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2" aria-labelledby="navbarDropdown" style="border-radius: 12px; overflow: hidden; min-width: 200px;">
-              <li>
-                <div class="px-3 py-2 text-muted small border-bottom mb-1">
-                  Signed in as<br>
-                  <strong class="text-dark text-truncate d-block" style="max-width: 170px;">{{ session['user'] }}</strong>
+            <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-3 p-0" aria-labelledby="navbarDropdown" style="border-radius: 16px; overflow: hidden; min-width: 260px; animation: dropdownFade 0.2s ease-out;">
+              <li class="dropdown-user-header">
+                <div class="d-flex align-items-center gap-3">
+                  <div class="navbar-avatar navbar-avatar-lg navbar-avatar-surface shadow-sm">
+                    {% if account_avatar %}
+                    <img src="{{ account_avatar }}" alt="{{ account_name }} avatar">
+                    {% else %}
+                    <span>{{ account_initials }}</span>
+                    {% endif %}
+                  </div>
+                  <div>
+                    <h6 class="mb-0 fw-bold">{{ account_name }}</h6>
+                    <small class="text-white-50 text-truncate d-inline-block" style="max-width: 150px;">{{ account_email }}</small>
+                  </div>
                 </div>
               </li>
-              <li>
-                <a class="dropdown-item py-2 dropdown-item-premium d-flex align-items-center gap-2" href="{{ url_for('main.profile') }}">
-                  <i class="bi bi-person-gear text-primary"></i> My Profile
-                </a>
-              </li>
-              <li>
-                <a class="dropdown-item py-2 dropdown-item-premium d-flex align-items-center gap-2" href="{{ url_for('main.shopping_list') }}">
-                  <i class="bi bi-card-list text-success"></i> Shopping Lists
-                </a>
-              </li>
-              <li><hr class="dropdown-divider"></li>
-              <li>
-                <a class="dropdown-item py-2 dropdown-item-premium text-danger fw-medium d-flex align-items-center gap-2" href="{{ url_for('auth.logout') }}">
-                  <i class="bi bi-box-arrow-right"></i> Logout
+              <div class="py-2">
+                <li>
+                  <a class="dropdown-item py-2 px-3 fw-medium d-flex align-items-center gap-3 transition-all {% if request.endpoint == 'main.profile' %}active{% endif %}" href="{{ url_for('main.profile') }}" onmouseover="this.style.backgroundColor='#f8f9fa'" onmouseout="this.style.backgroundColor='transparent'">
+                    <div class="bg-light rounded p-2 text-primary d-flex align-items-center justify-content-center"><i class="bi bi-person-lines-fill"></i></div> Profile
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item py-2 px-3 fw-medium d-flex align-items-center gap-3 transition-all" href="{{ url_for('main.shopping_list') }}" onmouseover="this.style.backgroundColor='#f8f9fa'" onmouseout="this.style.backgroundColor='transparent'">
+                    <div class="bg-light rounded p-2 text-success d-flex align-items-center justify-content-center"><i class="bi bi-card-checklist"></i></div> My Shopping Lists
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item py-2 px-3 fw-medium d-flex align-items-center gap-3 transition-all {% if request.endpoint == 'main.profile_favorites' %}active{% endif %}" href="{{ url_for('main.profile_favorites') }}" onmouseover="this.style.backgroundColor='#f8f9fa'" onmouseout="this.style.backgroundColor='transparent'">
+                    <div class="bg-light rounded p-2 text-danger d-flex align-items-center justify-content-center"><i class="bi bi-heart-fill"></i></div> Favorites
+                  </a>
+                </li>
+              </div>
+              <li class="border-top"><hr class="dropdown-divider m-0 border-0"></li>
+              <div class="py-2">
+                <li>
+                  <a class="dropdown-item py-2 px-3 fw-medium d-flex align-items-center gap-3 transition-all {% if request.endpoint == 'main.profile_settings' %}active{% endif %}" href="{{ url_for('main.profile_settings') }}" onmouseover="this.style.backgroundColor='#f8f9fa'" onmouseout="this.style.backgroundColor='transparent'">
+                    <div class="bg-light rounded p-2 d-flex align-items-center justify-content-center"><i class="bi bi-gear-fill"></i></div> Settings
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item py-2 px-3 fw-medium d-flex align-items-center gap-3 transition-all {% if request.endpoint == 'main.profile_preferences' %}active{% endif %}" href="{{ url_for('main.profile_preferences') }}" onmouseover="this.style.backgroundColor='#f8f9fa'" onmouseout="this.style.backgroundColor='transparent'">
+                    <div class="bg-light rounded p-2 text-warning d-flex align-items-center justify-content-center"><i class="bi bi-sliders2"></i></div> Preferences
+                  </a>
+                </li>
+              </div>
+              <li class="border-top bg-light"><hr class="dropdown-divider m-0 border-0"></li>
+              <li class="bg-light px-3 py-3">
+                <a class="btn btn-danger w-100 rounded-pill fw-bold text-white d-flex align-items-center justify-content-center gap-2" href="{{ url_for('auth.logout') }}" style="box-shadow: 0 4px 12px rgba(220, 53, 69, 0.2);">
+                  <i class="bi bi-box-arrow-right"></i> Sign Out
                 </a>
               </li>
             </ul>
           </li>
 
-          <!-- Optional generic logout button if you want it explicitly out of the dropdown 
+          {# Optional generic logout button if you want it explicitly out of the dropdown
           <li class="nav-item ms-2">
             <a class="btn btn-outline-light rounded-pill px-3 fw-bold btn-sm" href="{{ url_for('auth.logout') }}">Logout</a>
           </li>
-          -->
+          #}
           {% else %}
           <li class="nav-item mb-2 mb-lg-0 w-100">
             <a class="btn btn-outline-light rounded-pill px-4 fw-bold w-100" href="{{ url_for('auth.login') }}">Login</a>
@@ -125,6 +186,52 @@
           </li>
           {% endif %}
         </ul>
+
+        {% if session.get('user') %}
+        <div class="navbar-mobile-account d-lg-none mt-3">
+          <div class="navbar-account-card">
+            <div class="d-flex align-items-center gap-3">
+              <div class="navbar-avatar navbar-avatar-lg navbar-avatar-surface">
+                {% if account_avatar %}
+                <img src="{{ account_avatar }}" alt="{{ account_name }} avatar">
+                {% else %}
+                <span>{{ account_initials }}</span>
+                {% endif %}
+              </div>
+              <div class="min-w-0">
+                <div class="fw-bold text-dark text-truncate">{{ account_name }}</div>
+                <div class="small text-muted text-truncate">{{ account_email }}</div>
+              </div>
+            </div>
+            <div class="navbar-menu-grid mt-3">
+              <a class="navbar-menu-link {% if request.endpoint == 'main.profile' %}active{% endif %}" href="{{ url_for('main.profile') }}">
+                <i class="bi bi-person-lines-fill"></i>
+                <span>Profile</span>
+              </a>
+              <a class="navbar-menu-link {% if request.endpoint == 'main.profile_favorites' %}active{% endif %}" href="{{ url_for('main.profile_favorites') }}">
+                <i class="bi bi-heart-fill"></i>
+                <span>Favorites</span>
+              </a>
+              <a class="navbar-menu-link {% if request.endpoint == 'main.profile_settings' %}active{% endif %}" href="{{ url_for('main.profile_settings') }}">
+                <i class="bi bi-gear-fill"></i>
+                <span>Settings</span>
+              </a>
+              <a class="navbar-menu-link {% if request.endpoint == 'main.profile_preferences' %}active{% endif %}" href="{{ url_for('main.profile_preferences') }}">
+                <i class="bi bi-sliders2"></i>
+                <span>Preferences</span>
+              </a>
+              <a class="navbar-menu-link" href="{{ url_for('main.notifications_page') }}">
+                <i class="bi bi-bell-fill"></i>
+                <span>Notifications</span>
+              </a>
+              <a class="navbar-menu-link" href="{{ url_for('auth.logout') }}">
+                <i class="bi bi-box-arrow-right"></i>
+                <span>Sign Out</span>
+              </a>
+            </div>
+          </div>
+        </div>
+        {% endif %}
       </div>
     </div>
   </nav>

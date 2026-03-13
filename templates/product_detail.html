@@ -517,7 +517,7 @@
               style="background: rgba(255, 255, 255, 0.2); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.4); color: white; padding: 0.8rem; border-radius: 12px; transition: all 0.2s;"
               onmouseover="this.style.background='rgba(255, 255, 255, 0.3)'; this.style.transform='translateY(-2px)'"
               onmouseout="this.style.background='rgba(255, 255, 255, 0.2)'; this.style.transform='translateY(0)'"
-              data-name="{{ product.name }}" data-id="{{ product._id or product.id }}" data-price="" data-store=""
+              data-name="{{ product.name }}" data-id="{{ product._id or product.id }}" data-price="{{ best_price_value or '' }}" data-store="{{ best_price_stores[0] if best_price_stores and best_price_stores|length > 0 else '' }}"
               data-original-price="{{ product.original_price or '' }}"
               data-offer-json='{{ product.offer|tojson|forceescape if product.offer else "" }}'
               data-tier-json='{{ product.discount_tiers|tojson|forceescape if product.discount_tiers else "" }}'
@@ -607,6 +607,14 @@
                   </div> <!-- Retailer name label -->
                   <div class="card-price mb-2">€{{ store.price }}</div> <!-- Retailer-specific product price -->
 
+                  {# Offer / Discount Badge #}
+                  {% if store.get('offer') %}
+                  <div class="offer-badge mb-2 d-flex align-items-center gap-2 flex-wrap justify-content-center">
+                    <span class="badge bg-danger">-{{ store.offer.discount_percentage }}%</span>
+                    <span class="text-muted text-decoration-line-through" style="font-size:0.8rem">€{{ "%.2f"|format(store.offer.original_price) }}</span>
+                  </div>
+                  {% endif %}
+
                   {# External Link to Store Website (if available) #}
                   {% if store.get('url') %} <!-- Optional link to grocery website -->
                   <a href="{{ store.get('url') }}" target="_blank" rel="noopener noreferrer"
@@ -682,15 +690,62 @@
       if (mainImg && defaultImgSrc) mainImg.src = defaultImgSrc; // Initialize image if source is available
       const favoriteBtn = document.getElementById('favorite-btn'); // Reference to heart button (if present)
 
+      const hydrateProductFromApi = async () => {
+        const pageParams = new URLSearchParams(window.location.search);
+        if (pageParams.get('legacyCompare') === '1') return;
+        if (!productId) return;
+        try {
+          const res = await fetch(`/api/compare/product/${encodeURIComponent(productId)}`, { credentials: 'same-origin' });
+          if (!res.ok) return;
+          const data = await res.json();
+          const payload = data && data.product ? data.product : null;
+          if (!payload) return;
+
+          const bestPrice = payload.best_price_value;
+          const bestStores = Array.isArray(payload.best_price_stores) ? payload.best_price_stores : [];
+
+          if (selectedPriceEl) {
+            selectedPriceEl.textContent = bestPrice ? `EUR ${bestPrice}` : 'Select a Store';
+          }
+          if (selectedStoreEl) {
+            selectedStoreEl.innerHTML = bestStores.length ? `at <strong>${bestStores.join(', ')}</strong>` : 'Choose a store below';
+          }
+
+          if (addToListBtn) {
+            addToListBtn.dataset.price = bestPrice || '';
+            addToListBtn.dataset.store = bestStores.length ? bestStores[0] : '';
+          }
+
+          const storeMap = new Map((payload.stores || []).map((s) => [String((s.store || s.name || '')).trim().toLowerCase(), s]));
+          storeCards.forEach((card) => {
+            const key = String(card.dataset.store || '').trim().toLowerCase();
+            if (!key || !storeMap.has(key)) return;
+            const storePayload = storeMap.get(key) || {};
+            if (storePayload.price !== null && storePayload.price !== undefined) {
+              card.dataset.price = String(storePayload.price);
+              const priceNode = card.querySelector('.card-price');
+              if (priceNode) priceNode.textContent = `EUR ${Number(storePayload.price).toFixed(2)}`;
+            }
+            if (storePayload.image) {
+              card.dataset.image = storePayload.image;
+            }
+          });
+        } catch (_) {
+          // Silent fallback to server-rendered fields.
+        }
+      };
+
       // Start with no preselected store
       selectedStoreData.store = ''; // Clear retailer tracker
       selectedStoreData.price = ''; // Clear price tracker
       selectedStoreData.image = defaultImgSrc; // Default to main product image
       storeCards.forEach(c => c.classList.remove('selected')); // Remove selection marks from all cards
       if (addToListBtn) {
-        addToListBtn.dataset.price = ''; // Reset price on button for validation
-        addToListBtn.dataset.store = ''; // Reset store on button for validation
+        addToListBtn.dataset.price = addToListBtn.dataset.price || ''; // Reset price on button for validation
+        addToListBtn.dataset.store = addToListBtn.dataset.store || ''; // Reset store on button for validation
       }
+
+      hydrateProductFromApi();
 
       // Handle store card clicks
       storeCards.forEach(card => {

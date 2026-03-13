@@ -14,6 +14,7 @@ import json # Import standard JSON library for data parsing
 import os # Import operating system library for file path management
 import random # Import random library for data shuffling/selection
 import re # Import regular expressions for string manipulation
+from datetime import datetime, timezone
 
 # ═══════════════════════════════════════════════════════════════════════════
 # CONSTANTS
@@ -73,6 +74,153 @@ def _mark_list_metadata(items, fav_ids=None): # Define a helper to attach UI met
                 item['is_favorited'] = item_id in fav_ids # Set boolean flag for front-end heart rendering
     
     return items # Return the enriched list of products
+
+
+def _parse_datetime_safe(value):
+    """Best-effort datetime parser for freshness/confidence calculations."""
+    if not value:
+        return None
+    if isinstance(value, datetime):
+        return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
+    if isinstance(value, str):
+        raw = value.strip()
+        if not raw:
+            return None
+        try:
+            # Handle trailing Z timezone marker.
+            if raw.endswith('Z'):
+                raw = raw[:-1] + '+00:00'
+            parsed = datetime.fromisoformat(raw)
+            return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
+        except Exception:
+            return None
+    return None
+
+
+def _extract_pack_size(product):
+    """Infer pack quantity and normalized unit from product unit/name fields."""
+    unit_text = str(product.get('unit') or '').strip()
+    name_text = str(product.get('name') or product.get('title') or '').strip()
+    haystack = f"{unit_text} {name_text}".lower()
+
+    # Support common variants in imported data.
+    match = re.search(r'(\d+(?:[\.,]\d+)?)\s*(kg|g|l|ml)', haystack)
+    if not match:
+        return None
+
+    qty_raw = float(match.group(1).replace(',', '.'))
+    u = match.group(2)
+
+    if u == 'kg':
+        return {'amount': qty_raw, 'base_unit': 'kg', 'label': '/kg'}
+    if u == 'g':
+        return {'amount': qty_raw / 1000.0, 'base_unit': 'kg', 'label': '/kg'}
+    if u == 'l':
+        return {'amount': qty_raw, 'base_unit': 'l', 'label': '/L'}
+    if u == 'ml':
+        return {'amount': qty_raw / 1000.0, 'base_unit': 'l', 'label': '/L'}
+    return None
+
+
+def _compute_confidence(product):
+    """Generate confidence score/label for compare cards."""
+    stores = product.get('stores') or []
+    store_count = len([s for s in stores if s.get('price') not in (None, '')])
+    score = 0.35 + min(store_count, 5) * 0.1
+
+    timestamp_candidates = [
+        product.get('updated_at'),
+        product.get('scraped_at'),
+        product.get('last_seen'),
+    ]
+    ts = None
+    for c in timestamp_candidates:
+        ts = _parse_datetime_safe(c)
+        if ts:
+            break
+
+    freshness_text = 'Estimated'
+    if ts:
+        age_hours = max(0.0, (datetime.now(timezone.utc) - ts).total_seconds() / 3600.0)
+        if age_hours <= 12:
+            score += 0.3
+            freshness_text = 'Updated recently'
+        elif age_hours <= 48:
+            score += 0.18
+            freshness_text = 'Updated within 2 days'
+        else:
+            score += 0.07
+            freshness_text = 'May be stale'
+    else:
+        score += 0.05
+
+    has_urls = any((s.get('url') or '').strip() for s in stores if isinstance(s, dict))
+    if has_urls:
+        score += 0.1
+
+    score = min(score, 1.0)
+    if score >= 0.78:
+        label = 'High confidence'
+        tone = 'success'
+    elif score >= 0.58:
+        label = 'Medium confidence'
+        tone = 'warning'
+    else:
+        label = 'Low confidence'
+        tone = 'secondary'
+
+    return {
+        'score': round(score, 2),
+        'label': label,
+        'tone': tone,
+        'freshness_text': freshness_text,
+    }
+
+
+def _enrich_compare_product(product):
+    """Attach unit-price data, combo signal, and confidence metadata."""
+    size_meta = _extract_pack_size(product)
+    stores = product.get('stores') or []
+    normalized_candidates = []
+
+    for s in stores:
+        if not isinstance(s, dict):
+            continue
+        raw_price = s.get('price')
+        try:
+            if isinstance(raw_price, Decimal128):
+                raw_price = float(raw_price.to_decimal())
+            price_num = float(raw_price)
+        except Exception:
+            price_num = None
+
+        if size_meta and price_num is not None and size_meta['amount'] > 0:
+            unit_price = round(price_num / size_meta['amount'], 2)
+            s['normalized_price'] = unit_price
+            s['normalized_label'] = size_meta['label']
+            normalized_candidates.append(unit_price)
+        else:
+            s['normalized_price'] = None
+            s['normalized_label'] = ''
+
+    product['normalized_unit_price'] = min(normalized_candidates) if normalized_candidates else None
+    product['normalized_unit_label'] = size_meta['label'] if size_meta else ''
+
+    combo = False
+    combo_label = ''
+    if str(product.get('offer_type') or '').strip() == 'buyXgetY':
+        combo = True
+        x = product.get('offer_x')
+        y = product.get('offer_y')
+        combo_label = f'Combo {x}+{y}' if x and y else 'Combo offer'
+    elif any((s.get('offer') or {}).get('discount_percentage') for s in stores if isinstance(s, dict)):
+        combo = True
+        combo_label = 'Store promo'
+
+    product['combo_deal'] = combo
+    product['combo_deal_label'] = combo_label
+    product['confidence'] = _compute_confidence(product)
+    return product
 
 
 @main_bp.route('/') # Define the root landing page route
@@ -990,6 +1138,29 @@ def compare_prices():
         
         # Use helper method to bulk-mark products (Dry Principle)
         _mark_list_metadata(products, fav_ids) # Apply heart icons and discount badges
+
+        for p in products:
+            _enrich_compare_product(p)
+
+        # Attach community report counts for visible products.
+        try:
+            report_counts = {}
+            product_ids = [str(p.get('id') or p.get('_id')) for p in products if p.get('id') or p.get('_id')]
+            if product_ids:
+                from utils.db import get_db
+                db = get_db()
+                pipeline = [
+                    {'$match': {'product_id': {'$in': product_ids}}},
+                    {'$group': {'_id': '$product_id', 'count': {'$sum': 1}}},
+                ]
+                for row in list(db.community_price_reports.aggregate(pipeline)):
+                    report_counts[str(row.get('_id'))] = int(row.get('count') or 0)
+            for p in products:
+                pid = str(p.get('id') or p.get('_id') or '')
+                p['community_report_count'] = report_counts.get(pid, 0)
+        except Exception:
+            for p in products:
+                p['community_report_count'] = 0
 
         # 7. POPULATE SIDEBAR FILTERS
         cat_counts = products_model.get_category_counts() # Query DB for item counts per department

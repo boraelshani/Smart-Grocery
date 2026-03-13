@@ -1,0 +1,188 @@
+{% extends "account_layout.html" %}
+
+{% block title %}Favorites | Smart Grocery{% endblock %}
+
+{% block account_styles %}
+<style>
+  .favorites-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1rem;
+  }
+
+  .favorite-item-card {
+    position: relative;
+  }
+
+  .favorite-page-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    border-radius: 24px;
+    border: 1px solid #e2e8f0;
+    background: linear-gradient(180deg, #ffffff, #f8fafc);
+    overflow: hidden;
+    text-decoration: none;
+    color: inherit;
+    box-shadow: 0 16px 36px rgba(148, 163, 184, 0.12);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .favorite-page-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 24px 44px rgba(99, 102, 241, 0.14);
+  }
+
+  .favorite-card-media {
+    height: 180px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.25rem;
+    background: #ffffff;
+  }
+
+  .favorite-card-media img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  .favorite-card-body {
+    padding: 1.15rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    flex-grow: 1;
+  }
+
+  .favorite-card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .favorite-remove-btn {
+    position: absolute;
+    top: 0.7rem;
+    right: 0.7rem;
+    width: 30px;
+    height: 30px;
+    border: none;
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.7);
+    color: #ffffff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 10px 22px rgba(15, 23, 42, 0.22);
+    transition: background 0.2s ease, transform 0.2s ease;
+    z-index: 2;
+  }
+
+  .favorite-remove-btn:hover {
+    background: #dc2626;
+    transform: scale(1.06);
+  }
+
+  .favorite-empty {
+    padding: 3rem 1.5rem;
+    text-align: center;
+    border: 1px dashed #cbd5e1;
+    border-radius: 24px;
+    background: linear-gradient(180deg, #ffffff, #f8fafc);
+  }
+</style>
+{% endblock %}
+
+{% block account_content %}
+<div class="account-panel-header">
+  <div>
+    <h2 class="account-panel-title">Favorites</h2>
+    <p class="account-panel-subtitle">Everything you’ve bookmarked in one place, with fast links back into the catalog.</p>
+  </div>
+  <div class="account-count-pill">
+    <i class="bi bi-heart-fill"></i>
+    <span>{{ user_data.favorites|length if user_data.favorites else 0 }} items</span>
+  </div>
+</div>
+
+{% if user_data.favorites %}
+<div class="favorites-grid">
+  {% for fav in user_data.favorites %}
+  {% set view_url = url_for('main.product_info', product_id=fav.id, store_name=fav.store, store_price=fav.best_price or fav.price) %}
+  <article class="favorite-item-card">
+    <button class="favorite-remove-btn" onclick="removeProfileFavorite(event, '{{ fav.id }}', this)" title="Remove from favorites">
+      <i class="bi bi-x-lg"></i>
+    </button>
+    <a class="favorite-page-card" href="{{ view_url }}">
+      <div class="favorite-card-media">
+        <img src="{{ fav.image or url_for('static', filename='placeholder.svg') }}" alt="{{ fav.name }}">
+      </div>
+      <div class="favorite-card-body">
+        <div>
+          <h3 class="h6 fw-bold mb-1 text-dark">{{ fav.name }}</h3>
+          <p class="text-muted small mb-0">Saved for quick comparison and list building.</p>
+        </div>
+        <div class="favorite-card-meta">
+          {% if fav.category %}
+          <span class="badge rounded-pill text-bg-light border">{{ fav.category }}</span>
+          {% endif %}
+          {% if fav.store %}
+          <span class="badge rounded-pill text-bg-white border text-primary"><i class="bi bi-shop me-1"></i>{{ fav.store }}</span>
+          {% endif %}
+        </div>
+        <div class="mt-auto d-flex align-items-center justify-content-between">
+          <strong class="fs-5 text-primary">€{{ fav.best_price or fav.price or '0.00' }}</strong>
+        </div>
+      </div>
+    </a>
+  </article>
+  {% endfor %}
+</div>
+{% else %}
+<div class="favorite-empty">
+  <div class="display-6 text-muted mb-3"><i class="bi bi-heart"></i></div>
+  <h3 class="h5 fw-bold">No favorites yet</h3>
+  <p class="text-muted mb-4">Save products from any store page and they’ll appear here automatically.</p>
+  <a class="btn btn-primary rounded-pill px-4" href="{{ url_for('main.compare_prices') }}">Explore products</a>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block account_scripts %}
+<script>
+  async function removeProfileFavorite(event, productId, btn) {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+
+    try {
+      const response = await fetch('/api/toggle-favorite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ product_id: productId })
+      });
+
+      const data = await response.json();
+      if (!response.ok || !(data.action === 'removed' || data.success)) {
+        throw new Error(data.error || 'Could not remove favorite');
+      }
+
+      const card = btn.closest('.favorite-item-card');
+      if (card) {
+        card.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(8px)';
+        setTimeout(() => window.location.reload(), 240);
+      }
+    } catch (error) {
+      if (typeof showNotification === 'function') {
+        showNotification(error.message || 'Could not remove favorite', 'danger');
+      }
+    }
+  }
+</script>
+{% endblock %}

@@ -22,6 +22,7 @@ document.addEventListener('DOMContentLoaded', () => { // Page ready event
   setupFeaturedDealsSearch();         // Initialize filtering for the deals dashboard
   setupCompareHandlers();             // Enable price sorting on the comparison grid
   setupCompareFilters();              // Initialize hybrid (client+server) filtering
+  setupCompareExperience();           // Advanced compare tray, basket insights, alerts, community reports
   setupPaginationSmoothTransition();  // (Optional) Soft loading for paginated views
   setupLogoutConfirmation();          // Hijack logout links to show confirmation modal
   setupStoreSelection();              // Initialize store-specific pricing logic on cards

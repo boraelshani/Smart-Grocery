@@ -158,7 +158,7 @@ except Exception as e:
     print('INFO: Running in fallback mode with local JSON data.')
 
 # Now import the blueprints (after PyMongo attempted initialization)
-from routes import main_bp, auth_bp, admin_bp
+from routes import main_bp, auth_bp, admin_bp, compare_engine_bp
 
 # Log connection info
 try:
@@ -192,6 +192,7 @@ except Exception:
 app.register_blueprint(main_bp)
 app.register_blueprint(auth_bp)
 app.register_blueprint(admin_bp)
+app.register_blueprint(compare_engine_bp)
 
 
 @app.context_processor
@@ -205,9 +206,23 @@ def inject_navbar_data():
     """
     shopping_list_count = 0
     unread_notifications_count = 0
+    current_user_nav = None
     try:
         email = session.get('user')
         if email:
+            from models.users_model import get_user_by_email
+
+            user = get_user_by_email(email) or {}
+            display_name = (user.get('name') or email.split('@')[0]).strip()
+            initials = ''.join(part[:1] for part in display_name.split()[:2]).upper() or display_name[:1].upper()
+            current_user_nav = {
+                'email': email,
+                'name': user.get('name') or '',
+                'display_name': display_name,
+                'avatar': user.get('avatar') or '',
+                'initials': initials,
+            }
+
             # 1. Calculate Unread Notifications Count using model logic
             from models.notifications_model import get_unread_count
             unread_notifications_count = get_unread_count(email)
@@ -262,7 +277,8 @@ def inject_navbar_data():
         
     return {
         'shopping_list_count': shopping_list_count,
-        'unread_notifications_count': unread_notifications_count
+        'unread_notifications_count': unread_notifications_count,
+        'current_user_nav': current_user_nav,
     }
 
 

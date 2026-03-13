@@ -59,6 +59,19 @@ GOAL: Styles for the Navbar, including the dynamic "Glass" effect.
   color: #1e293b !important;
 }
 
+/* Hover states — override Bootstrap's navbar-dark white hover */
+.navbar-premium:not(.scrolled) .nav-link:not(.nav-icon-btn):not(.nav-profile-btn):hover {
+  color: rgba(255, 255, 255, 1) !important;
+  background: rgba(255, 255, 255, 0.14) !important;
+  border-radius: 10px;
+}
+
+.navbar-premium.scrolled .nav-link:not(.nav-icon-btn):not(.nav-profile-btn):hover {
+  color: #7c3aed !important;
+  background: rgba(124, 58, 237, 0.07) !important;
+  border-radius: 10px;
+}
+
 /* Active Tab Styles */
 .navbar-premium .nav-link:not(.nav-icon-btn):not(.nav-profile-btn).active {
   background: rgba(255, 255, 255, 0.15) !important;
@@ -183,3 +196,251 @@ GOAL: Styles for the Navbar, including the dynamic "Glass" effect.
 }
 .btn-logout-premium:hover { color: #fff; background: #ef4444; }
 
+
+/* Notification Bell Button */
+.nav-bell-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+  color: white !important;
+  transition: all 0.2s ease;
+  text-decoration: none !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.nav-bell-btn:hover {
+  background: rgba(255, 255, 255, 0.32) !important;
+  transform: scale(1.05);
+  color: white !important;
+}
+.navbar-premium.scrolled .nav-bell-btn {
+  background: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+  color: #1e293b !important;
+}
+.navbar-premium.scrolled .nav-bell-btn:hover {
+  background: #f1f5f9 !important;
+  color: #7c3aed !important;
+  transform: scale(1.05);
+  box-shadow: 0 6px 14px rgba(124, 58, 237, 0.12);
+}
+
+/* Profile Toggle Box */
+.profile-dropdown-toggle {
+  background: rgba(255, 255, 255, 0.15);
+  color: white !important;
+  min-height: 48px;
+  text-decoration: none !important;
+}
+.profile-dropdown-toggle:hover {
+  background: rgba(255, 255, 255, 0.25);
+  text-decoration: none !important;
+}
+
+.profile-toggle-copy {
+  min-width: 0;
+  max-width: 140px;
+  text-align: right;
+}
+
+.profile-toggle-name {
+  font-size: 0.95rem;
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color 0.2s ease;
+  text-decoration: none !important;
+}
+
+.profile-dropdown-toggle:hover .profile-toggle-name {
+  color: #e9d5ff;
+}
+
+.navbar-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+  color: #4f46e5;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.navbar-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.navbar-avatar-sm {
+  width: 34px;
+  height: 34px;
+  font-size: 0.85rem;
+}
+
+.navbar-avatar-lg {
+  width: 52px;
+  height: 52px;
+  font-size: 1rem;
+}
+
+.navbar-avatar-surface {
+  background: rgba(255, 255, 255, 0.95);
+  color: #4338ca;
+}
+
+.dropdown-user-header {
+  background: linear-gradient(135deg, #7c3aed, #6366f1);
+  padding: 20px 15px;
+  color: white;
+}
+
+.dropdown-item.active {
+  background: #f5f3ff;
+  color: #5b21b6;
+}
+
+.dropdown-item,
+.dropdown-item:hover,
+.dropdown-item:focus {
+  text-decoration: none !important;
+}
+
+.navbar-mobile-account {
+  padding-top: 0.5rem;
+}
+
+.navbar-account-card {
+  background:
+    radial-gradient(circle at top right, rgba(129, 140, 248, 0.2), transparent 44%),
+    linear-gradient(180deg, #ffffff, #f8fafc);
+  border: 1px solid rgba(203, 213, 225, 0.9);
+  border-radius: 24px;
+  box-shadow: 0 18px 48px rgba(15, 23, 42, 0.12);
+  padding: 1rem;
+}
+
+.navbar-menu-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.navbar-menu-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.9rem 1rem;
+  border-radius: 18px;
+  text-decoration: none;
+  color: #1e293b;
+  background: linear-gradient(145deg, #ffffff, #f8fafc);
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 10px 22px rgba(148, 163, 184, 0.14);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+  text-decoration: none !important;
+}
+
+.navbar-menu-link i {
+  color: #7c3aed;
+  font-size: 1rem;
+}
+
+.navbar-menu-link span {
+  font-weight: 600;
+  font-size: 0.95rem;
+  text-decoration: none;
+}
+
+.navbar-menu-link:hover,
+.navbar-menu-link.active {
+  transform: translateY(-2px);
+  background: linear-gradient(135deg, #f5f3ff, #eef2ff);
+  border-color: rgba(124, 58, 237, 0.22);
+  box-shadow: 0 16px 30px rgba(124, 58, 237, 0.14);
+  color: #4c1d95;
+  text-decoration: none !important;
+}
+
+.navbar-premium .navbar-toggler {
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.22) !important;
+  padding: 0.55rem 0.7rem;
+}
+
+.navbar-premium.scrolled .navbar-toggler {
+  background: #ffffff;
+  border-color: #e2e8f0 !important;
+}
+
+.navbar-premium.scrolled .profile-dropdown-toggle {
+  background: #f8fafc;
+  border-color: #e2e8f0 !important;
+  color: #1e293b !important;
+}
+.navbar-premium.scrolled .profile-dropdown-toggle:hover {
+  background: #f1f5f9;
+}
+
+.navbar-premium.scrolled .profile-dropdown-toggle:hover .profile-toggle-name {
+  color: #6366f1;
+}
+
+/* Animations for dropdown */
+@keyframes dropdownFade {
+  0% { opacity: 0; transform: translateY(10px) scale(0.98); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.hover-bg-light:hover { background-color: #f8f9fa !important; }
+
+@media (max-width: 991.98px) {
+  .navbar-premium .navbar-collapse {
+    margin-top: 0.9rem;
+    padding: 1rem;
+    border-radius: 28px;
+    background: rgba(255, 255, 255, 0.97);
+    border: 1px solid rgba(226, 232, 240, 0.9);
+    box-shadow: 0 18px 48px rgba(15, 23, 42, 0.12);
+    backdrop-filter: blur(18px);
+  }
+
+  .navbar-premium .navbar-collapse a,
+  .navbar-premium .navbar-collapse a:hover,
+  .navbar-premium .navbar-collapse a:focus {
+    text-decoration: none !important;
+  }
+
+  .navbar-premium .navbar-nav {
+    align-items: stretch !important;
+    gap: 0.45rem !important;
+    margin-right: 0 !important;
+  }
+
+  .navbar-premium .nav-link {
+    color: #0f172a !important;
+    border-radius: 16px;
+    padding: 0.85rem 1rem !important;
+  }
+
+  .navbar-premium .nav-link.active {
+    background: linear-gradient(135deg, #ede9fe, #eef2ff) !important;
+    border-color: rgba(124, 58, 237, 0.22) !important;
+    color: #5b21b6 !important;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .navbar-menu-grid {
+    grid-template-columns: 1fr;
+  }
+}

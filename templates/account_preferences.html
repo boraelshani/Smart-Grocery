@@ -1,0 +1,236 @@
+{% extends "account_layout.html" %}
+
+{% block title %}Preferences | Smart Grocery{% endblock %}
+
+{% block account_styles %}
+<style>
+  .preferences-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem;
+  }
+
+  .preferences-card {
+    border-radius: 24px;
+    border: 1px solid #e2e8f0;
+    background: linear-gradient(180deg, #ffffff, #f8fafc);
+    padding: 1.25rem;
+  }
+
+  .preferences-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0.85rem;
+  }
+
+  .preference-tile {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 1rem;
+    border-radius: 20px;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+  }
+
+  .preference-tile:hover,
+  .preference-tile.selected {
+    transform: translateY(-2px);
+    border-color: rgba(124, 58, 237, 0.22);
+    background: linear-gradient(135deg, #faf5ff, #eef2ff);
+    box-shadow: 0 16px 30px rgba(124, 58, 237, 0.1);
+  }
+
+  .preference-logo {
+    width: 48px;
+    height: 48px;
+    border-radius: 16px;
+    background: #f8fafc;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  .preference-logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  .preference-check {
+    position: absolute;
+    top: 0.8rem;
+    right: 0.8rem;
+    width: 24px;
+    height: 24px;
+    border-radius: 999px;
+    background: #7c3aed;
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transform: scale(0.8);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+
+  .preference-tile.selected .preference-check {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  @media (max-width: 991.98px) {
+    .preferences-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block account_content %}
+<div class="account-panel-header">
+  <div>
+    <h2 class="account-panel-title">Preferences</h2>
+    <p class="account-panel-subtitle">Tune the stores and categories that shape your recommendations, alerts, and featured content.</p>
+  </div>
+  <div class="account-count-pill">
+    <i class="bi bi-sliders2"></i>
+    <span>{{ user_data.get('preferred_stores', [])|length + user_data.get('preferred_categories', [])|length }} selections</span>
+  </div>
+</div>
+
+<div class="preferences-grid">
+  <section class="preferences-card">
+    <div class="d-flex align-items-start justify-content-between gap-3 mb-4">
+      <div>
+        <h3 class="h5 fw-bold mb-1">Preferred Stores</h3>
+        <p class="text-muted mb-0">Choose the retailers that matter most to you.</p>
+      </div>
+      <span class="badge text-bg-success rounded-pill" id="storesCountBadge">{{ user_data.get('preferred_stores', [])|length }} selected</span>
+    </div>
+    <form id="storesForm" class="preferences-list">
+      {% for store in stores %}
+      <label class="preference-tile {{ 'selected' if store.name in user_data.get('preferred_stores', []) else '' }}">
+        <input type="checkbox" name="stores" value="{{ store.name }}" {% if store.name in user_data.get('preferred_stores', []) %}checked{% endif %} hidden>
+        <span class="preference-check"><i class="bi bi-check"></i></span>
+        <span class="preference-logo">
+          {% if store.image %}
+          <img src="{{ store.image }}" alt="{{ store.name }}">
+          {% else %}
+          <strong class="text-primary">{{ store.name[:1] }}</strong>
+          {% endif %}
+        </span>
+        <span>
+          <strong class="d-block">{{ store.name }}</strong>
+          <small class="text-muted">{{ store.count }} products</small>
+        </span>
+      </label>
+      {% endfor %}
+    </form>
+  </section>
+
+  <section class="preferences-card">
+    <div class="d-flex align-items-start justify-content-between gap-3 mb-4">
+      <div>
+        <h3 class="h5 fw-bold mb-1">Preferred Categories</h3>
+        <p class="text-muted mb-0">Tell Smart Grocery what you shop for most often.</p>
+      </div>
+      <span class="badge text-bg-warning rounded-pill" id="categoriesCountBadge">{{ user_data.get('preferred_categories', [])|length }} selected</span>
+    </div>
+    <form id="categoriesForm" class="preferences-list">
+      {% for category in category_options %}
+      <label class="preference-tile {{ 'selected' if category in user_data.get('preferred_categories', []) else '' }}">
+        <input type="checkbox" name="categories" value="{{ category }}" {% if category in user_data.get('preferred_categories', []) %}checked{% endif %} hidden>
+        <span class="preference-check"><i class="bi bi-check"></i></span>
+        <span class="preference-logo"><i class="bi bi-tag-fill text-primary"></i></span>
+        <span>
+          <strong class="d-block">{{ category }}</strong>
+        </span>
+      </label>
+      {% endfor %}
+    </form>
+  </section>
+</div>
+{% endblock %}
+
+{% block account_scripts %}
+<script>
+  const submitPreferenceGroup = async (selector, endpoint, badgeSelector, suffix) => {
+    const form = document.querySelector(selector);
+    const badge = document.querySelector(badgeSelector);
+    if (!form) {
+      return;
+    }
+
+    const formData = new FormData();
+    const checked = Array.from(form.querySelectorAll('input:checked')).map((input) => input.value);
+    checked.forEach((value) => formData.append(form.querySelector('input').name, value));
+
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      throw new Error('Could not save your preferences');
+    }
+
+    if (badge) {
+      badge.textContent = `${checked.length} ${suffix}`;
+    }
+  };
+
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('#storesForm .preference-tile').forEach((tile) => {
+      tile.addEventListener('click', async (event) => {
+        if (event.target.closest('input')) {
+          return;
+        }
+
+        event.preventDefault();
+        const input = tile.querySelector('input');
+        input.checked = !input.checked;
+        tile.classList.toggle('selected', input.checked);
+
+        try {
+          await submitPreferenceGroup('#storesForm', '{{ url_for('main.update_stores') }}', '#storesCountBadge', 'selected');
+        } catch (error) {
+          input.checked = !input.checked;
+          tile.classList.toggle('selected', input.checked);
+          if (typeof showNotification === 'function') {
+            showNotification(error.message, 'danger');
+          }
+        }
+      });
+    });
+
+    document.querySelectorAll('#categoriesForm .preference-tile').forEach((tile) => {
+      tile.addEventListener('click', async (event) => {
+        if (event.target.closest('input')) {
+          return;
+        }
+
+        event.preventDefault();
+        const input = tile.querySelector('input');
+        input.checked = !input.checked;
+        tile.classList.toggle('selected', input.checked);
+
+        try {
+          await submitPreferenceGroup('#categoriesForm', '{{ url_for('main.update_categories') }}', '#categoriesCountBadge', 'selected');
+        } catch (error) {
+          input.checked = !input.checked;
+          tile.classList.toggle('selected', input.checked);
+          if (typeof showNotification === 'function') {
+            showNotification(error.message, 'danger');
+          }
+        }
+      });
+    });
+  });
+</script>
+{% endblock %}

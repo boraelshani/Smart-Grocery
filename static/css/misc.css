@@ -100,15 +100,32 @@ GOAL: Search entry and page navigation controls.
 /* Pagination Pills */
 .custom-pagination-container { display: flex; justify-content: center; margin-top: 3rem; padding-bottom: 2rem; }
 .pagination-pills {
-  display: flex; gap: 8px; list-style: none; padding: 8px;
-  background: #fff !important; border-radius: 50px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08); border: 1px solid #f1f5f9;
+  display: inline-flex; align-items: center; gap: 8px; list-style: none; padding: 12px 20px;
+  background: #fff !important; border-radius: 50px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); border: 1px solid #e2e8f0;
+  margin: 0;
+}
+.pagination-pills .page-item {
+  margin: 0;
 }
 .pagination-pills .page-link {
-  width: 44px; height: 44px; border-radius: 50% !important; border: none !important;
+  width: 40px !important; height: 40px !important; border-radius: 50% !important; border: none !important;
   color: #64748b !important; display: flex; align-items: center; justify-content: center; font-weight: 600;
+  padding: 0 !important; margin: 0; background: transparent; transition: all 0.2s ease; text-decoration: none;
 }
 .pagination-pills .page-item.active .page-link {
-  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%) !important; color: white !important; transform: scale(1.1);
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%) !important; color: white !important; 
+  box-shadow: 0 4px 10px rgba(124, 58, 237, 0.25);
+  transform: scale(1.05); /* Slight pop out effect */
+}
+.pagination-pills .page-item.disabled .page-link {
+  opacity: 0.5; pointer-events: none;
+}
+.pagination-pills .page-item:first-child .page-link,
+.pagination-pills .page-item:last-child .page-link {
+  width: auto !important; height: 40px !important; border-radius: 20px !important; padding: 0 16px !important; gap: 6px;
+}
+.pagination-pills .page-link:hover {
+  background: #f1f5f9 !important; color: #1e293b !important;
 }
 
 /* 

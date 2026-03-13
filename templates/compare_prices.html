@@ -78,6 +78,7 @@
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Professional easing curve for smooth hover */
       background: white;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      max-width: 100%;
     }
     
     /* Hover State: Lift up and glow purple to signal interactivity */
@@ -89,25 +90,34 @@
     
     /* Product Image Container */
     .product-image {
-      height: 240px; /* Fixed height ensures grid alignment regardless of image aspect ratio */
+      height: 230px; /* Larger image for clearer product recognition */
       object-fit: contain; /* Ensures whole image is visible without cropping/stretching */
       background: #ffffff !important;
-      padding: 15px;
+      padding: 10px;
     }
 
     /* Price tag positioned absolutely over the product image */
     .price-badge {
       position: absolute;
-      top: 15px;
-      right: 15px;
+      top: 10px;
+      right: 10px;
       background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); /* Bright pink/purple gradient for visibility */
       color: white;
-      padding: 8px 16px;
+      padding: 6px 10px;
       border-radius: 20px;
       font-weight: bold;
-      font-size: 1.1rem;
+      font-size: 0.9rem;
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
       z-index: 5; /* Sit above image content */
+    }
+
+    .product-card .card-title {
+      font-size: 1rem;
+      line-height: 1.2;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
     }
 
     /* Small badge for product categorization */
@@ -281,6 +291,441 @@
       transform: translateY(-5px); /* Lift upwards */
       box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15) !important; /* Increase shadow depth */
     }
+
+    .unit-price-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      background: #eef2ff;
+      border: 1px solid #c7d2fe;
+      color: #4338ca;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      padding: 0.22rem 0.6rem;
+      font-weight: 700;
+    }
+
+    .confidence-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      font-size: 0.74rem;
+      border-radius: 999px;
+      padding: 0.28rem 0.55rem;
+      border: 1px solid transparent;
+      font-weight: 700;
+    }
+    .confidence-success { background: #ecfdf3; color: #166534; border-color: #86efac; }
+    .confidence-warning { background: #fff7ed; color: #9a3412; border-color: #fdba74; }
+    .confidence-secondary { background: #f8fafc; color: #334155; border-color: #cbd5e1; }
+
+    .combo-badge {
+      background: linear-gradient(135deg, #f97316, #ef4444);
+      color: white;
+      border: none;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 0.3rem 0.6rem;
+    }
+
+    .compare-toolbar {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.5rem;
+      margin-top: 0.55rem;
+    }
+
+    .compare-toolbar .btn-report-price {
+      grid-column: span 2;
+    }
+
+    .btn-soft {
+      border: 1px solid #dbeafe;
+      background: linear-gradient(135deg, #f8fbff, #eef2ff);
+      color: #1d4ed8;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 0.78rem;
+      padding: 0.42rem 0.55rem;
+    }
+    .btn-soft:hover {
+      transform: translateY(-1px);
+      border-color: #93c5fd;
+      color: #1e40af;
+    }
+
+    .comparison-tray {
+      position: fixed;
+      left: 50%;
+      bottom: 1rem;
+      transform: translateX(-50%);
+      z-index: 1080;
+      width: min(1100px, calc(100% - 1.2rem));
+      background: rgba(15, 23, 42, 0.92);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      box-shadow: 0 24px 55px rgba(2, 6, 23, 0.4);
+      border-radius: 22px;
+      backdrop-filter: blur(16px);
+      padding: 0.8rem;
+      color: #e2e8f0;
+      display: none;
+    }
+
+    .comparison-tray.active { display: block; }
+
+    .tray-grid {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr;
+      gap: 0.75rem;
+      align-items: stretch;
+    }
+
+    .tray-items {
+      display: flex;
+      gap: 0.6rem;
+      overflow-x: auto;
+      padding-bottom: 0.2rem;
+    }
+
+    .tray-item {
+      min-width: 180px;
+      background: rgba(148, 163, 184, 0.15);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      border-radius: 14px;
+      padding: 0.55rem 0.7rem;
+      position: relative;
+    }
+
+    .tray-item-title {
+      font-size: 0.83rem;
+      font-weight: 700;
+      line-height: 1.2;
+      max-height: 2.4em;
+      overflow: hidden;
+    }
+
+    .tray-actions {
+      display: flex;
+      gap: 0.45rem;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      align-content: center;
+    }
+
+    .tray-btn {
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      background: rgba(15, 23, 42, 0.6);
+      color: #e2e8f0;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      padding: 0.48rem 0.72rem;
+    }
+
+    .tray-btn:hover { background: rgba(30, 41, 59, 0.95); color: #ffffff; }
+    .tray-btn-primary { background: linear-gradient(135deg, #7c3aed, #4f46e5); border-color: transparent; }
+
+    .insight-panel .table td,
+    .insight-panel .table th {
+      vertical-align: middle;
+      font-size: 0.9rem;
+    }
+
+    .report-count-pill {
+      font-size: 0.72rem;
+      font-weight: 700;
+      background: #eff6ff;
+      color: #1d4ed8;
+      border-radius: 999px;
+      padding: 0.25rem 0.5rem;
+      border: 1px solid #bfdbfe;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: linear-gradient(135deg, #eff6ff, #eef2ff);
+      border: 1px solid #c7d2fe;
+      color: #1e3a8a;
+      border-radius: 999px;
+      padding: 0.34rem 0.72rem;
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+
+    .stores-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      color: #334155;
+      border-radius: 999px;
+      padding: 0.34rem 0.72rem;
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+
+    .status-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.7rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .status-group {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      flex-wrap: wrap;
+      min-width: 0;
+    }
+
+    .inline-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      flex-shrink: 0;
+    }
+
+    .inline-action-btn {
+      border: 1px solid #dbeafe;
+      background: linear-gradient(135deg, #f8fbff, #eef2ff);
+      color: #1d4ed8;
+      border-radius: 10px;
+      width: 34px;
+      height: 34px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      font-size: 0.95rem;
+    }
+
+    .inline-action-btn:hover {
+      transform: translateY(-1px);
+      border-color: #93c5fd;
+      color: #1e40af;
+    }
+
+    .quick-actions-row {
+      display: flex;
+      gap: 0.45rem;
+      margin-top: 0.55rem;
+      margin-bottom: 0.35rem;
+    }
+
+    .quick-action-btn {
+      border: 1px solid #dbeafe;
+      background: linear-gradient(135deg, #f8fbff, #eef2ff);
+      color: #1d4ed8;
+      border-radius: 10px;
+      width: 34px;
+      height: 34px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      font-size: 0.95rem;
+    }
+
+    .quick-action-btn:hover {
+      transform: translateY(-1px);
+      border-color: #93c5fd;
+      color: #1e40af;
+    }
+
+    .compare-secondary-btn {
+      border-radius: 12px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      width: 100%;
+      padding: 0.55rem 0.75rem;
+    }
+
+    .price-main {
+      display: inline-flex;
+      align-items: center;
+      justify-content: flex-end;
+      min-width: 90px;
+      gap: 0.2rem;
+    }
+
+    .star-slot {
+      width: 0.95rem;
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .star-slot.empty {
+      visibility: hidden;
+    }
+
+    @media (max-width: 991.98px) {
+      .compare-toolbar { grid-template-columns: 1fr; }
+      .compare-toolbar .btn-report-price { grid-column: span 1; }
+      .tray-grid { grid-template-columns: 1fr; }
+      .comparison-tray { bottom: 0.6rem; border-radius: 16px; }
+      .status-row { flex-wrap: wrap; }
+      .inline-actions { margin-left: auto; }
+    }
+
+    /* Premium modal redesign for compare/alert/report popups */
+    #compareInsightsModal .modal-content,
+    #priceAlertModal .modal-content,
+    #priceReportModal .modal-content {
+      border: 1px solid #dbeafe;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 26px 58px rgba(15, 23, 42, 0.22);
+      background: linear-gradient(180deg, #ffffff, #f8fafc);
+    }
+
+    #compareInsightsModal .modal-header,
+    #priceAlertModal .modal-header,
+    #priceReportModal .modal-header {
+      border-bottom: 1px solid rgba(191, 219, 254, 0.7);
+      padding: 1rem 1.2rem;
+    }
+
+    #priceAlertModal .modal-header,
+    #priceReportModal .modal-header {
+      background: linear-gradient(135deg, #0f172a, #4338ca);
+      color: #fff;
+    }
+
+    #priceAlertModal .modal-header .btn-close,
+    #priceReportModal .modal-header .btn-close {
+      filter: invert(1) grayscale(100%);
+      opacity: 0.85;
+    }
+
+    #compareInsightsModal .modal-title,
+    #priceAlertModal .modal-title,
+    #priceReportModal .modal-title {
+      font-weight: 800;
+      letter-spacing: 0.01em;
+    }
+
+    #compareInsightsModal .modal-body,
+    #priceAlertModal .modal-body,
+    #priceReportModal .modal-body {
+      padding: 1.15rem 1.2rem;
+    }
+
+    #compareInsightsModal .nav-pills .nav-link {
+      border-radius: 999px;
+      border: 1px solid #dbeafe;
+      background: #f8fbff;
+      color: #1e3a8a;
+      font-weight: 700;
+      padding: 0.42rem 0.9rem;
+    }
+
+    #compareInsightsModal .nav-pills .nav-link.active {
+      background: linear-gradient(135deg, #4f46e5, #7c3aed);
+      color: #fff;
+      border-color: transparent;
+      box-shadow: 0 8px 18px rgba(79, 70, 229, 0.28);
+    }
+
+    #compareInsightsModal table thead th {
+      background: #eef2ff;
+      color: #1e3a8a;
+      border-bottom: 1px solid #c7d2fe;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-weight: 800;
+    }
+
+    #compareInsightsModal table tbody td {
+      border-color: #e2e8f0;
+      font-size: 0.9rem;
+    }
+
+    #priceAlertModal .form-label,
+    #priceReportModal .form-label {
+      color: #334155;
+      font-weight: 700;
+      font-size: 0.86rem;
+    }
+
+    #priceAlertModal .form-control,
+    #priceReportModal .form-control,
+    #priceReportModal .form-select {
+      border-radius: 12px;
+      border: 1px solid #cbd5e1;
+      background: #fff;
+      min-height: 42px;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    }
+
+    #priceAlertModal .form-control:focus,
+    #priceReportModal .form-control:focus,
+    #priceReportModal .form-select:focus {
+      border-color: #818cf8;
+      box-shadow: 0 0 0 0.2rem rgba(99, 102, 241, 0.18);
+    }
+
+    #priceAlertModal .input-group-text,
+    #priceReportModal .input-group-text {
+      border-radius: 12px 0 0 12px;
+      border: 1px solid #cbd5e1;
+      border-right: none;
+      background: #eef2ff;
+      color: #3730a3;
+      font-weight: 700;
+    }
+
+    #priceAlertModal .modal-footer,
+    #priceReportModal .modal-footer {
+      border-top: 1px solid #e2e8f0;
+      padding: 0.9rem 1.2rem 1.1rem;
+      background: #f8fafc;
+    }
+
+    #priceAlertModal .modal-footer .btn-primary,
+    #priceReportModal .modal-footer .btn-primary {
+      border: none;
+      background: linear-gradient(135deg, #4f46e5, #7c3aed);
+      border-radius: 10px;
+      font-weight: 700;
+      box-shadow: 0 10px 22px rgba(79, 70, 229, 0.3);
+      padding: 0.5rem 1rem;
+    }
+
+    #priceAlertModal .modal-footer .btn-outline-secondary,
+    #priceReportModal .modal-footer .btn-outline-secondary {
+      border-radius: 10px;
+      font-weight: 600;
+    }
+
+    #report-feedback.text-success {
+      color: #15803d !important;
+      font-weight: 700;
+    }
+
+    #report-feedback.text-danger {
+      color: #b91c1c !important;
+      font-weight: 700;
+    }
+
+    #compare-alert-toast-holder .toast {
+      border-radius: 14px;
+      border: 1px solid rgba(167, 243, 208, 0.6);
+      box-shadow: 0 14px 32px rgba(15, 118, 110, 0.22);
+      background: linear-gradient(135deg, #065f46, #047857) !important;
+    }
+
   </style>
 {% endblock %}
 
@@ -459,7 +904,13 @@
           data-stores='{{ p.get("stores")|tojson }}'
           data-price="{{ (p.get('cheapest') and p.get('cheapest').get('price')) or p.get('price','') }}"
           data-name="{{ p.get('name','') |lower }}" 
-          data-category="{{ p.get('category','') |lower }}">
+          data-category="{{ p.get('category','') |lower }}"
+          data-product-id="{{ p.get('id') }}"
+          data-product-name="{{ p.get('name') or p.get('title','')|e }}"
+          data-unit-price="{{ p.get('normalized_unit_price') if p.get('normalized_unit_price') is not none else '' }}"
+          data-unit-label="{{ p.get('normalized_unit_label','') }}"
+          data-confidence-score="{{ p.get('confidence', {}).get('score', 0) }}"
+          data-confidence-label="{{ p.get('confidence', {}).get('label', 'Unknown') }}">
           
           <div class="card product-card-inner h-100" style="background-color: #ffffff;">
             {# 
@@ -475,8 +926,8 @@
                 
                 {# Price Badge: Shows cheapest available price #}
                 <span class="price-badge">
-                  <i class="bi bi-tag-fill"></i> €{{ (p.get('cheapest') and p.get('cheapest').get('price')) or
-                  p.get('price','N/A') }}
+                  <i class="bi bi-tag-fill"></i> €<span class="js-compare-price">{{ (p.get('cheapest') and p.get('cheapest').get('price')) or
+                  p.get('price','N/A') }}</span>
                 </span>
               </div>
             </a>
@@ -489,22 +940,63 @@
                 {% endif %}
               </div>
 
+              {% set confidence = p.get('confidence', {}) %}
+              {% set report_count = p.get('community_report_count', 0) %}
+              {% set store_count = p.get('stores')|length if p.get('stores') else 0 %}
+              {% set confidence_label = confidence.get('label', 'Unknown') %}
+              {% if report_count|int > 0 %}
+                {% set status_text = 'Community Reported (' ~ report_count ~ ')' %}
+              {% elif confidence_label|lower == 'high confidence' %}
+                {% set status_text = 'Confirmed' %}
+              {% else %}
+                {% set status_text = 'Estimated' %}
+              {% endif %}
+              <div class="status-row">
+                <div class="status-group">
+                  <span class="status-pill js-price-status"
+                    data-confidence-label="{{ confidence_label }}"
+                    data-report-count="{{ report_count }}"><i class="bi bi-shield-check"></i> Price: {{ status_text }}</span>
+                  <span class="stores-pill js-store-count" data-store-count="{{ store_count }}"><i class="bi bi-shop"></i> {{ store_count }} store{{ 's' if store_count != 1 else '' }}</span>
+                </div>
+
+                <div class="inline-actions" aria-label="Quick card actions">
+                  <button type="button" class="inline-action-btn btn-set-alert"
+                    title="Set alert"
+                    data-product-id="{{ p.get('id') }}"
+                    data-product-name="{{ p.get('name') or p.get('title','')|e }}"
+                    data-product-price="{{ (p.get('cheapest') and p.get('cheapest').get('price')) or p.get('price','') }}">
+                    <i class="bi bi-bell"></i>
+                  </button>
+
+                  <button type="button" class="inline-action-btn btn-report-price"
+                    title="Report price"
+                    data-product-id="{{ p.get('id') }}"
+                    data-product-name="{{ p.get('name') or p.get('title','')|e }}"
+                    data-product-stores='{{ p.get("stores")|tojson|forceescape }}'>
+                    <i class="bi bi-chat-dots"></i>
+                  </button>
+                </div>
+              </div>
+
+              {% if p.get('combo_deal') %}
+              <div class="mb-2">
+                <span class="combo-badge"><i class="bi bi-lightning-charge-fill me-1"></i>{{ p.get('combo_deal_label') or 'Combo offer' }}</span>
+              </div>
+              {% endif %}
+
               {% if p.get('stores') %}
               <div class="mb-3">
-                <h6 class="text-muted mb-2 fw-semibold">
-                  <i class="bi bi-shop"></i> Available at {{ p.get('stores')|length }} store{{ 's' if
-                  p.get('stores')|length != 1 else '' }}
-                </h6>
-                
                 {# 
                    NESTED LOOP: STORES
-                   Shows the top 3 stores where this product is found.
-                   Sorted by price usually (backend logic).
+                   Shows store options where this product is found.
                 #}
-                {% for s in p.get('stores')[:3] %}
+                <div class="js-store-list">
+                {% for s in p.get('stores') %}
                 {# Store Item: Clickable to select specific store price #}
                 <div class="store-item" data-store-name="{{ s.get('store') or s.get('name') }}"
                   data-store-price="{{ s.get('price') }}" data-product-id="{{ p.get('id') }}"
+                  data-store-unit-price="{{ s.get('normalized_unit_price') if s.get('normalized_unit_price') is not none else '' }}"
+                  data-store-unit-label="{{ s.get('normalized_unit_label', '') }}"
                   data-image="{{ prefer_processed(s.get('image') if (s.get('image') and 'logo' not in s.get('image')|lower and 'brand' not in s.get('image')|lower) else p.get('image') or (p.get('images') and p.get('images')[0]) or url_for('static', filename='placeholder.svg')) }}">
                   <div class="d-flex justify-content-between align-items-center gap-1">
                     <div class="d-flex align-items-center gap-2 flex-grow-1" style="min-width:0;">
@@ -520,13 +1012,27 @@
                           }}</span>
                       </div>
                     </div>
-                    <div class="text-end d-flex align-items-center gap-2" style="min-width: 68px;">
-                      <span class="text-success fw-bold fs-5">
+                    <div class="text-end d-flex align-items-center gap-2" style="min-width: 130px;">
+                      <div>
+                        <span class="text-success fw-bold fs-5 d-block price-main">
                         {# Add Star Icon for "Cheapest" option #}
                         {% if p.get('cheapest') and (s.get('price')|string) ==
-                        (p.get('cheapest').get('price')|string) %}<i class="bi bi-star-fill"
-                          style="color: #ffc107; margin-right: 4px;"></i>{% endif %}€{{ s.get('price') }}
-                      </span>
+                        (p.get('cheapest').get('price')|string) %}
+                        <span class="star-slot"><i class="bi bi-star-fill" style="color: #ffc107;"></i></span>
+                        {% else %}
+                        <span class="star-slot empty"><i class="bi bi-star-fill"></i></span>
+                        {% endif %}
+                        €{{ s.get('price') }}
+                        </span>
+                        {% if s.get('normalized_unit_price') is not none and s.get('normalized_unit_label') %}
+                        <small class="text-muted js-store-unit-price">({{ s.get('normalized_unit_label') }}: €{{ '%.2f'|format(s.get('normalized_unit_price')) }})</small>
+                        {% else %}
+                        <small class="text-muted js-store-unit-price" style="display:none;"></small>
+                        {% endif %}
+                      </div>
+                      {% if s.get('offer') %}
+                      <span class="badge bg-danger" style="font-size:0.7rem;">-{{ s.offer.discount_percentage }}%</span>
+                      {% endif %}
                       {% if s.get('url') %}
                       <a href="{{ s.get('url') }}" target="_blank" rel="noopener noreferrer"
                         class="btn btn-sm btn-go-store p-1" title="Go to official store"
@@ -538,6 +1044,7 @@
                   </div>
                 </div>
                 {% endfor %}
+                </div>
               </div>
             </div>
             {% endif %}
@@ -566,11 +1073,7 @@
                     onclick="event.stopPropagation(); handleAddToCart(event, this);">
                     <i class="bi bi-cart-plus-fill"></i>Add to List
                   </button>
-                  <a href="{{ url_for('main.product_detail', product_id=p.get('id')) }}"
-                    class="btn btn-premium btn-premium-view w-100"
-                    onclick="event.stopPropagation();">
-                    <i class="bi bi-info-circle-fill"></i> View Details
-                  </a>
+
                 </div>
               </div>
             </div>
@@ -663,6 +1166,18 @@
                     data-special-offer="{{ deal.get('offer_type') or deal.get('special_offer_type') or '' }}"
                     onclick="event.stopPropagation(); handleAddToCart(event, this);">
                     <i class="bi bi-cart-plus-fill"></i> Add to List
+                  </button>
+
+                  <button type="button" class="btn-soft compare-secondary-btn btn-add-compare"
+                    data-product-id="{{ p.get('id') }}"
+                    data-product-name="{{ p.get('name') or p.get('title','')|e }}"
+                    data-product-price="{{ (p.get('cheapest') and p.get('cheapest').get('price')) or p.get('price','') }}"
+                    data-product-unit-price="{{ p.get('normalized_unit_price') if p.get('normalized_unit_price') is not none else '' }}"
+                    data-product-unit-label="{{ p.get('normalized_unit_label','') }}"
+                    data-product-confidence="{{ confidence.get('label', '') }}"
+                    data-product-image="{{ prefer_processed(p.get('image') or (p.get('images') and p.get('images')[0]) or url_for('static', filename='placeholder.svg'))|e }}"
+                    data-product-stores='{{ p.get("stores")|tojson|forceescape }}'>
+                    <i class="bi bi-columns-gap"></i> Compare Basket
                   </button>
                   <!-- Detailed view for multi-buy or complex offers -->
                   <a href="{{ url_for('main.featured_deal_detail', deal_id=deal.get('id') or deal.get('_id')) }}"
@@ -757,6 +1272,111 @@
       <footer class="text-center py-4 bg-light border-top"> <!-- Persistent bottom content -->
         <p class="mb-0 text-muted">&copy; 2025 Smart Grocery Team</p> <!-- Copyright declaration -->
       </footer>
+
+      <div id="comparison-tray" class="comparison-tray" aria-live="polite">
+        <div class="tray-grid">
+          <div>
+            <div class="small text-uppercase fw-bold mb-2" style="letter-spacing:0.06em; color:#cbd5e1;">Comparison tray</div>
+            <div id="comparison-tray-items" class="tray-items"></div>
+          </div>
+          <div class="tray-actions">
+            <button type="button" id="tray-open-insights" class="tray-btn tray-btn-primary"><i class="bi bi-bar-chart-line me-1"></i>Open Insights</button>
+            <button type="button" id="tray-best-basket" class="tray-btn"><i class="bi bi-calculator me-1"></i>Best Basket</button>
+            <button type="button" id="tray-clear" class="tray-btn"><i class="bi bi-x-circle me-1"></i>Clear</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal fade" id="compareInsightsModal" tabindex="-1" aria-labelledby="compareInsightsLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+          <div class="modal-content">
+            <div class="modal-header border-0" style="background:linear-gradient(135deg,#0f172a,#4338ca); color:white;">
+              <h5 class="modal-title" id="compareInsightsLabel"><i class="bi bi-stars me-2"></i>Comparison Insights</h5>
+              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body insight-panel">
+              <ul class="nav nav-pills mb-3" id="insightTabs" role="tablist">
+                <li class="nav-item"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tab-compare" type="button">Compare</button></li>
+                <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-basket" type="button">Best Basket</button></li>
+                <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-alerts" type="button">Alerts</button></li>
+              </ul>
+              <div class="tab-content">
+                <div class="tab-pane fade show active" id="tab-compare">
+                  <div class="table-responsive">
+                    <table class="table table-striped align-middle">
+                      <thead><tr><th>Product</th><th>Best Price</th><th>Unit Price</th><th>Confidence</th><th>Cheapest Store</th></tr></thead>
+                      <tbody id="compare-table-body"></tbody>
+                    </table>
+                  </div>
+                </div>
+                <div class="tab-pane fade" id="tab-basket">
+                  <div id="best-basket-panel"></div>
+                </div>
+                <div class="tab-pane fade" id="tab-alerts">
+                  <div id="alerts-panel"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal fade" id="priceAlertModal" tabindex="-1" aria-labelledby="priceAlertLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="priceAlertLabel">Set price drop alert</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <p class="mb-2" id="alert-product-name"></p>
+              <label class="form-label" for="alert-target-price">Notify me when price reaches</label>
+              <div class="input-group">
+                <span class="input-group-text">€</span>
+                <input type="number" min="0.01" step="0.01" class="form-control" id="alert-target-price">
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="button" class="btn btn-primary" id="save-alert-btn">Save Alert</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal fade" id="priceReportModal" tabindex="-1" aria-labelledby="priceReportLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="priceReportLabel">Report a local price</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <p class="mb-2" id="report-product-name"></p>
+              <div class="mb-2">
+                <label class="form-label" for="report-store-select">Store</label>
+                <select id="report-store-select" class="form-select"></select>
+              </div>
+              <div class="mb-2">
+                <label class="form-label" for="report-price-input">Observed price</label>
+                <div class="input-group">
+                  <span class="input-group-text">€</span>
+                  <input id="report-price-input" type="number" step="0.01" min="0.01" class="form-control">
+                </div>
+              </div>
+              <div>
+                <label class="form-label" for="report-note-input">Note (optional)</label>
+                <input id="report-note-input" maxlength="220" class="form-control" placeholder="Optional context (promo, location, etc.)">
+              </div>
+              <small id="report-feedback" class="text-muted d-block mt-2"></small>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="button" class="btn btn-primary" id="submit-report-btn">Submit Report</button>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <!-- JavaScript Dependencies -->
        <!-- Bootstrap interactivity engine -->

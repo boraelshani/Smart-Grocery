@@ -14,6 +14,7 @@ import json # Import standard JSON library for data parsing
 import os # Import operating system library for file path management
 import random # Import random library for data shuffling/selection
 import re # Import regular expressions for string manipulation
+from comparison.comparison_engine import build_best_price_summary, build_compare_product_payload
 
 # ═══════════════════════════════════════════════════════════════════════════
 # CONSTANTS
@@ -30,6 +31,153 @@ STANDARD_CATEGORIES = [ # Define the list of global product categories
 # HELPER FUNCTIONS
 # ═══════════════════════════════════════════════════════════════════════════
 
+
+
+def load_featured_deals_fallback(): # Define a function to load local data if DB is down
+    """
+    Load featured deals from the static JSON fallback file.
+    Used when MongoDB is unavailable during development/testing.
+    Returns: List of featured deal dictionaries
+    """
+    try: # Start error monitoring for file reading
+        path = os.path.join(current_app.root_path, 'data', 'featured_deals.json') # Construct the absolute path to the local JSON file
+        with open(path, 'r', encoding='utf-8') as f: # Open the fallback file in read-only mode with UTF-8 encoding
+            return json.load(f) # Parse the JSON file and return the list of deals
+    except Exception as e: # Handle missing files or parsing errors
+        print(f'WARNING: Failed to load featured deals fallback: {e}') # Log a warning message with the error details
+        return [] # Return an empty list to prevent downstream crashes
+
+
+
+
+
+
+
+
+def _mark_list_metadata(items, fav_ids=None): # Define a helper to attach UI metadata (offers, hearts) to items
+    """
+    Universal marker function to attach offers and favorites to a list of product items.
+    """
+    if not items: # Check if the input list is empty
+        return items # Return unchanged if no items present
+        
+    # 1. Attach offer metadata using Model-based helper
+    multibuy_offers_model.attach_offers_to_products(items) # Call model to inject 'Buy X Get Y' info into items
+    
+    # 2. Attach quantity discount metadata
+    quantity_discounts_model.attach_discounts_to_products(items) # Call model to inject bulk savings info
+
+    # 3. Mark favorites if fav_ids provided
+    if fav_ids is not None: # Check if we have a set of user favorite IDs
+        for item in items: # Iterate through each product in the list
+            if isinstance(item, dict): # Ensure the item is a dictionary object
+                item_id = str(item.get('id') or item.get('_id', '')) # Resolve the unique identifier string
+                item['is_favorited'] = item_id in fav_ids # Set boolean flag for front-end heart rendering
+    
+    return items # Return the enriched list of products
+
+
+def _normalize_account_user_data(user_data, user_email):
+    """Normalize user document fields so account pages can share one view model."""
+    user_data = dict(user_data or {})
+    prefs_obj = user_data.get('preferences') or {}
+
+    user_data['email'] = user_data.get('email') or user_email
+    user_data['name'] = user_data.get('name') or user_email.split('@')[0]
+    user_data['avatar'] = user_data.get('avatar') or ''
+    user_data['preferred_stores'] = user_data.get('preferred_stores') or prefs_obj.get('preferred_stores') or []
+    user_data['preferred_categories'] = user_data.get('preferred_categories') or prefs_obj.get('preferred_categories') or []
+    user_data['recent_views'] = user_data.get('recent_views') or []
+    return user_data
+
+
+def _build_account_page_context(user_email):
+    """Prepare shared data for profile, favorites, settings, and preferences pages."""
+    user_data = {}
+    stores_list = []
+    category_options = STANDARD_CATEGORIES
+
+    try:
+        from models.users_model import get_user_by_email
+
+        user = get_user_by_email(user_email)
+        if user:
+            user_data = user
+        else:
+            user_data = getattr(m, 'users', {}).get(user_email, {})
+
+        user_data = _normalize_account_user_data(user_data, user_email)
+
+        favorites = favorites_model.get_user_favorites(user_email)
+        for fav in favorites:
+            if not isinstance(fav, dict):
+                continue
+            if not fav.get('id') and fav.get('product_id'):
+                fav['id'] = str(fav.get('product_id'))
+            if not fav.get('name') and fav.get('product_name'):
+                fav['name'] = fav.get('product_name')
+            if not fav.get('image') and fav.get('product_image'):
+                fav['image'] = fav.get('product_image')
+
+        user_data['favorites'] = favorites
+
+        all_stores = stores_model.list_stores()
+        seen_names = set()
+        for store in all_stores:
+            store_name = store.get('name')
+            if not store_name or store_name in seen_names:
+                continue
+
+            seen_names.add(store_name)
+            stores_list.append({
+                'name': store_name,
+                'id': store.get('id'),
+                'image': store.get('image') or store.get('logo'),
+                'count': products_model.count_by_store(store_name),
+            })
+
+        stores_list.sort(key=lambda item: item['name'])
+    except Exception as e:
+        print(f"Error building account context: {e}")
+        user_data = _normalize_account_user_data(getattr(m, 'users', {}).get(user_email, {}), user_email)
+        user_data.setdefault('favorites', [])
+        stores_list = []
+        category_options = []
+
+    return {
+        'user_data': user_data,
+        'stores': stores_list,
+        'category_options': category_options,
+    }
+
+
+def _save_profile_update(user_email):
+    """Persist account settings from the profile/settings forms."""
+    name = request.form.get('name')
+    phone = request.form.get('phone_number', '')
+    address = request.form.get('address')
+    avatar = request.form.get('avatar')
+
+    update_data = {
+        'name': name,
+        'phone': phone,
+        'address': address,
+    }
+    if avatar:
+        update_data['avatar'] = avatar
+
+    from models.users_model import update_user_profile
+    update_user_profile(user_email, update_data)
+
+    try:
+        notifications_model.create_system_notification(
+            user_email,
+            'Profile Updated',
+            'Your profile details have been successfully updated.',
+            priority='normal'
+        )
+    except Exception:
+        pass
 
 
 @main_bp.route('/') # Define the root landing page route
@@ -902,7 +1050,8 @@ def compare_prices():
         
         # 4. EXECUTE MODEL QUERY
         # Using simplified logic from logic model for clean abstraction
-        total_products = products_model.count_products(product_query) # Count total matching documents in DB
+        total_products = products_model.count_products(product_query)
+        
         total_pages = (total_products + per_page - 1) // per_page if total_products else 1 # Calc total pagination pages
         page = min(page, total_pages) if total_products else 1 # Bounds checking for current page
         skip_amount = (page - 1) * per_page # Calc offset for MongoDB [skip]
@@ -1089,28 +1238,15 @@ def product_detail(product_id): # Logic for single item detail view
             # Assign store hero image as background or auxiliary graphic
             s['store_display_image'] = image # Bind
 
-    # 7. MARKET ANALYSIS: FIND BEST PRICE
-    # We want to highlight the cheapest option across all stores.
-    best_price_value = None # Value holder
-    best_price_stores = [] # List of stores offering this price
-    try: # Start math sweep
-        min_price = float('inf') # Set initial baseline to infinity
-        for s in stores_list: # Scan availability matrix
-            try: # Parse price string to float
-                price = s.get('price') # Get raw value
-                price_val = float(str(price).replace('€','').replace('$','').replace(',','.')) if price is not None else float('inf') # Sanitize and convert
-                if price_val < min_price: # New record cheap?
-                    min_price = price_val # Update record
-                    best_price_stores = [s.get('store') or s.get('store_name') or s.get('name') or 'Store'] # Reset winner list
-                elif price_val == min_price: # Match existing cheap?
-                    best_price_stores.append(s.get('store') or s.get('store_name') or s.get('name') or 'Store') # Add to winners
-            except Exception: # Skip invalid price formats
-                continue # Next
-        if min_price != float('inf'): # If we found a valid number
-            best_price_value = f"{min_price:.2f}" # Format to currency
-    except Exception: # Handle logic failure
-        best_price_value = None # Reset
-        best_price_stores = [] # Reset
+    # 7. MARKET ANALYSIS: FIND BEST PRICE VIA SHARED ENGINE
+    best_price_value = None
+    best_price_stores = []
+    try:
+        compare_payload = build_compare_product_payload(product)
+        best_price_value, best_price_stores = build_best_price_summary(compare_payload)
+    except Exception:
+        best_price_value = None
+        best_price_stores = []
 
     # 8. USER STATUS: FAVORITES
     is_favorited = False # Default state
@@ -1731,99 +1867,61 @@ def profile(): # Logic for user settings and account management
     
     # 1. HANDLE UPDATES (POST)
     if request.method == 'POST' and user_email: # Form submit?
-        # Extract inputs from form body
-        name = request.form.get('name') # Display Name
-        phone = request.form.get('phone_number', '') # Contact
-        address = request.form.get('address') # Delivery info
-        avatar = request.form.get('avatar') # Selected image
-        
-        print(f"DEBUG PROFILE UPDATE: User={user_email}, Avatar={avatar}") # Log audit
-
-        # Construct update payload
-        update_data = { # Field map
-            'name': name, # Save name
-            'phone': phone, # Save phone
-            'address': address # Save address
-        } # End map
-        if avatar: # Image changed?
-            update_data['avatar'] = avatar # Save asset ref
-            
-        from models.users_model import update_user_profile # Helper
-        update_user_profile(user_email, update_data) # Write to DB
-        
-        # 2. FEEDBACK NOTIFICATION
-        # Trigger an alert so the user knows the update worked
-        try: # Start safety block
-            notifications_model.create_system_notification( # Alert helper
-                user_email, # Target
-                "Profile Updated", # Title
-                "Your profile details have been successfully updated.", # Body
-                priority="normal" # Level
-            )
-        except: # Ignore alert failure
-            pass # Keep going
-        
+        _save_profile_update(user_email)
         return redirect(url_for('main.profile')) # Reload page to reflect changes
 
-    # 3. HANDLE VIEW (GET)
-    user_data = {} # Init
-    stores_list = [] # Init stores list
+    context = _build_account_page_context(user_email) if user_email else {
+        'user_data': {},
+        'stores': [],
+        'category_options': [],
+    }
+    return render_template('profile.html', **context)
 
-    if user_email: # Authenticated?
-        try: # Start lookup
-            from models.users_model import get_user_by_email # Helper
-            user = get_user_by_email(user_email) # Fetch user record
-            if user: # Found match?
-                user_data = user # Capture data
-            else: # Fallback?
-                user_data = getattr(m, 'users', {}).get(user_email, {}) # Check mocks
 
-            # Load user favorites for display on profile dashboard
-            from models import favorites_model # Import model
-            favorites = favorites_model.get_user_favorites(user_email) # Fetch user's likes
-            
-            # Normalize favorites data structure for UI consistency across different source types
-            for fav in favorites: # Iterate over items
-                if isinstance(fav, dict): # Validate type
-                    if not fav.get('id') and fav.get('product_id'): # Needs ID mapping?
-                        fav['id'] = str(fav['product_id']) # Map product_id to id
-                    if not fav.get('name') and fav.get('product_name'): # Needs name mapping?
-                        fav['name'] = fav.get('product_name') # Map product_name to name
-                    if not fav.get('image') and fav.get('product_image'): # Needs image mapping?
-                        fav['image'] = fav.get('product_image') # Map product_image to image
-            
-            user_data['favorites'] = favorites # Store processed list
-            
-            if 'recent_views' not in user_data: # History missing?
-                user_data['recent_views'] = [] # Initialize empty
+@main_bp.route('/profile/favorites')
+def profile_favorites():
+    """Dedicated page for the user's saved favorites."""
+    user_email = helpers.get_user_email()
+    if not user_email:
+        return redirect(url_for('auth.login'))
 
-            # Load stores list for preferences section
-            all_stores = stores_model.list_stores() # Fetch all retail outlets
-            seen_names = set() # Track unique names
-            for s in all_stores: # Filter loop
-                name = s.get('name') # Extract name
-                if name and name not in seen_names: # New name?
-                    seen_names.add(name) # Mark seen
-                    stores_list.append({ # Add to display list
-                        'name': name, # Store name
-                        'id': s.get('id'), # Unique ID
-                        'image': s.get('image') or s.get('logo'), # Visual asset
-                        # Dynamically count products available at this store
-                        'count': products_model.count_by_store(name) # Aggregation check
-                    })
-            stores_list.sort(key=lambda x: x['name']) # Alpha sort
-            
-            # Load specific standard category options for personalization
-            category_options = STANDARD_CATEGORIES # Use global constants
-            
-        except Exception as e: # Handle lookup crashes
-            print(f"Error in profile route: {e}") # Log error
-            user_data = getattr(m, 'users', {}).get(user_email, {}) # Fallback to empty/mock
-            stores_list = [] # Clear lists
-            category_options = [] # Clear categories
+    return render_template(
+        'account_favorites.html',
+        account_section='favorites',
+        **_build_account_page_context(user_email),
+    )
 
-    # Render profile dashboard with user data and preference choices
-    return render_template('profile.html', user_data=user_data, stores=stores_list, category_options=category_options)
+
+@main_bp.route('/profile/settings', methods=['GET', 'POST'])
+def profile_settings():
+    """Dedicated page for account settings and avatar management."""
+    user_email = helpers.get_user_email()
+    if not user_email:
+        return redirect(url_for('auth.login'))
+
+    if request.method == 'POST':
+        _save_profile_update(user_email)
+        return redirect(url_for('main.profile_settings'))
+
+    return render_template(
+        'account_settings.html',
+        account_section='settings',
+        **_build_account_page_context(user_email),
+    )
+
+
+@main_bp.route('/profile/preferences')
+def profile_preferences():
+    """Dedicated page for store and category preferences."""
+    user_email = helpers.get_user_email()
+    if not user_email:
+        return redirect(url_for('auth.login'))
+
+    return render_template(
+        'account_preferences.html',
+        account_section='preferences',
+        **_build_account_page_context(user_email),
+    )
 
 
 
