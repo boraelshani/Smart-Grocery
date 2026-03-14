@@ -131,16 +131,29 @@ class RealBillaScraper:
                             if raw.startswith("http"):
                                 image_url = raw
                             
+                        # Enhanced attribute extraction from Nuxt payload
+                        amount = p.get("amount")
+                        vol_unit = p.get("volumeLabelShort")
+                        brand_obj = p.get("brand") or {}
+                        brand_name = brand_obj.get("name") or ""
+                        
                         description = p.get("descriptionShort") or p.get("descriptionLong") or ""
+                        price_obj_full = p.get("price", {}) if isinstance(p.get("price"), dict) else {}
                         base_unit_long = ''
                         if isinstance(price_obj_full, dict):
                             base_unit_long = str(price_obj_full.get("baseUnitLong") or "").strip()
-                        unit_value = self._extract_unit_from_text(name) or self._extract_unit_from_text(description) or base_unit_long
+                        
+                        # Fallback unit extraction
+                        unit_value = ""
+                        if amount and vol_unit:
+                            unit_value = f"{amount}{vol_unit}"
+                        else:
+                            unit_value = self._extract_unit_from_text(name) or self._extract_unit_from_text(description) or base_unit_long
+
                         now_iso = datetime.now(UTC).isoformat()
 
                         # Offer / promotion data
                         in_promo = bool(p.get("inPromotion"))
-                        price_obj_full = p.get("price", {}) if isinstance(p.get("price"), dict) else {}
                         crossed_cents = price_obj_full.get("crossed", 0) or 0
                         discount_pct = price_obj_full.get("discountPercentage", 0) or 0
                         promo_value_cents = 0
@@ -159,11 +172,12 @@ class RealBillaScraper:
                         scraped_p = {
                             "store": "Billa",
                             "name": name,
+                            "brand": brand_name,
                             "price": final_price,
                             "original_price": final_price,
                             "url": f"https://shop.billa.at/angebote/{slug}" if "angebote" in slug else f"https://shop.billa.at/produkte/{slug}",
                             "image_url": image_url,
-                            "organic": "bio" in name.lower() or "bio" in description.lower(),
+                            "organic": "bio" in name.lower() or "bio" in description.lower() or "bio" in (brand_name.lower()),
                             "categories": [p.get("category", "")],
                             "description": str(description),
                             "unit": unit_value,

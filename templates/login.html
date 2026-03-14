@@ -144,6 +144,8 @@
 </style>
 {% endblock %}
 
+{% block navbar %}{% endblock %}
+
 {% block content %}
 <!-- Flexbox centered body -->
 
@@ -155,7 +157,7 @@
     <i class="bi bi-arrow-left"></i> Back <!-- Arrow icon and text -->
   </a>
 
-  <div class="container d-flex justify-content-center px-3"> <!-- Centered container -->
+  <div class="container d-flex justify-content-center align-items-center px-3 min-vh-100 pt-5"> <!-- Centered container -->
     <div class="auth-card"> <!-- The white login box -->
       <div class="brand-header"> <!-- Logo and header section -->
         <div class="brand-icon"> <!-- Icon box -->

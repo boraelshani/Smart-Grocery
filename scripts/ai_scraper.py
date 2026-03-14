@@ -10,6 +10,9 @@ sys.path.insert(0, parent_dir)
 
 from utils.db import mongo
 from app import app
+from utils.product_matcher import normalize_product, smart_product_match
+from scrapers.real_billa_scraper import RealBillaScraper
+from scripts.playwright_scraper import get_real_store_data
 
 # Reliable Cloudinary Store Logos (direct from your 'stores' DB) or local SVG fallbacks
 LOGOS = {
@@ -162,13 +165,14 @@ def fetch_spar_products(search_terms):
                     
                     if full_name and price > 0:
                         results.append({
-                            "search_term": term,
                             "original_name": full_name,
+                            "brand": brand,
                             "price": price,
+                            "unit": m.get("sales-unit", ""),
                             "url": real_url,
-                            "description": marketing or short_desc,
-                            "unit": m.get("sales-unit", "1 pc"),
-                            "spar_image": m.get("image-url")
+                            "description": marketing,
+                            "spar_image": m.get("image", ""),
+                            "search_term": term
                         })
         except Exception as e:
             print("Error scraping", term, e)
@@ -183,15 +187,37 @@ def run_ai_scraper():
         "Milch": "Dairy",
         "Brot": "Bakery",
         "Apfel": "Produce",
+        "Erdbeeren": "Produce",
         "Bananen": "Produce",
-        "Pizza": "Frozen",
+        "Tomaten": "Produce",
+        "Kartoffeln": "Produce",
+        "Zwiebeln": "Produce",
         "Eier": "Dairy",
-        "Wasser": "Beverages"
+        "Butter": "Dairy",
+        "Käse": "Dairy",
+        "Joghurt": "Dairy",
+        "Pizza": "Frozen",
+        "Speiseeis": "Frozen",
+        "Wasser": "Beverages",
+        "Orangensaft": "Beverages",
+        "Kaffee": "Pantry",
+        "Olivenöl": "Pantry",
+        "Nudeln": "Pantry",
+        "Reis": "Pantry",
+        "Mehl": "Pantry",
+        "Zucker": "Pantry",
+        "Emmentaler": "Dairy",
+        "Salami": "Pantry",
+        "Toilettenpapier": "Household",
+        "Spülmittel": "Household",
+        "Zahnpasta": "Household"
     }
     
     scraped_items = fetch_spar_products(list(queries.keys()))
     
     final_docs = []
+    
+    billa_scraper = RealBillaScraper()
     
     for item in scraped_items:
         # Resolve best category based on the search query mapping
@@ -228,22 +254,64 @@ def run_ai_scraper():
             "logo": LOGOS["SPAR"]
         })
         
-        billa_search = f"https://shop.billa.at/search/results?search={item['search_term']}"
+        # Normalize SPAR master product for comparison
+        spar_norm = normalize_product(
+            item["original_name"], 
+            item["description"], 
+            category,
+            raw_brand=item.get("brand"),
+            raw_unit=item.get("unit")
+        )
+        
+        # --- BILLA MATCHING VIA REAL SCRAPER ---
+        best_billa_match = None
+        best_billa_score = -1
+        
         try:
-            from scripts.playwright_scraper import get_real_store_data
-            billa_data = get_real_store_data(item['search_term'], "BILLA", billa_search) or {}
+            billa_results = billa_scraper.search_products(item['search_term'])
+            if not billa_results:
+                # Fallback to search term if original name was too specific
+                billa_results = billa_scraper.search_products(item['original_name'])
+                
+            for b_res in billa_results:
+                b_cat = b_res.get("categories", [""])[0] if b_res.get("categories") else ""
+                b_norm = normalize_product(
+                    b_res["name"], 
+                    b_res["description"], 
+                    b_cat,
+                    raw_brand=b_res.get("brand"),
+                    raw_unit=b_res.get("unit")
+                )
+                
+                match_result = smart_product_match(spar_norm, b_norm)
+                if match_result["match"] and match_result["score"] > best_billa_score:
+                    best_billa_score = match_result["score"]
+                    best_billa_match = b_res
+                    best_billa_match["match_reason"] = match_result["reason"]
         except Exception as e:
-            print(e)
-            billa_data = {}
+            print(f"Billa scraping/matching error: {e}")
 
-        doc["stores"].append({
-            "store": "BILLA", 
-            "price": round(base_price * 1.05, 2), 
-            "original_branded_name": clean_and_translate(item["original_name"]),
-            "url": billa_data.get("url") or billa_search,
-            "image": billa_data.get("image") or "https://res.cloudinary.com/drljgepgy/image/upload/v1768750643/pizza_dough_billa_mcdat1.jpg",
-            "logo": LOGOS["BILLA"]
-        })
+        if best_billa_match:
+            doc["stores"].append({
+                "store": "BILLA", 
+                "price": best_billa_match["price"], 
+                "original_branded_name": best_billa_match["name"],
+                "url": best_billa_match["url"],
+                "image": best_billa_match["image_url"] or "https://res.cloudinary.com/drljgepgy/image/upload/v1768750643/pizza_dough_billa_mcdat1.jpg",
+                "logo": LOGOS["BILLA"],
+                "match_score": best_billa_score,
+                "match_reason": best_billa_match["match_reason"]
+            })
+        else:
+            doc["stores"].append({
+                "store": "BILLA", 
+                "price": round(base_price * 1.05, 2), 
+                "original_branded_name": f"{clean_and_translate(item['original_name'])} (Estimated)",
+                "url": f"https://shop.billa.at/search/results?search={item['search_term']}",
+                "image": "https://res.cloudinary.com/drljgepgy/image/upload/v1768750643/pizza_dough_billa_mcdat1.jpg",
+                "logo": LOGOS["BILLA"],
+                "match_reason": "No match found >= 70 score"
+            })
         
         hofer_search = f"https://www.hofer.at/de/search.html?query={item['search_term']}"
         try:
@@ -280,14 +348,18 @@ def run_ai_scraper():
         final_docs.append(doc)
 
     with app.app_context():
-        # Clear previous scraped products
+        # Clear previous scraped products in both collections
+        mongo.db.matched_products.delete_many({"is_scraped": True})
+        
+        # We delete from the main products collection as well to refresh the live site
         result_del = mongo.db.products.delete_many({"is_scraped": True})
+        print(f"Cleared {result_del.deleted_count} items from main 'products' collection.")
         
         if final_docs:
+            mongo.db.matched_products.insert_many(final_docs)
             mongo.db.products.insert_many(final_docs)
-            print(f"SUCCESS: Inserted {len(final_docs)} active products.")
-            print(f"Cleared {result_del.deleted_count} old records.")
-            print("Fully resolved image broken links, store logos, and standardized categories!")
+            print(f"SUCCESS: Inserted {len(final_docs)} active products into BOTH collections.")
+            print("Site is now LIVE with updated matches.")
         else:
             print("No items were scraped.")
 
