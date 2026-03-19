@@ -1,0 +1,280 @@
+{% extends "admin_layout.html" %}
+{% block title %}Admin Products - Smart Grocery{% endblock %}
+
+{% set admin_title = "Product Manager" %}
+{% set admin_subtitle = "Browse every product, inspect details, and edit records with linked store offers." %}
+{% set admin_section = "products" %}
+
+{% block admin_styles %}
+<style>
+  .products-ribbon {
+    border-radius: 18px;
+    border: 1px solid rgba(14, 165, 163, 0.2);
+    background: linear-gradient(132deg, rgba(14, 165, 163, 0.14), rgba(124, 58, 237, 0.1));
+    padding: 0.9rem 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .product-search-shell {
+    border-radius: 16px;
+    background: linear-gradient(140deg, rgba(255, 255, 255, 0.96), rgba(240, 249, 255, 0.95));
+    border: 1px solid rgba(14, 165, 163, 0.2);
+    padding: 0.5rem;
+    box-shadow: 0 10px 22px rgba(14, 116, 144, 0.1);
+  }
+
+  .product-search-shell .input-group-text {
+    background: transparent;
+    border: 0;
+    color: #0f766e;
+    font-size: 1rem;
+  }
+
+  .product-search-shell .form-control {
+    border: 0;
+    background: transparent;
+    font-size: 1rem;
+    box-shadow: none;
+  }
+
+  .product-search-shell .form-control:focus {
+    box-shadow: none;
+  }
+
+  .product-search-shell .btn {
+    min-width: 110px;
+  }
+
+  .soft-label {
+    font-size: 0.78rem;
+    color: #475569;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+</style>
+{% endblock %}
+
+{% block admin_content %}
+<div class="products-ribbon d-flex align-items-center justify-content-between flex-wrap gap-2">
+  <div class="small text-secondary">No need to type generated IDs manually. They are created automatically unless editing an existing record.</div>
+  <a href="{{ url_for('admin.admin_products_new_page') }}" class="btn btn-sm btn-primary admin-btn">Create New Product</a>
+</div>
+
+<section class="admin-panel mb-4">
+  <div class="panel-head">
+    <h2>Find Products</h2>
+    <p>Search products by name, category, brand, or barcode.</p>
+  </div>
+  <div class="panel-body">
+    <form method="get" action="{{ url_for('admin.admin_products_page') }}">
+      <div class="product-search-shell">
+        <div class="input-group input-group-lg">
+          <span class="input-group-text"><i class="bi bi-search"></i></span>
+          <input type="text" name="q" value="{{ data.q }}" class="form-control" placeholder="Try: Yogurt, Cheese, Sparkling Water, or barcode">
+          {% if data.q %}
+          <a class="btn btn-light rounded-pill" href="{{ url_for('admin.admin_products_page') }}">Clear</a>
+          {% endif %}
+          <button type="submit" class="btn btn-primary admin-btn">Search</button>
+        </div>
+      </div>
+    </form>
+    <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
+      <div class="small text-secondary">{{ data.total }} total products{% if data.q %} matching "{{ data.q }}"{% endif %}.</div>
+      <a href="{{ url_for('admin.admin_products_new_page') }}" class="btn btn-outline-secondary btn-sm admin-btn">New Product Form</a>
+    </div>
+  </div>
+</section>
+
+<section class="row g-4 mb-4">
+  <div class="col-xl-7">
+    <div class="admin-panel">
+      <div class="panel-head">
+        <h2>Product List</h2>
+        <p>Click Edit to load details into the form.</p>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-sm table-clean align-middle mb-0">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Category</th>
+              <th>Brand</th>
+              <th>Cheapest</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in data.products or [] %}
+            <tr>
+              <td>
+                <div class="fw-semibold">{{ p.name_en }}</div>
+                <div class="small text-secondary">{{ p.name_de }}</div>
+              </td>
+              <td>{{ p.category_name or '-' }}</td>
+              <td>{{ p.brand_name or '-' }}</td>
+              <td>{{ p.cheapestPrice if p.cheapestPrice is not none else '-' }}</td>
+              <td>
+                <a class="btn btn-sm btn-outline-primary rounded-pill" href="{{ url_for('admin.admin_products_page', q=data.q, page=data.page, edit=p.productId) }}">Edit</a>
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="5" class="text-secondary">No products found.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="panel-body border-top">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+          <div class="small text-secondary">Page {{ data.page }} of {{ data.total_pages }}</div>
+          <div class="d-flex gap-2">
+            {% if data.has_prev %}
+            <a class="btn btn-outline-secondary btn-sm rounded-pill" href="{{ url_for('admin.admin_products_page', q=data.q, page=data.page - 1, edit=request.args.get('edit')) }}">Previous</a>
+            {% endif %}
+            {% if data.has_next %}
+            <a class="btn btn-outline-secondary btn-sm rounded-pill" href="{{ url_for('admin.admin_products_page', q=data.q, page=data.page + 1, edit=request.args.get('edit')) }}">Next</a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-5">
+    <div class="admin-panel mb-4">
+      <div class="panel-head">
+        <h2>{% if data.selected_product %}Edit Product{% else %}Create Product{% endif %}</h2>
+        <p>Only fill business fields. Internal IDs are handled automatically.</p>
+      </div>
+      <div class="panel-body">
+        {% set selected = data.selected_product or {} %}
+        <form method="post" action="{{ url_for('admin.admin_save_product') }}" class="admin-form-grid">
+          <input type="hidden" name="redirectTo" value="products">
+          <input type="hidden" name="productId" value="{{ selected.productId or '' }}">
+          <div class="span-6"><input class="form-control" name="name_en" placeholder="Name EN" required value="{{ selected.name_en or '' }}"></div>
+          <div class="span-6"><input class="form-control" name="name_de" placeholder="Name DE" required value="{{ selected.name_de or '' }}"></div>
+
+          <div class="span-6">
+            <select class="form-select" name="brandId">
+              {% if selected.brandId and not (data.brands | selectattr('brandId', 'equalto', selected.brandId) | list) %}
+              <option value="{{ selected.brandId }}" selected>Selected brand</option>
+              {% else %}
+              <option value="">Select brand (optional)</option>
+              {% endif %}
+              {% for b in data.brands or [] %}
+              <option value="{{ b.brandId }}" {% if selected.brandId == b.brandId %}selected{% endif %}>{{ b.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="span-6">
+            <select class="form-select" name="categoryId">
+              {% if selected.categoryId and not (data.categories | selectattr('categoryId', 'equalto', selected.categoryId) | list) %}
+              <option value="{{ selected.categoryId }}" selected>Selected category</option>
+              {% else %}
+              <option value="">Select category (optional)</option>
+              {% endif %}
+              {% for c in data.categories or [] %}
+              <option value="{{ c.categoryId }}" {% if selected.categoryId == c.categoryId %}selected{% endif %}>{{ c.name_en }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="span-12"><input class="form-control" name="unitSize" placeholder="Unit size (example: 500g, 1L)" value="{{ selected.unitSize or '' }}"></div>
+
+          <div class="span-12 mt-1">
+            <details>
+              <summary class="soft-label">Advanced Optional Fields</summary>
+              <div class="admin-form-grid mt-2">
+                <div class="span-6"><input class="form-control" name="barcode" placeholder="Barcode" value="{{ selected.barcode or '' }}"></div>
+                <div class="span-6"><input class="form-control" name="defaultImageUrl" placeholder="Image URL" value="{{ selected.defaultImageUrl or '' }}"></div>
+                <div class="span-6"><input class="form-control" name="legalImageStatus" placeholder="Image status" value="{{ selected.legalImageStatus or 'placeholder' }}"></div>
+                <div class="span-6"><input class="form-control" name="labels" placeholder="labels: new,popular,on_sale" value="{{ (selected.labels or [])|join(',') }}"></div>
+                <div class="span-12"><textarea class="form-control" name="description_en" rows="2" placeholder="Description EN">{{ selected.description_en or '' }}</textarea></div>
+                <div class="span-12"><textarea class="form-control" name="description_de" rows="2" placeholder="Description DE">{{ selected.description_de or '' }}</textarea></div>
+              </div>
+            </details>
+          </div>
+
+          <div class="span-12 d-grid"><button class="btn btn-primary admin-btn">Save Product</button></div>
+        </form>
+      </div>
+    </div>
+
+    {% if data.selected_product %}
+    <div class="admin-panel">
+      <div class="panel-head">
+        <h2>Selected Product Details</h2>
+        <p>Live snapshot of the stored document and linked offers.</p>
+      </div>
+      <div class="panel-body">
+        <div class="small text-secondary mb-2">Category Path</div>
+        <div class="mb-3">
+          {% for cat in data.selected_category_names or [] %}
+          <span class="pill">{{ cat }}</span>
+          {% else %}
+          <span class="small text-secondary">No category path</span>
+          {% endfor %}
+        </div>
+
+        <div class="small text-secondary mb-2">Linked Store Offers ({{ (data.selected_offers or [])|length }})</div>
+        <div class="table-responsive">
+          <table class="table table-sm table-clean align-middle mb-0">
+            <thead>
+              <tr><th>Store</th><th>Base</th><th>Promo</th><th>Available</th></tr>
+            </thead>
+            <tbody>
+              {% for offer in data.selected_offers or [] %}
+              <tr>
+                <td>{{ offer.storeName }}</td>
+                <td>{{ offer.basePrice }}</td>
+                <td>{{ offer.promoPrice if offer.promoPrice is not none else '-' }}</td>
+                <td>{{ 'Yes' if offer.isAvailable else 'No' }}</td>
+              </tr>
+              {% else %}
+              <tr><td colspan="4" class="text-secondary">No store offers linked.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <hr>
+        <div class="small text-secondary mb-2">Add Store Offer for This Product</div>
+        <form method="post" action="{{ url_for('admin.admin_save_store_product') }}" class="admin-form-grid">
+          <input type="hidden" name="redirectTo" value="products">
+          <input type="hidden" name="productId" value="{{ data.selected_product.productId }}">
+          <div class="span-12">
+            <div class="small text-secondary">Adding offer for <span class="fw-semibold">{{ data.selected_product.name_en }}</span></div>
+          </div>
+          <div class="span-6">
+            <select class="form-select" name="storeId" required>
+              <option value="">Select store</option>
+              {% for s in data.stores or [] %}
+              <option value="{{ s.storeId }}">{{ s.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="span-6"><input class="form-control" name="basePrice" placeholder="Base Price" required></div>
+          <div class="span-6"><input class="form-control" name="promoPrice" placeholder="Promo Price"></div>
+
+          <div class="span-12 mt-1">
+            <details>
+              <summary class="soft-label">Advanced Offer Fields</summary>
+              <div class="admin-form-grid mt-2">
+                <div class="span-6"><input class="form-control" name="storeProductId" placeholder="storeProductId (optional)"></div>
+                <div class="span-6"><input class="form-control" name="lastScrapeStatus" value="ok" placeholder="ok/partial/failed"></div>
+                <div class="span-6"><input class="form-control" name="stockStatus" value="in_stock" placeholder="in_stock"></div>
+                <div class="span-6"><input class="form-control" name="productPageUrl" placeholder="Product page URL"></div>
+              </div>
+            </details>
+          </div>
+
+          <div class="span-12 form-check ms-2"><input class="form-check-input" type="checkbox" name="isAvailable" id="isAvailableQuick" checked><label class="form-check-label" for="isAvailableQuick">Is Available</label></div>
+          <div class="span-12 d-grid"><button class="btn btn-dark admin-btn">Save Store Offer</button></div>
+        </form>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

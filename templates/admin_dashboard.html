@@ -1,0 +1,108 @@
+{% extends "admin_layout.html" %}
+{% block title %}Admin Overview - Smart Grocery{% endblock %}
+
+{% set admin_title = "Admin Overview" %}
+{% set admin_subtitle = "Command center for catalog, customer insight, and data quality." %}
+{% set admin_section = "overview" %}
+
+{% block admin_styles %}
+<style>
+  .overview-hero {
+    border-radius: 20px;
+    border: 1px solid rgba(124, 58, 237, 0.14);
+    background: linear-gradient(145deg, rgba(124, 58, 237, 0.08), rgba(14, 165, 163, 0.06));
+    padding: 1.1rem;
+  }
+
+  .overview-grid {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  .overview-card {
+    grid-column: span 6;
+    border-radius: 18px;
+    border: 1px solid #e2e8f0;
+    background: #fff;
+    box-shadow: 0 10px 20px rgba(15, 23, 42, 0.05);
+    padding: 1rem;
+  }
+
+  .overview-card .kicker {
+    color: #7c3aed;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.74rem;
+    font-weight: 800;
+    margin-bottom: 0.35rem;
+  }
+
+  .overview-card h3 {
+    font-size: 1.08rem;
+    margin-bottom: 0.35rem;
+  }
+
+  .overview-card p {
+    color: #64748b;
+    margin-bottom: 0.9rem;
+  }
+
+  @media (max-width: 992px) {
+    .overview-card {
+      grid-column: span 12;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block admin_content %}
+<section class="row g-3 mb-4">
+  {% for key, val in (data.counts or {}).items() %}
+  <div class="col-6 col-md-4 col-lg-3 col-xl-2">
+    <div class="card admin-kpi">
+      <div class="card-body py-3 px-3">
+        <div class="label">{{ key.replace('_', ' ') }}</div>
+        <div class="value">{{ val }}</div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</section>
+
+<section class="overview-hero mb-4">
+  <div class="overview-grid">
+    <article class="overview-card">
+      <div class="kicker">Catalog Studio</div>
+      <h3>Products</h3>
+      <p>Search every product, edit details, and add store offers without manually typing internal IDs.</p>
+      <div class="d-flex gap-2 flex-wrap">
+        <a class="btn btn-primary admin-btn" href="/admin/products">Open Products</a>
+        <a class="btn btn-outline-primary admin-btn" href="/admin/products/new">Create Product</a>
+      </div>
+    </article>
+
+    <article class="overview-card">
+      <div class="kicker">Taxonomy</div>
+      <h3>Categories and Brands</h3>
+      <p>Manage naming and hierarchy with clean forms. Slugs and internal IDs are generated automatically.</p>
+      <a class="btn btn-primary admin-btn" href="/admin/categories">Open Categories</a>
+    </article>
+
+    <article class="overview-card">
+      <div class="kicker">Community</div>
+      <h3>Feedback</h3>
+      <p>Review user messages in a focused board and update status directly in each row.</p>
+      <a class="btn btn-primary admin-btn" href="/admin/feedback">Open Feedback</a>
+    </article>
+
+    <article class="overview-card">
+      <div class="kicker">Engagement</div>
+      <h3>Lists</h3>
+      <p>Track user and public lists, then publish curated public templates from one workspace.</p>
+      <a class="btn btn-primary admin-btn" href="/admin/lists">Open Lists</a>
+    </article>
+  </div>
+</section>
+
+{% endblock %}

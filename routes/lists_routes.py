@@ -14,6 +14,8 @@ import json # Import standard JSON library for data parsing
 import os # Import operating system library for file path management
 import random # Import random library for data shuffling/selection
 import re # Import regular expressions for string manipulation
+import uuid
+from utils.db import get_db
 
 # ═══════════════════════════════════════════════════════════════════════════
 # CONSTANTS
@@ -518,6 +520,126 @@ def get_list_items_api(list_id): # The main data provider for the shopping list 
         })
     except Exception as e: # Catch failure
         return jsonify({'success': False, 'error': str(e)}), 500 # Fail
+
+
+@main_bp.route('/api/list/share', methods=['POST'])
+def share_list_api():
+    """Enable sharing for a user list and return its share code."""
+    try:
+        user_email = session.get('user')
+        if not user_email:
+            return jsonify({'success': False, 'error': 'Not authenticated'}), 401
+
+        data = request.get_json() or {}
+        list_id = data.get('list_id')
+        if not list_id:
+            return jsonify({'success': False, 'error': 'List ID is required'}), 400
+
+        from models.users_model import get_user_by_email
+
+        db = get_db()
+        if db is None or 'lists' not in db.list_collection_names():
+            return jsonify({'success': False, 'error': 'Lists collection unavailable'}), 500
+
+        user = get_user_by_email(user_email) or {}
+        owner_id = str(user.get('userId') or user_email)
+        row = db.lists.find_one({'listId': list_id, 'userId': owner_id}, {'_id': 0, 'shareCode': 1})
+        if not row:
+            return jsonify({'success': False, 'error': 'List not found'}), 404
+
+        share_code = row.get('shareCode') or uuid.uuid4().hex[:10]
+        db.lists.update_one(
+            {'listId': list_id, 'userId': owner_id},
+            {'$set': {'shared': True, 'shareCode': share_code}},
+        )
+        return jsonify({'success': True, 'share_code': share_code})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@main_bp.route('/api/list/by-share/<share_code>', methods=['GET'])
+def get_shared_list_api(share_code):
+    """Fetch a shared public view of a list by share code."""
+    try:
+        db = get_db()
+        if db is None:
+            return jsonify({'success': False, 'error': 'Database unavailable'}), 500
+
+        row = db.lists.find_one({'shareCode': share_code, 'shared': True}, {'_id': 0})
+        if not row:
+            return jsonify({'success': False, 'error': 'List not found'}), 404
+
+        return jsonify({'success': True, 'list': helpers.sanitize_mongo_doc({
+            'id': row.get('listId'),
+            'name': row.get('name'),
+            'items': row.get('items', []),
+            'totalPrice': row.get('totalPrice', 0),
+            'shared': row.get('shared', False),
+            'shareCode': row.get('shareCode'),
+            'updated_at': row.get('updatedAt'),
+        })})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@main_bp.route('/api/public-lists', methods=['GET'])
+def get_public_lists_api():
+    """List public list templates and user-published lists."""
+    try:
+        db = get_db()
+        if db is None or 'public_lists' not in db.list_collection_names():
+            return jsonify({'success': True, 'items': []})
+
+        type_filter = request.args.get('type')
+        query = {'type': type_filter} if type_filter else {}
+        rows = list(db.public_lists.find(query, {'_id': 0}).sort([('popularityScore', -1), ('createdAt', -1)]).limit(100))
+        return jsonify({'success': True, 'items': helpers.sanitize_mongo_doc(rows)})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@main_bp.route('/api/public-lists/create-from-list', methods=['POST'])
+def create_public_list_from_user_list_api():
+    """Publish one of the current user's lists as a public template/user list."""
+    try:
+        user_email = session.get('user')
+        if not user_email:
+            return jsonify({'success': False, 'error': 'Not authenticated'}), 401
+
+        data = request.get_json() or {}
+        list_id = data.get('list_id')
+        if not list_id:
+            return jsonify({'success': False, 'error': 'List ID is required'}), 400
+
+        from models.users_model import get_user_by_email
+
+        db = get_db()
+        if db is None:
+            return jsonify({'success': False, 'error': 'Database unavailable'}), 500
+
+        user = get_user_by_email(user_email) or {}
+        owner_id = str(user.get('userId') or user_email)
+        row = db.lists.find_one({'listId': list_id, 'userId': owner_id}, {'_id': 0})
+        if not row:
+            return jsonify({'success': False, 'error': 'List not found'}), 404
+
+        public_id = f"public_{uuid.uuid4().hex[:12]}"
+        payload = {
+            'id': public_id,
+            'type': data.get('type') or 'user',
+            'name_en': data.get('name_en') or row.get('name') or 'Public List',
+            'name_de': data.get('name_de') or row.get('name') or 'Public List',
+            'description_en': data.get('description_en') or None,
+            'description_de': data.get('description_de') or None,
+            'items': row.get('items', []),
+            'creatorUserId': owner_id,
+            'popularityScore': 0,
+            'createdAt': __import__('datetime').datetime.utcnow(),
+        }
+        db.public_lists.insert_one(payload)
+        return jsonify({'success': True, 'public_id': public_id})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 

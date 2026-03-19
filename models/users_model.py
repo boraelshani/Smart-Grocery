@@ -496,6 +496,488 @@ def mark_items_as_seen(email: str, list_id: str) -> bool:
 
 
 # ═══════════════════════════════════════════════════════════════════════════
+# PRODUCTION LISTS OVERRIDES (lists/public_lists collections)
+# ═══════════════════════════════════════════════════════════════════════════
+
+def _list_owner_key(email: str) -> str:
+    user = get_user_by_email(email) or {}
+    return str(user.get('userId') or email)
+
+
+def _to_float(value, default=0.0):
+    try:
+        if value is None:
+            return float(default)
+        return float(value)
+    except Exception:
+        return float(default)
+
+
+def _normalize_item(item):
+    if isinstance(item, str):
+        return {
+            'name': item,
+            'qty': 1,
+            'quantity': 1,
+            'purchased': False,
+            'checked': False,
+            'is_new': True,
+        }
+
+    if not isinstance(item, dict):
+        return {
+            'name': str(item),
+            'qty': 1,
+            'quantity': 1,
+            'purchased': False,
+            'checked': False,
+            'is_new': True,
+        }
+
+    merged = dict(item)
+    qty = int(_to_float(merged.get('qty') if merged.get('qty') is not None else merged.get('quantity'), 1))
+    qty = max(1, qty)
+    merged['qty'] = qty
+    merged['quantity'] = qty
+    merged['purchased'] = bool(merged.get('purchased') or merged.get('checked'))
+    merged['checked'] = bool(merged.get('checked') or merged.get('purchased'))
+    merged['is_new'] = bool(merged.get('is_new', True))
+    return merged
+
+
+def _resolve_price_for_item(db, item):
+    unit_price = _to_float(item.get('price_val') if item.get('price_val') is not None else item.get('price'), 0)
+    product_id = item.get('productId')
+
+    if not product_id and item.get('id'):
+        candidate = db.products.find_one({'$or': [{'productId': str(item.get('id'))}, {'id': str(item.get('id'))}]}, {'_id': 0, 'productId': 1})
+        if candidate and candidate.get('productId'):
+            product_id = candidate.get('productId')
+
+    if not product_id and item.get('name'):
+        name = str(item.get('name')).strip()
+        if name:
+            prod = db.products.find_one(
+                {'$or': [
+                    {'name_en': {'$regex': '^' + re.escape(name) + '$', '$options': 'i'}},
+                    {'name_de': {'$regex': '^' + re.escape(name) + '$', '$options': 'i'}},
+                    {'name': {'$regex': '^' + re.escape(name) + '$', '$options': 'i'}},
+                ]},
+                {'_id': 0, 'productId': 1, 'defaultImageUrl': 1},
+            )
+            if prod:
+                product_id = prod.get('productId')
+                if not item.get('image') and prod.get('defaultImageUrl'):
+                    item['image'] = prod.get('defaultImageUrl')
+
+    store_id = item.get('storeId') or item.get('store_id')
+    if product_id:
+        item['productId'] = product_id
+        query = {'productId': product_id, 'isAvailable': True}
+        if store_id:
+            query['storeId'] = store_id
+
+        offer = db.store_products.find_one(query, sort=[('promoPrice', 1), ('basePrice', 1), ('lastPriceUpdate', -1)])
+        if not offer and store_id:
+            offer = db.store_products.find_one({'productId': product_id, 'isAvailable': True}, sort=[('promoPrice', 1), ('basePrice', 1), ('lastPriceUpdate', -1)])
+
+        if offer:
+            unit_price = _to_float(offer.get('promoPrice') if offer.get('promoPrice') is not None else offer.get('basePrice'), unit_price)
+            item['storeId'] = offer.get('storeId')
+            item['store_product_id'] = offer.get('storeProductId')
+
+    qty = int(_to_float(item.get('qty') if item.get('qty') is not None else item.get('quantity'), 1))
+    qty = max(1, qty)
+    item['qty'] = qty
+    item['quantity'] = qty
+
+    item['price_val'] = round(unit_price, 2)
+    item['price'] = round(unit_price, 2)
+    item['unitPrice'] = round(unit_price, 2)
+    item['lineTotal'] = round(unit_price * qty, 2)
+    return item
+
+
+def _normalize_list_doc(doc):
+    return {
+        'id': doc.get('listId') or doc.get('id'),
+        'listId': doc.get('listId') or doc.get('id'),
+        'name': doc.get('name') or 'My List',
+        'items': doc.get('items', []) or [],
+        'totalPrice': _to_float(doc.get('totalPrice'), 0),
+        'shared': bool(doc.get('shared', False)),
+        'shareCode': doc.get('shareCode'),
+        'created_at': doc.get('createdAt') or doc.get('created_at'),
+        'updated_at': doc.get('updatedAt') or doc.get('updated_at'),
+    }
+
+
+def _persist_list(db, owner_key, list_doc):
+    payload = {
+        'listId': list_doc.get('listId') or list_doc.get('id'),
+        'userId': owner_key,
+        'name': list_doc.get('name') or 'My List',
+        'items': list_doc.get('items') or [],
+        'totalPrice': round(_to_float(list_doc.get('totalPrice'), 0), 2),
+        'shared': bool(list_doc.get('shared', False)),
+        'shareCode': list_doc.get('shareCode'),
+        'updatedAt': datetime.utcnow(),
+    }
+
+    db.lists.update_one(
+        {'listId': payload['listId'], 'userId': owner_key},
+        {
+            '$set': payload,
+            '$setOnInsert': {
+                'createdAt': datetime.utcnow(),
+            },
+        },
+        upsert=True,
+    )
+
+
+def _recalculate_and_save_list(db, owner_key, list_doc):
+    items = []
+    total = 0.0
+    for raw in (list_doc.get('items') or []):
+        item = _normalize_item(raw)
+        item = _resolve_price_for_item(db, item)
+        total += _to_float(item.get('lineTotal'), 0)
+        items.append(item)
+
+    list_doc['items'] = items
+    list_doc['totalPrice'] = round(total, 2)
+    _persist_list(db, owner_key, list_doc)
+    return list_doc
+
+
+def _ensure_default_list(db, owner_key, email):
+    rows = list(db.lists.find({'userId': owner_key}).sort('createdAt', 1))
+    if rows:
+        return rows
+
+    legacy_items = []
+    user = get_user_by_email(email) or {}
+    if isinstance(user.get('shopping_list'), list):
+        legacy_items = [_normalize_item(i) for i in user.get('shopping_list')]
+
+    list_id = str(uuid.uuid4())
+    base = {
+        'listId': list_id,
+        'id': list_id,
+        'name': 'My List',
+        'items': legacy_items,
+        'shared': False,
+        'shareCode': None,
+        'totalPrice': 0,
+    }
+    base = _recalculate_and_save_list(db, owner_key, base)
+    update_user(email, {'active_list_id': list_id})
+    return [base]
+
+
+def get_user_lists(email):
+    if not email:
+        return {'lists': [], 'active_list_id': None}
+
+    db = get_db()
+    if db is not None and 'lists' in db.list_collection_names():
+        owner_key = _list_owner_key(email)
+        rows = _ensure_default_list(db, owner_key, email)
+
+        if rows and isinstance(rows[0], dict) and rows[0].get('listId') and rows[0].get('userId'):
+            docs = rows
+        else:
+            docs = list(db.lists.find({'userId': owner_key}).sort('updatedAt', -1))
+
+        lists = [_normalize_list_doc(doc) for doc in docs]
+        user = get_user_by_email(email) or {}
+        active_list_id = user.get('active_list_id') or user.get('activeListId')
+        if not active_list_id and lists:
+            active_list_id = lists[0].get('id')
+            update_user(email, {'active_list_id': active_list_id})
+
+        return {'lists': lists, 'active_list_id': active_list_id}
+
+    # Fallback to legacy embedded-list behavior
+    user = get_user_by_email(email)
+    if not user:
+        return {'lists': [], 'active_list_id': None}
+
+    if 'lists' not in user:
+        legacy_list = user.get('shopping_list', [])
+        default_lists = []
+        active_id = None
+        if legacy_list:
+            list_id = str(uuid.uuid4())
+            default_lists.append({'id': list_id, 'name': 'My Shopping List', 'items': legacy_list, 'created_at': datetime.utcnow() if get_db() is not None else None})
+            active_id = list_id
+        return {'lists': default_lists, 'active_list_id': active_id}
+
+    return {'lists': user.get('lists', []), 'active_list_id': user.get('active_list_id')}
+
+
+def create_shopping_list(email: str, name: str) -> str:
+    list_id = str(uuid.uuid4())
+    db = get_db()
+    if db is not None and 'lists' in db.list_collection_names():
+        owner_key = _list_owner_key(email)
+        _persist_list(
+            db,
+            owner_key,
+            {
+                'listId': list_id,
+                'id': list_id,
+                'name': name,
+                'items': [],
+                'totalPrice': 0,
+                'shared': False,
+                'shareCode': None,
+            },
+        )
+        update_user(email, {'active_list_id': list_id})
+        return list_id
+
+    new_list = {'id': list_id, 'name': name, 'items': [], 'created_at': datetime.utcnow()}
+    if get_db() is not None:
+        get_db().users.update_one({'email': email}, {'$push': {'lists': new_list}, '$set': {'active_list_id': list_id}})
+    elif getattr(mock_models, 'users', None):
+        user = mock_models.users.get(email)
+        if user:
+            user.setdefault('lists', []).append(new_list)
+            user['active_list_id'] = list_id
+    return list_id
+
+
+def update_list_items(email: str, list_id: str, items: list) -> bool:
+    db = get_db()
+    if db is not None and 'lists' in db.list_collection_names():
+        owner_key = _list_owner_key(email)
+        row = db.lists.find_one({'listId': list_id, 'userId': owner_key})
+        if not row:
+            return False
+        row = _normalize_list_doc(row)
+        row['items'] = items or []
+        _recalculate_and_save_list(db, owner_key, row)
+        return True
+
+    if get_db() is not None:
+        result = get_db().users.update_one({'email': email, 'lists.id': list_id}, {'$set': {'lists.$.items': items}})
+        return result.modified_count > 0
+
+    if getattr(mock_models, 'users', None):
+        user = mock_models.users.get(email)
+        if user and 'lists' in user:
+            for lst in user['lists']:
+                if lst['id'] == list_id:
+                    lst['items'] = items
+                    return True
+    return False
+
+
+def set_active_list(email: str, list_id: str) -> bool:
+    return update_user(email, {'active_list_id': list_id})
+
+
+def add_item_to_list(email: str, list_id: str, item: dict) -> bool:
+    db = get_db()
+    if db is not None and 'lists' in db.list_collection_names():
+        owner_key = _list_owner_key(email)
+        row = db.lists.find_one({'listId': list_id, 'userId': owner_key})
+        if not row:
+            return False
+
+        row = _normalize_list_doc(row)
+        items = row.get('items') or []
+        norm = _normalize_item(item)
+
+        incoming_name = str(norm.get('name') or '').strip().lower()
+        incoming_product_id = str(norm.get('productId') or '').strip()
+        merged = False
+        for existing in items:
+            ex_name = str(existing.get('name') or '').strip().lower() if isinstance(existing, dict) else ''
+            ex_pid = str(existing.get('productId') or '').strip() if isinstance(existing, dict) else ''
+            if incoming_product_id and ex_pid and incoming_product_id == ex_pid:
+                existing['qty'] = int(_to_float(existing.get('qty'), 1)) + int(_to_float(norm.get('qty'), 1))
+                existing['quantity'] = existing['qty']
+                existing['is_new'] = True
+                merged = True
+                break
+            if incoming_name and ex_name and incoming_name == ex_name:
+                existing['qty'] = int(_to_float(existing.get('qty'), 1)) + int(_to_float(norm.get('qty'), 1))
+                existing['quantity'] = existing['qty']
+                existing['is_new'] = True
+                merged = True
+                break
+
+        if not merged:
+            items.append(norm)
+
+        row['items'] = items
+        _recalculate_and_save_list(db, owner_key, row)
+        return True
+
+    if get_db() is not None:
+        result = get_db().users.update_one({'email': email, 'lists.id': list_id}, {'$push': {'lists.$.items': item}})
+        return result.modified_count > 0
+
+    if getattr(mock_models, 'users', None):
+        user = mock_models.users.get(email)
+        if user and 'lists' in user:
+            for lst in user['lists']:
+                if lst['id'] == list_id:
+                    lst.setdefault('items', []).append(item)
+                    return True
+    return False
+
+
+def remove_item_from_list(email: str, list_id: str, item_name: str) -> bool:
+    db = get_db()
+    if db is not None and 'lists' in db.list_collection_names():
+        owner_key = _list_owner_key(email)
+        row = db.lists.find_one({'listId': list_id, 'userId': owner_key})
+        if not row:
+            return False
+
+        row = _normalize_list_doc(row)
+        before = len(row.get('items') or [])
+        target = (item_name or '').strip().lower()
+        kept = []
+        removed = False
+        for item in (row.get('items') or []):
+            name = ''
+            if isinstance(item, dict):
+                name = str(item.get('name') or '').strip().lower()
+            elif isinstance(item, str):
+                name = item.strip().lower()
+
+            if not removed and target and name == target:
+                removed = True
+                continue
+            kept.append(item)
+
+        row['items'] = kept
+        _recalculate_and_save_list(db, owner_key, row)
+        return removed or (before != len(kept))
+
+    if get_db() is not None:
+        db = get_db()
+        res1 = db.users.update_one({'email': email, 'lists.id': list_id}, {'$pull': {'lists.$.items': {'name': item_name}}})
+        if res1.modified_count > 0:
+            return True
+        res2 = db.users.update_one({'email': email, 'lists.id': list_id}, {'$pull': {'lists.$.items': item_name}})
+        return res2.modified_count > 0
+
+    if getattr(mock_models, 'users', None) is not None:
+        user = mock_models.users.get(email)
+        if user and 'lists' in user:
+            for lst in user['lists']:
+                if lst['id'] == list_id:
+                    items = lst.get('items', [])
+                    new_items = [i for i in items if not (isinstance(i, dict) and i.get('name') == item_name) and not (isinstance(i, str) and i == item_name)]
+                    if len(items) != len(new_items):
+                        lst['items'] = new_items
+                        return True
+    return False
+
+
+def rename_shopping_list(email: str, list_id: str, new_name: str) -> bool:
+    db = get_db()
+    if db is not None and 'lists' in db.list_collection_names():
+        owner_key = _list_owner_key(email)
+        res = db.lists.update_one({'listId': list_id, 'userId': owner_key}, {'$set': {'name': new_name, 'updatedAt': datetime.utcnow()}})
+        return res.modified_count > 0
+
+    if get_db() is not None:
+        result = get_db().users.update_one({'email': email, 'lists.id': list_id}, {'$set': {'lists.$.name': new_name}})
+        return result.modified_count > 0
+
+    if getattr(mock_models, 'users', None) is not None:
+        user = mock_models.users.get(email)
+        if user and 'lists' in user:
+            for lst in user['lists']:
+                if lst['id'] == list_id:
+                    lst['name'] = new_name
+                    return True
+    return False
+
+
+def delete_shopping_list(email: str, list_id: str) -> bool:
+    db = get_db()
+    if db is not None and 'lists' in db.list_collection_names():
+        owner_key = _list_owner_key(email)
+        res = db.lists.delete_one({'listId': list_id, 'userId': owner_key})
+        if res.deleted_count > 0:
+            user = get_user_by_email(email) or {}
+            if user.get('active_list_id') == list_id:
+                fallback = db.lists.find_one({'userId': owner_key}, sort=[('updatedAt', -1)])
+                update_user(email, {'active_list_id': fallback.get('listId') if fallback else None})
+            return True
+        return False
+
+    if get_db() is not None:
+        result = get_db().users.update_one({'email': email}, {'$pull': {'lists': {'id': list_id}}})
+        get_db().users.update_one({'email': email, 'active_list_id': list_id}, {'$unset': {'active_list_id': ''}})
+        return result.modified_count > 0
+
+    if getattr(mock_models, 'users', None) is not None:
+        user = mock_models.users.get(email)
+        if user and 'lists' in user:
+            initial_len = len(user['lists'])
+            user['lists'] = [l for l in user['lists'] if l['id'] != list_id]
+            if user.get('active_list_id') == list_id:
+                user['active_list_id'] = None
+            return len(user['lists']) < initial_len
+    return False
+
+
+def mark_items_as_seen(email: str, list_id: str) -> bool:
+    db = get_db()
+    if db is not None and 'lists' in db.list_collection_names():
+        owner_key = _list_owner_key(email)
+        row = db.lists.find_one({'listId': list_id, 'userId': owner_key})
+        if not row:
+            return False
+        row = _normalize_list_doc(row)
+        changed = False
+        for item in (row.get('items') or []):
+            if isinstance(item, dict) and item.get('is_new'):
+                item['is_new'] = False
+                changed = True
+        if changed:
+            _persist_list(db, owner_key, row)
+        return True
+
+    if get_db() is not None:
+        user = get_db().users.find_one({'email': email})
+        if not user or 'lists' not in user:
+            return False
+        updated = False
+        lists = user.get('lists', [])
+        for lst in lists:
+            if lst.get('id') == list_id:
+                for item in lst.get('items', []):
+                    if isinstance(item, dict) and item.get('is_new'):
+                        item['is_new'] = False
+                        updated = True
+                break
+        if updated:
+            return update_list_items(email, list_id, lst['items'])
+        return True
+
+    if getattr(mock_models, 'users', None):
+        user = mock_models.users.get(email)
+        if user and 'lists' in user:
+            for lst in user['lists']:
+                if lst['id'] == list_id:
+                    for item in lst.get('items', []):
+                        if isinstance(item, dict) and item.get('is_new'):
+                            item['is_new'] = False
+                    return True
+    return False
+
+
+# ═══════════════════════════════════════════════════════════════════════════
 # CATEGORY: CLASS WRAPPER (FOR NAMESPACE)
 # ═══════════════════════════════════════════════════════════════════════════
 

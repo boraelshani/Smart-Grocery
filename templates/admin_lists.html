@@ -1,0 +1,126 @@
+{% extends "admin_layout.html" %}
+{% block title %}Admin Lists - Smart Grocery{% endblock %}
+
+{% set admin_title = "Lists Hub" %}
+{% set admin_subtitle = "Monitor user shopping behavior and curate public list templates." %}
+{% set admin_section = "lists" %}
+
+{% block admin_styles %}
+<style>
+  .lists-hero {
+    border-radius: 20px;
+    border: 1px solid rgba(249, 115, 22, 0.2);
+    background:
+      linear-gradient(120deg, rgba(249, 115, 22, 0.14), rgba(14, 165, 163, 0.1)),
+      repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.35) 0, rgba(255, 255, 255, 0.35) 8px, transparent 8px, transparent 16px);
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .list-card {
+    border-radius: 14px;
+    border: 1px solid #e2e8f0;
+    background: #fff;
+    padding: 0.8rem;
+    margin-bottom: 0.7rem;
+  }
+
+  .list-meta {
+    font-size: 0.8rem;
+    color: #64748b;
+  }
+</style>
+{% endblock %}
+
+{% block admin_content %}
+<div class="lists-hero d-flex justify-content-between align-items-center flex-wrap gap-2">
+  <div>
+    <div class="small text-secondary">{{ data.counts.lists or 0 }} user lists · {{ data.counts.public_lists or 0 }} public lists</div>
+    <div class="fw-semibold">Use this page for list intelligence and public template publishing.</div>
+  </div>
+</div>
+
+<section class="row g-4">
+  <div class="col-xl-7">
+    <div class="admin-panel">
+      <div class="panel-head">
+        <h2>Recent User Lists</h2>
+        <p>Latest shopping lists with item and total summaries.</p>
+      </div>
+      <div class="panel-body" style="max-height: 680px; overflow: auto;">
+        {% for l in data.lists or [] %}
+        <article class="list-card">
+          <div class="d-flex justify-content-between align-items-start gap-2 flex-wrap">
+            <div>
+              <div class="fw-semibold">{{ l.name or 'Unnamed List' }}</div>
+              <div class="list-meta">owner: {{ l.owner_display or 'unknown' }} · items: {{ (l.get('items', []) or [])|length }} · total: {{ l.totalPrice if l.totalPrice is not none else '-' }}</div>
+            </div>
+            <span class="badge text-bg-light border">{{ l.updatedAt or l.createdAt or '-' }}</span>
+          </div>
+        </article>
+        {% else %}
+        <div class="text-secondary">No user lists found.</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-5">
+    <div class="admin-panel mb-4">
+      <div class="panel-head">
+        <h2>Create Public List</h2>
+        <p>Only business fields are required. ID is auto-generated.</p>
+      </div>
+      <div class="panel-body">
+        <form method="post" action="{{ url_for('admin.admin_save_public_list') }}" class="admin-form-grid">
+          <input type="hidden" name="redirectTo" value="lists">
+          <div class="span-6"><input class="form-control" name="name_en" placeholder="Name EN" required></div>
+          <div class="span-6"><input class="form-control" name="name_de" placeholder="Name DE" required></div>
+          <div class="span-6">
+            <select class="form-select" name="type">
+              <option value="template">Template</option>
+              <option value="public">Public</option>
+            </select>
+          </div>
+          <div class="span-6"><input class="form-control" name="popularityScore" value="0" placeholder="Popularity score"></div>
+          <div class="span-12"><textarea class="form-control" name="description_en" rows="2" placeholder="Description EN"></textarea></div>
+          <div class="span-12"><textarea class="form-control" name="description_de" rows="2" placeholder="Description DE"></textarea></div>
+          <div class="span-12">
+            <details>
+              <summary class="small fw-semibold text-secondary">Advanced Optional Fields</summary>
+              <div class="admin-form-grid mt-2">
+                <div class="span-12"><input class="form-control" name="creatorUserId" placeholder="Creator user ID"></div>
+                <div class="span-12"><textarea class="form-control" name="items_json" rows="3" placeholder='[{"productId":"prod_x","quantity":1}]'></textarea></div>
+              </div>
+            </details>
+          </div>
+          <div class="span-12 d-grid"><button class="btn btn-primary admin-btn">Save Public List</button></div>
+        </form>
+      </div>
+    </div>
+
+    <div class="admin-panel">
+      <div class="panel-head">
+        <h2>Public Lists Snapshot</h2>
+        <p>Newest templates and public entries.</p>
+      </div>
+      <div class="table-responsive" style="max-height: 300px; overflow: auto;">
+        <table class="table table-sm table-clean align-middle mb-0">
+          <thead><tr><th>Name</th><th>Type</th><th>Popularity</th></tr></thead>
+          <tbody>
+            {% for p in data.public_lists or [] %}
+            <tr>
+              <td>{{ p.name_en }}</td>
+              <td>{{ p.type }}</td>
+              <td>{{ p.popularityScore }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="3" class="text-secondary">No public lists available.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -163,6 +163,13 @@
                     <div class="bg-light rounded p-2 text-warning d-flex align-items-center justify-content-center"><i class="bi bi-sliders2"></i></div> Preferences
                   </a>
                 </li>
+                {% if is_admin_nav %}
+                <li>
+                  <a class="dropdown-item py-2 px-3 fw-medium d-flex align-items-center gap-3 transition-all {% if request.endpoint and request.endpoint.startswith('admin.') %}active{% endif %}" href="{{ url_for('admin.admin_dashboard') }}" onmouseover="this.style.backgroundColor='#f8f9fa'" onmouseout="this.style.backgroundColor='transparent'">
+                    <div class="bg-light rounded p-2 text-dark d-flex align-items-center justify-content-center"><i class="bi bi-shield-lock"></i></div> Admin Dashboard
+                  </a>
+                </li>
+                {% endif %}
               </div>
               <li class="border-top bg-light"><hr class="dropdown-divider m-0 border-0"></li>
               <li class="bg-light px-3 py-3">
@@ -225,6 +232,12 @@
                 <i class="bi bi-bell-fill"></i>
                 <span>Notifications</span>
               </a>
+              {% if is_admin_nav %}
+              <a class="navbar-menu-link {% if request.endpoint and request.endpoint.startswith('admin.') %}active{% endif %}" href="{{ url_for('admin.admin_dashboard') }}">
+                <i class="bi bi-shield-lock"></i>
+                <span>Admin</span>
+              </a>
+              {% endif %}
               <a class="navbar-menu-link" href="{{ url_for('auth.logout') }}">
                 <i class="bi bi-box-arrow-right"></i>
                 <span>Sign Out</span>

@@ -14,7 +14,11 @@ import json # Import standard JSON library for data parsing
 import os # Import operating system library for file path management
 import random # Import random library for data shuffling/selection
 import re # Import regular expressions for string manipulation
+import time
 from comparison.comparison_engine import build_best_price_summary, build_compare_product_payload
+
+_PAGE_CACHE_TTL_SEC = 20
+_page_cache = {}
 
 # ═══════════════════════════════════════════════════════════════════════════
 # CONSTANTS
@@ -202,6 +206,14 @@ def home(): # Define the view function for the dashboard
         # User is Guest: Render the 'entry.html' (Login/Signup options).
         return render_template('entry.html') # Return the login/signup gateway page
 
+    # Fast path for repeated refreshes: return a short-lived cached render context.
+    cache_bust = request.args.get('refresh') == '1'
+    cache_key = f"home:{user_email}"
+    now_ts = time.time()
+    cached = _page_cache.get(cache_key)
+    if not cache_bust and cached and cached.get('expires_at', 0) > now_ts:
+        return render_template('home.html', **cached.get('context', {}))
+
     # 2. INITIALIZATION
     # Initialize all potential template variables to empty defaults.
     # We do this to ensure the template never crashes due to a missing variable, 
@@ -239,13 +251,17 @@ def home(): # Define the view function for the dashboard
         # Fetch list of stores available in the system
         stores = stores_model.list_stores() # Call model to get all retailer information
         # Fetch list of all products
-        products = products_model.list_products() # Call model to get full product catalog
+        products = products_model.list_products(limit=80) # Cap payload for home rendering
         
         # Calculate Grand Total of all active deals in the system
         # This sums up Featured Deals + Multibuy Offers + Quantity Discounts
         total_deals_count = (featured_deals_model.get_deals_count() + 
                            multibuy_offers_model.get_offers_count() + 
                            len(quantity_discounts_model.list_active_discounts())) # Aggregate count from 3 models
+        try:
+            total_product_count = products_model.count_products()
+        except Exception:
+            total_product_count = len(products)
         
         # Fetch the actual deal objects for display
         featured_deals_list = featured_deals_model.list_featured_deals() # Get primary promotions from DB
@@ -395,7 +411,8 @@ def home(): # Define the view function for the dashboard
 
     # Initialize a dictionary that defaults to 0 for missing keys
     store_counts = defaultdict(int) # Create integer-default map
-    total_product_count = 0 # Initialize global catalog item counter
+    if not total_product_count:
+        total_product_count = 0 # Initialize global catalog item counter
 
     # Count products per store
     for product in products: # Iterate through everything in the core catalog
@@ -422,25 +439,16 @@ def home(): # Define the view function for the dashboard
         norm = _norm_store(deal_store) # Normalize
         if norm: # If valid
             store_counts[norm] += 1 # Add to tally
-    total_product_count += len(featured_deals) # Final global count adjustment including deals
+    if total_product_count == 0:
+        total_product_count += len(featured_deals) # Final global count adjustment including deals
 
     # Update the 'stores' list objects with their counts
     for store in stores: # Iterate through the authoritative store list
         name = store.get('name') or store.get('store') or '' # Get display name
         norm = _norm_store(name) # Normalize for dict lookup
         
-        # Try to get authoritative count from DB first
-        store_product_count = 0 # Initialize local count
-        try: # Start direct database counting
-            product_count = products_model.count_by_store(name) # Count standard items in DB
-            deal_count = featured_deals_model.count_by_store(name) # Count promotions in DB
-            store_product_count = product_count + deal_count # Sum results
-        except Exception as e: # Handle count query failure
-            # Fallback to the manual counts we just calculated
-            print(f'WARNING: Error counting products for {name}: {e}') # Log warning
-            store_product_count = store_counts.get(norm, 0) # Use the loop-based fallback count
-        
-        store['product_count'] = store_product_count # Save the final count to the store object
+        # Use computed counts from the in-memory pass to avoid N+1 DB queries.
+        store['product_count'] = store_counts.get(norm, 0) # Save the final count to the store object
 
     # 11. CHOOSE A STORE TO FEATURE
     # The home page design features a specific store's products (e.g., "Best at Aldi").
@@ -599,33 +607,35 @@ def home(): # Define the view function for the dashboard
                     fav['image'] = fav.get('product_image') # Bridge field
         
         # Compute recommendations using advanced Model method
-        try: # Start recommendation engine
-            from models.users_model import get_user_lists # Late import
-            
-            # 14.1 Analyze user habits
-            # Collect shops and categories from favorites and shopping lists
-            favorite_shops = [fav.get('store') for fav in favorites if fav.get('store')] # Extract shops from likes
-            favorite_categories = [fav.get('category') for fav in favorites if fav.get('category')] # Extract categories from likes
-            
-            list_shops = [] # Target variable for shopping list stores
-            list_categories = [] # Target variable for shopping list categories
-            lists_data = get_user_lists(user_email) or {} # Fetch user's cart history
-            for lst in (lists_data.get('lists', []) or []): # Sweep through all lists
-                for item in (lst.get('items', []) or []): # Sweep through all items in list
-                    if isinstance(item, dict): # Check item validity
-                        if item.get('store'): list_shops.append(item.get('store')) # Log store usage
-                        if item.get('category'): list_categories.append(item.get('category')) # Log category usage
-            
-            all_shops = favorite_shops + list_shops # Combine data points
-            all_categories = favorite_categories + list_categories # Combine data points
-            
-            # 14.2 Query the Database for Similar Items
-            # Use ProductsModel to get recommendations based on the collected signals
-            recommended_products = products_model.get_recommendations(all_shops, all_categories) # Run algo
+        if current_app.config.get('ENABLE_HOME_RECOMMENDATIONS', False):
+            try: # Start recommendation engine
+                from models.users_model import get_user_lists # Late import
                 
-        except Exception as e: # Handle recommendation failure
-            print(f'WARNING: Failed to compute recommendations: {e}') # Log
-            recommended_products = products[:12] # Fallback to standard products
+                # 14.1 Analyze user habits
+                # Collect shops and categories from favorites and shopping lists
+                favorite_shops = [fav.get('store') for fav in favorites if fav.get('store')] # Extract shops from likes
+                favorite_categories = [fav.get('category') for fav in favorites if fav.get('category')] # Extract categories from likes
+                
+                list_shops = [] # Target variable for shopping list stores
+                list_categories = [] # Target variable for shopping list categories
+                lists_data = get_user_lists(user_email) or {} # Fetch user's cart history
+                for lst in (lists_data.get('lists', []) or []): # Sweep through all lists
+                    for item in (lst.get('items', []) or []): # Sweep through all items in list
+                        if isinstance(item, dict): # Check item validity
+                            if item.get('store'): list_shops.append(item.get('store')) # Log store usage
+                            if item.get('category'): list_categories.append(item.get('category')) # Log category usage
+                
+                all_shops = favorite_shops + list_shops # Combine data points
+                all_categories = favorite_categories + list_categories # Combine data points
+                
+                # 14.2 Query the Database for Similar Items
+                # Use ProductsModel to get recommendations based on the collected signals
+                recommended_products = products_model.get_recommendations(all_shops, all_categories) # Run algo
+            except Exception as e: # Handle recommendation failure
+                print(f'WARNING: Failed to compute recommendations: {e}') # Log
+                recommended_products = products[:12] # Fallback to standard products
+        else:
+            recommended_products = products[:12] # Fast default without heavy preference joins
     except Exception as e: # Handle favorites retrieval failure
         print(f'WARNING: Failed to load favorites: {e}') # Log
 
@@ -656,20 +666,30 @@ def home(): # Define the view function for the dashboard
     favorites = helpers.sanitize_mongo_doc(favorites) # Clean favorites
 
     # 17. RENDER TEMPLATE
-    return render_template('home.html', # Load the home layout
-                         stores=stores, # Pass data
-                         products=products, # Pass data
-                         featured_deals=featured_deals, # Pass data
-                         popular_products=popular_products, # Pass data
-                         total_deals_count=total_deals_count, # Pass count
-                         favorites=favorites, # Pass likes
-                         recommended_products=recommended_products, # Pass personal recs
-                         store_products=store_products, # Pass spotlight
-                         chosen_store_name=chosen_store_name, # Pass choice
-                         using_fallback=using_fallback, # Pass status
-                         total_product_count=total_product_count, # Pass total
-                         max_savings=max_savings, # Pass savings percentage
-                         user_join_date=user_join_date) # Pass join date
+    template_context = {
+        'stores': stores,
+        'products': products,
+        'featured_deals': featured_deals,
+        'popular_products': popular_products,
+        'total_deals_count': total_deals_count,
+        'favorites': favorites,
+        'recommended_products': recommended_products,
+        'store_products': store_products,
+        'chosen_store_name': chosen_store_name,
+        'using_fallback': using_fallback,
+        'total_product_count': total_product_count,
+        'max_savings': max_savings,
+        'user_join_date': user_join_date,
+    }
+
+    _page_cache[cache_key] = {
+        'expires_at': now_ts + _PAGE_CACHE_TTL_SEC,
+        'context': template_context,
+    }
+    if len(_page_cache) > 200:
+        _page_cache.clear()
+
+    return render_template('home.html', **template_context) # Load the home layout
 
 
 
@@ -829,7 +849,7 @@ def store_products_page(store_name): # Logic to handle per-store inventory brows
     # Re-apply favorited status to fallback products
     user_email = session.get('user') # Identity
     fav_ids = set() # Set
-    if user_email: # Auth check
+    if user_email and current_app.config.get('ENABLE_LIST_ASSET_ENRICHMENT', False): # Auth check
         try: # Try DB
             from models.favorites_model import get_user_favorites # Helper
             user_favs = get_user_favorites(user_email) # Fetch
@@ -1578,7 +1598,7 @@ def shopping_list(): # Logic for cart and inventory view
         # 5. CLEAR NOTIFICATION STATES
         # Reset 'is_new' status for items in the currently active list view
         requested_list_id = request.args.get('list_id') or lists_data.get('active_list_id') # Determine focused list
-        if user_email and requested_list_id: # Valid target?
+        if user_email and requested_list_id and current_app.config.get('ENABLE_LIST_MARK_SEEN_ON_RENDER', False): # Valid target?
             from models.users_model import users_model # Status helper
             users_model.mark_items_as_seen(user_email, requested_list_id) # Update status in DB
             # Refresh data to reflect the cleared status flags in the UI
@@ -1595,9 +1615,9 @@ def shopping_list(): # Logic for cart and inventory view
             items = lst.get('list_items') or [] # Extract items
             # Ensure items are valid dictionaries before enrichment
             valid_items = [i for i in items if isinstance(i, dict)] # Filter garbage
-            if valid_items: # Has items?
-                 multibuy_offers_model.attach_offers_to_products(valid_items) # Sync multibuys
-                 quantity_discounts_model.attach_discounts_to_products(valid_items) # Sync bulk
+            if valid_items and current_app.config.get('ENABLE_LIST_PROMO_ENRICHMENT', False): # Has items?
+                multibuy_offers_model.attach_offers_to_products(valid_items) # Sync multibuys
+                quantity_discounts_model.attach_discounts_to_products(valid_items) # Sync bulk
 
             # Initialize counters for this specific list
             total = 0.0 # Price counter
@@ -1673,149 +1693,71 @@ def shopping_list(): # Logic for cart and inventory view
         else:
             active_list = all_lists[0] if all_lists else None
 
-        # 9. ITEM AGGREGATION & PRICE SYNC
-        # Deep-enrich each item in the shopping list with live catalog prices
+        # 9. ITEM AGGREGATION
+        # Build shopping list rows from stored list entries only. Avoid full-catalog
+        # lookups on every render to keep page refreshes responsive.
         shopping_entries = active_list.get('list_items', active_list.get('items', [])) if active_list else [] # Access items
-
-        # Load global catalog for fuzzy price matching
-        products = products_model.list_products() # Fetch everything
-
-        def find_product_by_name(name): # Helper for fuzzy lookup
-            """Find product in catalog by exact or partial name match"""
-            if not name: return None # Exit early
-            name_l = name.lower() # Case seed
-            # Priority 1: Exact Match
-            for p in products: # Scan
-                if isinstance(p.get('name'), str) and p.get('name').lower() == name_l: # Exact?
-                    return p # Winner
-            # Priority 2: Partial/Contains Match
-            for p in products: # Scan
-                if isinstance(p.get('name'), str) and name_l in p.get('name').lower(): # Contained?
-                    return p # Secondary winner
-            return None # Miss
 
         items = [] # Result items
         agg = {} # Deduplication map
         for idx, entry in enumerate(shopping_entries): # Process list items
-            # Parse entry name and quantity
-            if isinstance(entry, dict): # Complex entry?
-                name = entry.get('name') # Get Name
-                qty = int(entry.get('qty', entry.get('quantity', 1))) if entry.get('qty') or entry.get('quantity') else 1 # Get quantity
-                purchased = bool(entry.get('purchased', False)) # Get status
-            else: # String entry?
-                name = str(entry) # Name is string
-                qty = 1 # Qty is 1
-                purchased = False # Status is fresh
+            if isinstance(entry, dict):
+                name = entry.get('name') or f'Item {idx + 1}'
+                qty = int(entry.get('qty', entry.get('quantity', 1))) if entry.get('qty') or entry.get('quantity') else 1
+                purchased = bool(entry.get('purchased', False))
+                store_name = entry.get('store') or entry.get('store_name') or ''
+                image_val = entry.get('image') or ''
+                if not image_val and isinstance(entry.get('images'), list) and entry.get('images'):
+                    image_val = entry.get('images')[0]
 
-            # A. Attempt to find matching product in catalog
-            product = find_product_by_name(name) # Search
-            price_val = 0.0 # Default
-            store_name = '' # Default
+                raw_price = entry.get('price_val') if entry.get('price_val') is not None else entry.get('price')
+                try:
+                    if isinstance(raw_price, Decimal128):
+                        price_val = float(raw_price.to_decimal())
+                    elif isinstance(raw_price, (int, float)):
+                        price_val = float(raw_price)
+                    else:
+                        cleaned = re.sub(r"[^0-9.]", "", str(raw_price or ""))
+                        price_val = float(cleaned) if cleaned else 0.0
+                except Exception:
+                    price_val = 0.0
 
-            # B. Extract Price (Preferring entry's specific price)
-            if isinstance(entry, dict): # Entry has metadata?
-                entry_price = entry.get('price') or entry.get('price_val') # Extract
-                store_name = entry.get('store', '') # Extract retailer
-                if entry_price is not None: # Field exists?
-                    try: # Parse
-                        if isinstance(entry_price, (int, float)): # Numeric?
-                            price_val = float(entry_price) # Cast
-                        elif isinstance(entry_price, Decimal128): # Mongo?
-                            try: price_val = float(entry_price.to_decimal()) # Extract
-                            except Exception: price_val = 0.0 # Handle fail
-                        else: # String with symbols?
-                            cleaned = re.sub(r"[^0-9.]", "", str(entry_price)) # Regex strip symbols
-                            price_val = float(cleaned) if cleaned else 0.0 # Cast
-                    except Exception: # Handle errors
-                        price_val = 0.0 # Reset
+                row_id = entry.get('id') or entry.get('productId') or f'item-{idx}'
+                offer_val = entry.get('offer')
+                discount_tiers_val = entry.get('discount_tiers')
+            else:
+                name = str(entry)
+                qty = 1
+                purchased = False
+                store_name = ''
+                image_val = ''
+                price_val = 0.0
+                row_id = f'item-{idx}'
+                offer_val = None
+                discount_tiers_val = None
 
-            # C. Sync Price from Catalog if entry has no price
-            if (not price_val or price_val == 0) and product: # Missing price but found catalog item?
-                cheapest = product.get('cheapest') or {} # Check record cheap
-                price_field = cheapest.get('price') if isinstance(cheapest, dict) else product.get('price') # Identify best field
-                if price_field is None: # Missing cheap index?
-                    try: # Deep look
-                        stores_list = product.get('stores', []) # Access retailer matrix
-                        if stores_list and isinstance(stores_list, list): # Has entries?
-                            price_field = stores_list[0].get('price') # Take first
-                            if not store_name: # Retailer missing?
-                                store_name = stores_list[0].get('store') or stores_list[0].get('name') # Assign
-                    except Exception: # Handle traverse error
-                        price_field = None # Reset
-                if price_field is not None: # Found a replacement price?
-                    try: # Parse
-                        if isinstance(price_field, (int, float)): # Numeric?
-                            price_val = float(price_field) # Cast
-                        elif isinstance(price_field, Decimal128): # Mongo?
-                            try: price_val = float(price_field.to_decimal()) # Extract
-                            except Exception: price_val = 0.0 # Reset
-                        else: # String?
-                            cleaned = re.sub(r"[^0-9.]", "", str(price_field)) # Strip
-                            price_val = float(cleaned) if cleaned else 0.0 # Cast
-                    except Exception: # Errors?
-                        price_val = 0.0 # Reset
-                if not store_name: # Still no retailer?
-                    try: # Look up cheapest retailer string
-                        store_name = (product.get('cheapest') or {}).get('store', '') # Extract
-                    except Exception: # Fail?
-                        store_name = '' # Clear
+            item_key = f"{str(row_id)}#{store_name}"
+            existing = agg.get(item_key)
 
-            # D. Retailer Resolution
-            store_from_entry = '' # Holder
-            if isinstance(entry, dict): # Complex entry?
-                store_from_entry = entry.get('store', '') # Capture
-            if not store_from_entry: # Missing?
-                store_from_entry = store_name # Use catalog retailer
-
-            # E. Deduplication Logic: Group by ID + Store
-            if product and product.get('id'): # Has ID?
-                item_key = f"{str(product.get('id'))}#{store_from_entry}" # Unique composite key
-            else: # Sparse data?
-                item_key = f"{(name or f'item-{idx}').strip().lower()}#{store_from_entry}" # Unique composite key from name
-            
-            existing = agg.get(item_key) # Check for existing group
-            
-            # F. Image Resolution
-            image_val = '' # Holder
-            try: # Start asset lookup
-                if isinstance(entry, dict): # Entry has asset?
-                    image_val = entry.get('image') # Primary
-                    if not image_val and entry.get('images'): # Gallery?
-                        if isinstance(entry.get('images'), list) and len(entry.get('images')) > 0: # Array?
-                            image_val = entry.get('images')[0] # First
-                        elif isinstance(entry.get('images'), str): # Simple key?
-                            image_val = entry.get('images') # Link
-
-                if not image_val and product: # Missing asset but has catalog item?
-                    image_val = product.get('image') # Catalog primary
-                    if not image_val and product.get('images'): # Catalog gallery?
-                        if isinstance(product.get('images'), list) and len(product.get('images')) > 0: # Array?
-                            image_val = product.get('images')[0] # First
-                        elif isinstance(product.get('images'), str): # String?
-                            image_val = product.get('images') # Link
-            except Exception: # Asset error?
-                image_val = '' # Clear
-
-            # G. Update Existing Group or Add New
-            if existing: # Aggregate?
-                existing['qty'] += qty # Add quantity
-                existing['purchased'] = existing['purchased'] or purchased # Logic OR for status
-                if existing.get('price_val', 0) == 0 and price_val: # Missing price?
-                    existing['price_val'] = price_val # Sync
-                if not existing.get('image') and image_val: # Missing photo?
-                    existing['image'] = image_val # Sync
-            else: # Create new row?
-                agg[item_key] = { # Bind object
-                    'id': product.get('id') if product and product.get('id') else f'item-{idx}', # ID
-                    'name': name, # Display Name
-                    'price_val': price_val, # Decimal price
-                    'store': store_from_entry or store_name, # Effective retailer
-                    'qty': qty, # Quantity
-                    'purchased': purchased, # Status
-                    'image': image_val or '', # Final asset
-                    'offer': entry.get('offer') if isinstance(entry, dict) else None, # Tied offer
-                    'discount_tiers': entry.get('discount_tiers') if isinstance(entry, dict) else None # Bulk tiers
-                } # End object
+            if existing:
+                existing['qty'] += qty
+                existing['purchased'] = existing['purchased'] or purchased
+                if existing.get('price_val', 0) == 0 and price_val:
+                    existing['price_val'] = price_val
+                if not existing.get('image') and image_val:
+                    existing['image'] = image_val
+            else:
+                agg[item_key] = {
+                    'id': str(row_id),
+                    'name': name,
+                    'price_val': price_val,
+                    'store': store_name,
+                    'qty': qty,
+                    'purchased': purchased,
+                    'image': image_val,
+                    'offer': offer_val,
+                    'discount_tiers': discount_tiers_val,
+                }
 
         # 10. FINAL ITEM MATH
         # Calculate sub-totals for each grouped item row
@@ -1845,8 +1787,6 @@ def shopping_list(): # Logic for cart and inventory view
             v['price'] = f"€{total:.2f}" # Format currency string for template
             items.append(v) # Add to final array
             
-        print("DEBUG: Rendering template") # Log for server monitors
-
         # 11. RENDER VIEW
         return render_template('shopping_list.html', # Load cart layout
                             user_data=user_data, # User demographics

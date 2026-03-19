@@ -1,0 +1,110 @@
+{% extends "admin_layout.html" %}
+{% block title %}Admin Feedback - Smart Grocery{% endblock %}
+
+{% set admin_title = "Feedback Desk" %}
+{% set admin_subtitle = "Review, triage, and close the feedback loop with users." %}
+{% set admin_section = "feedback" %}
+
+{% block admin_styles %}
+<style>
+  .feedback-header {
+    border-radius: 18px;
+    border: 1px solid rgba(14, 165, 163, 0.2);
+    background: linear-gradient(120deg, rgba(14, 165, 163, 0.14), rgba(56, 189, 248, 0.1));
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .feedback-kpi {
+    border-radius: 14px;
+    border: 1px solid #dbeafe;
+    background: #eff6ff;
+    padding: 0.65rem 0.8rem;
+    min-width: 120px;
+  }
+
+  .feedback-kpi .label {
+    font-size: 0.72rem;
+    color: #1d4ed8;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 700;
+  }
+
+  .feedback-kpi .value {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: #0f172a;
+  }
+</style>
+{% endblock %}
+
+{% block admin_content %}
+<div class="feedback-header d-flex justify-content-between align-items-start gap-2 flex-wrap">
+  <div>
+    <div class="small text-secondary">Status-driven review flow with direct row actions.</div>
+    <form method="get" action="{{ url_for('admin.admin_feedback_page') }}" class="d-flex gap-2 mt-2">
+      <select class="form-select" name="status" style="max-width: 220px;">
+        <option value="all" {% if (data.status_filter or 'all') == 'all' %}selected{% endif %}>All</option>
+        <option value="pending" {% if data.status_filter == 'pending' %}selected{% endif %}>Pending</option>
+        <option value="reviewed" {% if data.status_filter == 'reviewed' %}selected{% endif %}>Reviewed</option>
+        <option value="resolved" {% if data.status_filter == 'resolved' %}selected{% endif %}>Resolved</option>
+      </select>
+      <button class="btn btn-primary admin-btn" type="submit">Apply</button>
+    </form>
+  </div>
+  <div class="d-flex gap-2 flex-wrap">
+    <div class="feedback-kpi"><div class="label">All</div><div class="value">{{ data.counts.all or 0 }}</div></div>
+    <div class="feedback-kpi"><div class="label">Pending</div><div class="value">{{ data.counts.pending or 0 }}</div></div>
+    <div class="feedback-kpi"><div class="label">Reviewed</div><div class="value">{{ data.counts.reviewed or 0 }}</div></div>
+    <div class="feedback-kpi"><div class="label">Resolved</div><div class="value">{{ data.counts.resolved or 0 }}</div></div>
+  </div>
+</div>
+
+<section class="admin-panel">
+  <div class="panel-head">
+    <h2>Feedback Queue</h2>
+    <p>Update status inline, no manual feedback ID typing required.</p>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-sm table-clean align-middle mb-0">
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>User</th>
+          <th>Message</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for f in data.feedback or [] %}
+        <tr>
+          <td>{{ f.type or '-' }}</td>
+          <td>{{ f.user_display or '-' }}</td>
+          <td style="min-width: 280px;">{{ f.message or '-' }}</td>
+          <td>
+            <span class="badge {% if f.status == 'resolved' %}text-bg-success{% elif f.status == 'reviewed' %}text-bg-info{% else %}text-bg-warning{% endif %}">{{ f.status or 'pending' }}</span>
+          </td>
+          <td>
+            <form method="post" action="{{ url_for('admin.admin_feedback_status') }}" class="d-flex gap-2 align-items-center">
+              <input type="hidden" name="redirectTo" value="feedback">
+              <input type="hidden" name="statusFilter" value="{{ data.status_filter or 'all' }}">
+              <input type="hidden" name="feedbackId" value="{{ f.feedbackId }}">
+              <select name="status" class="form-select form-select-sm" style="min-width: 130px;">
+                <option value="pending" {% if (f.status or 'pending') == 'pending' %}selected{% endif %}>Pending</option>
+                <option value="reviewed" {% if f.status == 'reviewed' %}selected{% endif %}>Reviewed</option>
+                <option value="resolved" {% if f.status == 'resolved' %}selected{% endif %}>Resolved</option>
+              </select>
+              <button class="btn btn-sm btn-outline-dark rounded-pill">Save</button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" class="text-secondary">No feedback items found for this filter.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}
