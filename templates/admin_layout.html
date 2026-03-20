@@ -4,11 +4,14 @@
 
 {% block styles %}
 <style>
+  @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap');
+
   .admin-page {
+    font-family: 'Manrope', 'Segoe UI', sans-serif;
     background:
-      radial-gradient(circle at 8% 8%, rgba(124, 58, 237, 0.14), transparent 46%),
-      radial-gradient(circle at 88% 5%, rgba(249, 115, 22, 0.12), transparent 36%),
-      linear-gradient(180deg, #f5f2ff 0%, #f4f7ff 100%);
+      radial-gradient(circle at 4% 10%, rgba(14, 165, 163, 0.15), transparent 38%),
+      radial-gradient(circle at 100% 0%, rgba(249, 115, 22, 0.18), transparent 44%),
+      linear-gradient(180deg, #f4faf9 0%, #f8fbff 100%);
     min-height: 100vh;
   }
 
@@ -31,9 +34,9 @@
   }
 
   .admin-page .navbar-premium .nav-link.active {
-    color: #0ea5a3 !important;
-    border-color: rgba(14, 165, 163, 0.4) !important;
-    background: rgba(14, 165, 163, 0.12) !important;
+    color: #0f766e !important;
+    border-color: rgba(15, 118, 110, 0.25) !important;
+    background: rgba(15, 118, 110, 0.11) !important;
   }
 
   .admin-page .nav-bell-btn {
@@ -48,11 +51,11 @@
   }
 
   .admin-head {
-    background: linear-gradient(128deg, #2e1065, #5b21b6 58%, #7c3aed);
+    background: linear-gradient(128deg, #0f766e, #0ea5a3 55%, #22c55e);
     color: #fff;
     border-radius: 22px;
     padding: 1.5rem;
-    box-shadow: 0 14px 30px rgba(46, 16, 101, 0.28);
+    box-shadow: 0 14px 30px rgba(15, 118, 110, 0.28);
     position: relative;
     overflow: hidden;
   }
@@ -100,9 +103,9 @@
 
   .admin-nav-link.is-active {
     color: #fff;
-    border-color: #6d28d9;
-    background: linear-gradient(120deg, #7c3aed, #6d28d9);
-    box-shadow: 0 8px 14px rgba(109, 40, 217, 0.3);
+    border-color: #0f766e;
+    background: linear-gradient(120deg, #0f766e, #0ea5a3);
+    box-shadow: 0 8px 14px rgba(15, 118, 110, 0.3);
   }
 
   .admin-panel {
@@ -160,6 +163,20 @@
   .admin-panel textarea:focus {
     box-shadow: 0 0 0 0.2rem rgba(14, 165, 163, 0.15);
     border-color: #0ea5a3;
+  }
+
+  .admin-toggle-btn {
+    border-radius: 999px;
+    border: 1px solid #cbd5e1;
+    background: #fff;
+    color: #0f172a;
+    font-weight: 700;
+    padding: 0.45rem 0.95rem;
+  }
+
+  .admin-toggle-btn:hover {
+    border-color: #0f766e;
+    color: #0f766e;
   }
 
   .admin-btn {
@@ -256,10 +273,11 @@
     </div>
     <nav class="admin-nav">
       <a href="{{ url_for('admin.admin_dashboard') }}" class="admin-nav-link {% if admin_section == 'overview' %}is-active{% endif %}">Overview</a>
-      <a href="/admin/products" class="admin-nav-link {% if admin_section == 'products' %}is-active{% endif %}">Products</a>
-      <a href="/admin/categories" class="admin-nav-link {% if admin_section == 'categories' %}is-active{% endif %}">Categories</a>
-      <a href="/admin/lists" class="admin-nav-link {% if admin_section == 'lists' %}is-active{% endif %}">Lists</a>
-      <a href="/admin/feedback" class="admin-nav-link {% if admin_section == 'feedback' %}is-active{% endif %}">Feedback</a>
+      <a href="{{ url_for('admin.admin_products_page') }}" class="admin-nav-link {% if admin_section == 'products' %}is-active{% endif %}">Products</a>
+      <a href="{{ url_for('admin.admin_categories_page') }}" class="admin-nav-link {% if admin_section == 'categories' %}is-active{% endif %}">Categories</a>
+      <a href="{{ url_for('admin.admin_brands_page') }}" class="admin-nav-link {% if admin_section == 'brands' %}is-active{% endif %}">Brands</a>
+      <a href="{{ url_for('admin.admin_lists_page') }}" class="admin-nav-link {% if admin_section == 'lists' %}is-active{% endif %}">Lists</a>
+      <a href="{{ url_for('admin.admin_feedback_page') }}" class="admin-nav-link {% if admin_section == 'feedback' %}is-active{% endif %}">Feedback</a>
     </nav>
   </section>
 

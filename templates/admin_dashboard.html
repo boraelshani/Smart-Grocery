@@ -1,108 +1,113 @@
 {% extends "admin_layout.html" %}
-{% block title %}Admin Overview - Smart Grocery{% endblock %}
+{% block title %}Dashboard - Smart Grocery{% endblock %}
 
-{% set admin_title = "Admin Overview" %}
-{% set admin_subtitle = "Command center for catalog, customer insight, and data quality." %}
-{% set admin_section = "overview" %}
-
-{% block admin_styles %}
-<style>
-  .overview-hero {
-    border-radius: 20px;
-    border: 1px solid rgba(124, 58, 237, 0.14);
-    background: linear-gradient(145deg, rgba(124, 58, 237, 0.08), rgba(14, 165, 163, 0.06));
-    padding: 1.1rem;
-  }
-
-  .overview-grid {
-    display: grid;
-    grid-template-columns: repeat(12, minmax(0, 1fr));
-    gap: 1rem;
-  }
-
-  .overview-card {
-    grid-column: span 6;
-    border-radius: 18px;
-    border: 1px solid #e2e8f0;
-    background: #fff;
-    box-shadow: 0 10px 20px rgba(15, 23, 42, 0.05);
-    padding: 1rem;
-  }
-
-  .overview-card .kicker {
-    color: #7c3aed;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    font-size: 0.74rem;
-    font-weight: 800;
-    margin-bottom: 0.35rem;
-  }
-
-  .overview-card h3 {
-    font-size: 1.08rem;
-    margin-bottom: 0.35rem;
-  }
-
-  .overview-card p {
-    color: #64748b;
-    margin-bottom: 0.9rem;
-  }
-
-  @media (max-width: 992px) {
-    .overview-card {
-      grid-column: span 12;
-    }
-  }
-</style>
-{% endblock %}
+{% set admin_title = "Overview" %}
+{% set admin_subtitle = "System status and key metrics." %}
+{% set admin_section = "dashboard" %}
 
 {% block admin_content %}
-<section class="row g-3 mb-4">
-  {% for key, val in (data.counts or {}).items() %}
-  <div class="col-6 col-md-4 col-lg-3 col-xl-2">
-    <div class="card admin-kpi">
-      <div class="card-body py-3 px-3">
-        <div class="label">{{ key.replace('_', ' ') }}</div>
-        <div class="value">{{ val }}</div>
-      </div>
+<div class="row g-4 mb-5">
+  <!-- Stats Cards -->
+  <div class="col-md-3">
+    <div class="card-modern p-4 d-flex flex-column h-100 justify-content-center">
+       <div class="d-flex align-items-center mb-3">
+          <div class="bg-light rounded-circle p-3 d-flex align-items-center justify-content-center text-brand me-3" style="width: 50px; height: 50px;">
+             <i class="bi bi-box-seam fs-4"></i>
+          </div>
+          <h6 class="text-uppercase text-secondary small fw-bold mb-0">Products</h6>
+       </div>
+       <h2 class="display-6 fw-bold text-dark mb-0">{{ data.stats.total_products|default(0) }}</h2>
+       <p class="text-muted small mt-2 mb-0">Active in catalog</p>
     </div>
   </div>
-  {% endfor %}
-</section>
-
-<section class="overview-hero mb-4">
-  <div class="overview-grid">
-    <article class="overview-card">
-      <div class="kicker">Catalog Studio</div>
-      <h3>Products</h3>
-      <p>Search every product, edit details, and add store offers without manually typing internal IDs.</p>
-      <div class="d-flex gap-2 flex-wrap">
-        <a class="btn btn-primary admin-btn" href="/admin/products">Open Products</a>
-        <a class="btn btn-outline-primary admin-btn" href="/admin/products/new">Create Product</a>
-      </div>
-    </article>
-
-    <article class="overview-card">
-      <div class="kicker">Taxonomy</div>
-      <h3>Categories and Brands</h3>
-      <p>Manage naming and hierarchy with clean forms. Slugs and internal IDs are generated automatically.</p>
-      <a class="btn btn-primary admin-btn" href="/admin/categories">Open Categories</a>
-    </article>
-
-    <article class="overview-card">
-      <div class="kicker">Community</div>
-      <h3>Feedback</h3>
-      <p>Review user messages in a focused board and update status directly in each row.</p>
-      <a class="btn btn-primary admin-btn" href="/admin/feedback">Open Feedback</a>
-    </article>
-
-    <article class="overview-card">
-      <div class="kicker">Engagement</div>
-      <h3>Lists</h3>
-      <p>Track user and public lists, then publish curated public templates from one workspace.</p>
-      <a class="btn btn-primary admin-btn" href="/admin/lists">Open Lists</a>
-    </article>
+  
+  <div class="col-md-3">
+    <div class="card-modern p-4 d-flex flex-column h-100 justify-content-center">
+       <div class="d-flex align-items-center mb-3">
+          <div class="bg-light rounded-circle p-3 d-flex align-items-center justify-content-center text-warning me-3" style="width: 50px; height: 50px;">
+             <i class="bi bi-shop fs-4"></i>
+          </div>
+          <h6 class="text-uppercase text-secondary small fw-bold mb-0">Stores</h6>
+       </div>
+       <h2 class="display-6 fw-bold text-dark mb-0">{{ data.stats.total_stores|default(0) }}</h2>
+       <p class="text-muted small mt-2 mb-0">Monitored chains</p>
+    </div>
   </div>
-</section>
 
+  <div class="col-md-3">
+    <div class="card-modern p-4 d-flex flex-column h-100 justify-content-center">
+       <div class="d-flex align-items-center mb-3">
+          <div class="bg-light rounded-circle p-3 d-flex align-items-center justify-content-center text-success me-3" style="width: 50px; height: 50px;">
+             <i class="bi bi-people fs-4"></i>
+          </div>
+          <h6 class="text-uppercase text-secondary small fw-bold mb-0">Users</h6>
+       </div>
+       <h2 class="display-6 fw-bold text-dark mb-0">{{ data.stats.total_users|default(0) }}</h2>
+       <p class="text-muted small mt-2 mb-0">Registered accounts</p>
+    </div>
+  </div>
+
+  <div class="col-md-3">
+    <div class="card-modern p-4 d-flex flex-column h-100 justify-content-center">
+       <div class="d-flex align-items-center mb-3">
+          <div class="bg-light rounded-circle p-3 d-flex align-items-center justify-content-center text-danger me-3" style="width: 50px; height: 50px;">
+             <i class="bi bi-exclamation-triangle fs-4"></i>
+          </div>
+          <h6 class="text-uppercase text-secondary small fw-bold mb-0">Feedback</h6>
+       </div>
+       <h2 class="display-6 fw-bold text-dark mb-0">{{ data.stats.pending_feedback|default(0) }}</h2>
+       <p class="text-muted small mt-2 mb-0">Unresolved items</p>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Recent Activity / Feedback -->
+  <div class="col-lg-8">
+     <div class="card-modern h-100">
+        <div class="card-header bg-white border-bottom py-3 d-flex align-items-center justify-content-between">
+           <h6 class="fw-bold mb-0">Recent Feedback</h6>
+           <a href="{{ url_for('admin.admin_feedback_page') }}" class="btn btn-sm btn-light text-muted small">View All</a>
+        </div>
+        <div class="card-body p-0">
+           {% if data.recent_feedback %}
+           <ul class="list-group list-group-flush">
+             {% for f in data.recent_feedback %}
+             <li class="list-group-item px-4 py-3 border-light">
+                <div class="d-flex w-100 justify-content-between align-items-start mb-1">
+                   <strong class="text-dark">{{ f.user_email|default('Anonymous') }}</strong>
+                   <span class="badge bg-light text-secondary rounded-pill fw-normal">{{ f.type|default('General') }}</span>
+                </div>
+                <p class="mb-1 text-muted small">{{ f.message|truncate(80) }}</p>
+                <small class="text-secondary opacity-50" style="font-size: 0.75rem;">{{ f.timestamp }}</small>
+             </li>
+             {% endfor %}
+           </ul>
+           {% else %}
+           <div class="h-100 d-flex flex-column align-items-center justify-content-center py-5 text-muted small">
+              <i class="bi bi-inbox fs-1 opacity-25 mb-2"></i>
+              No recent feedback.
+           </div>
+           {% endif %}
+        </div>
+     </div>
+  </div>
+
+  <!-- System Health / Quick Actions -->
+  <div class="col-lg-4">
+     <div class="card-modern h-100 mb-4">
+        <div class="card-header bg-white border-bottom py-3">
+           <h6 class="fw-bold mb-0">Quick Actions</h6>
+        </div>
+        <div class="card-body p-4 d-flex flex-column gap-3">
+           <a href="{{ url_for('admin.run_scraper_manual') }}" class="btn btn-outline-dark w-100 py-2 border-2 fw-medium rounded-pill">
+              <i class="bi bi-cloud-arrow-down me-2"></i> Run Scraper Now
+           </a>
+           <a href="{{ url_for('admin.clear_cache') }}" class="btn btn-outline-secondary w-100 py-2 border-2 fw-medium rounded-pill">
+              <i class="bi bi-hdd-network me-2"></i> Clear System Cache
+           </a>
+        </div>
+     </div>
+  </div>
+</div>
 {% endblock %}

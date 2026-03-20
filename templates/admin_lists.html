@@ -1,126 +1,257 @@
 {% extends "admin_layout.html" %}
 {% block title %}Admin Lists - Smart Grocery{% endblock %}
 
-{% set admin_title = "Lists Hub" %}
-{% set admin_subtitle = "Monitor user shopping behavior and curate public list templates." %}
+{% set admin_title = "Lists" %}
+{% set admin_subtitle = "Manage user shopping lists and public templates." %}
 {% set admin_section = "lists" %}
 
-{% block admin_styles %}
-<style>
-  .lists-hero {
-    border-radius: 20px;
-    border: 1px solid rgba(249, 115, 22, 0.2);
-    background:
-      linear-gradient(120deg, rgba(249, 115, 22, 0.14), rgba(14, 165, 163, 0.1)),
-      repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.35) 0, rgba(255, 255, 255, 0.35) 8px, transparent 8px, transparent 16px);
-    padding: 1rem;
-    margin-bottom: 1rem;
-  }
-
-  .list-card {
-    border-radius: 14px;
-    border: 1px solid #e2e8f0;
-    background: #fff;
-    padding: 0.8rem;
-    margin-bottom: 0.7rem;
-  }
-
-  .list-meta {
-    font-size: 0.8rem;
-    color: #64748b;
-  }
-</style>
-{% endblock %}
-
 {% block admin_content %}
-<div class="lists-hero d-flex justify-content-between align-items-center flex-wrap gap-2">
-  <div>
-    <div class="small text-secondary">{{ data.counts.lists or 0 }} user lists · {{ data.counts.public_lists or 0 }} public lists</div>
-    <div class="fw-semibold">Use this page for list intelligence and public template publishing.</div>
-  </div>
-</div>
+{% set show_list_form = (request.args.get('showListForm') == '1') %}
+{% set show_public_form = (request.args.get('showPublicForm') == '1') %}
+{% set show_form = show_list_form or show_public_form %}
 
-<section class="row g-4">
-  <div class="col-xl-7">
-    <div class="admin-panel">
-      <div class="panel-head">
-        <h2>Recent User Lists</h2>
-        <p>Latest shopping lists with item and total summaries.</p>
-      </div>
-      <div class="panel-body" style="max-height: 680px; overflow: auto;">
-        {% for l in data.lists or [] %}
-        <article class="list-card">
-          <div class="d-flex justify-content-between align-items-start gap-2 flex-wrap">
-            <div>
-              <div class="fw-semibold">{{ l.name or 'Unnamed List' }}</div>
-              <div class="list-meta">owner: {{ l.owner_display or 'unknown' }} · items: {{ (l.get('items', []) or [])|length }} · total: {{ l.totalPrice if l.totalPrice is not none else '-' }}</div>
+<div class="row g-4">
+  <!-- Left Column: Lists -->
+  <div class="{{ 'col-lg-8' if show_form else 'col-12' }} transition-all">
+    
+    <!-- Stats Cards -->
+    <div class="row g-3 mb-4">
+      <div class="col-md-6">
+        <div class="card border-0 shadow-sm bg-primary text-white h-100">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <h6 class="card-title mb-0 opacity-75">User Lists</h6>
+              <i class="bi bi-person-lines-fill fs-4 opacity-50"></i>
             </div>
-            <span class="badge text-bg-light border">{{ l.updatedAt or l.createdAt or '-' }}</span>
+            <h2 class="display-6 fw-bold mb-0">{{ data.counts.lists or 0 }}</h2>
           </div>
-        </article>
-        {% else %}
-        <div class="text-secondary">No user lists found.</div>
-        {% endfor %}
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card border-0 shadow-sm bg-white h-100">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <h6 class="card-title mb-0 text-secondary">Public Templates</h6>
+              <i class="bi bi-collection fs-4 text-primary opacity-50"></i>
+            </div>
+            <h2 class="display-6 fw-bold mb-0 text-dark">{{ data.counts.public_lists or 0 }}</h2>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main List Content -->
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white border-bottom-0 py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <ul class="nav nav-pills" id="pills-tab" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active rounded-pill px-3" id="pills-user-tab" data-bs-toggle="pill" data-bs-target="#pills-user" type="button" role="tab">User Lists</button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link rounded-pill px-3" id="pills-public-tab" data-bs-toggle="pill" data-bs-target="#pills-public" type="button" role="tab">Public Templates</button>
+          </li>
+        </ul>
+        <div class="d-flex gap-2">
+           <a href="{{ url_for('admin.admin_lists_page', showListForm=1) }}" class="btn btn-outline-primary btn-sm rounded-pill">
+             <i class="bi bi-plus-lg me-1"></i> New User List
+           </a>
+           <a href="{{ url_for('admin.admin_lists_page', showPublicForm=1) }}" class="btn btn-primary btn-sm rounded-pill">
+             <i class="bi bi-plus-lg me-1"></i> New Public List
+           </a>
+        </div>
+      </div>
+
+      <div class="card-body p-0">
+        <div class="tab-content" id="pills-tabContent">
+          <!-- User Lists Tab -->
+          <div class="tab-pane fade show active" id="pills-user" role="tabpanel">
+            <div class="table-responsive">
+              <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                  <tr>
+                    <th class="ps-4">List Name</th>
+                    <th>Owner</th>
+                    <th>Items</th>
+                    <th>Last Updated</th>
+                    <th class="text-end pe-4">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for l in data.lists or [] %}
+                  <tr>
+                    <td class="ps-4">
+                      <div class="fw-bold text-dark">{{ l.name or 'Unnamed List' }}</div>
+                      <div class="small text-secondary font-monospace" style="font-size: 0.75rem;">{{ l.listId }}</div>
+                    </td>
+                    <td>
+                      <div class="d-flex align-items-center gap-2">
+                        <div class="rounded-circle bg-light text-primary fw-bold d-flex align-items-center justify-content-center" style="width:24px;height:24px;font-size:10px;">
+                          {{ (l.owner_display or '?')[:1]|upper }}
+                        </div>
+                        <span class="small">{{ l.owner_display }}</span>
+                      </div>
+                    </td>
+                    <td><span class="badge bg-secondary rounded-pill">{{ l.itemsCount }} items</span></td>
+                    <td class="small text-secondary">{{ l.updatedAtDisplay }}</td>
+                    <td class="text-end pe-4">
+                      <button class="btn btn-sm btn-light rounded-circle text-primary" type="button" data-bs-toggle="collapse" data-bs-target="#collapseList{{ loop.index }}">
+                        <i class="bi bi-chevron-down"></i>
+                      </button>
+                    </td>
+                  </tr>
+                  <!-- Expanded Detail Row -->
+                  <tr class="collapse bg-light" id="collapseList{{ loop.index }}">
+                    <td colspan="5" class="p-0 border-0">
+                      <div class="p-3">
+                        <div class="card border-0 shadow-none">
+                          <div class="card-body p-0">
+                             <h6 class="fw-bold border-bottom pb-2 mb-2 px-3 pt-2">List Contents</h6>
+                             <div class="table-responsive">
+                               <table class="table table-sm table-borderless mb-0 px-3">
+                                 <thead class="text-secondary small">
+                                   <tr><th class="ps-3">Product</th><th class="text-center">Qty</th><th class="text-end pe-3">Est. Price</th></tr>
+                                 </thead>
+                                 <tbody>
+                                   {% for item in l['items'] or [] %}
+                                   <tr>
+                                     <td class="ps-3">{{ item.product_display }}</td>
+                                     <td class="text-center">{{ item.quantity_display }}</td>
+                                     <td class="text-end pe-3">{{ item.price if item.price else '-' }}</td>
+                                   </tr>
+                                   {% else %}
+                                   <tr><td colspan="3" class="text-center text-muted small py-2">Empty list</td></tr>
+                                   {% endfor %}
+                                 </tbody>
+                               </table>
+                             </div>
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                  {% else %}
+                  <tr><td colspan="5" class="text-center py-5 text-secondary">No user lists found.</td></tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Public Lists Tab -->
+          <div class="tab-pane fade" id="pills-public" role="tabpanel">
+            <div class="table-responsive">
+              <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                  <tr>
+                    <th class="ps-4">Title</th>
+                    <th>Category/Tags</th>
+                    <th>Created</th>
+                    <th class="text-end pe-4">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for pl in data.public_lists or [] %}
+                  <tr>
+                    <td class="ps-4 fw-bold">{{ pl.title or pl.name or 'Untitled' }}</td>
+                    <td><span class="badge bg-light text-dark border">{{ pl.category or 'General' }}</span></td>
+                    <td class="small text-secondary">{{ pl.createdAtDisplay }}</td>
+                    <td class="text-end pe-4">
+                      <button class="btn btn-sm btn-outline-primary rounded-pill px-3">Edit</button>
+                    </td>
+                  </tr>
+                  {% else %}
+                  <tr><td colspan="4" class="text-center py-5 text-secondary">No public templates found.</td></tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 
-  <div class="col-xl-5">
-    <div class="admin-panel mb-4">
-      <div class="panel-head">
-        <h2>Create Public List</h2>
-        <p>Only business fields are required. ID is auto-generated.</p>
-      </div>
-      <div class="panel-body">
-        <form method="post" action="{{ url_for('admin.admin_save_public_list') }}" class="admin-form-grid">
-          <input type="hidden" name="redirectTo" value="lists">
-          <div class="span-6"><input class="form-control" name="name_en" placeholder="Name EN" required></div>
-          <div class="span-6"><input class="form-control" name="name_de" placeholder="Name DE" required></div>
-          <div class="span-6">
-            <select class="form-select" name="type">
-              <option value="template">Template</option>
-              <option value="public">Public</option>
+  <!-- Right Column: Form (Sticky) -->
+  {% if show_form %}
+  <div class="col-lg-4">
+    <div class="card border-0 shadow-sm border-top border-4 border-primary position-sticky" style="top: 8rem;">
+      <div class="card-body p-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h5 class="mb-0 fw-bold">
+            {% if show_list_form %}Create User List
+            {% else %}Create Public Template{% endif %}
+          </h5>
+          <a href="{{ url_for('admin.admin_lists_page') }}" class="btn-close" aria-label="Close"></a>
+        </div>
+
+        {% if show_list_form %}
+        <form method="post" action="{{ url_for('admin.admin_create_list') }}">
+          <div class="mb-3">
+            <label class="form-label small fw-bold text-secondary">List Name <span class="text-danger">*</span></label>
+            <input class="form-control" name="name" placeholder="Weekly Groceries" required>
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label small fw-bold text-secondary">Owner <span class="text-danger">*</span></label>
+            <select class="form-select" name="userId" required>
+              <option value="" disabled selected>Select User...</option>
+              {% for u in data.users %}
+              <option value="{{ u.userId }}">{{ u.label }}</option>
+              {% endfor %}
             </select>
           </div>
-          <div class="span-6"><input class="form-control" name="popularityScore" value="0" placeholder="Popularity score"></div>
-          <div class="span-12"><textarea class="form-control" name="description_en" rows="2" placeholder="Description EN"></textarea></div>
-          <div class="span-12"><textarea class="form-control" name="description_de" rows="2" placeholder="Description DE"></textarea></div>
-          <div class="span-12">
-            <details>
-              <summary class="small fw-semibold text-secondary">Advanced Optional Fields</summary>
-              <div class="admin-form-grid mt-2">
-                <div class="span-12"><input class="form-control" name="creatorUserId" placeholder="Creator user ID"></div>
-                <div class="span-12"><textarea class="form-control" name="items_json" rows="3" placeholder='[{"productId":"prod_x","quantity":1}]'></textarea></div>
-              </div>
-            </details>
-          </div>
-          <div class="span-12 d-grid"><button class="btn btn-primary admin-btn">Save Public List</button></div>
-        </form>
-      </div>
-    </div>
 
-    <div class="admin-panel">
-      <div class="panel-head">
-        <h2>Public Lists Snapshot</h2>
-        <p>Newest templates and public entries.</p>
-      </div>
-      <div class="table-responsive" style="max-height: 300px; overflow: auto;">
-        <table class="table table-sm table-clean align-middle mb-0">
-          <thead><tr><th>Name</th><th>Type</th><th>Popularity</th></tr></thead>
-          <tbody>
-            {% for p in data.public_lists or [] %}
-            <tr>
-              <td>{{ p.name_en }}</td>
-              <td>{{ p.type }}</td>
-              <td>{{ p.popularityScore }}</td>
-            </tr>
-            {% else %}
-            <tr><td colspan="3" class="text-secondary">No public lists available.</td></tr>
-            {% endfor %}
-          </tbody>
-        </table>
+          <div class="mb-4">
+            <label class="form-label small fw-bold text-secondary">Initial Items (Optional)</label>
+            <div class="d-flex gap-2">
+                <select class="form-select form-select-sm" name="initial_product">
+                    <option value="">Add a product...</option>
+                    {% for p in data.products %}
+                    <option value="{{ p.productId }}">{{ p.name_en }}</option>
+                    {% endfor %}
+                </select>
+                <input type="number" class="form-control form-control-sm" name="initial_qty" value="1" style="width: 70px;">
+            </div>
+            <div class="form-text small">More items can be added later via API or App.</div>
+          </div>
+
+          <div class="d-grid">
+            <button type="submit" class="btn btn-primary">Create List</button>
+          </div>
+        </form>
+        {% endif %}
+
+        {% if show_public_form %}
+        <form method="post" action="{{ url_for('admin.admin_create_public_list') }}">
+          <div class="mb-3">
+            <label class="form-label small fw-bold text-secondary">Template Title <span class="text-danger">*</span></label>
+            <input class="form-control" name="title" placeholder="Vegan Starter Kit" required>
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label small fw-bold text-secondary">Category</label>
+            <select class="form-select" name="category">
+                <option value="General">General</option>
+                <option value="Dietary">Dietary</option>
+                <option value="Event">Event</option>
+                <option value="Seasonal">Seasonal</option>
+            </select>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label small fw-bold text-secondary">Description</label>
+            <textarea class="form-control" name="description" rows="3" placeholder="Short description..."></textarea>
+          </div>
+
+          <div class="d-grid">
+            <button type="submit" class="btn btn-primary">Create Template</button>
+          </div>
+        </form>
+        {% endif %}
+
       </div>
     </div>
   </div>
-</section>
+  {% endif %}
+</div>
 {% endblock %}

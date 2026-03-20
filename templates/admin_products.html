@@ -1,280 +1,223 @@
 {% extends "admin_layout.html" %}
 {% block title %}Admin Products - Smart Grocery{% endblock %}
 
-{% set admin_title = "Product Manager" %}
-{% set admin_subtitle = "Browse every product, inspect details, and edit records with linked store offers." %}
+{% set admin_title = "Product Catalog" %}
+{% set admin_subtitle = "Central database of all grocery items tracked." %}
 {% set admin_section = "products" %}
 
-{% block admin_styles %}
-<style>
-  .products-ribbon {
-    border-radius: 18px;
-    border: 1px solid rgba(14, 165, 163, 0.2);
-    background: linear-gradient(132deg, rgba(14, 165, 163, 0.14), rgba(124, 58, 237, 0.1));
-    padding: 0.9rem 1rem;
-    margin-bottom: 1rem;
-  }
-
-  .product-search-shell {
-    border-radius: 16px;
-    background: linear-gradient(140deg, rgba(255, 255, 255, 0.96), rgba(240, 249, 255, 0.95));
-    border: 1px solid rgba(14, 165, 163, 0.2);
-    padding: 0.5rem;
-    box-shadow: 0 10px 22px rgba(14, 116, 144, 0.1);
-  }
-
-  .product-search-shell .input-group-text {
-    background: transparent;
-    border: 0;
-    color: #0f766e;
-    font-size: 1rem;
-  }
-
-  .product-search-shell .form-control {
-    border: 0;
-    background: transparent;
-    font-size: 1rem;
-    box-shadow: none;
-  }
-
-  .product-search-shell .form-control:focus {
-    box-shadow: none;
-  }
-
-  .product-search-shell .btn {
-    min-width: 110px;
-  }
-
-  .soft-label {
-    font-size: 0.78rem;
-    color: #475569;
-    font-weight: 700;
-    letter-spacing: 0.03em;
-    text-transform: uppercase;
-  }
-</style>
+{% block page_actions %}
+<button class="btn btn-brand rounded-pill px-4 shadow-sm" data-bs-toggle="modal" data-bs-target="#productModal" onclick="prepareProductModal('new', null)">
+  <i class="bi bi-plus-lg me-2"></i> New Product
+</button>
 {% endblock %}
 
 {% block admin_content %}
-<div class="products-ribbon d-flex align-items-center justify-content-between flex-wrap gap-2">
-  <div class="small text-secondary">No need to type generated IDs manually. They are created automatically unless editing an existing record.</div>
-  <a href="{{ url_for('admin.admin_products_new_page') }}" class="btn btn-sm btn-primary admin-btn">Create New Product</a>
+<!-- Search & Filter -->
+<div class="card-modern mb-4 p-2">
+  <form method="get" action="{{ url_for('admin.admin_products_page') }}" class="d-flex align-items-center bg-white rounded-3 px-2 flex-wrap gap-2">
+    <i class="bi bi-search text-muted ms-2 fs-5"></i>
+    <input type="text" class="form-control form-control-lg border-0 shadow-none py-3 flex-grow-1" name="q" value="{{ data.q or '' }}" placeholder="Search products..." style="font-size: 1.1rem; min-width: 200px;">
+    
+    <select class="form-select border-0 bg-light rounded-pill" name="brand" style="width: auto; max-width: 150px;" onchange="this.form.submit()">
+       <option value="">All Brands</option>
+       {% for b in data.brands or [] %}
+       <option value="{{ b.brandId }}" {% if request.args.get('brand') == b.brandId %}selected{% endif %}>{{ b.name_en or b.brandId }}</option>
+       {% endfor %}
+    </select>
+    
+    {% if data.q or request.args.get('brand') %}
+    <a href="{{ url_for('admin.admin_products_page') }}" class="btn btn-light rounded-circle"><i class="bi bi-x-lg"></i></a>
+    {% endif %}
+  </form>
 </div>
 
-<section class="admin-panel mb-4">
-  <div class="panel-head">
-    <h2>Find Products</h2>
-    <p>Search products by name, category, brand, or barcode.</p>
+<!-- Products List -->
+<div class="card-modern overflow-hidden">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="bg-light text-secondary small text-uppercase">
+        <tr>
+          <th class="ps-4 py-3 fw-bold">Product Details</th>
+          <th class="fw-bold">Category</th>
+          <th class="fw-bold">Brand</th>
+          <th class="text-end pe-4 fw-bold">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in data.products or [] %}
+        <tr>
+          <td class="ps-4">
+             <div class="d-flex align-items-center gap-3">
+                {% if p.image_url %}
+                <img src="{{ p.image_url }}" class="rounded-3 border object-fit-contain bg-white" style="width: 48px; height: 48px;">
+                {% else %}
+                <div class="rounded-3 bg-light border d-flex align-items-center justify-content-center text-muted" style="width: 48px; height: 48px;">
+                   <i class="bi bi-image"></i>
+                </div>
+                {% endif %}
+                <div>
+                   <div class="fw-bold text-dark">{{ p.name_en or p.name }}</div>
+                   <div class="text-muted small" style="opacity: 0.7; font-size: 0.75rem;">
+                      {{ p.qty_str or '1 unit' }} • Updated {{ p.updatedAtDisplay }}
+                   </div>
+                </div>
+             </div>
+          </td>
+          <td>
+             <span class="badge bg-light text-dark border">{{ p.categoryId|replace('cat_', '')|replace('_', ' ')|title }}</span>
+          </td>
+          <td>
+             <span class="text-dark fw-medium small">{{ p.brandId|replace('brand_', '')|title }}</span>
+          </td>
+          <td class="text-end pe-4">
+             <button class="btn btn-sm btn-light border rounded-pill px-3 fw-medium btn-edit-product" 
+                     data-product="{{ p|tojson|forceescape }}"
+                     data-bs-toggle="modal" data-bs-target="#productModal">
+                Edit
+             </button>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" class="text-center py-5 text-muted">No products found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
   </div>
-  <div class="panel-body">
-    <form method="get" action="{{ url_for('admin.admin_products_page') }}">
-      <div class="product-search-shell">
-        <div class="input-group input-group-lg">
-          <span class="input-group-text"><i class="bi bi-search"></i></span>
-          <input type="text" name="q" value="{{ data.q }}" class="form-control" placeholder="Try: Yogurt, Cheese, Sparkling Water, or barcode">
-          {% if data.q %}
-          <a class="btn btn-light rounded-pill" href="{{ url_for('admin.admin_products_page') }}">Clear</a>
-          {% endif %}
-          <button type="submit" class="btn btn-primary admin-btn">Search</button>
-        </div>
-      </div>
-    </form>
-    <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
-      <div class="small text-secondary">{{ data.total }} total products{% if data.q %} matching "{{ data.q }}"{% endif %}.</div>
-      <a href="{{ url_for('admin.admin_products_new_page') }}" class="btn btn-outline-secondary btn-sm admin-btn">New Product Form</a>
-    </div>
+  
+  <!-- Pagination -->
+  {% if data.total_pages > 1 %}
+  <div class="card-footer bg-white border-top py-3">
+    <nav>
+      <ul class="pagination justify-content-center mb-0">
+        <li class="page-item {% if not data.has_prev %}disabled{% endif %}">
+          <a class="page-link rounded-pill border-0 bg-light text-dark mx-1" href="{{ url_for('admin.admin_products_page', page=data.page-1, q=data.q) }}">Previous</a>
+        </li>
+        <li class="page-item disabled">
+          <span class="page-link border-0 text-muted mx-1">Page {{ data.page }} of {{ data.total_pages }}</span>
+        </li>
+        <li class="page-item {% if not data.has_next %}disabled{% endif %}">
+          <a class="page-link rounded-pill border-0 bg-light text-dark mx-1" href="{{ url_for('admin.admin_products_page', page=data.page+1, q=data.q) }}">Next</a>
+        </li>
+      </ul>
+    </nav>
   </div>
-</section>
+  {% endif %}
+</div>
 
-<section class="row g-4 mb-4">
-  <div class="col-xl-7">
-    <div class="admin-panel">
-      <div class="panel-head">
-        <h2>Product List</h2>
-        <p>Click Edit to load details into the form.</p>
+<!-- Modal: Product Editor -->
+<div class="modal fade" id="productModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content modal-content-modern shadow-lg">
+      <div class="modal-header modal-header-modern">
+        <h5 class="modal-title fw-bold" id="productModalLabel">Product Details</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <div class="table-responsive">
-        <table class="table table-sm table-clean align-middle mb-0">
-          <thead>
-            <tr>
-              <th>Product</th>
-              <th>Category</th>
-              <th>Brand</th>
-              <th>Cheapest</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for p in data.products or [] %}
-            <tr>
-              <td>
-                <div class="fw-semibold">{{ p.name_en }}</div>
-                <div class="small text-secondary">{{ p.name_de }}</div>
-              </td>
-              <td>{{ p.category_name or '-' }}</td>
-              <td>{{ p.brand_name or '-' }}</td>
-              <td>{{ p.cheapestPrice if p.cheapestPrice is not none else '-' }}</td>
-              <td>
-                <a class="btn btn-sm btn-outline-primary rounded-pill" href="{{ url_for('admin.admin_products_page', q=data.q, page=data.page, edit=p.productId) }}">Edit</a>
-              </td>
-            </tr>
-            {% else %}
-            <tr><td colspan="5" class="text-secondary">No products found.</td></tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-      <div class="panel-body border-top">
-        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-          <div class="small text-secondary">Page {{ data.page }} of {{ data.total_pages }}</div>
-          <div class="d-flex gap-2">
-            {% if data.has_prev %}
-            <a class="btn btn-outline-secondary btn-sm rounded-pill" href="{{ url_for('admin.admin_products_page', q=data.q, page=data.page - 1, edit=request.args.get('edit')) }}">Previous</a>
-            {% endif %}
-            {% if data.has_next %}
-            <a class="btn btn-outline-secondary btn-sm rounded-pill" href="{{ url_for('admin.admin_products_page', q=data.q, page=data.page + 1, edit=request.args.get('edit')) }}">Next</a>
-            {% endif %}
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="col-xl-5">
-    <div class="admin-panel mb-4">
-      <div class="panel-head">
-        <h2>{% if data.selected_product %}Edit Product{% else %}Create Product{% endif %}</h2>
-        <p>Only fill business fields. Internal IDs are handled automatically.</p>
-      </div>
-      <div class="panel-body">
-        {% set selected = data.selected_product or {} %}
-        <form method="post" action="{{ url_for('admin.admin_save_product') }}" class="admin-form-grid">
-          <input type="hidden" name="redirectTo" value="products">
-          <input type="hidden" name="productId" value="{{ selected.productId or '' }}">
-          <div class="span-6"><input class="form-control" name="name_en" placeholder="Name EN" required value="{{ selected.name_en or '' }}"></div>
-          <div class="span-6"><input class="form-control" name="name_de" placeholder="Name DE" required value="{{ selected.name_de or '' }}"></div>
-
-          <div class="span-6">
-            <select class="form-select" name="brandId">
-              {% if selected.brandId and not (data.brands | selectattr('brandId', 'equalto', selected.brandId) | list) %}
-              <option value="{{ selected.brandId }}" selected>Selected brand</option>
-              {% else %}
-              <option value="">Select brand (optional)</option>
-              {% endif %}
-              {% for b in data.brands or [] %}
-              <option value="{{ b.brandId }}" {% if selected.brandId == b.brandId %}selected{% endif %}>{{ b.name }}</option>
-              {% endfor %}
-            </select>
-          </div>
-
-          <div class="span-6">
-            <select class="form-select" name="categoryId">
-              {% if selected.categoryId and not (data.categories | selectattr('categoryId', 'equalto', selected.categoryId) | list) %}
-              <option value="{{ selected.categoryId }}" selected>Selected category</option>
-              {% else %}
-              <option value="">Select category (optional)</option>
-              {% endif %}
-              {% for c in data.categories or [] %}
-              <option value="{{ c.categoryId }}" {% if selected.categoryId == c.categoryId %}selected{% endif %}>{{ c.name_en }}</option>
-              {% endfor %}
-            </select>
-          </div>
-
-          <div class="span-12"><input class="form-control" name="unitSize" placeholder="Unit size (example: 500g, 1L)" value="{{ selected.unitSize or '' }}"></div>
-
-          <div class="span-12 mt-1">
-            <details>
-              <summary class="soft-label">Advanced Optional Fields</summary>
-              <div class="admin-form-grid mt-2">
-                <div class="span-6"><input class="form-control" name="barcode" placeholder="Barcode" value="{{ selected.barcode or '' }}"></div>
-                <div class="span-6"><input class="form-control" name="defaultImageUrl" placeholder="Image URL" value="{{ selected.defaultImageUrl or '' }}"></div>
-                <div class="span-6"><input class="form-control" name="legalImageStatus" placeholder="Image status" value="{{ selected.legalImageStatus or 'placeholder' }}"></div>
-                <div class="span-6"><input class="form-control" name="labels" placeholder="labels: new,popular,on_sale" value="{{ (selected.labels or [])|join(',') }}"></div>
-                <div class="span-12"><textarea class="form-control" name="description_en" rows="2" placeholder="Description EN">{{ selected.description_en or '' }}</textarea></div>
-                <div class="span-12"><textarea class="form-control" name="description_de" rows="2" placeholder="Description DE">{{ selected.description_de or '' }}</textarea></div>
+      <form method="post" action="{{ url_for('admin.admin_save_product') }}">
+        <div class="modal-body modal-body-modern">
+           <input type="hidden" name="redirectTo" value="products">
+           <input type="hidden" name="productId" id="field_productId">
+           
+           <div class="row g-3 mb-3">
+              <div class="col-md-8">
+                 <label class="form-label small fw-bold text-secondary text-uppercase">Product Name (EN) <span class="text-danger">*</span></label>
+                 <input type="text" class="form-control form-control-lg-modern" name="name_en" id="field_name_en" required>
               </div>
-            </details>
-          </div>
-
-          <div class="span-12 d-grid"><button class="btn btn-primary admin-btn">Save Product</button></div>
-        </form>
-      </div>
-    </div>
-
-    {% if data.selected_product %}
-    <div class="admin-panel">
-      <div class="panel-head">
-        <h2>Selected Product Details</h2>
-        <p>Live snapshot of the stored document and linked offers.</p>
-      </div>
-      <div class="panel-body">
-        <div class="small text-secondary mb-2">Category Path</div>
-        <div class="mb-3">
-          {% for cat in data.selected_category_names or [] %}
-          <span class="pill">{{ cat }}</span>
-          {% else %}
-          <span class="small text-secondary">No category path</span>
-          {% endfor %}
-        </div>
-
-        <div class="small text-secondary mb-2">Linked Store Offers ({{ (data.selected_offers or [])|length }})</div>
-        <div class="table-responsive">
-          <table class="table table-sm table-clean align-middle mb-0">
-            <thead>
-              <tr><th>Store</th><th>Base</th><th>Promo</th><th>Available</th></tr>
-            </thead>
-            <tbody>
-              {% for offer in data.selected_offers or [] %}
-              <tr>
-                <td>{{ offer.storeName }}</td>
-                <td>{{ offer.basePrice }}</td>
-                <td>{{ offer.promoPrice if offer.promoPrice is not none else '-' }}</td>
-                <td>{{ 'Yes' if offer.isAvailable else 'No' }}</td>
-              </tr>
-              {% else %}
-              <tr><td colspan="4" class="text-secondary">No store offers linked.</td></tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-
-        <hr>
-        <div class="small text-secondary mb-2">Add Store Offer for This Product</div>
-        <form method="post" action="{{ url_for('admin.admin_save_store_product') }}" class="admin-form-grid">
-          <input type="hidden" name="redirectTo" value="products">
-          <input type="hidden" name="productId" value="{{ data.selected_product.productId }}">
-          <div class="span-12">
-            <div class="small text-secondary">Adding offer for <span class="fw-semibold">{{ data.selected_product.name_en }}</span></div>
-          </div>
-          <div class="span-6">
-            <select class="form-select" name="storeId" required>
-              <option value="">Select store</option>
-              {% for s in data.stores or [] %}
-              <option value="{{ s.storeId }}">{{ s.name }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="span-6"><input class="form-control" name="basePrice" placeholder="Base Price" required></div>
-          <div class="span-6"><input class="form-control" name="promoPrice" placeholder="Promo Price"></div>
-
-          <div class="span-12 mt-1">
-            <details>
-              <summary class="soft-label">Advanced Offer Fields</summary>
-              <div class="admin-form-grid mt-2">
-                <div class="span-6"><input class="form-control" name="storeProductId" placeholder="storeProductId (optional)"></div>
-                <div class="span-6"><input class="form-control" name="lastScrapeStatus" value="ok" placeholder="ok/partial/failed"></div>
-                <div class="span-6"><input class="form-control" name="stockStatus" value="in_stock" placeholder="in_stock"></div>
-                <div class="span-6"><input class="form-control" name="productPageUrl" placeholder="Product page URL"></div>
+              <div class="col-md-4">
+                 <label class="form-label small fw-bold text-secondary text-uppercase">Quantity String</label>
+                 <input type="text" class="form-control form-control-lg-modern" name="qty_str" id="field_qty_str" placeholder="e.g. 500g">
               </div>
-            </details>
-          </div>
-
-          <div class="span-12 form-check ms-2"><input class="form-check-input" type="checkbox" name="isAvailable" id="isAvailableQuick" checked><label class="form-check-label" for="isAvailableQuick">Is Available</label></div>
-          <div class="span-12 d-grid"><button class="btn btn-dark admin-btn">Save Store Offer</button></div>
-        </form>
-      </div>
+           </div>
+           
+           <div class="mb-3">
+              <label class="form-label small fw-bold text-secondary text-uppercase">German Name (DE)</label>
+              <input type="text" class="form-control form-control-lg-modern" name="name_de" id="field_name_de">
+           </div>
+           
+           <div class="row g-3 mb-3">
+              <div class="col-md-6">
+                 <label class="form-label small fw-bold text-secondary text-uppercase">Brand</label>
+                 <select class="form-select form-control-lg-modern" name="brandId" id="field_brandSelect">
+                    <option value="">(No Brand)</option>
+                    {% for b in data.brands %}
+                    <option value="{{ b.brandId }}">{{ b.name_en or b.brandId }}</option>
+                    {% endfor %}
+                 </select>
+              </div>
+              <div class="col-md-6">
+                 <label class="form-label small fw-bold text-secondary text-uppercase">Category</label>
+                 <select class="form-select form-control-lg-modern" name="categoryId" id="field_categorySelect">
+                    <option value="">(Uncategorized)</option>
+                    {% for c in data.categories %}
+                    <option value="{{ c.categoryId }}">{{ c.name_en or c.categoryId }}</option>
+                    {% endfor %}
+                 </select>
+              </div>
+           </div>
+           
+           <div class="mb-2">
+              <label class="form-label small fw-bold text-secondary text-uppercase">Image URL</label>
+              <div class="input-group">
+                 <span class="input-group-text bg-white border-end-0"><i class="bi bi-image text-muted"></i></span>
+                 <input type="text" class="form-control form-control-lg-modern border-start-0 ps-0" name="image_url" id="field_image_url">
+              </div>
+           </div>
+        </div>
+        <div class="modal-footer modal-footer-modern justify-content-between">
+           <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+           <div class="d-flex gap-2">
+              <button type="submit" formaction="" class="btn btn-outline-danger rounded-pill px-4 d-none" id="btn_delete_prod" onclick="return confirm('Delete this product?')">Delete</button>
+              <button type="submit" class="btn btn-brand rounded-pill px-4">Save Product</button>
+           </div>
+        </div>
+      </form>
     </div>
-    {% endif %}
   </div>
-</section>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+   const productModal = document.getElementById('productModal');
+   if (productModal) {
+       productModal.addEventListener('show.bs.modal', function(event) {
+           const button = event.relatedTarget;
+           if (button.classList.contains('btn-edit-product')) {
+               const productData = JSON.parse(button.getAttribute('data-product'));
+               prepareProductModal('edit', productData);
+           } else if (button.getAttribute('onclick') && button.getAttribute('onclick').includes("prepareProductModal('new'")) {
+               // New product case is handled by onclick on the button itself or we can move it here
+               // But the onclick="prepareProductModal('new', null)" on the "New Product" button works fine.
+           }
+       });
+   }
+});
+
+function prepareProductModal(mode, product) {
+   const label = document.getElementById('productModalLabel');
+   const delBtn = document.getElementById('btn_delete_prod');
+   
+   if (mode === 'new' || !product) {
+      label.innerText = "New Product";
+      document.getElementById('field_productId').value = '';
+      document.getElementById('field_name_en').value = '';
+      document.getElementById('field_qty_str').value = '';
+      document.getElementById('field_name_de').value = '';
+      document.getElementById('field_brandSelect').value = '';
+      document.getElementById('field_categorySelect').value = '';
+      document.getElementById('field_image_url').value = '';
+      delBtn.classList.add('d-none');
+      delBtn.removeAttribute('formaction');
+   } else {
+      label.innerText = "Edit Product";
+      document.getElementById('field_productId').value = product.productId || '';
+      document.getElementById('field_name_en').value = product.name_en || product.name || '';
+      document.getElementById('field_qty_str').value = product.qty_str || '';
+      document.getElementById('field_name_de').value = product.name_de || '';
+      document.getElementById('field_brandSelect').value = product.brandId || '';
+      document.getElementById('field_categorySelect').value = product.categoryId || '';
+      document.getElementById('field_image_url').value = product.image_url || '';
+      delBtn.classList.remove('d-none');
+      delBtn.setAttribute('formaction', `/admin/products/delete/${product.productId}`);
+   }
+}
+</script>
 {% endblock %}

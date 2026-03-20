@@ -1,137 +1,115 @@
 {% extends "admin_layout.html" %}
 {% block title %}Admin Categories - Smart Grocery{% endblock %}
 
-{% set admin_title = "Category and Brand Studio" %}
-{% set admin_subtitle = "Design taxonomy and naming with clean, non-technical forms." %}
+{% set admin_title = "Categories" %}
+{% set admin_subtitle = "Parent-first taxonomy management with expandable category levels." %}
 {% set admin_section = "categories" %}
 
 {% block admin_styles %}
 <style>
-  .tax-hero {
-    border-radius: 18px;
-    border: 1px solid rgba(244, 114, 182, 0.22);
-    background: linear-gradient(120deg, rgba(244, 114, 182, 0.12), rgba(192, 132, 252, 0.12));
-    padding: 1rem;
-    margin-bottom: 1rem;
+  .cat-tree details {
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background: #fff;
+    margin-bottom: 0.6rem;
   }
 
-  .tax-tree {
-    max-height: 440px;
-    overflow: auto;
+  .cat-tree summary {
+    cursor: pointer;
+    padding: 0.65rem 0.85rem;
+    font-weight: 700;
+    color: #0f172a;
+  }
+
+  .cat-tree .node-inner {
+    padding: 0 0.85rem 0.85rem;
+  }
+
+  .cat-form-hidden {
+    display: none;
+  }
+
+  .cat-form-visible {
+    display: block;
   }
 </style>
 {% endblock %}
 
 {% block admin_content %}
-<div class="tax-hero d-flex align-items-center justify-content-between gap-2 flex-wrap">
-  <div class="small text-secondary">Category IDs and slugs are generated for you when omitted. Use edit buttons to update existing nodes.</div>
-</div>
+{% set show_form = (request.args.get('showForm') == '1') or data.selected_category %}
 
-<section class="row g-4">
-  <div class="col-xl-7">
-    <div class="admin-panel">
-      <div class="panel-head">
-        <h2>Category Explorer</h2>
-        <p>Search and select categories for editing.</p>
-      </div>
-      <div class="panel-body">
-        <form method="get" action="{{ url_for('admin.admin_categories_page') }}" class="admin-form-grid mb-3">
-          <div class="span-9"><input class="form-control" name="q" value="{{ data.q or '' }}" placeholder="Search by name, slug, or category"></div>
-          <div class="span-3 d-grid"><button class="btn btn-primary admin-btn">Search</button></div>
-        </form>
-      </div>
-      <div class="table-responsive tax-tree">
-        <table class="table table-sm table-clean align-middle mb-0">
-          <thead>
-            <tr><th>Name EN</th><th>Name DE</th><th>Parent</th><th>Actions</th></tr>
-          </thead>
-          <tbody>
-            {% for c in data.categories or [] %}
-            <tr>
-              <td>{{ c.name_en }}</td>
-              <td>{{ c.name_de }}</td>
-              <td>{{ c.parentName or '-' }}</td>
-              <td>
-                <a class="btn btn-sm btn-outline-primary rounded-pill" href="{{ url_for('admin.admin_categories_page', q=data.q, edit=c.categoryId) }}">Edit</a>
-              </td>
-            </tr>
-            {% else %}
-            <tr><td colspan="4" class="text-secondary">No categories found.</td></tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
+<section class="admin-panel mb-4">
+  <div class="panel-head d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div>
+      <h2>Category Hierarchy</h2>
+      <p>Only top-level categories are shown first. Click a parent category to open child levels.</p>
+    </div>
+    <a href="{{ url_for('admin.admin_categories_page', showForm=1) }}" class="btn btn-primary admin-btn">Create Category</a>
+  </div>
+  <div class="panel-body">
+    <form method="get" action="{{ url_for('admin.admin_categories_page') }}" class="admin-form-grid mb-3">
+      <input type="hidden" name="showForm" value="{{ '1' if show_form else '0' }}">
+      <div class="span-9"><input class="form-control" name="q" value="{{ data.q or '' }}" placeholder="Search categories by name, slug, or id"></div>
+      <div class="span-3 d-grid"><button class="btn btn-primary admin-btn">Search</button></div>
+    </form>
+
+    <div class="cat-tree">
+      {% macro render_node(node) %}
+      <details>
+        <summary>
+          {{ node.name_en }}
+          <span class="small text-secondary">({{ node.categoryId }})</span>
+        </summary>
+        <div class="node-inner">
+          <div class="small text-secondary mb-2">German: {{ node.name_de or 'auto-filled when missing' }}</div>
+          <div class="small text-secondary mb-2">Slug: {{ node.slug or '-' }}</div>
+          <a class="btn btn-sm btn-outline-primary rounded-pill" href="{{ url_for('admin.admin_categories_page', q=data.q, showForm=1, edit=node.categoryId) }}">Edit</a>
+          {% for child in node.children %}
+          {{ render_node(child) }}
+          {% endfor %}
+        </div>
+      </details>
+      {% endmacro %}
+
+      {% if data.category_tree %}
+      {% for root in data.category_tree %}
+      {{ render_node(root) }}
+      {% endfor %}
+      {% else %}
+      <div class="text-secondary">No categories found.</div>
+      {% endif %}
     </div>
   </div>
+</section>
 
-  <div class="col-xl-5">
-    <div class="admin-panel mb-4">
-      <div class="panel-head">
-        <h2>{% if data.selected_category %}Edit Category{% else %}Create Category{% endif %}</h2>
-        <p>Core fields only. Internal values can stay automatic.</p>
-      </div>
-      <div class="panel-body">
-        {% set selected = data.selected_category or {} %}
-        <form method="post" action="{{ url_for('admin.admin_save_category') }}" class="admin-form-grid">
-          <input type="hidden" name="redirectTo" value="categories">
-          <input type="hidden" name="categoryId" value="{{ selected.categoryId or '' }}">
-          <div class="span-6"><input class="form-control" name="name_en" value="{{ selected.name_en or '' }}" placeholder="Name EN" required></div>
-          <div class="span-6"><input class="form-control" name="name_de" value="{{ selected.name_de or '' }}" placeholder="Name DE" required></div>
-          <div class="span-12">
-            <input class="form-control" list="rootCategoryOptions" name="parentId" value="{{ selected.parentId or '' }}" placeholder="Parent category (optional)">
-            <datalist id="rootCategoryOptions">
-              {% for root in data.root_categories or [] %}
-              <option value="{{ root.categoryId }}">{{ root.name_en }}</option>
-              {% endfor %}
-            </datalist>
-          </div>
-          <div class="span-12">
-            <details>
-              <summary class="small fw-semibold text-secondary">Advanced Optional Field</summary>
-              <input class="form-control mt-2" name="slug" value="{{ selected.slug or '' }}" placeholder="Custom slug (optional)">
-            </details>
-          </div>
-          <div class="span-12 d-grid"><button class="btn btn-primary admin-btn">Save Category</button></div>
-        </form>
-      </div>
+<section class="admin-panel {{ 'cat-form-visible' if show_form else 'cat-form-hidden' }}">
+  <div class="panel-head d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div>
+      <h2>{{ 'Edit Category' if data.selected_category else 'Create Category' }}</h2>
+      <p>Provide English values. German fields are auto-filled when omitted.</p>
     </div>
+    <a href="{{ url_for('admin.admin_categories_page', q=data.q) }}" class="admin-toggle-btn">Hide Form</a>
+  </div>
+  <div class="panel-body">
+    {% set selected = data.selected_category or {} %}
+    <form method="post" action="{{ url_for('admin.admin_save_category') }}" class="admin-form-grid">
+      <input type="hidden" name="redirectTo" value="categories">
+      <input type="hidden" name="categoryId" value="{{ selected.categoryId or '' }}">
 
-    <div class="admin-panel">
-      <div class="panel-head">
-        <h2>Create Brand</h2>
-        <p>Add a brand with optional metadata.</p>
+      <div class="span-6"><input class="form-control" name="name_en" value="{{ selected.name_en or '' }}" placeholder="Name (English)" required></div>
+      <div class="span-6"><input class="form-control" name="name_de" value="{{ selected.name_de or '' }}" placeholder="Name (German, optional)"></div>
+
+      <div class="span-12">
+        <select class="form-select" name="parentId">
+          <option value="">Parent category (optional)</option>
+          {% for root in data.root_categories or [] %}
+          <option value="{{ root.categoryId }}" {% if selected.parentId == root.categoryId %}selected{% endif %}>{{ root.name_en }}</option>
+          {% endfor %}
+        </select>
       </div>
-      <div class="panel-body">
-        <form method="post" action="{{ url_for('admin.admin_save_brand') }}" class="admin-form-grid">
-          <input type="hidden" name="redirectTo" value="categories">
-          <div class="span-12"><input class="form-control" name="name" placeholder="Brand name" required></div>
-          <div class="span-6"><input class="form-control" name="website" placeholder="Website (optional)"></div>
-          <div class="span-6"><input class="form-control" name="logoUrl" placeholder="Logo URL (optional)"></div>
-          <div class="span-12 d-grid"><button class="btn btn-dark admin-btn">Save Brand</button></div>
-        </form>
-        <hr>
-        <div class="small text-secondary mb-2">Recently known brands</div>
-        <div class="table-responsive">
-          <table class="table table-sm table-clean align-middle mb-0">
-            <thead>
-              <tr><th>Name</th><th>Actions</th></tr>
-            </thead>
-            <tbody>
-              {% for b in data.brands or [] %}
-              <tr>
-                <td>{{ b.name }}</td>
-                <td>
-                  <a class="btn btn-sm btn-outline-primary rounded-pill" href="{{ url_for('admin.admin_categories_page', edit_brand=b.brandId) }}">Edit</a>
-                </td>
-              </tr>
-              {% else %}
-              <tr><td colspan="2" class="text-secondary">No brands found.</td></tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
+      <div class="span-12"><input class="form-control" name="slug" value="{{ selected.slug or '' }}" placeholder="Slug (optional custom value)"></div>
+      <div class="span-12 d-grid"><button class="btn btn-primary admin-btn">Save Category</button></div>
+    </form>
   </div>
 </section>
 {% endblock %}
