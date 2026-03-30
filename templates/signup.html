@@ -1,231 +1,229 @@
-<!--
-═══════════════════════════════════════════════════════════════════════════
-SIGNUP PAGE (User Registration)
-═══════════════════════════════════════════════════════════════════════════
-Purpose: New user account creation form
-Features:
-- Premium Glassmorphism UI
-- Name/Email/Password inputs
-- Validation feedback
-- Authentication flow consistent with Entry/Login
-Route: POST /signup
-═══════════════════════════════════════════════════════════════════════════
--->
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Smart Grocery | Sign Up</title>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+{% extends "base.html" %}
+
+{% block styles %}
 <style>
-    body {
-      margin: 0;
-      padding: 0;
-      min-height: 100vh;
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #8b5cf6 100%);
-      position: relative;
-      overflow-x: hidden;
+  body {
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #8b5cf6 100%);
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  /* Background Pattern - Consistent with Entry */
+  .bg-pattern {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: radial-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+    background-size: 30px 30px;
+    opacity: 0.3;
+    z-index: 0;
+  }
+
+  /* Floating Shapes */
+  .shape {
+    position: absolute;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(5px);
+    border-radius: 50%;
+    z-index: 0;
+    animation: float 20s infinite ease-in-out;
+  }
+
+  .shape-1 {
+    width: 300px;
+    height: 300px;
+    top: -100px;
+    right: -50px;
+  }
+
+  .shape-2 {
+    width: 200px;
+    height: 200px;
+    bottom: 50px;
+    left: -50px;
+    animation-delay: -5s;
+  }
+
+  @keyframes float {
+
+    0%,
+    100% {
+      transform: translateY(0) rotate(0deg);
     }
 
-    /* Background Pattern - Consistent with Entry */
-    .bg-pattern {
-      position: absolute;
-      top: 0; left: 0; width: 100%; height: 100%;
-      background-image: radial-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px);
-      background-size: 30px 30px;
-      opacity: 0.3;
-      z-index: 0;
+    50% {
+      transform: translateY(-20px) rotate(10deg);
     }
+  }
 
-    /* Floating Shapes */
-    .shape {
-      position: absolute;
-      background: rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(5px);
-      border-radius: 50%;
-      z-index: 0;
-      animation: float 20s infinite ease-in-out;
-    }
-    .shape-1 { width: 300px; height: 300px; top: -100px; right: -50px; }
-    .shape-2 { width: 200px; height: 200px; bottom: 50px; left: -50px; animation-delay: -5s; }
-    
-    @keyframes float {
-      0%, 100% { transform: translateY(0) rotate(0deg); }
-      50% { transform: translateY(-20px) rotate(10deg); }
-    }
+  /* Auth Card */
+  .auth-card {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 24px;
+    padding: 3rem;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    position: relative;
+    z-index: 10;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    width: 100%;
+    max-width: 450px;
+  }
 
-    /* Auth Card */
-    .auth-card {
-      background: rgba(255, 255, 255, 0.95);
-      border-radius: 24px;
-      padding: 3rem;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-      position: relative;
-      z-index: 10;
-      border: 1px solid rgba(255, 255, 255, 0.5);
-      width: 100%;
-      max-width: 450px;
-    }
+  .brand-header {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
 
-    .brand-header {
-      text-align: center;
-      margin-bottom: 2rem;
-    }
+  .brand-icon {
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, #7c3aed, #4f46e5);
+    border-radius: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.8rem;
+    box-shadow: 0 10px 20px rgba(124, 58, 237, 0.3);
+    margin-bottom: 1rem;
+    transform: rotate(-5deg);
+  }
 
-    .brand-icon {
-      width: 60px;
-      height: 60px;
-      background: linear-gradient(135deg, #7c3aed, #4f46e5);
-      border-radius: 16px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      font-size: 1.8rem;
-      box-shadow: 0 10px 20px rgba(124, 58, 237, 0.3);
-      margin-bottom: 1rem;
-      transform: rotate(-5deg);
-    }
+  /* Form Inputs */
+  .form-floating>.form-control {
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    padding-left: 1rem;
+  }
 
-    /* Form Inputs */
-    .form-floating > .form-control {
-      border: 2px solid #e2e8f0;
-      border-radius: 12px;
-      padding-left: 1rem;
-    }
+  .form-floating>.form-control:focus {
+    border-color: #7c3aed;
+    box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.1);
+  }
 
-    .form-floating > .form-control:focus {
-      border-color: #7c3aed;
-      box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.1);
-    }
-    
-    .form-floating > label {
-      padding-left: 1rem;
-      color: #64748b;
-    }
+  .form-floating>label {
+    padding-left: 1rem;
+    color: #64748b;
+  }
 
-    .btn-submit {
-      background: #7c3aed;
-      border: none;
-      border-radius: 12px;
-      padding: 1rem;
-      font-weight: 600;
-      font-size: 1.1rem;
-      color: white;
-      transition: all 0.2s;
-    }
-    
-    .btn-submit:hover {
-      background: #6d28d9; 
-      transform: translateY(-2px);
-      box-shadow: 0 8px 16px rgba(124, 58, 237, 0.3);
-      color: white;
-    }
+  .btn-submit {
+    background: #7c3aed;
+    border: none;
+    border-radius: 12px;
+    padding: 1rem;
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: white;
+    transition: all 0.2s;
+  }
 
-    .auth-links {
-      text-align: center;
-      margin-top: 1.5rem;
-    }
+  .btn-submit:hover {
+    background: #6d28d9;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(124, 58, 237, 0.3);
+    color: white;
+  }
 
-    .auth-links a {
-      color: #7c3aed;
-      text-decoration: none;
-      font-weight: 600;
-      transition: color 0.2s;
-    }
-    
-    .auth-links a:hover {
-      color: #5b21b6;
-      text-decoration: underline;
-    }
+  .auth-links {
+    text-align: center;
+    margin-top: 1.5rem;
+  }
 
-    .back-link {
-        position: absolute;
-        top: 2rem;
-        left: 2rem;
-        color: rgba(255,255,255,0.8);
-        text-decoration: none;
-        font-weight: 500;
-        z-index: 20;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        transition: all 0.2s;
-    }
-    .back-link:hover {
-        color: white;
-        transform: translateX(-3px);
-    }
+  .auth-links a {
+    color: #7c3aed;
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.2s;
+  }
+
+  .auth-links a:hover {
+    color: #5b21b6;
+    text-decoration: underline;
+  }
+
+  .back-link {
+    position: absolute;
+    top: 2rem;
+    left: 2rem;
+    color: rgba(255, 255, 255, 0.8);
+    text-decoration: none;
+    font-weight: 500;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s;
+  }
+
+  .back-link:hover {
+    color: white;
+    transform: translateX(-3px);
+  }
 </style>
-</head>
-<body class="d-flex align-items-center justify-content-center"> <!-- Centers the card in the middle of the screen -->
+{% endblock %}
 
-  <div class="bg-pattern"></div> <!-- Decorative background pattern -->
-  <div class="shape shape-1"></div> <!-- Floating decorative circle -->
-  <div class="shape shape-2"></div> <!-- Floating decorative circle -->
+{% block navbar %}{% endblock %}
 
-  <a href="{{ url_for('main.home') }}" class="back-link"> <!-- Link to return to the Home page -->
-    <i class="bi bi-arrow-left"></i> Back <!-- Legend and arrow -->
-  </a>
+{% block content %}
+<!-- Centers the card in the middle of the screen -->
 
-  <div class="container d-flex justify-content-center px-3"> <!-- Container for responsive centering -->
-    <div class="auth-card"> <!-- The white card containing the signup form -->
-      <div class="brand-header"> <!-- Top section with icon and title -->
-        <div class="brand-icon"> <!-- Icon box -->
-          <i class="bi bi-person-plus-fill"></i> <!-- 'Add person' icon -->
-        </div>
-        <h2 class="fw-bold text-dark">Create Account</h2> <!-- Main Header -->
-        <p class="text-muted">Start saving on groceries today</p> <!-- Subtitle -->
+<div class="bg-pattern"></div> <!-- Decorative background pattern -->
+<div class="shape shape-1"></div> <!-- Floating decorative circle -->
+<div class="shape shape-2"></div> <!-- Floating decorative circle -->
+
+<a href="{{ url_for('main.home') }}" class="back-link"> <!-- Link to return to the Home page -->
+  <i class="bi bi-arrow-left"></i> Back <!-- Legend and arrow -->
+</a>
+
+<div class="container d-flex justify-content-center align-items-center px-3 min-vh-100 pt-5">
+  <!-- Container for responsive centering -->
+  <div class="auth-card"> <!-- The white card containing the signup form -->
+    <div class="brand-header"> <!-- Top section with icn and title -->
+      <div class="brand-icon"> <!-- Icon box -->
+        <i class="bi bi-person-plus-fill"></i> <!-- 'Add person' icon -->
+      </div>
+      <h2 class="fw-bold text-dark">Create Account</h2> <!-- Main Header -->
+      <p class="text-muted">Start saving on groceries today</p> <!-- Subtitle -->
+    </div>
+
+    <!-- Flash Messages - Error/Success alerts from Python logic -->
+
+
+    <form method="POST" action="{{ url_for('auth.signup') }}"> <!-- Submits data to the /signup Python route -->
+      <div class="form-floating mb-3"> <!-- Container for floating name input -->
+        <input type="text" class="form-control" id="name" name="name" placeholder="John Doe" required>
+        <!-- Name input field -->
+        <label for="name">Full Name</label> <!-- Floating label -->
       </div>
 
-      <!-- Flash Messages - Error/Success alerts from Python logic -->
-	  {% with messages = get_flashed_messages(with_categories=true) %} <!-- Fetch messages sent via Flask flash() -->
-        {% if messages %}
-          {% for category, message in messages %}
-            <div class="alert alert-{{ category }} border-0 shadow-sm rounded-3 mb-4 d-flex align-items-center"> <!-- Styled alert based on category -->
-              {% if category == 'success' %}
-                <i class="bi bi-check-circle-fill me-2 fs-5"></i> <!-- Green check for success -->
-              {% else %}
-                <i class="bi bi-exclamation-circle-fill me-2 fs-5"></i> <!-- Red exclamation for error -->
-              {% endif %}
-              {{ message }} <!-- Display the text of the message -->
-            </div>
-          {% endfor %}
-        {% endif %}
-      {% endwith %}
+      <div class="form-floating mb-3"> <!-- Container for floating email input -->
+        <input type="email" class="form-control" id="email" name="email" placeholder="name@example.com" required>
+        <!-- Email input field -->
+        <label for="email">Email address</label> <!-- Floating label -->
+      </div>
 
-      <form method="POST" action="{{ url_for('auth.signup') }}"> <!-- Submits data to the /signup Python route -->
-		<div class="form-floating mb-3"> <!-- Container for floating name input -->
-		  <input type="text" class="form-control" id="name" name="name" placeholder="John Doe" required> <!-- Name input field -->
-		  <label for="name">Full Name</label> <!-- Floating label -->
-        </div>
+      <div class="form-floating mb-4"> <!-- Container for floating password input -->
+        <input type="password" class="form-control" id="password" name="password" placeholder="Password" required>
+        <!-- Secure password input field -->
+        <label for="password">Password</label> <!-- Floating label -->
+      </div>
 
-        <div class="form-floating mb-3"> <!-- Container for floating email input -->
-          <input type="email" class="form-control" id="email" name="email" placeholder="name@example.com" required> <!-- Email input field -->
-          <label for="email">Email address</label> <!-- Floating label -->
-        </div>
-        
-        <div class="form-floating mb-4"> <!-- Container for floating password input -->
-          <input type="password" class="form-control" id="password" name="password" placeholder="Password" required> <!-- Secure password input field -->
-          <label for="password">Password</label> <!-- Floating label -->
-        </div>
+      <button type="submit" class="btn btn-submit w-100 mb-3"> <!-- Submit button to register user -->
+        Sign Up
+      </button>
 
-        <button type="submit" class="btn btn-submit w-100 mb-3"> <!-- Submit button to register user -->
-          Sign Up
-        </button>
-
-        <div class="auth-links"> <!-- Link to login if user already has an account -->
-          <p class="mb-0 text-muted">Already have an account? 
-            <a href="{{ url_for('auth.login') }}">Log in</a>
-          </p>
-        </div>
-      </form>
-    </div>
+      <div class="auth-links"> <!-- Link to login if user already has an account -->
+        <p class="mb-0 text-muted">Already have an account?
+          <a href="{{ url_for('auth.login') }}">Log in</a>
+        </p>
+      </div>
+    </form>
   </div>
-
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+</div>
+{% endblock %}

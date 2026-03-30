@@ -1,0 +1,68 @@
+/* 
+═══════════════════════════════════════════════════════════════════════════
+CATEGORY: SHOPPING LIST & PRINT
+GOAL: Styles for the list layout and print view.
+═══════════════════════════════════════════════════════════════════════════
+*/
+
+.shopping-list {
+  padding: 40px 0;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.06) !important;
+  margin: 20px auto;
+  max-width: 800px;
+}
+.shopping-list h2 { text-align: center; font-size: 1.5rem; color: #5b21b6; margin-bottom: 30px; }
+
+/* List Controls (Toolbar) */
+.shopping-list-controls, .list-summary, .list-header, .list-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  row-gap: 12px;
+}
+.shopping-list-controls .btn, .shopping-list-controls .badge {
+  margin: 0; padding: 6px 10px; line-height: 1.25; border-radius: 8px;
+}
+.badge, .chip, .pill { display: inline-flex; align-items: center; padding: 2px 6px; line-height: 1.2; }
+.total-chip, .price-chip, .summary-chip { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 6px 10px; }
+
+/* Item Row */
+.shopping-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 15px 0;
+  border-bottom: 1px solid #e9d5ff;
+}
+.shopping-item:last-child { border-bottom: none; }
+.shopping-list .shopping-item .item-name { font-weight: 600; color: #5b21b6; }
+.shopping-list .shopping-item .item-cost { font-weight: 700; color: #7c3aed; }
+.item-row { display: flex; align-items: center; gap: 12px; border: 1px solid #e9d5ff; background: #fff; }
+
+.btn-add { display: inline-flex; align-items: center; gap: 6px; background: #7c3aed; color: #fff; padding: 8px 12px; border-radius: 8px; text-decoration: none; font-weight: 600; }
+.btn-add:hover { background: #6d28d9; color: #fff; }
+.btn-ghost { background: transparent; border: none; color: #a78bfa; cursor: pointer; }
+
+/* PRINT STYLES (CTRL+P) */
+@media print {
+  /* Hide all UI that consumes ink/space */
+  .navbar, .footer, .list-toolbar, .shopping-list-controls, .search-container, .btn, .badge.action {
+    display: none !important;
+  }
+  
+  /* Show only list content */
+  .shopping-list, .list-card {
+    box-shadow: none !important;
+    border: 1px solid #ddd;
+    padding: 16px;
+    margin-bottom: 12px;
+    max-width: 100% !important;
+  }
+  
+  input[type="checkbox"] { display: inline-block !important; margin-right: 8px; }
+  
+  body { font-size: 12pt; line-height: 1.4; color: #000; background: #fff; }
+}
+

@@ -1,58 +1,7 @@
-<!--
-═══════════════════════════════════════════════════════════════════════════
-FEATURED DEALS PAGE
-═══════════════════════════════════════════════════════════════════════════
-Purpose: 
-    Displays a curated list of special offers, featured deals, and discounts 
-    to the user. This is a primary conversion page designed to look attractive 
-    and highlight savings.
+{% extends "base.html" %}
 
-Key Components:
-    1. Navigation Bar: Standard global navigation.
-    2. Hero Header: Visual impact area with "Featured Deals" title.
-    3. Search & Filter Bar: Complex interactive component allowing users to:
-       - Search by text
-       - Filter by Category, Store, Price
-       - Sort by Price or Name
-    4. Category Chips: Quick-access buttons for common categories.
-    5. Search Results Area: Hidden by default, populated via AJAX when searching.
-    6. Main Deals Grid: The core content, rendering cards for each deal.
-    
-Data Source:
-    - Variables passed from Flask: `deals`, `category_options`, `search_query`
-    - Logic handles pagination and empty states.
-
-Styling:
-    - Uses Bootstrap 5 for layout (Grid system, Cards, Navbar).
-    - Custom overrides in `style.css` for "Premium" look (shadows, rounded corners).
-    - Inline styles used sparingly for specific animations or positioning (e.g., Favorites button).
-═══════════════════════════════════════════════════════════════════════════
--->
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-  <!-- 
-  ═══════════════════════════════════════════════════════════════════════════
-  HEAD & METADATA
-  ═══════════════════════════════════════════════════════════════════════════
-  -->
-  <meta charset="UTF-8">
-   
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Smart Grocery | Featured Deals</title>
-  
-  <!-- EXTERNAL LIBRARIES -->
-  <!-- Bootstrap 5 CSS Framework -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <!-- Bootstrap Icons -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-  
-  <!-- CUSTOM STYLES -->
-  <!-- Main application stylesheet -->
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  
-  <style>
+{% block styles %}
+<style>
     /* 
     ════════════════════════════════════════════════════════════════════════
     PAGE-SPECIFIC STYLES
@@ -105,10 +54,10 @@ Styling:
       cursor: pointer;
     }
   </style>
-</head>
+{% endblock %}
 
-<body>
-  <!-- 
+{% block content %}
+<!-- 
   ═══════════════════════════════════════════════════════════════════════════
   NAVIGATION BAR
   ═══════════════════════════════════════════════════════════════════════════
@@ -117,93 +66,7 @@ Styling:
   Explanation: Checks "Where am I?" If the current URL is /featured-deals, 
   it adds the CSS class active to the button so the user knows which page they are on.
   -->
-  <nav class="navbar navbar-expand-lg navbar-premium">
-    <div class="container">
-      <!-- BRAND LOGO -->
-      <a class="navbar-brand d-flex align-items-center" href="{{ url_for('main.home') }}">
-        <div class="brand-icon me-3">
-          <i class="bi bi-cart-check-fill fs-5"></i>
-        </div>
-        <span>Smart<span class="brand-grocery-text">Grocery</span></span>
-      </a>
-      
-      <!-- MOBILE TOGGLE MENU -->
-      <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-      
-      <!-- NAV LINKS -->
-      <div class="collapse navbar-collapse" id="navbarNav">
-        {% set cart_count = shopping_list_count or 0 %}
-        <ul class="navbar-nav ms-auto align-items-center">
-          
-          <!-- Home Link -->
-          <li class="nav-item">
-            <a class="nav-link {% if request.endpoint == 'main.home' %}active{% endif %}" href="{{ url_for('main.home') }}">
-              <i class="bi bi-house-door me-1"></i> Home
-            </a>
-          </li>
-          
-          <!-- Stores Link -->
-          <li class="nav-item">
-            <a class="nav-link {% if 'stores' in request.path or request.endpoint == 'main.stores_page' %}active{% endif %}" href="{{ url_for('main.stores_page') }}">
-              <i class="bi bi-shop me-1"></i> Stores
-            </a>
-          </li>
-          
-          <!-- Active Page: Deals -->
-          <li class="nav-item">
-            <a class="nav-link {% if 'featured-deals' in request.path or request.endpoint == 'main.featured_deals_page' %}active{% endif %}" href="{{ url_for('main.featured_deals_page') }}">
-              <i class="bi bi-tags me-1"></i> Deals
-            </a>
-          </li>
-          
-          <!-- Compare Link -->
-          <!-- 
-          Active State Logic: 
-          Checks if 'compare' is in the URL path OR if the endpoint matches.
-          This ensures the tab stays highlighted even on sub-pages.
-          -->
-          <li class="nav-item">
-            <a class="nav-link {% if 'compare' in request.path or request.endpoint == 'main.compare_prices' %}active{% endif %}" href="{{ url_for('main.compare_prices') }}">
-              <i class="bi bi-arrow-left-right me-1"></i> Compare
-            </a>
-          </li>
-          
-          <!-- Lists Link -->
-          <li class="nav-item">
-            <a class="nav-link d-flex align-items-center position-relative {% if 'shopping-list' in request.path or request.endpoint == 'main.shopping_list' %}active{% endif %}" href="{{ url_for('main.shopping_list') }}">
-              <i class="bi bi-list-check me-1"></i> Lists
-            </a>
-          </li>
-          
-          <!-- Notifications: With Badge Counter -->
-          <li class="nav-item ms-lg-1">
-            <a class="nav-link nav-icon-btn position-relative {% if 'notifications' in request.path %}active{% endif %}" href="{{ url_for('main.notifications_page') }}" aria-label="Notifications">
-              <i class="bi bi-bell fs-5"></i>
-              <!-- 
-              Jinja Logic for Badge: 
-              Only renders the red span if unread_notifications_count > 0.
-              This prevents an empty red dot from appearing.
-              -->
-              {% if (unread_notifications_count or 0) > 0 %}
-              <span class="position-absolute badge rounded-pill bg-danger" style="font-size: 0.65rem; padding: 0.45em 0.7em; top: -5px; right: -10px; border: 2px solid white; box-shadow: 0 4px 10px rgba(220, 53, 69, 0.4); min-width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;">
-                {{ unread_notifications_count }}
-              </span>
-              {% endif %}
-            </a>
-          </li>
-          
-          <!-- User Profile -->
-          <li class="nav-item ms-lg-2">
-            <a class="nav-link nav-icon-btn nav-profile-btn {% if 'profile' in request.path %}active{% endif %}" href="{{ url_for('main.profile') }}" aria-label="User Profile">
-              <i class="bi bi-person-circle fs-5"></i>
-            </a>
-          </li>
-        </ul>
-      </div>
-    </div>
-  </nav>
+  
 
   <!-- 
   ═══════════════════════════════════════════════════════════════════════════
@@ -606,11 +469,23 @@ Styling:
     <p class="mb-0 text-muted">&copy; 2025 Smart Grocery Team</p>
   </footer>
 
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="{{ url_for('static', filename='js/script.js') }}?v=11"></script>
+  
+  
 
   <!-- Inline Script: Card Click Handling -->
-  <script>
+  
+
+  
+  <!-- 
+  This modal is hidden by default. 
+  It pops up via JavaScript when a user needs to choose which shopping list to add an item to.
+  -->
+  
+  </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
     function goToDealDetail(event, cardEl) {
       // Prevent navigation if clicking buttons inside the card
       const target = event.target;
@@ -623,30 +498,4 @@ Styling:
       }
     }
   </script>
-
-  <!-- Global List Selector Modal -->
-  <!-- 
-  This modal is hidden by default. 
-  It pops up via JavaScript when a user needs to choose which shopping list to add an item to.
-  -->
-  <div class="modal fade" id="globalListSelectorModal" tabindex="-1" aria-labelledby="globalListSelectorModalLabel"
-    aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="globalListSelectorModalLabel">
-            <i class="bi bi-cart-plus me-2"></i>Select Shopping List
-          </h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-          <p class="text-white mb-3">Choose which list to add this item to:</p>
-          <div id="globalListSelectorBody">
-            <!-- List options will be populated here by JavaScript -->
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</body>
-</html>
+{% endblock %}

@@ -1,0 +1,223 @@
+{% extends "admin_layout.html" %}
+{% block title %}Admin Products - Smart Grocery{% endblock %}
+
+{% set admin_title = "Product Catalog" %}
+{% set admin_subtitle = "Central database of all grocery items tracked." %}
+{% set admin_section = "products" %}
+
+{% block page_actions %}
+<button class="btn btn-brand rounded-pill px-4 shadow-sm" data-bs-toggle="modal" data-bs-target="#productModal" onclick="prepareProductModal('new', null)">
+  <i class="bi bi-plus-lg me-2"></i> New Product
+</button>
+{% endblock %}
+
+{% block admin_content %}
+<!-- Search & Filter -->
+<div class="card-modern mb-4 p-2">
+  <form method="get" action="{{ url_for('admin.admin_products_page') }}" class="d-flex align-items-center bg-white rounded-3 px-2 flex-wrap gap-2">
+    <i class="bi bi-search text-muted ms-2 fs-5"></i>
+    <input type="text" class="form-control form-control-lg border-0 shadow-none py-3 flex-grow-1" name="q" value="{{ data.q or '' }}" placeholder="Search products..." style="font-size: 1.1rem; min-width: 200px;">
+    
+    <select class="form-select border-0 bg-light rounded-pill" name="brand" style="width: auto; max-width: 150px;" onchange="this.form.submit()">
+       <option value="">All Brands</option>
+       {% for b in data.brands or [] %}
+       <option value="{{ b.brandId }}" {% if request.args.get('brand') == b.brandId %}selected{% endif %}>{{ b.name_en or b.brandId }}</option>
+       {% endfor %}
+    </select>
+    
+    {% if data.q or request.args.get('brand') %}
+    <a href="{{ url_for('admin.admin_products_page') }}" class="btn btn-light rounded-circle"><i class="bi bi-x-lg"></i></a>
+    {% endif %}
+  </form>
+</div>
+
+<!-- Products List -->
+<div class="card-modern overflow-hidden">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="bg-light text-secondary small text-uppercase">
+        <tr>
+          <th class="ps-4 py-3 fw-bold">Product Details</th>
+          <th class="fw-bold">Category</th>
+          <th class="fw-bold">Brand</th>
+          <th class="text-end pe-4 fw-bold">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in data.products or [] %}
+        <tr>
+          <td class="ps-4">
+             <div class="d-flex align-items-center gap-3">
+                {% if p.image_url %}
+                <img src="{{ p.image_url }}" class="rounded-3 border object-fit-contain bg-white" style="width: 48px; height: 48px;">
+                {% else %}
+                <div class="rounded-3 bg-light border d-flex align-items-center justify-content-center text-muted" style="width: 48px; height: 48px;">
+                   <i class="bi bi-image"></i>
+                </div>
+                {% endif %}
+                <div>
+                   <div class="fw-bold text-dark">{{ p.name_en or p.name }}</div>
+                   <div class="text-muted small" style="opacity: 0.7; font-size: 0.75rem;">
+                      {{ p.qty_str or '1 unit' }} • Updated {{ p.updatedAtDisplay }}
+                   </div>
+                </div>
+             </div>
+          </td>
+          <td>
+             <span class="badge bg-light text-dark border">{{ p.categoryId|replace('cat_', '')|replace('_', ' ')|title }}</span>
+          </td>
+          <td>
+             <span class="text-dark fw-medium small">{{ p.brandId|replace('brand_', '')|title }}</span>
+          </td>
+          <td class="text-end pe-4">
+             <button class="btn btn-sm btn-light border rounded-pill px-3 fw-medium btn-edit-product" 
+                     data-product="{{ p|tojson|forceescape }}"
+                     data-bs-toggle="modal" data-bs-target="#productModal">
+                Edit
+             </button>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" class="text-center py-5 text-muted">No products found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  
+  <!-- Pagination -->
+  {% if data.total_pages > 1 %}
+  <div class="card-footer bg-white border-top py-3">
+    <nav>
+      <ul class="pagination justify-content-center mb-0">
+        <li class="page-item {% if not data.has_prev %}disabled{% endif %}">
+          <a class="page-link rounded-pill border-0 bg-light text-dark mx-1" href="{{ url_for('admin.admin_products_page', page=data.page-1, q=data.q) }}">Previous</a>
+        </li>
+        <li class="page-item disabled">
+          <span class="page-link border-0 text-muted mx-1">Page {{ data.page }} of {{ data.total_pages }}</span>
+        </li>
+        <li class="page-item {% if not data.has_next %}disabled{% endif %}">
+          <a class="page-link rounded-pill border-0 bg-light text-dark mx-1" href="{{ url_for('admin.admin_products_page', page=data.page+1, q=data.q) }}">Next</a>
+        </li>
+      </ul>
+    </nav>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Modal: Product Editor -->
+<div class="modal fade" id="productModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content modal-content-modern shadow-lg">
+      <div class="modal-header modal-header-modern">
+        <h5 class="modal-title fw-bold" id="productModalLabel">Product Details</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="post" action="{{ url_for('admin.admin_save_product') }}">
+        <div class="modal-body modal-body-modern">
+           <input type="hidden" name="redirectTo" value="products">
+           <input type="hidden" name="productId" id="field_productId">
+           
+           <div class="row g-3 mb-3">
+              <div class="col-md-8">
+                 <label class="form-label small fw-bold text-secondary text-uppercase">Product Name (EN) <span class="text-danger">*</span></label>
+                 <input type="text" class="form-control form-control-lg-modern" name="name_en" id="field_name_en" required>
+              </div>
+              <div class="col-md-4">
+                 <label class="form-label small fw-bold text-secondary text-uppercase">Quantity String</label>
+                 <input type="text" class="form-control form-control-lg-modern" name="qty_str" id="field_qty_str" placeholder="e.g. 500g">
+              </div>
+           </div>
+           
+           <div class="mb-3">
+              <label class="form-label small fw-bold text-secondary text-uppercase">German Name (DE)</label>
+              <input type="text" class="form-control form-control-lg-modern" name="name_de" id="field_name_de">
+           </div>
+           
+           <div class="row g-3 mb-3">
+              <div class="col-md-6">
+                 <label class="form-label small fw-bold text-secondary text-uppercase">Brand</label>
+                 <select class="form-select form-control-lg-modern" name="brandId" id="field_brandSelect">
+                    <option value="">(No Brand)</option>
+                    {% for b in data.brands %}
+                    <option value="{{ b.brandId }}">{{ b.name_en or b.brandId }}</option>
+                    {% endfor %}
+                 </select>
+              </div>
+              <div class="col-md-6">
+                 <label class="form-label small fw-bold text-secondary text-uppercase">Category</label>
+                 <select class="form-select form-control-lg-modern" name="categoryId" id="field_categorySelect">
+                    <option value="">(Uncategorized)</option>
+                    {% for c in data.categories %}
+                    <option value="{{ c.categoryId }}">{{ c.name_en or c.categoryId }}</option>
+                    {% endfor %}
+                 </select>
+              </div>
+           </div>
+           
+           <div class="mb-2">
+              <label class="form-label small fw-bold text-secondary text-uppercase">Image URL</label>
+              <div class="input-group">
+                 <span class="input-group-text bg-white border-end-0"><i class="bi bi-image text-muted"></i></span>
+                 <input type="text" class="form-control form-control-lg-modern border-start-0 ps-0" name="image_url" id="field_image_url">
+              </div>
+           </div>
+        </div>
+        <div class="modal-footer modal-footer-modern justify-content-between">
+           <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+           <div class="d-flex gap-2">
+              <button type="submit" formaction="" class="btn btn-outline-danger rounded-pill px-4 d-none" id="btn_delete_prod" onclick="return confirm('Delete this product?')">Delete</button>
+              <button type="submit" class="btn btn-brand rounded-pill px-4">Save Product</button>
+           </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+   const productModal = document.getElementById('productModal');
+   if (productModal) {
+       productModal.addEventListener('show.bs.modal', function(event) {
+           const button = event.relatedTarget;
+           if (button.classList.contains('btn-edit-product')) {
+               const productData = JSON.parse(button.getAttribute('data-product'));
+               prepareProductModal('edit', productData);
+           } else if (button.getAttribute('onclick') && button.getAttribute('onclick').includes("prepareProductModal('new'")) {
+               // New product case is handled by onclick on the button itself or we can move it here
+               // But the onclick="prepareProductModal('new', null)" on the "New Product" button works fine.
+           }
+       });
+   }
+});
+
+function prepareProductModal(mode, product) {
+   const label = document.getElementById('productModalLabel');
+   const delBtn = document.getElementById('btn_delete_prod');
+   
+   if (mode === 'new' || !product) {
+      label.innerText = "New Product";
+      document.getElementById('field_productId').value = '';
+      document.getElementById('field_name_en').value = '';
+      document.getElementById('field_qty_str').value = '';
+      document.getElementById('field_name_de').value = '';
+      document.getElementById('field_brandSelect').value = '';
+      document.getElementById('field_categorySelect').value = '';
+      document.getElementById('field_image_url').value = '';
+      delBtn.classList.add('d-none');
+      delBtn.removeAttribute('formaction');
+   } else {
+      label.innerText = "Edit Product";
+      document.getElementById('field_productId').value = product.productId || '';
+      document.getElementById('field_name_en').value = product.name_en || product.name || '';
+      document.getElementById('field_qty_str').value = product.qty_str || '';
+      document.getElementById('field_name_de').value = product.name_de || '';
+      document.getElementById('field_brandSelect').value = product.brandId || '';
+      document.getElementById('field_categorySelect').value = product.categoryId || '';
+      document.getElementById('field_image_url').value = product.image_url || '';
+      delBtn.classList.remove('d-none');
+      delBtn.setAttribute('formaction', `/admin/products/delete/${product.productId}`);
+   }
+}
+</script>
+{% endblock %}

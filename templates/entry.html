@@ -1,25 +1,7 @@
-<!--
-═══════════════════════════════════════════════════════════════════════════
-ENTRY PAGE (First Screen - Before Login)
-═══════════════════════════════════════════════════════════════════════════
-Purpose: Landing page shown when user is NOT logged in
-Features:
-- Premium welcoming UI
-- Two buttons: "Log In" and "Sign Up"
-- User must authenticate before accessing the main application
-- Shown at route: /entry
-═══════════════════════════════════════════════════════════════════════════
--->
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Welcome - Smart Grocery</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <style>
+{% extends "base.html" %}
+
+{% block styles %}
+<style>
     body {
       margin: 0;
       padding: 0;
@@ -145,16 +127,41 @@ Features:
       margin-top: 2rem;
     }
   </style>
-</head>
-<body class="d-flex align-items-center justify-content-center">
-  
-  <div class="bg-pattern"></div> <!-- Renders the background decorative pattern -->
+{% endblock %}
+
+{% block navbar %}{% endblock %}
+
+{% block content %}
+<div class="bg-pattern"></div> <!-- Renders the background decorative pattern -->
   <div class="shape shape-1"></div> <!-- Floating decorative circle 1 -->
   <div class="shape shape-2"></div> <!-- Floating decorative circle 2 -->
   <div class="shape shape-3"></div> <!-- Floating decorative circle 3 -->
 
-  <div class="container d-flex justify-content-center px-3"> <!-- Bootstrap container: centers content, adds horizontal padding -->
-      <div class="glass-card"> <!-- White elevated box with transparency effects -->
+  <!-- Top Left Logo -->
+  <div style="position: absolute; top: 1.5rem; left: 1.5rem; z-index: 100;">
+    <a href="{{ url_for('main.home') }}" style="text-decoration: none; display: flex; align-items: center; gap: 0.5rem; font-weight: bold; font-size: 1.25rem; color: #fff;">
+        <svg viewBox="0 0 64 64" aria-hidden="true" style="width: 28px; height: 28px; border-radius: 8px; flex: 0 0 auto;">
+          <defs>
+            <linearGradient id="entry-brand-bg" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#f97316"/>
+              <stop offset="100%" stop-color="#0ea5a3"/>
+            </linearGradient>
+            <linearGradient id="entry-brand-leaf" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#22c55e"/>
+              <stop offset="100%" stop-color="#16a34a"/>
+            </linearGradient>
+          </defs>
+          <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#entry-brand-bg)"/>
+          <path d="M32 12c-8.3 0-15 6.7-15 15 0 10.8 13.1 22.7 14.2 23.7a1.2 1.2 0 0 0 1.6 0C33.9 49.7 47 37.8 47 27c0-8.3-6.7-15-15-15z" fill="#ffffff"/>
+          <path d="M32.2 20.5c4.6-3.6 9.1-2.1 11.4 1.2-4 3.3-8.9 4.2-12.6 2.9-1.9 1.4-3.3 3.6-4 6.2 1.2.4 2.6.6 4 .6 4 0 7.5-1.4 10.1-3.7-.3 6.6-4.3 11.4-10.3 11.4-5.9 0-10.8-4.4-10.8-10.2 0-5.6 4.7-10.2 10.7-10.2.5 0 1 0 1.5.1z" fill="url(#entry-brand-leaf)"/>
+          <circle cx="46.5" cy="16.5" r="2.3" fill="#ffffff" opacity="0.95"/>
+        </svg>
+        Smart Grocery
+    </a>
+  </div>
+
+  <div class="container d-flex justify-content-center align-items-center px-3 min-vh-100 pt-5"> <!-- Bootstrap container: centers content vertically and horizontally -->
+      <div class="glass-card mt-5"> <!-- White elevated box with transparency effects, pushed down from navbar -->
         <div class="brand-icon"> <!-- Container for the main brand icon -->
           <i class="bi bi-basket2-fill"></i> <!-- Shopping basket icon from Bootstrap -->
         </div>
@@ -178,7 +185,4 @@ Features:
         </p>
       </div>
   </div>
-
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+{% endblock %}

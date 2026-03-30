@@ -206,3 +206,6 @@ def is_favorited(user_email, product_id):
 
 def add_favorite(user_email, product_id, product_data):
     return favorites_model.add_favorite(user_email, product_id, product_data)
+
+def remove_favorite(user_email, product_id):
+    return favorites_model.remove_favorite(user_email, product_id)

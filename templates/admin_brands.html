@@ -1,0 +1,135 @@
+{% extends "admin_layout.html" %}
+{% block title %}Admin Brands - Smart Grocery{% endblock %}
+
+{% set admin_title = "Brands" %}
+{% set admin_subtitle = "Centralized brand management with automatic German fallback." %}
+{% set admin_section = "brands" %}
+
+{% block admin_content %}
+{% set show_form = (request.args.get('showForm') == '1') or data.selected_brand %}
+
+<div class="row g-4">
+  <!-- Left Column: List -->
+  <div class="{{ 'col-lg-8' if show_form else 'col-12' }} transition-all">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-white border-bottom-0 py-3 d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 fw-bold">Brand List</h5>
+        <a href="{{ url_for('admin.admin_brands_page', showForm=1) }}" class="btn btn-primary btn-sm rounded-pill px-3">
+          <i class="bi bi-plus-lg me-1"></i> New Brand
+        </a>
+      </div>
+      
+      <!-- Search -->
+      <div class="px-3 pb-3 border-bottom">
+        <form method="get" action="{{ url_for('admin.admin_brands_page') }}" class="d-flex gap-2">
+          <input type="hidden" name="showForm" value="{{ '1' if show_form else '0' }}">
+          <div class="flex-grow-1 position-relative">
+            <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-secondary"></i>
+            <input class="form-control rounded-pill ps-5 bg-light border-0" name="q" value="{{ data.q or '' }}" placeholder="Search brands...">
+          </div>
+          <button type="submit" class="btn btn-dark rounded-pill px-3">Search</button>
+        </form>
+      </div>
+      
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="bg-light">
+            <tr>
+              <th class="ps-4">Brand Info</th>
+              <th>German Name</th>
+              <th>Website</th>
+              <th>Updated</th>
+              <th class="text-end pe-4">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for b in data.brands or [] %}
+            <tr>
+              <td class="ps-4">
+                <div class="fw-bold text-dark">{{ b.name_en or b.name }}</div>
+                <div class="small font-monospace text-secondary" style="font-size: 0.75rem;">{{ b.brandId }}</div>
+              </td>
+              <td>
+                {% if b.name_de %}
+                {{ b.name_de }}
+                {% else %}
+                <span class="text-secondary small fst-italic">Auto</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if b.website %}
+                <a href="{{ b.website }}" target="_blank" rel="noopener" class="text-decoration-none small">
+                  {{ b.website|replace('https://', '')|replace('http://', '')|truncate(20) }} <i class="bi bi-box-arrow-up-right ms-1" style="font-size: 10px;"></i>
+                </a>
+                {% else %}
+                <span class="text-secondary small">-</span>
+                {% endif %}
+              </td>
+              <td class="small text-secondary">{{ b.updatedAtDisplay }}</td>
+              <td class="text-end pe-4">
+                <a class="btn btn-sm btn-outline-primary rounded-pill px-3" href="{{ url_for('admin.admin_brands_page', q=data.q, showForm=1, edit=b.brandId) }}">Edit</a>
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="5" class="text-center py-5 text-secondary">No brands found.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Column: Form (Sticky) -->
+  {% if show_form %}
+  <div class="col-lg-4">
+    <div class="card border-0 shadow-sm border-top border-4 border-primary position-sticky" style="top: 8rem;">
+      <div class="card-body p-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h5 class="mb-0 fw-bold">{{ 'Edit Brand' if data.selected_brand else 'New Brand' }}</h5>
+          <a href="{{ url_for('admin.admin_brands_page', q=data.q) }}" class="btn-close" aria-label="Close"></a>
+        </div>
+
+        {% set selected = data.selected_brand or {} %}
+        <form method="post" action="{{ url_for('admin.admin_save_brand') }}">
+          <input type="hidden" name="redirectTo" value="brands">
+          <input type="hidden" name="brandId" value="{{ selected.brandId or '' }}">
+
+          <div class="mb-3">
+            <label class="form-label small fw-bold text-secondary">Brand Name <span class="text-danger">*</span></label>
+            <input class="form-control" name="name_en" value="{{ selected.name_en or selected.name or '' }}" placeholder="International Name" required>
+            <div class="form-text small">Used as primary display name.</div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-bold text-secondary">German Name (Optional)</label>
+            <input class="form-control" name="name_de" value="{{ selected.name_de or '' }}" placeholder="Localized Name">
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-bold text-secondary">Website</label>
+            <input class="form-control" name="website" value="{{ selected.website or '' }}" placeholder="https://example.com">
+          </div>
+          
+          <div class="mb-4">
+            <label class="form-label small fw-bold text-secondary">Logo URL</label>
+            <div class="input-group">
+               <span class="input-group-text bg-light text-secondary"><i class="bi bi-image"></i></span>
+               <input class="form-control border-start-0" name="logoUrl" value="{{ selected.logoUrl or '' }}" placeholder="https://...">
+            </div>
+          </div>
+
+          <div class="d-grid gap-2">
+            <button type="submit" class="btn btn-primary">Save Brand</button>
+            {% if selected.brandId %}
+            <button type="submit" formaction="{{ url_for('admin.admin_delete_brand', brand_id=selected.brandId) }}" class="btn btn-outline-danger btn-sm" onclick="return confirm('Delete this brand? Ensure no products are linked.')">
+              Delete
+            </button>
+            {% endif %}
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

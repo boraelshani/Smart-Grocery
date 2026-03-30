@@ -1,0 +1,181 @@
+{
+  "stores": {
+    "storeId": "store_billa_at",
+    "name": "BILLA",
+    "logoUrl": "https://cdn.smart-grocery.io/stores/billa.png",
+    "website": "https://shop.billa.at",
+    "country": "AT",
+    "languages_available": ["en", "de"],
+    "apiAvailable": false,
+    "scrapingRequired": true,
+    "createdAt": "2026-03-19T10:00:00.000Z",
+    "updatedAt": "2026-03-19T10:00:00.000Z"
+  },
+  "brands": {
+    "brandId": "brand_manner",
+    "name": "Manner",
+    "logoUrl": "https://cdn.smart-grocery.io/brands/manner.png",
+    "website": "https://www.manner.com",
+    "createdAt": "2026-03-19T10:00:00.000Z",
+    "updatedAt": "2026-03-19T10:00:00.000Z"
+  },
+  "categories": [
+    {
+      "categoryId": "cat_dairy",
+      "name_en": "Dairy",
+      "name_de": "Molkerei",
+      "slug": "dairy",
+      "parentId": null,
+      "path": ["cat_dairy"],
+      "fullPathNames": [
+        {
+          "categoryId": "cat_dairy",
+          "name_en": "Dairy",
+          "name_de": "Molkerei",
+          "slug": "dairy"
+        }
+      ],
+      "createdAt": "2026-03-19T10:00:00.000Z",
+      "updatedAt": "2026-03-19T10:00:00.000Z"
+    },
+    {
+      "categoryId": "cat_milk",
+      "name_en": "Milk",
+      "name_de": "Milch",
+      "slug": "milk",
+      "parentId": "cat_dairy",
+      "path": ["cat_dairy", "cat_milk"],
+      "fullPathNames": [
+        {
+          "categoryId": "cat_dairy",
+          "name_en": "Dairy",
+          "name_de": "Molkerei",
+          "slug": "dairy"
+        },
+        {
+          "categoryId": "cat_milk",
+          "name_en": "Milk",
+          "name_de": "Milch",
+          "slug": "milk"
+        }
+      ],
+      "createdAt": "2026-03-19T10:00:00.000Z",
+      "updatedAt": "2026-03-19T10:00:00.000Z"
+    }
+  ],
+  "products": {
+    "productId": "prod_whole_milk_1l",
+    "name_en": "Whole Milk 1L",
+    "name_de": "Vollmilch 1L",
+    "brandId": "brand_manner",
+    "categoryId": "cat_milk",
+    "categoryPath": ["cat_dairy", "cat_milk"],
+    "unitSize": "1L",
+    "barcode": "900000000001",
+    "defaultImageUrl": "https://cdn.smart-grocery.io/products/whole-milk.jpg",
+    "legalImageStatus": "open-source",
+    "labels": ["new", "on_sale"],
+    "description_en": "Fresh whole milk.",
+    "description_de": "Frische Vollmilch.",
+    "createdAt": "2026-03-19T10:00:00.000Z",
+    "updatedAt": "2026-03-19T10:00:00.000Z"
+  },
+  "storeProducts": {
+    "storeProductId": "sp_billa_whole_milk_1l",
+    "productId": "prod_whole_milk_1l",
+    "storeId": "store_billa_at",
+    "productPageUrl": "https://shop.billa.at/product/whole-milk-1l",
+    "extractedImageUrl": "https://shop.billa.at/media/whole-milk.jpg",
+    "basePrice": 1.49,
+    "promoPrice": 1.29,
+    "multiBuy": {
+      "type": "x_for_y",
+      "details": { "buy": 3, "pay": 2 }
+    },
+    "isAvailable": true,
+    "lastScrapeStatus": "ok",
+    "offerStart": "2026-03-18T00:00:00.000Z",
+    "offerEnd": "2026-03-25T00:00:00.000Z",
+    "lastPriceUpdate": "2026-03-19T10:05:00.000Z",
+    "stockStatus": "in_stock",
+    "unitPriceComparison": { "value": 1.29, "unit": "liter" },
+    "createdAt": "2026-03-19T10:00:00.000Z",
+    "updatedAt": "2026-03-19T10:05:00.000Z"
+  },
+  "priceHistory": {
+    "historyId": "hist_01",
+    "storeProductId": "sp_billa_whole_milk_1l",
+    "oldPrice": 1.49,
+    "newPrice": 1.29,
+    "promoPrice": 1.29,
+    "timestamp": "2026-03-19T10:05:00.000Z"
+  },
+  "users": {
+    "userId": "user_anna_01",
+    "username": "anna",
+    "email": "anna@example.com",
+    "passwordHash": "$2a$10$abcdefghijklmnopqrstuv",
+    "preferredLanguage": "de",
+    "createdAt": "2026-03-19T10:00:00.000Z",
+    "updatedAt": "2026-03-19T10:00:00.000Z"
+  },
+  "lists": {
+    "listId": "list_anna_weekly",
+    "userId": "user_anna_01",
+    "name": "Weekly Essentials",
+    "items": [
+      {
+        "productId": "prod_whole_milk_1l",
+        "storeId": "store_billa_at",
+        "quantity": 2,
+        "checked": false
+      }
+    ],
+    "totalPrice": 2.58,
+    "shared": true,
+    "shareCode": "ABCD1234",
+    "createdAt": "2026-03-19T10:00:00.000Z",
+    "updatedAt": "2026-03-19T10:10:00.000Z"
+  },
+  "publicLists": {
+    "id": "public_weekly_basics",
+    "type": "template",
+    "name_en": "Weekly Basics",
+    "name_de": "Wochentliche Basics",
+    "description_en": "Most bought weekly products.",
+    "description_de": "Am haufigsten gekaufte Wochenprodukte.",
+    "items": [
+      {
+        "productId": "prod_whole_milk_1l",
+        "storeId": "store_billa_at",
+        "quantity": 1,
+        "checked": false
+      }
+    ],
+    "creatorUserId": null,
+    "popularityScore": 87,
+    "createdAt": "2026-03-19T10:00:00.000Z"
+  },
+  "feedback": {
+    "feedbackId": "feedback_01",
+    "userId": "user_anna_01",
+    "productId": "prod_whole_milk_1l",
+    "storeProductId": "sp_billa_whole_milk_1l",
+    "type": "wrong_price",
+    "message": "Shelf price is 1.19, app shows 1.29.",
+    "status": "pending",
+    "createdAt": "2026-03-19T10:15:00.000Z"
+  },
+  "scraperRules": {
+    "storeId": "store_billa_at",
+    "productNameSelector": "h1.product-title",
+    "basePriceSelector": "[data-price='base']",
+    "promoPriceSelector": "[data-price='promo']",
+    "availabilitySelector": ".stock-status",
+    "imageSelector": ".product-image img",
+    "offerSelector": ".offer-badge",
+    "multiBuySelector": ".multibuy",
+    "requiresJSRendering": true,
+    "updatedAt": "2026-03-19T10:00:00.000Z"
+  }
+}

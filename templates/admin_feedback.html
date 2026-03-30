@@ -1,0 +1,45 @@
+{% extends "admin_layout.html" %}
+{% block title %}Feedback - Smart Grocery{% endblock %}
+
+{% set admin_title = "User Feedback" %}
+{% set admin_subtitle = "Review and resolve user submitted issues." %}
+{% set admin_section = "feedback" %}
+
+{% block admin_content %}
+<div class="card-modern overflow-hidden">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="bg-light text-secondary small text-uppercase">
+         <tr>
+            <th class="ps-4 py-3 fw-bold">User</th>
+            <th class="fw-bold">Type</th>
+            <th class="fw-bold">Message</th>
+            <th class="fw-bold">Date</th>
+            <th class="text-end pe-4 fw-bold">Actions</th>
+         </tr>
+      </thead>
+      <tbody>
+         {% for f in data.feedback or [] %}
+         <tr>
+            <td class="ps-4 fw-medium text-dark">{{ f.user_email|default('Anonymous') }}</td>
+            <td><span class="badge bg-light text-dark border">{{ f.type|default('General')|title }}</span></td>
+            <td class="text-secondary small" style="max-width: 300px;">
+               <div class="text-truncate" title="{{ f.message }}">{{ f.message }}</div>
+            </td>
+            <td class="text-secondary small">{{ f.timestamp }}</td>
+            <td class="text-end pe-4">
+               <form method="post" action="{{ url_for('admin.admin_resolve_feedback', id=f._id) }}" class="d-inline">
+                  <button type="submit" class="btn btn-sm btn-outline-success rounded-pill px-3" title="Mark Resolved">
+                     <i class="bi bi-check-lg me-1"></i> Resolve
+                  </button>
+               </form>
+            </td>
+         </tr>
+         {% else %}
+         <tr><td colspan="5" class="text-center py-5 text-muted">No unresolved feedback.</td></tr>
+         {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

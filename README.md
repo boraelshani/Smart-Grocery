@@ -26,7 +26,7 @@
 ### **Bora Elshani** - Team Lead & Full Stack Engineer
 **Key Contributions:**
 *   **Backend Architecture:** Designed `app.py` entry point and Flask configuration.
-*   **Core Logic:** Implemented `routes/main_routes.py` handling primary navigation and user flow.
+*   **Core Logic:** Implemented route modules handling primary navigation and user flow.
 *   **Data Models:** Architected `users_model.py` for auth and `models.py` for fallback data.
 *   **Data Pipeline:** Wrote scripts for importing featured deals from JSON to MongoDB.
 *   **Frontend UX:** Developed the interactive Shopping List (`shopping_list.html`), Profile management (`profile.html`), and Deal view (`featured_deal_detail.html`).
@@ -182,7 +182,8 @@ Smart Grocery Project/
 ├── requirements.txt       # Python dependencies
 ├── .gitignore            # Git ignore rules
 ├── routes/               # Flask route handlers
-│   ├── main_routes.py
+│   ├── ui_routes.py
+│   ├── lists_routes.py
 │   └── auth_routes.py
 ├── models/               # Data models
 │   └── models.py
@@ -195,9 +196,9 @@ Smart Grocery Project/
 │   ├── stores.html
 │   └── ...
 ├── static/               # CSS and JavaScript
-│   ├── style.css
+│   ├── css/
 │   └── js/
-│       └── script.js
+│       └── modules/
 └── utils/                # Helper functions
     └── helpers.py
 ```

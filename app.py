@@ -14,6 +14,7 @@
 
 import os
 import sys
+import time
 
 # ═══════════════════════════════════════════════════════════════════════════
 # 0. SELF-REEXECUTION: Automatically use the virtual environment
@@ -48,12 +49,13 @@ def ensure_venv():
         # Check two conditions before switching:
         # 1. Does the virtual environment python executable actually exist at that path?
         # 2. Is the currently running python interpreter (sys.executable) DIFFERENT from the venv python?
-        if os.path.exists(venv_python) and sys.executable != venv_python:
+        if os.path.exists(venv_python) and sys.executable != venv_python and not os.environ.get('VENV_RESTARTED'):
             print(f"INFO: Auto-switching to virtual environment: {venv_python}")
             try:
                 # Use os.execv to replace the current process image with a new process.
                 # This effectively restarts the script using the correct Python interpreter.
                 # The arguments passed are [venv_python, script_name, ...other_args].
+                os.environ['VENV_RESTARTED'] = '1'
                 os.execv(venv_python, [venv_python] + sys.argv)
             except Exception as e:
                 # If something goes wrong (e.g., permission error), catch the exception 
@@ -94,6 +96,10 @@ if not os.environ.get('SSL_CERT_FILE'):
 
 from utils.db import mongo, sanitize_uri
 
+# Short-lived in-memory cache for expensive navbar counters.
+_NAVBAR_CACHE_TTL_SEC = 20
+_navbar_cache = {}
+
 # ═══════════════════════════════════════════════════════════════════════════
 # 2. FLASK APP INITIALIZATION
 # ═══════════════════════════════════════════════════════════════════════════
@@ -110,6 +116,10 @@ app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key')
 # JWT_SECRET_KEY is specifically for JSON Web Token encryption.
 # This often matches the app secret key but can be separate.
 app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', app.secret_key)
+app.config['ADMIN_EMAILS'] = os.environ.get('ADMIN_EMAILS', '')
+app.config['ENABLE_HOME_RECOMMENDATIONS'] = os.environ.get('ENABLE_HOME_RECOMMENDATIONS', 'false').lower() == 'true'
+app.config['ENABLE_LIST_PROMO_ENRICHMENT'] = os.environ.get('ENABLE_LIST_PROMO_ENRICHMENT', 'false').lower() == 'true'
+app.config['ENABLE_LIST_MARK_SEEN_ON_RENDER'] = os.environ.get('ENABLE_LIST_MARK_SEEN_ON_RENDER', 'false').lower() == 'true'
 
 # ═══════════════════════════════════════════════════════════════════════════
 # 3. MONGODB CONFIGURATION
@@ -157,8 +167,7 @@ except Exception as e:
     print('INFO: Running in fallback mode with local JSON data.')
 
 # Now import the blueprints (after PyMongo attempted initialization)
-from routes import main_bp, auth_bp
-from routes.admin_routes import admin_bp
+from routes import main_bp, auth_bp, admin_bp, compare_engine_bp
 
 # Log connection info
 try:
@@ -173,6 +182,19 @@ except Exception as e:
 try:
     if getattr(mongo, 'db', None) is not None:
         mongo.db.users.create_index('email', unique=True)
+        mongo.db.notifications.create_index([
+            ('user_email', 1),
+            ('read', 1),
+            ('created_at', -1),
+        ])
+        mongo.db.lists.create_index([
+            ('userId', 1),
+            ('updatedAt', -1),
+        ])
+        mongo.db.lists.create_index([
+            ('userId', 1),
+            ('items.is_new', 1),
+        ])
 except Exception:
     pass
 
@@ -192,6 +214,7 @@ except Exception:
 app.register_blueprint(main_bp)
 app.register_blueprint(auth_bp)
 app.register_blueprint(admin_bp)
+app.register_blueprint(compare_engine_bp)
 
 
 @app.context_processor
@@ -205,64 +228,86 @@ def inject_navbar_data():
     """
     shopping_list_count = 0
     unread_notifications_count = 0
+    current_user_nav = None
+    is_admin_nav = False
     try:
         email = session.get('user')
         if email:
-            # 1. Calculate Unread Notifications Count using model logic
-            from models.notifications_model import get_unread_count
-            unread_notifications_count = get_unread_count(email)
-            
-            # --- Dynamic Notifications Count Fix ---
-            # Check for new unseen offers based on user reading history
-            try:
-                from models.users_model import get_user_by_email
-                from models.featured_deals_model import featured_deals_model
-                from models.multibuy_offers_model import multibuy_offers_model
-                from models.quantity_discounts_model import quantity_discounts_model
-                
-                user = get_user_by_email(email)
-                # 'read_dynamic_notifications' tracks IDs of offers the user has already seen
-                read_ids = set(user.get('read_dynamic_notifications', [])) if user else set()
-                
-                # 1. Check Featured Deals (Latest 10)
-                fds = featured_deals_model.get_latest_deals(limit=10)
-                for d in fds:
-                     # Check if this specific deal ID has been seen
-                    if f"suggestion_fd_{str(d.get('_id'))}" not in read_ids:
-                        unread_notifications_count += 1
-                        
-                # 2. Check Multibuy Offers (Latest 5)
-                mbs = multibuy_offers_model.get_latest_offers(limit=5)
-                for m in mbs:
-                    if f"suggestion_multi_{str(m.get('_id'))}" not in read_ids:
-                        unread_notifications_count += 1
-                        
-                # 3. Check Quantity Discounts (Latest 3)
-                qds = quantity_discounts_model.get_latest_discounts(limit=3)
-                for q in qds:
-                     if f"suggestion_qty_{str(q.get('_id'))}" not in read_ids:
-                        unread_notifications_count += 1
-            except Exception as e:
-                print(f"Error calculating dynamic unread count: {e}")
-            
-            # 2. Calculate Shopping List Count (New items only)
-            from models.users_model import get_user_lists
-            data = get_user_lists(email) or {}
-            lists = data.get('lists', []) or []
-            new_items_count = 0
-            for lst in lists:
-                items = lst.get('items', []) or []
-                # Count items marked as 'is_new' which haven't been reviewed yet
-                new_items_count += sum(1 for it in items if isinstance(it, dict) and it.get('is_new'))
-            
-            shopping_list_count = new_items_count
+            # Fast path: use very short cache to avoid repeating heavy DB reads
+            # on rapid refreshes and frequent AJAX-triggered page renders.
+            cache_entry = _navbar_cache.get(email)
+            now_ts = time.time()
+            if cache_entry and cache_entry.get('expires_at', 0) > now_ts:
+                cached = cache_entry.get('value', {})
+                return {
+                    'shopping_list_count': int(cached.get('shopping_list_count', 0)),
+                    'unread_notifications_count': int(cached.get('unread_notifications_count', 0)),
+                    'current_user_nav': cached.get('current_user_nav'),
+                    'is_admin_nav': bool(cached.get('is_admin_nav', False)),
+                }
+
+            user = {}
+            if getattr(mongo, 'db', None) is not None:
+                user = mongo.db.users.find_one(
+                    {'email': email},
+                    {
+                        '_id': 0,
+                        'email': 1,
+                        'userId': 1,
+                        'name': 1,
+                        'avatar': 1,
+                        'is_admin': 1,
+                    },
+                ) or {}
+
+            display_name = (user.get('name') or email.split('@')[0]).strip()
+            initials = ''.join(part[:1] for part in display_name.split()[:2]).upper() or display_name[:1].upper()
+            current_user_nav = {
+                'email': email,
+                'name': user.get('name') or '',
+                'display_name': display_name,
+                'avatar': user.get('avatar') or '',
+                'initials': initials,
+            }
+
+            admin_emails = {e.strip().lower() for e in str(app.config.get('ADMIN_EMAILS', '')).split(',') if e.strip()}
+            is_admin_nav = bool(user.get('is_admin')) or (email.lower() in admin_emails)
+
+            if getattr(mongo, 'db', None) is not None:
+                from datetime import datetime, timedelta
+                unread_notifications_count = mongo.db.notifications.count_documents({
+                    'user_email': email,
+                    'read': False,
+                    'created_at': {'$gte': datetime.utcnow() - timedelta(days=7)},
+                })
+
+                owner_key = str(user.get('userId') or email)
+                agg = list(mongo.db.lists.aggregate([
+                    {'$match': {'userId': owner_key}},
+                    {'$unwind': '$items'},
+                    {'$match': {'items.is_new': True}},
+                    {'$count': 'count'},
+                ]))
+                shopping_list_count = int((agg[0] if agg else {}).get('count', 0))
+
+            _navbar_cache[email] = {
+                'expires_at': now_ts + _NAVBAR_CACHE_TTL_SEC,
+                'value': {
+                    'shopping_list_count': shopping_list_count,
+                    'unread_notifications_count': unread_notifications_count,
+                    'current_user_nav': current_user_nav,
+                    'is_admin_nav': is_admin_nav,
+                },
+            }
     except Exception:
         # Fail silently to avoid breaking the entire page if notification count fails
         pass
         
     return {
         'shopping_list_count': shopping_list_count,
-        'unread_notifications_count': unread_notifications_count
+        'unread_notifications_count': unread_notifications_count,
+        'current_user_nav': current_user_nav,
+        'is_admin_nav': is_admin_nav,
     }
 
 
