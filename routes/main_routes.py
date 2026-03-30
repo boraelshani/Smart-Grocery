@@ -2807,6 +2807,55 @@ def rename_shopping_list_api(): # Updates the name property of a specific list o
     except Exception as e: # Catch failure
         return jsonify({'success': False, 'error': str(e)}), 500 # Fail
 
+@main_bp.route('/api/list/share', methods=['POST'])
+def share_list_api():
+    try:
+        user_email = session.get('user')
+        if not user_email: return jsonify({'success': False, 'error': 'Not authenticated'}), 401
+        
+        data = request.get_json()
+        list_id = data.get('list_id')
+        target_email = data.get('target_email')
+        role = data.get('role', 'view')
+
+        if not list_id or not target_email: 
+            return jsonify({'success': False, 'error': 'Missing fields'}), 400
+            
+        from models.users_model import users_model
+        
+        # Share functionality
+        success = users_model.share_list_with_user(user_email, list_id, target_email, role)
+        
+        if success:
+            # Drop a notification
+            from models.notifications_model import notifications_model
+            notifications_model.create_notification({
+                'user_email': target_email,
+                'type': 'list_share',
+                'title': 'New Shared List!',
+                'message': f'Exciting news! {user_email} has invited you to collaborate on a shopping list. You can now view and manage items together directly from your Lists page.',
+                'action_url': '/shopping-list'
+            })
+            
+        return jsonify({'success': success})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@main_bp.route('/api/list/unshare', methods=['POST'])
+def unshare_list_api():
+    try:
+        user_email = session.get('user')
+        if not user_email: return jsonify({'success': False, 'error': 'Not authenticated'}), 401
+        
+        data = request.get_json()
+        list_id = data.get('list_id')
+        target_email = data.get('target_email')
+
+        from models.users_model import users_model
+        success = users_model.remove_collaborator(user_email, list_id, target_email)
+        return jsonify({'success': success})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @main_bp.route('/api/list/delete', methods=['POST']) # API: Remove a list
 def delete_shopping_list_api(): # Permanently deletes a list and its items
@@ -3212,7 +3261,11 @@ def get_list_items_api(list_id): # The main data provider for the shopping list 
             'list_id': list_id,
             'name': target_list.get('name'),
             'items': enriched_items,
-            'created_at': target_list.get('created_at')
+            'created_at': target_list.get('created_at'),
+            'is_shared': target_list.get('is_shared'),
+            'owner_email': target_list.get('owner_email'),
+            'collaborators': target_list.get('collaborators'),
+            'my_role': target_list.get('my_role')
         })
     except Exception as e: # Catch failure
         return jsonify({'success': False, 'error': str(e)}), 500 # Fail

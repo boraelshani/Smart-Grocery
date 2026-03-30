@@ -64,7 +64,24 @@ def login(): # Define the view function for user authentication
             # 5. HANDLE BROWSER CLIENTS
             # Store primary identifier in Flask's session object (server-side signed cookie).
             session['user'] = email  # Store the user's email in the encrypted session cookie
+
+            # FLASH UNSEEN NOTIFICATIONS
+            from models.notifications_model import notifications_model
+            from utils.db import get_db
             
+            # Fetch unread list_share notifications
+            notifs = notifications_model.get_user_notifications(email, unread_only=True)
+            for n in notifs:
+                if n.get('type') == 'list_share' and not n.get('is_toasted'):
+                    # Flash it to UI
+                    flash(n.get('message', 'A new list was shared with you!'), 'info')
+                    # Mark as toasted
+                    if get_db() is not None:
+                        get_db().notifications.update_one(
+                            {'_id': n['_id']},
+                            {'$set': {'is_toasted': True}}
+                        )
+
             # Prepare redirect response to the home page
             resp = redirect(url_for('main.home')) # Create a redirect object pointing to the dashboard
             

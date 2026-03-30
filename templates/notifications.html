@@ -156,6 +156,7 @@ Data: Fetches from notifications collection
 
     .icon-deal_alert { background: rgba(124, 58, 237, 0.1); color: var(--premium-purple); }
     .icon-price_drop { background: rgba(16, 185, 129, 0.1); color: var(--success-green); }
+    .icon-list_share { background: rgba(236, 72, 153, 0.1); color: #ec4899; }
     .icon-system { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
 
     .notification-content h6 {
@@ -393,6 +394,8 @@ Data: Fetches from notifications collection
                 <i class="bi bi-tag-fill"></i>
               {% elif n_type == "price_drop" %}
                 <i class="bi bi-graph-down-arrow"></i>
+              {% elif n_type == "list_share" %}
+                <i class="bi bi-envelope-paper-heart-fill"></i>
               {% else %}
                 <i class="bi bi-info-circle-fill"></i>
               {% endif %}
@@ -403,6 +406,10 @@ Data: Fetches from notifications collection
               </span>
               <h6 class="fw-bold mb-1" style="color: #1a202c; font-size: 1.05rem;">{{ notification.title }}</h6>
               
+              {% if notification.message %}
+              <p class="mb-2 mt-1 text-muted" style="font-size: 0.95rem;">{{ notification.message }}</p>
+              {% endif %}
+
               {% if notification.product_id or notification.deal_id %}
               <div class="product-preview-card mt-3 p-3 rounded-4 border bg-white shadow-sm d-flex align-items-center gap-3">
                 

@@ -279,24 +279,62 @@ def get_user_lists(email):
         if legacy_list:
             import uuid
             list_id = str(uuid.uuid4())
-            default_lists.append({
+            new_legacy = {
                 'id': list_id,
                 'name': 'My Shopping List',
                 'items': legacy_list,
-                'created_at': datetime.utcnow() if get_db() else None
-            })
+                'collaborators': [],
+                'created_at': datetime.utcnow() if get_db() is not None else None
+            }
+            default_lists.append(new_legacy)
             active_id = list_id
+
+        if get_db() is not None:
+            # Perform an explicit save so the created lists array persists alongside the newly generated list later
+            get_db().users.update_one(
+                {'email': email},
+                {'$set': {'lists': default_lists, 'active_list_id': active_id}}
+            )
+        elif getattr(mock_models, 'users', None) and email in mock_models.users:
+            mock_models.users[email]['lists'] = default_lists
+            mock_models.users[email]['active_list_id'] = active_id
             
-        return {'lists': default_lists, 'active_list_id': active_id}
-        
+        user['lists'] = default_lists
+        user['active_list_id'] = active_id
+
+    my_lists = user.get('lists', [])
+    active_id = user.get('active_list_id')
+
+    # Fetch shared lists safely
+    if get_db() is not None:
+        try:
+            shared = get_db().users.find({'lists.collaborators.email': email})
+            for u in shared:
+                owner = u.get('email')
+                if owner == email: continue # Skip own
+                for l in u.get('lists', []):
+                    for c in l.get('collaborators', []):
+                        if isinstance(c, dict) and c.get('email') == email:
+                            l_copy = l.copy()
+                            l_copy['is_shared'] = True
+                            l_copy['owner_email'] = owner
+                            l_copy['my_role'] = c.get('role', 'view')
+                            my_lists.append(l_copy)
+                            break
+        except Exception as e:
+            print(f"Error fetching shared lists: {e}")
+
     return {
-        'lists': user.get('lists', []),
-        'active_list_id': user.get('active_list_id')
+        'lists': my_lists,
+        'active_list_id': active_id
     }
 
 
 def create_shopping_list(email: str, name: str) -> str:
     """Create a new shopping list and return its ID."""
+    # Ensure legacy data is migrated BEFORE pushing a new list
+    get_user_lists(email)
+    
     list_id = str(uuid.uuid4())
     new_list = {
         'id': list_id,
@@ -320,7 +358,36 @@ def create_shopping_list(email: str, name: str) -> str:
             user['active_list_id'] = list_id
             
     return list_id
+def share_list_with_user(owner_email: str, list_id: str, target_email: str, role: str = 'view') -> bool:
+    """Share a list with another user."""
+    if get_db() is not None:
+        # Avoid duplicating the user
+        get_db().users.update_one(
+            {'email': owner_email, 'lists.id': list_id},
+            {
+                '$pull': {'lists.$.collaborators': {'email': target_email}}
+            }
+        )
+        res = get_db().users.update_one(
+            {'email': owner_email, 'lists.id': list_id},
+            {
+                '$push': {'lists.$.collaborators': {'email': target_email, 'role': role}}
+            }
+        )
+        return res.modified_count > 0
+    return False
 
+def remove_collaborator(owner_email: str, list_id: str, target_email: str) -> bool:
+    """Remove a collaborator from a list."""
+    if get_db() is not None:
+        res = get_db().users.update_one(
+            {'email': owner_email, 'lists.id': list_id},
+            {
+                '$pull': {'lists.$.collaborators': {'email': target_email}}
+            }
+        )
+        return res.modified_count > 0
+    return False
 def update_user(email: str, update_data: dict) -> bool:
     """Update arbitrary fields on a user document."""
     if get_db() is not None:
@@ -341,7 +408,13 @@ def update_list_items(email: str, list_id: str, items: list) -> bool:
     """Update the items in a specific shopping list."""
     if get_db() is not None:
         result = get_db().users.update_one(
-            {'email': email, 'lists.id': list_id},
+            {
+                'lists.id': list_id,
+                '$or': [
+                    {'email': email},
+                    {'lists': {'$elemMatch': {'id': list_id, 'collaborators.email': email}}}
+                ]
+            },
             {'$set': {'lists.$.items': items}}
         )
         return result.modified_count > 0
@@ -364,7 +437,13 @@ def add_item_to_list(email: str, list_id: str, item: dict) -> bool:
     """Add an item to a specific list."""
     if get_db() is not None:
         result = get_db().users.update_one(
-            {'email': email, 'lists.id': list_id},
+            {
+                'lists.id': list_id,
+                '$or': [
+                    {'email': email},
+                    {'lists': {'$elemMatch': {'id': list_id, 'collaborators.email': email}}}
+                ]
+            },
             {'$push': {'lists.$.items': item}}
         )
         return result.modified_count > 0
@@ -382,13 +461,20 @@ def add_item_to_list(email: str, list_id: str, item: dict) -> bool:
 def remove_item_from_list(email: str, list_id: str, item_name: str) -> bool:
     """Remove an item by name from a specific list."""
     if get_db() is not None:
-        # First, pull the item from the array
-        # Note: We match by name for simplicity
-        result = get_db().users.update_one(
-            {'email': email, 'lists.id': list_id},
-            {'$pull': {'lists.$.items': {'name': item_name}}}
-        )
-        return result.modified_count > 0
+        # PULL logic ensures it's only successful if item found (could use modified_count)
+        # However, multiple `$pull` fields to handle structure diffs
+        q = {
+            'lists.id': list_id,
+            '$or': [
+                {'email': email},
+                {'lists': {'$elemMatch': {'id': list_id, 'collaborators.email': email}}}
+            ]
+        }
+        # Pull the item from the array if it's a dict with the name
+        get_db().users.update_one(q, {'$pull': {'lists.$.items': {'name': item_name}}})
+        # Also try pulling if it's just a direct string match (for legacy data)
+        get_db().users.update_one(q, {'$pull': {'lists.$.items': item_name}})
+        return True # Return true as long as DB ops succeeded
         
     if getattr(mock_models, 'users', None):
         user = mock_models.users.get(email)
@@ -398,18 +484,22 @@ def remove_item_from_list(email: str, list_id: str, item_name: str) -> bool:
                     items = lst.get('items', [])
                     # Filter out items with matching name
                     new_items = [i for i in items if not (isinstance(i, dict) and i.get('name') == item_name) and not (isinstance(i, str) and i == item_name)]
-                    if len(items) != len(new_items):
-                        lst['items'] = new_items
-                        return True
-    return False
-
+                    lst['items'] = new_items
+                    return True
 
 def mark_items_as_seen(email: str, list_id: str) -> bool:
     """Clear 'is_new' flag from all items in a list."""
     # 1. Mongo
     if get_db() is not None:
-        # Fetch the user document to process in memory (easiest for nested array logic)
-        user = get_db().users.find_one({'email': email})
+        # Query any user's document where this list lives, IF user has access
+        q = {
+            'lists.id': list_id,
+            '$or': [
+                {'email': email},
+                {'lists': {'$elemMatch': {'id': list_id, 'collaborators.email': email}}}
+            ]
+        }
+        user = get_db().users.find_one(q)
         if not user or 'lists' not in user:
             return False
             
@@ -476,6 +566,12 @@ class UsersModel:
         user_lists = get_user_lists(email)
         return user_lists
     
+    def share_list_with_user(self, owner_email, list_id, target_email, role='view'):
+        return share_list_with_user(owner_email, list_id, target_email, role)
+
+    def remove_collaborator(self, owner_email, list_id, target_email):
+        return remove_collaborator(owner_email, list_id, target_email)
+
     def add_item_to_list(self, email, list_id, item):
         return add_item_to_list(email, list_id, item)
         

@@ -661,6 +661,11 @@
 					<div class="me-auto">
 						<h2 class="fw-900 text-premium-dark mb-2" id="active-list-title" style="font-weight: 900;">
 							<i class="bi bi-basket3-fill text-premium-purple me-2"></i>{{ active_list.name if active_list else 'Select a List' }}
+							{% if active_list and active_list.is_shared %}
+								<span class="badge bg-info text-dark ms-2 fs-6 pb-2" style="vertical-align: middle; cursor: pointer;" onclick="showCollaboratorsModal()"><i class="bi bi-people-fill me-1"></i>Shared by {{ active_list.owner_email }}</span>
+							{% elif active_list and active_list.collaborators %}
+								<span class="badge bg-primary ms-2 fs-6 pb-2" style="vertical-align: middle; cursor: pointer;" onclick="showCollaboratorsModal()"><i class="bi bi-person-lines-fill me-1"></i>Shared ({{ active_list.collaborators|length }})</span>
+							{% endif %}
 						</h2>
 						<div class="d-flex flex-wrap gap-2">
 							<span class="header-chip">
@@ -689,6 +694,9 @@
 						<a href="{{ url_for('main.compare_prices') }}" class="btn btn-premium-purple btn-premium-style">
 							<i class="bi bi-plus-lg me-2"></i>Add Items
 						</a>
+						<button class="btn btn-outline-secondary btn-premium-style" onclick="showShareListModal('{{ active_list.id }}')">
+							<i class="bi bi-person-plus me-1"></i>Share
+						</button>
 						<div class="dropdown">
 							<button class="btn btn-outline-secondary btn-premium-style" data-bs-toggle="dropdown">
 								<i class="bi bi-three-dots"></i>
@@ -926,7 +934,6 @@
 		</div>
 	</div>
 
-	<!-- Add template pill style to CSS -->
 	<style>
 		.btn-template-pill {
 			background: #f1f5f9;
@@ -942,6 +949,58 @@
 			transform: scale(1.02);
 		}
 	</style>
+
+	<!-- Share List Modal -->
+	<div class="modal fade" id="shareListModal" tabindex="-1">
+		<div class="modal-dialog modal-dialog-centered" style="max-width: 450px;">
+			<div class="modal-content border-0 shadow-lg" style="border-radius: 30px; overflow: hidden;">
+				<div class="modal-header border-0 pb-0 pt-4 px-4 d-flex align-items-center">
+					<div class="header-icon-circle me-3" style="width: 48px; height: 48px; background: #e0e7ff; border-radius: 14px; display: flex; align-items: center; justify-content: center; color: #4338ca;">
+						<i class="bi bi-person-plus-fill fs-5"></i>
+					</div>
+					<h5 class="modal-title fw-800 text-premium-dark m-0">Share List</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+				</div>
+				<div class="modal-body px-4 pt-4 pb-4">
+					<input type="hidden" id="share-list-id">
+					
+					<div class="mb-4">
+						<label class="form-label fw-700 text-muted small text-uppercase mb-2 ms-1">Invite Collaborator</label>
+						<div class="input-group">
+							<input type="email" class="form-control form-control-lg border-2" id="share-email" 
+								placeholder="Friend's email" style="border-radius: 16px 0 0 16px; font-size: 1rem; border-color: #f1f5f9; background: #f8fafc;">
+							<select class="form-select border-2" id="share-role" style="max-width: 110px; border-radius: 0 16px 16px 0; border-color: #f1f5f9; font-size: 0.9rem;">
+								<option value="edit">Editor</option>
+								<option value="view">Viewer</option>
+							</select>
+						</div>
+					</div>
+
+					<button type="button" class="btn btn-premium-purple w-100 py-3 mb-4 rounded-4 fw-bold" onclick="confirmShareList()">Send Invite</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Collaborators View Modal -->
+	<div class="modal fade" id="collaboratorsModal" tabindex="-1">
+		<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" style="max-width: 400px;">
+			<div class="modal-content border-0 shadow-lg" style="border-radius: 30px; overflow: hidden;">
+				<div class="modal-header border-0 pb-0 pt-4 px-4 d-flex align-items-center">
+					<div class="header-icon-circle me-3" style="width: 48px; height: 48px; background: #e0e7ff; border-radius: 14px; display: flex; align-items: center; justify-content: center; color: #4338ca;">
+						<i class="bi bi-people-fill fs-5"></i>
+					</div>
+					<h5 class="modal-title fw-800 text-premium-dark m-0">Shared With</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+				</div>
+				<div class="modal-body px-4 pt-4 pb-4">
+					<div id="collaborators-list-container" class="d-flex flex-column gap-3">
+						<!-- Collaborators will be injected here via JS -->
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
 
 	<!-- Rename List Modal -->
 	<div class="modal fade" id="renameListModal" tabindex="-1">
@@ -1094,6 +1153,11 @@
 		</div>
 	</div>
 
+	<!-- Data Island for Collaborators -->
+	<script id="shared-list-collaborators-data" type="application/json">
+		{{ active_list.collaborators|tojson|safe if active_list and active_list.collaborators else '[]' }}
+	</script>
+
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 	<script src="{{ url_for('static', filename='js/script.js') }}?v={{ range(1, 99999) | random }}"></script>
 
@@ -1168,6 +1232,15 @@
 				} catch (e) { }
 			}
 
+			// Fallback to text match
+			const offerText = row.getAttribute('data-offer') || '';
+			const m = offerText.match(/buy\s+(\d+)\s+get\s+(\d+)/i);
+			if (m) return { type: 'buyXgetY', x: parseInt(m[1], 10) || 0, y: parseInt(m[2], 10) || 0 };
+			
+			return null;
+		}
+
+		function calculateItemPrice(row) {
 			// CORE PRICING LOGIC (The Brain):
 			// Calculates the final price for a row based on Quantity, Unit Price, and Active Discounts.
 			
@@ -1177,15 +1250,8 @@
 
 			// SCENARIO 1: Multi-Buy Offer (e.g., "Buy 2 Get 1 Free")
 			// Logic: We define a 'cycle' (e.g., 3 items). Inside each cycle, you pay for X items.
-			// We calculate how many full cycles fit in the user's quantity.			if (m) return { type: 'buyXgetY', x: parseInt(m[1], 10) || 0, y: parseInt(m[2], 10) || 0 };
-			return null;
-		}
-
-		function calculateItemPrice(row) {
-			const unitPrice = parseFloat(row.getAttribute('data-price') || 0) || 0;
-			const qty = parseInt(row.getAttribute('data-qty') || 1, 10) || 1;
-			const offerObj = parseOffer(row);
-
+			// We calculate how many full cycles fit in the user's quantity.
+			
 			// Check for multi-buy offer first (Buy X Get Y Free)
 			if (offerObj && offerObj.type === 'buyXgetY') {
 				const x = parseInt(offerObj.x || 0, 10) || 0;
@@ -1199,11 +1265,7 @@
 
 					// Full cycles: pay for x items, free for y items per cycle
 					let total = fullCycles * x * unitPrice;
-SCENARIO 2: Tiered Discounts (e.g., "Buy 5+ for 10% off")
-			// Logic: We check if the quantity meets the minimum requirement ('minQty').
-			// If it does, we apply the discount percentage to the bundles.
-			
-			// 
+					
 					// Remainder: pay for as many as we need (but not more than x)
 					total += Math.min(remainder, x) * unitPrice;
 
@@ -1211,6 +1273,10 @@ SCENARIO 2: Tiered Discounts (e.g., "Buy 5+ for 10% off")
 				}
 			}
 
+			// SCENARIO 2: Tiered Discounts (e.g., "Buy 5+ for 10% off")
+			// Logic: We check if the quantity meets the minimum requirement ('minQty').
+			// If it does, we apply the discount percentage to the bundles.
+			
 			// Check for quantity tier discount (e.g., Buy 2+ get 15% off)
 			const tierJson = row.getAttribute('data-tier-json');
 			if (tierJson) {
@@ -1397,10 +1463,10 @@ SCENARIO 2: Tiered Discounts (e.g., "Buy 5+ for 10% off")
 		}
 
 		// Run restore on page load
-		i// DATA PROCESSING: 
-			// Users might find the same item twice. This function combines them.
-			// It uses an object 'merged' as a dictionary to track unique items (Key: "name__store").
-			f (document.readyState === 'loading') {
+		// DATA PROCESSING: 
+		// Users might find the same item twice. This function combines them.
+		// It uses an object 'merged' as a dictionary to track unique items (Key: "name__store").
+		if (document.readyState === 'loading') {
 			document.addEventListener('DOMContentLoaded', restoreLastOpenedList);
 		} else {
 			restoreLastOpenedList();
@@ -1459,13 +1525,23 @@ SCENARIO 2: Tiered Discounts (e.g., "Buy 5+ for 10% off")
 			const listName = data.list_name || data.name || 'Unnamed List';
 			let items = data.items || [];
 
+			// Store globally for Modals
+			currentSharedListUsers = data.collaborators || [];
+			currentListOwnerEmail = data.is_shared ? (data.owner_email || 'Another User') : 'You';
+
 			// Merge duplicate items by name
 			items = mergeItemsByName(items);
 
 			// Update title
 			const titleEl = document.getElementById('active-list-title');
 			if (titleEl) {
-				titleEl.innerHTML = `<i class="bi bi-basket3-fill text-premium-purple me-2"></i>${listName}`;
+				let titleHtml = `<i class="bi bi-basket3-fill text-premium-purple me-2"></i>${listName}`;
+				if (data.is_shared) {
+					titleHtml += ` <span class="badge bg-info text-dark ms-2 fs-6 pb-2" style="vertical-align: middle; cursor: pointer;" onclick="showCollaboratorsModal()"><i class="bi bi-people-fill me-1"></i>Shared by ${data.owner_email || 'another user'}</span>`;
+				} else if (data.collaborators && data.collaborators.length > 0) {
+					titleHtml += ` <span class="badge bg-primary ms-2 fs-6 pb-2" style="vertical-align: middle; cursor: pointer;" onclick="showCollaboratorsModal()"><i class="bi bi-person-lines-fill me-1"></i>Shared (${data.collaborators.length})</span>`;
+				}
+				titleEl.innerHTML = titleHtml;
 			}
 
 			// Update items container
@@ -1656,6 +1732,133 @@ SCENARIO 2: Tiered Discounts (e.g., "Buy 5+ for 10% off")
 						showNotification(err.message || 'A server error occurred', 'danger');
 					} else {
 						alert(err.message || 'A server error occurred');
+					}
+				})
+				.finally(() => {
+					if (btn) {
+						btn.disabled = false;
+						btn.innerHTML = originalText;
+					}
+				});
+		}
+
+		// View Collaborators Modal
+		let currentSharedListUsers = [];
+		try {
+			const dataElement = document.getElementById('shared-list-collaborators-data');
+			if (dataElement) {
+				currentSharedListUsers = JSON.parse(dataElement.textContent || '[]');
+			}
+		} catch(e) {
+			console.error("Error parsing collaborators", e);
+		}
+		
+		let currentListOwnerEmail = "{{ active_list.owner_email if active_list and active_list.is_shared else 'You' }}";
+		function showCollaboratorsModal() {
+			const container = document.getElementById('collaborators-list-container');
+			let html = '';
+
+			// Show Owner
+			html += `
+				<div class="d-flex align-items-center p-3 rounded-4" style="background: #f8fafc; border: 1px solid #f1f5f9;">
+					<div class="header-icon-circle me-3" style="width: 40px; height: 40px; background: #e0e7ff; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #4338ca;">
+						<i class="bi bi-person-badge fs-5"></i>
+					</div>
+					<div class="me-auto">
+						<div class="fw-bold" style="color: #1e293b;">${currentListOwnerEmail || 'Unknown User'}</div>
+						<div class="small text-muted">Owner</div>
+					</div>
+				</div>
+			`;
+
+			// Show Collaborators
+			if (currentSharedListUsers && currentSharedListUsers.length > 0) {
+				currentSharedListUsers.forEach(collab => {
+					html += `
+						<div class="d-flex align-items-center p-3 rounded-4" style="background: #ffffff; border: 1px solid #f1f5f9;">
+							<div class="header-icon-circle me-3" style="width: 40px; height: 40px; background: #fdf2f8; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #ec4899;">
+								<i class="bi bi-person fs-5"></i>
+							</div>
+							<div class="me-auto">
+								<div class="fw-bold" style="color: #1e293b;">${collab.email}</div>
+								<div class="small text-muted text-capitalize">${collab.role || 'view'}</div>
+							</div>
+						</div>
+					`;
+				});
+			} else {
+				html += `<div class="text-center text-muted p-3">No other collaborators.</div>`;
+			}
+
+			container.innerHTML = html;
+			const modalEl = document.getElementById('collaboratorsModal');
+			if (modalEl) {
+				const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+				modal.show();
+			}
+		}
+
+		// Share List Modals
+		function showShareListModal(listId) {
+			const idEl = document.getElementById('share-list-id');
+			if (idEl) idEl.value = listId;
+
+			const modalEl = document.getElementById('shareListModal');
+			if (modalEl) {
+				const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+				modal.show();
+			}
+		}
+
+		function confirmShareList() {
+			const listId = document.getElementById('share-list-id').value;
+			const targetEmail = document.getElementById('share-email').value.trim();
+			const role = document.getElementById('share-role').value;
+
+			if (!targetEmail) {
+				if (typeof showNotification === 'function') {
+					showNotification('Please enter an email limit.', 'warning');
+				} else {
+					alert('Please enter an email.');
+				}
+				return;
+			}
+
+			// Add loading state
+			const btn = document.querySelector('#shareListModal .btn-premium-purple');
+			const originalText = btn ? btn.innerHTML : 'Send Invite';
+			if (btn) {
+				btn.disabled = true;
+				btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Sharing...';
+			}
+
+			fetch('/api/list/share', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ list_id: listId, target_email: targetEmail, role: role })
+			})
+				.then(r => r.json())
+				.then(data => {
+					if (data.success) {
+						if (typeof showNotification === 'function') {
+							showNotification('Shared successfully!', 'success');
+						} else {
+							alert('Shared successfully!');
+						}
+						const modalEl = document.getElementById('shareListModal');
+						if (modalEl) {
+							const modal = bootstrap.Modal.getInstance(modalEl);
+							if (modal) modal.hide();
+						}
+						document.getElementById('share-email').value = '';
+					} else {
+						throw new Error(data.error || 'Failed to share list');
+					}
+				})
+				.catch(err => {
+					console.error('Error sharing list:', err);
+					if (typeof showNotification === 'function') {
+						showNotification(err.message || 'Error sharing list', 'danger');
 					}
 				})
 				.finally(() => {
