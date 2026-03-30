@@ -185,7 +185,7 @@
         </div>
 
         {% if show_list_form %}
-        <form method="post" action="{{ url_for('admin.admin_create_list') }}">
+        <form method="post" action="{{ url_for('admin.admin_save_list') }}">
           <div class="mb-3">
             <label class="form-label small fw-bold text-secondary">List Name <span class="text-danger">*</span></label>
             <input class="form-control" name="name" placeholder="Weekly Groceries" required>
@@ -222,7 +222,7 @@
         {% endif %}
 
         {% if show_public_form %}
-        <form method="post" action="{{ url_for('admin.admin_create_public_list') }}">
+        <form method="post" action="{{ url_for('admin.admin_save_public_list') }}">
           <div class="mb-3">
             <label class="form-label small fw-bold text-secondary">Template Title <span class="text-danger">*</span></label>
             <input class="form-control" name="title" placeholder="Vegan Starter Kit" required>
@@ -255,3 +255,4 @@
   {% endif %}
 </div>
 {% endblock %}
+
