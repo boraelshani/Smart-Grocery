@@ -516,7 +516,10 @@ def get_list_items_api(list_id): # The main data provider for the shopping list 
             'list_id': list_id,
             'name': target_list.get('name'),
             'items': enriched_items,
-            'created_at': target_list.get('created_at')
+            'created_at': target_list.get('created_at'),
+              'collaborators': target_list.get('collaborators', []),
+              'is_shared': target_list.get('is_shared', False),
+              'owner_email': target_list.get('owner_email')
         })
     except Exception as e: # Catch failure
         return jsonify({'success': False, 'error': str(e)}), 500 # Fail
