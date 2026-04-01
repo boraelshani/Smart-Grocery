@@ -4,87 +4,188 @@
 
 {% block styles %}
 <style>
-/* Custom styles for Recipe Planner */
-.recipe-planner-header {
-  background: linear-gradient(135deg, var(--sg-primary), var(--sg-secondary));
+/* Premium Hero Section */
+.hero-gradient {
+  background: linear-gradient(-45deg, var(--sg-primary), #0d9488, var(--sg-secondary), #0f766e);
+  background-size: 400% 400%;
+  animation: gradientBG 15s ease infinite;
   color: white;
-  padding: 3rem 1.5rem;
-  border-radius: var(--sg-border-radius-lg);
-  margin-bottom: 2rem;
-  text-align: center;
+  margin-top: 0;
+  padding-top: 8rem;
+  padding-bottom: 6rem;
+  position: relative;
+  overflow: hidden;
+  border-radius: 0 0 50% 50% / 0 0 60px 60px;
+  box-shadow: 0 10px 40px rgba(14, 165, 163, 0.3);
 }
+
+@keyframes gradientBG {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.hero-glass {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(15px);
+  border-radius: 30px;
+  padding: 3rem;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  position: relative;
+  z-index: 1;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+}
+
+/* Floating shapes for hero */
+.bg-shape {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(5px);
+  border-radius: 20%;
+  animation: float 10s infinite ease-in-out;
+}
+.shape-1 { top: 10%; left: 5%; width: 80px; height: 80px; }
+.shape-2 { top: 50%; right: 5%; width: 120px; height: 120px; border-radius: 50%; animation-delay: -2s; }
+.shape-3 { bottom: 10%; left: 30%; width: 60px; height: 60px; animation-delay: -5s; }
+
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-30px) rotate(10deg); }
+}
+
+/* Ingredient Cards */
 .ingredient-card {
-  border: 1px solid var(--sg-gray-200);
-  border-radius: var(--sg-border-radius);
-  margin-bottom: 1rem;
-  transition: all 0.2s ease;
   background: white;
+  border-radius: var(--sg-border-radius-lg);
+  border: 1px solid var(--sg-gray-200);
+  margin-bottom: 1.25rem;
+  transition: all 0.3s ease;
+  overflow: hidden;
 }
 .ingredient-card:hover {
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-  transform: translateY(-2px);
+  transform: translateY(-4px);
+  box-shadow: var(--sg-shadow-md);
+  border-color: var(--sg-primary-light);
 }
+
 .ingredient-header {
-  padding: 1rem;
+  padding: 1rem 1.5rem;
   background: var(--sg-gray-50);
   border-bottom: 1px solid var(--sg-gray-200);
-  font-weight: 500;
+  font-weight: 600;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  font-size: 1.1rem;
 }
+
 .ingredient-body {
-  padding: 1rem;
+  padding: 1.5rem;
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 1.5rem;
 }
+
 .matched-product-img {
-  width: 60px;
-  height: 60px;
+  width: 75px;
+  height: 75px;
   object-fit: cover;
-  border-radius: 8px;
+  border-radius: 12px;
+  box-shadow: var(--sg-shadow-sm);
+  background: white;
+  padding: 5px;
+  border: 1px solid var(--sg-gray-200);
 }
+
+/* Summary Card */
 .summary-card {
   position: sticky;
   top: 100px;
+  border-radius: var(--sg-border-radius-lg);
+  border: none;
+  box-shadow: var(--sg-shadow-md);
+  background: white;
+  padding: 1.5rem;
+}
+
+.summary-card .card-header {
+  background: transparent;
+  border-bottom: 2px dashed var(--sg-gray-200);
+  padding-bottom: 1rem;
+  margin-bottom: 1rem;
+}
+
+/* Unmatched State */
+.unmatched-card .ingredient-header {
+  background: #fff5f5;
+  color: var(--sg-gray-600);
+}
+.unmatched-card .ingredient-body {
+  background: #fafafa;
+  opacity: 0.8;
+}
+
+.badge-store {
+  font-weight: 600;
+  padding: 0.5em 0.8em;
+  letter-spacing: 0.5px;
+}
+
+.custom-input {
+  border: 2px solid white;
+  font-size: 1.2rem;
+  padding: 1rem 1.5rem;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+}
+.custom-input:focus {
+  border-color: var(--sg-primary);
+  box-shadow: 0 0 0 4px rgba(14, 165, 163, 0.25);
 }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container py-4">
+<!-- Premium Hero Section -->
+<section class="hero-gradient text-center">
+  <div class="bg-shape shape-1"></div>
+  <div class="bg-shape shape-2"></div>
+  <div class="bg-shape shape-3"></div>
   
-  <div class="recipe-planner-header shadow-sm">
-    <h1 class="display-4 fw-bold mb-3"><i class="bi bi-magic me-2"></i> AI Recipe Planner</h1>
-    <p class="lead mb-4">Enter any recipe, and our AI will break it down into an ingredient list and find the cheapest items in your local stores.</p>
-    
-    <div class="row justify-content-center">
-      <div class="col-md-8 col-lg-6">
-        <form id="recipeForm" class="d-flex gap-2">
-          <input type="text" class="form-control form-control-lg form-control-pill shadow-sm" id="recipeInput" 
-                 placeholder="e.g. Spaghetti Carbonara, Chicken Tikka Masala..." required>
-          <button type="submit" class="btn btn-warning btn-lg btn-pill px-4 shadow-sm" id="generateBtn">
-            <i class="bi bi-search"></i> Generate
-          </button>
-        </form>
-      </div>
+  <div class="container hero-content">
+    <div class="hero-glass mx-auto" style="max-width: 800px;">
+      <span class="badge bg-white text-primary rounded-pill px-3 py-2 mb-3 fw-bold shadow-sm">
+        <i class="bi bi-stars text-warning me-1"></i> AI Powered
+      </span>
+      <h1 class="display-4 fw-bold mb-3 text-white">Recipe Planner</h1>
+      <p class="lead mb-4 text-white-50">Enter any recipe, and our AI will instantly build your shopping list with the cheapest matching ingredients from local stores.</p>
+      
+      <form id="recipeForm" class="d-flex flex-column flex-md-row gap-3">
+        <input type="text" class="form-control rounded-pill custom-input flex-grow-1" id="recipeInput" 
+               placeholder="e.g. Spaghetti Carbonara, Chicken Tikka Masala..." required>
+        <button type="submit" class="btn btn-warning btn-lg rounded-pill px-5 text-dark fw-bold shadow" id="generateBtn" style="font-size: 1.1rem; padding-top: 1rem; padding-bottom: 1rem;">
+          <i class="bi bi-search me-2"></i> Generate
+        </button>
+      </form>
     </div>
   </div>
+</section>
 
-  <div id="loadingState" class="text-center py-5 d-none">
-    <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+<!-- Content Section -->
+<div class="container" style="margin-top: -3rem; position: relative; z-index: 10; padding-bottom: 5rem;">
+  
+  <div id="loadingState" class="text-center py-5 d-none bg-white rounded-4 shadow-sm p-5 border">
+    <div class="spinner-grow text-primary" style="width: 4rem; height: 4rem;" role="status">
       <span class="visually-hidden">Loading...</span>
     </div>
-    <h4 class="mt-4 text-muted">Calculating cheapest ingredients for your recipe...</h4>
-    <p class="text-muted small">This may take 10-15 seconds.</p>
+    <h3 class="mt-4 fw-bold text-dark">Building your recipe...</h3>
+    <p class="text-muted fs-5">Matching ingredients to the cheapest real-world products.</p>
   </div>
 
   <div id="resultsContainer" class="row d-none">
-    <div class="col-lg-8">
-      <div class="d-flex justify-content-between align-items-end mb-3">
-        <h3 id="recipeTitle" class="fw-bold m-0">Recommended Ingredients</h3>
-        <span class="badge bg-primary rounded-pill p-2" id="itemCountBadge">0 items</span>
+    <div class="col-lg-8 mb-4 mb-lg-0">
+      <div class="d-flex justify-content-between align-items-center mb-4 bg-white p-3 rounded-4 shadow-sm border">
+        <h3 id="recipeTitle" class="fw-bold m-0 text-dark"><i class="bi bi-card-checklist text-primary me-2"></i>Ingredients</h3>
+        <span class="badge bg-primary rounded-pill p-2 fs-6 shadow-sm" id="itemCountBadge">0 items</span>
       </div>
       
       <div id="ingredientsList">
@@ -92,28 +193,29 @@
       </div>
     </div>
     
-    <div class="col-lg-4 mt-4 mt-lg-0">
-      <div class="card summary-card shadow-sm border-0">
-        <div class="card-header bg-white py-3">
-          <h5 class="card-title fw-bold m-0"><i class="bi bi-cart3 me-2"></i>Cart Summary</h5>
+    <div class="col-lg-4">
+      <div class="summary-card">
+        <div class="card-header">
+          <h4 class="card-title fw-bold m-0 text-dark"><i class="bi bi-cart3 text-primary me-2"></i>Summary</h4>
         </div>
-        <div class="card-body">
-          <div class="d-flex justify-content-between mb-2">
-            <span class="text-muted">Matched Items:</span>
-            <strong id="summaryMatchedCount">0</strong>
+        <div class="card-body p-0 pt-3">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <span class="text-muted fs-5">Matched Items</span>
+            <strong id="summaryMatchedCount" class="fs-5 text-dark">0</strong>
           </div>
-          <div class="d-flex justify-content-between mb-3">
-            <span class="text-muted">Unmatched Items:</span>
-            <strong id="summaryUnmatchedCount">0</strong>
+          <div class="d-flex justify-content-between align-items-center mb-4">
+            <span class="text-muted fs-5">Unmatched</span>
+            <strong id="summaryUnmatchedCount" class="fs-5 text-dark">0</strong>
           </div>
-          <hr>
-          <div class="d-flex justify-content-between mb-4">
-            <span class="fs-5 fw-bold">Est. Total:</span>
-            <span class="fs-5 fw-bold text-success" id="summaryTotal">€0.00</span>
+          <div class="p-3 bg-light rounded-3 mb-4 border">
+            <div class="d-flex justify-content-between align-items-center">
+              <span class="fs-5 fw-bold text-dark">Est. Total</span>
+              <span class="fs-3 fw-bold text-success" id="summaryTotal">€0.00</span>
+            </div>
           </div>
           
-          <button id="addToTargetListBtn" class="btn btn-primary w-100 btn-lg shadow-sm" data-bs-toggle="modal" data-bs-target="#listSelectModal">
-            <i class="bi bi-cart-plus me-2"></i>Add Matches to List
+          <button id="addToTargetListBtn" class="btn btn-primary w-100 btn-lg rounded-pill shadow-sm border-0 d-flex justify-content-center align-items-center gap-2" style="padding: 1rem;" data-bs-toggle="modal" data-bs-target="#listSelectModal">
+            <i class="bi bi-cart-plus fs-5"></i> <span class="fw-bold fs-5">Add to List</span>
           </button>
         </div>
       </div>
@@ -226,34 +328,36 @@ document.addEventListener('DOMContentLoaded', () => {
                 const prod = item.matched_product;
                 matchedProductsData.push(prod);
                 
-                const storeBadgeClass = prod.store === 'Billa' ? 'bg-warning text-dark' : 'bg-primary';
+                const storeBadgeClass = prod.store === 'Billa' ? 'bg-warning text-dark' : 'bg-primary text-white';
                 const imageUrl = prod.image_url && prod.image_url.startsWith('http') ? prod.image_url : '/static/img/placeholder.png';
                 
                 bodyHTML = `
                     <div class="ingredient-header">
-                        <span><i class="bi bi-check-circle-fill text-success me-2"></i>${originalName}</span>
-                        <span class="badge ${storeBadgeClass}">${escapeHtml(prod.store)}</span>
+                        <span class="d-flex align-items-center"><i class="bi bi-magic text-primary me-2 fs-5"></i>${originalName}</span>
+                        <span class="badge ${storeBadgeClass} rounded-pill shadow-sm badge-store"><i class="bi bi-shop me-1"></i>${escapeHtml(prod.store)}</span>
                     </div>
                     <div class="ingredient-body">
-                        <img src="${imageUrl}" class="matched-product-img border" alt="Product Image">
+                        <img src="${imageUrl}" class="matched-product-img" alt="Product Image">
                         <div class="flex-grow-1">
-                            <h6 class="mb-1">${escapeHtml(prod.name)}</h6>
-                            <p class="text-muted small mb-0">${escapeHtml(prod.brand || 'No Brand')}</p>
+                            <h5 class="mb-1 fw-bold text-dark">${escapeHtml(prod.name)}</h5>
+                            <p class="text-muted mb-0"><i class="bi bi-tag text-secondary me-1"></i>${escapeHtml(prod.brand || 'No Brand')}</p>
                         </div>
                         <div class="text-end">
-                            <h5 class="fw-bold text-success mb-0">€${parseFloat(prod.price_val || 0).toFixed(2)}</h5>
+                            <h4 class="fw-bold text-success m-0">€${parseFloat(prod.price_val || 0).toFixed(2)}</h4>
                         </div>
                     </div>
                 `;
             } else {
+                card.classList.add('unmatched-card');
                 bodyHTML = `
-                    <div class="ingredient-header bg-light">
-                        <span class="text-muted"><i class="bi bi-x-circle text-danger me-2"></i>${originalName}</span>
-                        <span class="badge bg-secondary">No match found</span>
+                    <div class="ingredient-header">
+                        <span class="d-flex align-items-center text-muted"><i class="bi bi-dash-circle text-secondary me-2 fs-5"></i><del>${originalName}</del></span>
+                        <span class="badge bg-light text-secondary border rounded-pill badge-store"><i class="bi bi-ban me-1"></i>Not in stock</span>
                     </div>
-                    <div class="ingredient-body bg-light opacity-75">
-                         <div class="w-100 text-center py-2 text-muted small">
-                             <i class="bi bi-info-circle me-1"></i> We couldn't find a matching product for this ingredient in the database.
+                    <div class="ingredient-body justify-content-center py-4">
+                         <div class="text-center text-muted">
+                             <i class="bi bi-info-circle fs-4 d-block mb-2 text-secondary"></i>
+                             <span class="fw-medium">No direct match found in database for this ingredient.</span>
                          </div>
                     </div>
                 `;
