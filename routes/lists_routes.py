@@ -525,6 +525,29 @@ def get_list_items_api(list_id): # The main data provider for the shopping list 
         return jsonify({'success': False, 'error': str(e)}), 500 # Fail
 
 
+@main_bp.route('/list/accept_share')
+def accept_share_route():
+    from flask import session, request, redirect, url_for, flash
+    user_email = session.get('user')
+    if not user_email:
+        flash('You need to log in to accept a list invitation.', 'error')
+        return redirect(url_for('auth.login'))
+        
+    list_id = request.args.get('list_id')
+    owner = request.args.get('owner')
+    if not list_id or not owner:
+        flash('Invalid invitation link.', 'error')
+        return redirect(url_for('main.shopping_list'))
+        
+    from models.users_model import users_model
+    success = users_model.accept_share_list(owner, list_id, user_email)
+    if success:
+        flash('You have successfully joined the shared list!', 'success')
+    else:
+        flash('Could not accept the invitation, or you are already a collaborator.', 'error')
+        
+    return redirect(url_for('main.shopping_list'))
+
 @main_bp.route('/api/list/share', methods=['POST'])
 def share_list_api():
     try:
@@ -548,13 +571,14 @@ def share_list_api():
             
             if success:
                 # Drop a notification
+                import urllib.parse
                 from models.notifications_model import notifications_model        
                 notifications_model.create_notification({
                     'user_email': target_email,
                     'type': 'list_share',
                     'title': 'New Shared List!',
-                    'message': f'Exciting news! {user_email} has invited you to collaborate on a shopping list. You can now view and manage items together directly from your Lists page.',
-                    'action_url': '/shopping-list'
+                    'message': f'Exciting news! {user_email} has invited you to collaborate on a shopping list. Click to accept!',
+                    'action_url': f'/list/accept_share?list_id={list_id}&owner={urllib.parse.quote(user_email)}'
                 })
             return jsonify({'success': success})
             

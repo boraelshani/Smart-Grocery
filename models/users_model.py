@@ -364,32 +364,37 @@ def _normalize_list_doc(doc):
     return {
         'id': doc.get('listId') or doc.get('id'),
         'listId': doc.get('listId') or doc.get('id'),
+        'userId': doc.get('userId'),
         'name': doc.get('name') or 'My List',
         'items': doc.get('items', []) or [],
         'totalPrice': _to_float(doc.get('totalPrice'), 0),
         'shared': bool(doc.get('shared', False)),
         'shareCode': doc.get('shareCode'),
         'collaborators': doc.get('collaborators', []),
+        'pending_collaborators': doc.get('pending_collaborators', []),
         'created_at': doc.get('createdAt') or doc.get('created_at'),
         'updated_at': doc.get('updatedAt') or doc.get('updated_at'),
     }
 
 
 def _persist_list(db, owner_key, list_doc):
+    # Use the original userId if present, else fallback to owner_key
+    target_user_id = list_doc.get('userId') or owner_key
     payload = {
         'listId': list_doc.get('listId') or list_doc.get('id'),
-        'userId': owner_key,
+        'userId': target_user_id,
         'name': list_doc.get('name') or 'My List',
         'items': list_doc.get('items') or [],
         'totalPrice': round(_to_float(list_doc.get('totalPrice'), 0), 2),
         'shared': bool(list_doc.get('shared', False)),
         'shareCode': list_doc.get('shareCode'),
         'collaborators': list_doc.get('collaborators', []),
+        'pending_collaborators': list_doc.get('pending_collaborators', []),
         'updatedAt': datetime.utcnow(),
     }
 
     db.lists.update_one(
-        {'listId': payload['listId'], 'userId': owner_key},
+        {'listId': payload['listId'], 'userId': target_user_id},
         {
             '$set': payload,
             '$setOnInsert': {
@@ -600,18 +605,69 @@ def share_list_with_user(owner_email: str, list_id: str, target_email: str, role
         if row:
             db.lists.update_one(
                 {'listId': list_id, 'userId': owner_key},
-                {'$pull': {'collaborators': {'email': target_email}}}
+                {'$pull': {'pending_collaborators': {'email': target_email}}}
             )
             res = db.lists.update_one(
                 {'listId': list_id, 'userId': owner_key},
-                {'$push': {'collaborators': {'email': target_email, 'role': role}}}
+                {'$push': {'pending_collaborators': {'email': target_email, 'role': role}}}
             )
             return res.modified_count > 0
 
     if get_db() is not None:
         get_db().users.update_one(
             {'email': owner_email, 'lists.id': list_id},
-            {'$pull': {'lists.$.collaborators': {'email': target_email}}}
+            {'$pull': {'lists.$.pending_collaborators': {'email': target_email}}}
+        )
+        res = get_db().users.update_one(
+            {'email': owner_email, 'lists.id': list_id},
+            {'$push': {'lists.$.pending_collaborators': {'email': target_email, 'role': role}}}
+        )
+        return res.modified_count > 0
+    return False
+
+def accept_share_list(owner_email: str, list_id: str, target_email: str) -> bool:
+    db = get_db()
+    if db is not None and 'lists' in db.list_collection_names():
+        owner_key = _list_owner_key(owner_email)
+        row = db.lists.find_one({'listId': list_id, 'userId': owner_key})
+        if not row:
+            return False
+            
+        pending = row.get('pending_collaborators', [])
+        role = 'view'
+        for p in pending:
+            if isinstance(p, dict) and p.get('email') == target_email:
+                role = p.get('role', 'view')
+                break
+                
+        db.lists.update_one(
+            {'listId': list_id, 'userId': owner_key},
+            {'$pull': {'pending_collaborators': {'email': target_email}, 'collaborators': {'email': target_email}}}
+        )
+        res = db.lists.update_one(
+            {'listId': list_id, 'userId': owner_key},
+            {'$push': {'collaborators': {'email': target_email, 'role': role}}}
+        )
+        return res.modified_count > 0
+
+    if get_db() is not None:
+        user = get_db().users.find_one({'email': owner_email, 'lists.id': list_id})
+        if not user: return False
+        
+        lists = user.get('lists', [])
+        role = 'view'
+        for l in lists:
+            if l.get('id') == list_id:
+                pending = l.get('pending_collaborators', [])
+                for p in pending:
+                    if isinstance(p, dict) and p.get('email') == target_email:
+                        role = p.get('role', 'view')
+                        break
+                break
+
+        get_db().users.update_one(
+            {'email': owner_email, 'lists.id': list_id},
+            {'$pull': {'lists.$.pending_collaborators': {'email': target_email}, 'lists.$.collaborators': {'email': target_email}}}
         )
         res = get_db().users.update_one(
             {'email': owner_email, 'lists.id': list_id},
@@ -619,7 +675,6 @@ def share_list_with_user(owner_email: str, list_id: str, target_email: str, role
         )
         return res.modified_count > 0
     return False
-
 
 def remove_collaborator(owner_email: str, list_id: str, target_email: str) -> bool:
     db = get_db()
@@ -1004,6 +1059,9 @@ class UsersModel:
     
     def share_list_with_user(self, owner_email, list_id, target_email, role='view'):
         return share_list_with_user(owner_email, list_id, target_email, role)
+        
+    def accept_share_list(self, owner_email, list_id, target_email):
+        return accept_share_list(owner_email, list_id, target_email)
 
     def remove_collaborator(self, owner_email, list_id, target_email):
         return remove_collaborator(owner_email, list_id, target_email)

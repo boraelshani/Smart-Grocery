@@ -6,7 +6,7 @@ Handles user login, signup, logout, and session management.
 Also includes shopping list API endpoints for adding/removing items.
 """
 
-from flask import render_template, request, redirect, url_for, session, jsonify, current_app # Import core Flask modules for HTTP handling and sessions
+from flask import render_template, request, redirect, url_for, session, jsonify, current_app, flash # Import core Flask modules for HTTP handling and sessions
 from . import auth_bp # Import the authentication Blueprint instance from the local package
 import re # Import Regular Expression module for string pattern matching
 import os # Import Operating System module for environment variable access
