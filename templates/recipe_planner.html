@@ -287,11 +287,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 renderResults(data);
                 loadUserLists(); // Pre-load shopping lists for the modal
             } else {
-                alert('Error: ' + (data.error || 'Failed to generate recipe.'));
+                if (typeof showNotification === 'function') {
+                    showNotification('Error: ' + (data.error || 'Failed to generate recipe.'), 'danger');
+                } else {
+                    alert('Error: ' + (data.error || 'Failed to generate recipe.'));
+                }
             }
         } catch (error) {
             console.error(error);
-            alert('An unexpected error occurred. Check browser console.');
+            if (typeof showNotification === 'function') {
+                showNotification('An unexpected error occurred. Check browser console.', 'danger');
+            } else {
+                alert('An unexpected error occurred. Check browser console.');
+            }
         } finally {
             generateBtn.disabled = false;
             recipeInput.disabled = false;
@@ -392,12 +400,14 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('confirmAddToListBtn').addEventListener('click', async (e) => {
         const listId = document.getElementById('targetListSelect').value;
         if (!listId) {
-            alert('Please select a list first.');
+            if (typeof showNotification === 'function') showNotification('Please select a list first.', 'warning');
+            else alert('Please select a list first.');
             return;
         }
         
         if (matchedProductsData.length === 0) {
-             alert('No matched products to add.');
+             if (typeof showNotification === 'function') showNotification('No matched products to add.', 'danger');
+             else alert('No matched products to add.');
              return;
         }
 
@@ -436,11 +446,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const modal = bootstrap.Modal.getInstance(document.getElementById('listSelectModal'));
             modal.hide();
             
-            alert(`Successfully added ${successCount} items to your shopping list!`);
+            if (typeof showNotification === 'function') {
+                showNotification(`Successfully added ${successCount} items to your shopping list!`, 'success');
+            } else {
+                alert(`Successfully added ${successCount} items to your shopping list!`);
+            }
 
         } catch (error) {
             console.error(error);
-            alert('An error occurred while adding items to your list.');
+            if (typeof showNotification === 'function') showNotification('An error occurred while adding items to your list.', 'danger');
+            else alert('An error occurred while adding items to your list.');
         } finally {
             btn.innerHTML = originalText;
             btn.disabled = false;
