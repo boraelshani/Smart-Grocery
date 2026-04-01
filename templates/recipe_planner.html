@@ -1,0 +1,360 @@
+{% extends "base.html" %}
+
+{% block title %}Smart Grocery - Recipe Planner{% endblock %}
+
+{% block styles %}
+<style>
+/* Custom styles for Recipe Planner */
+.recipe-planner-header {
+  background: linear-gradient(135deg, var(--sg-primary), var(--sg-secondary));
+  color: white;
+  padding: 3rem 1.5rem;
+  border-radius: var(--sg-border-radius-lg);
+  margin-bottom: 2rem;
+  text-align: center;
+}
+.ingredient-card {
+  border: 1px solid var(--sg-gray-200);
+  border-radius: var(--sg-border-radius);
+  margin-bottom: 1rem;
+  transition: all 0.2s ease;
+  background: white;
+}
+.ingredient-card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  transform: translateY(-2px);
+}
+.ingredient-header {
+  padding: 1rem;
+  background: var(--sg-gray-50);
+  border-bottom: 1px solid var(--sg-gray-200);
+  font-weight: 500;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.ingredient-body {
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.matched-product-img {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+.summary-card {
+  position: sticky;
+  top: 100px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  
+  <div class="recipe-planner-header shadow-sm">
+    <h1 class="display-4 fw-bold mb-3"><i class="bi bi-magic me-2"></i> AI Recipe Planner</h1>
+    <p class="lead mb-4">Enter any recipe, and our AI will break it down into an ingredient list and find the cheapest items in your local stores.</p>
+    
+    <div class="row justify-content-center">
+      <div class="col-md-8 col-lg-6">
+        <form id="recipeForm" class="d-flex gap-2">
+          <input type="text" class="form-control form-control-lg form-control-pill shadow-sm" id="recipeInput" 
+                 placeholder="e.g. Spaghetti Carbonara, Chicken Tikka Masala..." required>
+          <button type="submit" class="btn btn-warning btn-lg btn-pill px-4 shadow-sm" id="generateBtn">
+            <i class="bi bi-search"></i> Generate
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div id="loadingState" class="text-center py-5 d-none">
+    <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+    <h4 class="mt-4 text-muted">Calculating cheapest ingredients for your recipe...</h4>
+    <p class="text-muted small">This may take 10-15 seconds.</p>
+  </div>
+
+  <div id="resultsContainer" class="row d-none">
+    <div class="col-lg-8">
+      <div class="d-flex justify-content-between align-items-end mb-3">
+        <h3 id="recipeTitle" class="fw-bold m-0">Recommended Ingredients</h3>
+        <span class="badge bg-primary rounded-pill p-2" id="itemCountBadge">0 items</span>
+      </div>
+      
+      <div id="ingredientsList">
+        <!-- Javascript will inject ingredient cards here -->
+      </div>
+    </div>
+    
+    <div class="col-lg-4 mt-4 mt-lg-0">
+      <div class="card summary-card shadow-sm border-0">
+        <div class="card-header bg-white py-3">
+          <h5 class="card-title fw-bold m-0"><i class="bi bi-cart3 me-2"></i>Cart Summary</h5>
+        </div>
+        <div class="card-body">
+          <div class="d-flex justify-content-between mb-2">
+            <span class="text-muted">Matched Items:</span>
+            <strong id="summaryMatchedCount">0</strong>
+          </div>
+          <div class="d-flex justify-content-between mb-3">
+            <span class="text-muted">Unmatched Items:</span>
+            <strong id="summaryUnmatchedCount">0</strong>
+          </div>
+          <hr>
+          <div class="d-flex justify-content-between mb-4">
+            <span class="fs-5 fw-bold">Est. Total:</span>
+            <span class="fs-5 fw-bold text-success" id="summaryTotal">€0.00</span>
+          </div>
+          
+          <button id="addToTargetListBtn" class="btn btn-primary w-100 btn-lg shadow-sm" data-bs-toggle="modal" data-bs-target="#listSelectModal">
+            <i class="bi bi-cart-plus me-2"></i>Add Matches to List
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal for selecting which shopping list to add to -->
+<div class="modal fade" id="listSelectModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header border-bottom-0 pb-0">
+        <h5 class="modal-title fw-bold">Add to Shopping List</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-muted mb-3">Which list would you like to add these ingredients to?</p>
+        <select class="form-select form-select-lg mb-3" id="targetListSelect">
+          <option value="" disabled selected>Loading your lists...</option>
+        </select>
+      </div>
+      <div class="modal-footer border-top-0 pt-0">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" id="confirmAddToListBtn">
+          Add <span id="confirmItemCount" class="badge bg-white text-primary ms-1">0</span> Items
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const recipeForm = document.getElementById('recipeForm');
+    const recipeInput = document.getElementById('recipeInput');
+    const generateBtn = document.getElementById('generateBtn');
+    const loadingState = document.getElementById('loadingState');
+    const resultsContainer = document.getElementById('resultsContainer');
+    const ingredientsList = document.getElementById('ingredientsList');
+    
+    // State to hold valid matched products to add to standard list
+    let matchedProductsData = [];
+
+    recipeForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const recipeName = recipeInput.value.trim();
+        if (!recipeName) return;
+
+        // UI Reset
+        generateBtn.disabled = true;
+        recipeInput.disabled = true;
+        resultsContainer.classList.add('d-none');
+        loadingState.classList.remove('d-none');
+        matchedProductsData = [];
+
+        try {
+            const response = await fetch('/api/recipe/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ recipe: recipeName })
+            });
+
+            const data = await response.json();
+            
+            if (data.success) {
+                renderResults(data);
+                loadUserLists(); // Pre-load shopping lists for the modal
+            } else {
+                alert('Error: ' + (data.error || 'Failed to generate recipe.'));
+            }
+        } catch (error) {
+            console.error(error);
+            alert('An unexpected error occurred. Check browser console.');
+        } finally {
+            generateBtn.disabled = false;
+            recipeInput.disabled = false;
+            loadingState.classList.add('d-none');
+            if(matchedProductsData.length > 0) {
+                resultsContainer.classList.remove('d-none');
+            }
+        }
+    });
+
+    function renderResults(data) {
+        document.getElementById('recipeTitle').textContent = `Ingredients for "${data.recipe}"`;
+        document.getElementById('itemCountBadge').textContent = `${data.total_items} items`;
+        
+        document.getElementById('summaryMatchedCount').textContent = data.matched_items;
+        document.getElementById('summaryUnmatchedCount').textContent = data.total_items - data.matched_items;
+        document.getElementById('summaryTotal').textContent = `€${parseFloat(data.total_price || 0).toFixed(2)}`;
+        
+        document.getElementById('confirmItemCount').textContent = data.matched_items;
+
+        ingredientsList.innerHTML = '';
+        matchedProductsData = [];
+
+        data.results.forEach(item => {
+            const card = document.createElement('div');
+            card.className = 'ingredient-card';
+
+            const originalName = escapeHtml(item.original);
+            const isMatched = !!item.matched_product;
+            
+            let bodyHTML = '';
+            
+            if (isMatched) {
+                const prod = item.matched_product;
+                matchedProductsData.push(prod);
+                
+                const storeBadgeClass = prod.store === 'Billa' ? 'bg-warning text-dark' : 'bg-primary';
+                const imageUrl = prod.image_url && prod.image_url.startsWith('http') ? prod.image_url : '/static/img/placeholder.png';
+                
+                bodyHTML = `
+                    <div class="ingredient-header">
+                        <span><i class="bi bi-check-circle-fill text-success me-2"></i>${originalName}</span>
+                        <span class="badge ${storeBadgeClass}">${escapeHtml(prod.store)}</span>
+                    </div>
+                    <div class="ingredient-body">
+                        <img src="${imageUrl}" class="matched-product-img border" alt="Product Image">
+                        <div class="flex-grow-1">
+                            <h6 class="mb-1">${escapeHtml(prod.name)}</h6>
+                            <p class="text-muted small mb-0">${escapeHtml(prod.brand || 'No Brand')}</p>
+                        </div>
+                        <div class="text-end">
+                            <h5 class="fw-bold text-success mb-0">€${parseFloat(prod.price_val || 0).toFixed(2)}</h5>
+                        </div>
+                    </div>
+                `;
+            } else {
+                bodyHTML = `
+                    <div class="ingredient-header bg-light">
+                        <span class="text-muted"><i class="bi bi-x-circle text-danger me-2"></i>${originalName}</span>
+                        <span class="badge bg-secondary">No match found</span>
+                    </div>
+                    <div class="ingredient-body bg-light opacity-75">
+                         <div class="w-100 text-center py-2 text-muted small">
+                             <i class="bi bi-info-circle me-1"></i> We couldn't find a matching product for this ingredient in the database.
+                         </div>
+                    </div>
+                `;
+            }
+
+            card.innerHTML = bodyHTML;
+            ingredientsList.appendChild(card);
+        });
+    }
+
+    async function loadUserLists() {
+        const select = document.getElementById('targetListSelect');
+        select.innerHTML = '<option value="" disabled selected>Loading your lists...</option>';
+        try {
+            const response = await fetch('/api/get-lists');
+            const data = await response.json();
+            if (data.lists && data.lists.length > 0) {
+                select.innerHTML = '<option value="" disabled selected>Select a list</option>';
+                data.lists.forEach(list => {
+                    const listId = list.id || list.listId || list._id;
+                    select.innerHTML += `<option value="${listId}">${escapeHtml(list.name)}</option>`;
+                });
+            } else {
+                select.innerHTML = '<option value="" disabled selected>No lists found. Please create one first.</option>';
+            }
+        } catch(e) {
+            console.error('Failed to fetch lists:', e);
+            select.innerHTML = '<option value="" disabled selected>Error loading lists.</option>';
+        }
+    }
+
+    document.getElementById('confirmAddToListBtn').addEventListener('click', async (e) => {
+        const listId = document.getElementById('targetListSelect').value;
+        if (!listId) {
+            alert('Please select a list first.');
+            return;
+        }
+        
+        if (matchedProductsData.length === 0) {
+             alert('No matched products to add.');
+             return;
+        }
+
+        const btn = e.target;
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Adding...';
+        btn.disabled = true;
+
+        try {
+            // Add items one by one or via bulk API if available. Let's do sequentially to reuse existing add endpoint logic safely.
+            // Map the format standard expected by our list ADD endpoint
+            let successCount = 0;
+            
+            for (const prod of matchedProductsData) {
+                const payload = {
+                    list_id: listId,
+                    item: {
+                        id: prod._id,
+                        name: prod.name,
+                        price: prod.price_val ? parseFloat(prod.price_val).toFixed(2) : '0.00',
+                        store: prod.store || 'Unknown',
+                        image_url: prod.image_url || '/static/img/placeholder.png'
+                    }
+                };
+
+                const response = await fetch(`/api/list/add-item`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                if(response.ok) successCount++;
+            }
+            
+            // Hide modal and show success toast
+            const modal = bootstrap.Modal.getInstance(document.getElementById('listSelectModal'));
+            modal.hide();
+            
+            alert(`Successfully added ${successCount} items to your shopping list!`);
+
+        } catch (error) {
+            console.error(error);
+            alert('An error occurred while adding items to your list.');
+        } finally {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    });
+
+    function escapeHtml(unsafe) {
+        if (!unsafe) return '';
+        return (unsafe + '').replace(/[&<"'>]/g, function (m) {
+            return {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            }[m];
+        });
+    }
+});
+</script>
+{% endblock %}
