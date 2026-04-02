@@ -377,7 +377,7 @@ function setupShoppingListHandlers() {
     if (!name) return; // Guard
 
     // API Call
-    const r = await apiPostJson('/shopping-list/remove', { item: name }); 
+    const r = await apiPostJson('/api/list/remove-item', { item_name: name }); 
     if (r && r.success) { 
       showNotification('Item removed', 'info'); 
       refreshShoppingListUI(); // Trigger reload to cleanup table
@@ -434,7 +434,7 @@ function setupShoppingListInteractions() {
     const rows = Array.from(list.querySelectorAll('.item-row.purchased'));
     rows.forEach(r => { 
       const name = r.getAttribute('data-name'); 
-      apiPostJson('/shopping-list/remove', { item: name }).then(res => { 
+      apiPostJson('/api/list/remove-item', { item_name: name }).then(res => { 
         if (res && res.success) refreshShoppingListUI(); 
       }); 
     });
@@ -442,7 +442,7 @@ function setupShoppingListInteractions() {
 
   document.getElementById('clear-all')?.addEventListener('click', () => {
     if (!confirm('Clear all items from your shopping list?')) return;
-    apiPostJson('/shopping-list/clear', {}).then(res => { 
+    apiPostJson('/api/list/clear-all', {}).then(res => { 
       if (res && res.success) { 
         showNotification('All items cleared', 'info'); 
         refreshShoppingListUI(); 
@@ -492,7 +492,7 @@ async function postCurrentListOrder() {
     qty: Number(r.getAttribute('data-qty') || 1),
     price: formatPrice(r.getAttribute('data-price') || (r.querySelector('.item-price')?.textContent || '0'))
   }));
-  return apiPostJson('/shopping-list/update', { items });
+  return apiPostJson('/api/list/update-items', { items });
 }
 
 /**

@@ -1,13 +1,16 @@
 from flask import render_template, request, jsonify, session
 from routes import recipe_bp
-from utils.recipe_ai import get_recipe_ingredients
+from utils.recipe_ai import get_recipe_ingredients, get_budget_meal_ideas
 from utils.recipe_matcher import match_ingredients_to_products
+from models.saved_recipes_model import get_saved_recipes, save_recipe, delete_recipe
 import traceback
 
 @recipe_bp.route('/recipe-planner')
 def recipe_planner():
     """Render the recipe planner page."""
-    return render_template('recipe_planner.html')
+    user_email = session.get('user')
+    saved_recipes = get_saved_recipes(user_email) if user_email else []
+    return render_template('recipe_planner.html', saved_recipes=saved_recipes)
 
 @recipe_bp.route('/api/recipe/generate', methods=['POST'])
 def generate_recipe_plan():
@@ -23,7 +26,7 @@ def generate_recipe_plan():
         if not recipe_query:
             return jsonify({'success': False, 'error': 'Recipe name cannot be empty.'}), 400
 
-        # Phase 1: Call OpenAI (or fallback) to get generic ingredients
+        # Phase 1: Call Google Gemini (or fallback) to get generic ingredients
         print(f"Generating ingredients for recipe: {recipe_query}")
         raw_ingredients = get_recipe_ingredients(recipe_query)
         
@@ -34,15 +37,25 @@ def generate_recipe_plan():
         print(f"Matching {len(raw_ingredients)} ingredients to products...")
         matched_results = match_ingredients_to_products(raw_ingredients)
         
+        # Structure the results exactly how the UI expects them
+        formatted_results = []
+        for item in matched_results:
+            matched_product = item['matches'][0] if item.get('matches') else None
+            formatted_results.append({
+                'original': item.get('original_request', ''),
+                'cleaned': item.get('search_term', ''),
+                'matched_product': matched_product
+            })
+
         # Calculate total price for matched results
-        total_price = sum(item['matched_product']['price_val'] for item in matched_results if item.get('matched_product'))
+        total_price = sum(float(item['matched_product'].get('price_val', item['matched_product'].get('price', 0))) for item in formatted_results if item.get('matched_product'))
 
         return jsonify({
             'success': True,
             'recipe': recipe_query,
-            'results': matched_results, # List of dicts: {'original': ..., 'cleaned': ..., 'matched_product': ...}
-            'total_items': len(matched_results),
-            'matched_items': len([i for i in matched_results if i.get('matched_product')]),
+            'results': formatted_results,
+            'total_items': len(formatted_results),
+            'matched_items': len([i for i in formatted_results if i.get('matched_product')]),
             'total_price': total_price
         })
 
@@ -50,3 +63,47 @@ def generate_recipe_plan():
         print(f"Error generating recipe plan: {e}")
         traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500
+
+@recipe_bp.route('/api/recipe/budget', methods=['POST'])
+def generate_budget_ideas():
+    """Generates a list of meal titles that conceptually fit a given budget."""
+    try:
+        data = request.get_json()
+        budget = data.get('budget', '').strip()
+        if not budget:
+            return jsonify({'success': False, 'error': 'Missing budget.'}), 400
+        
+        meals = get_budget_meal_ideas(budget)
+        return jsonify({'success': True, 'meals': meals})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@recipe_bp.route('/api/recipe/save', methods=['POST'])
+def api_save_recipe():
+    user_email = session.get('user')
+    if not user_email:
+        return jsonify({'success': False, 'error': 'Not authenticated'}), 401
+    try:
+        data = request.get_json()
+        success, recipe_doc = save_recipe(user_email, data)
+        if success:
+            return jsonify({'success': True, 'recipe': recipe_doc})
+        else:
+            return jsonify({'success': False, 'error': recipe_doc}), 500
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@recipe_bp.route('/api/recipe/delete/<recipe_id>', methods=['DELETE'])
+def api_delete_recipe(recipe_id):
+    user_email = session.get('user')
+    if not user_email:
+        return jsonify({'success': False, 'error': 'Not authenticated'}), 401
+    try:
+        success, err = delete_recipe(user_email, recipe_id)
+        if success:
+            return jsonify({'success': True})
+        else:
+            return jsonify({'success': False, 'error': err}), 500
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+

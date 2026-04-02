@@ -51,25 +51,25 @@ def match_ingredients_to_products(ingredients):
         pipeline = [
             {
                 "$match": {
-                    "name": {"$regex": search_term, "$options": "i"}
+                    "name": {"$regex": re.escape(search_term), "$options": "i"}
                 }
             },
             # Sort cheapest first
             {"$sort": {"price_val": 1}},
             {"$limit": 3}
         ]
-        
+
         matches = list(mongo.db.products.aggregate(pipeline))
-        
-        # If no strict match, fallback to the last main word of the ingredient
-        # (e.g., if 'yellow onion' didn't match, maybe just 'onion' will)
+
+        # If no strict match, fallback to the last main word of the ingredient  
+        # (e.g., if 'yellow onion' didn't match, maybe just 'onion' will)       
         if not matches and ' ' in search_term:
             last_word = search_term.split()[-1]
             if len(last_word) >= 3:
                 pipeline_fallback = [
                     {
                         "$match": {
-                            "name": {"$regex": last_word, "$options": "i"}
+                            "name": {"$regex": re.escape(last_word), "$options": "i"}
                         }
                     },
                     {"$sort": {"price_val": 1}},

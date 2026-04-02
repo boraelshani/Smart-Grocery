@@ -4,12 +4,12 @@ import json
 
 def get_recipe_ingredients(recipe_query):
     """
-    Calls the OpenAI API (or another LLM) to convert a recipe name or text
+    Calls the Google Gemini API (or fallback) to convert a recipe name or text
     into a clean JSON array of generic ingredients.
     
     Returns a list of strings, e.g., ["500g tomatoes", "1 onion", "garlic"]
     """
-    api_key = os.environ.get("OPENAI_API_KEY")
+    api_key = os.environ.get("GEMINI_API_KEY")
     
     def fallback_ingredients():
         if "tomato soup" in recipe_query.lower():
@@ -19,53 +19,83 @@ def get_recipe_ingredients(recipe_query):
         return ["2 apples", "1 loaf of bread", "1 liter of milk"] # generic fallback
 
     if not api_key:
-        print("Warning: No OPENAI_API_KEY found in environment variables.")     
+        print("Warning: No GEMINI_API_KEY found in environment variables.")     
         return fallback_ingredients()
-
-    headers = {
-        "Authorization": f"Bearer {api_key}",
-        "Content-Type": "application/json"
-    }
     
-    # We ask the AI to act as a strict JSON generator
     prompt = f"""
     You are a culinary assistant. I will give you a recipe name or a description.
     You must return a STRICT JSON array of strings representing the raw ingredients and their standard quantities needed to make this.
-    Do NOT return any markdown formatting, bullet points, or conversation.
+    Do NOT return any markdown formatting, bullet points, or conversation.      
     Just the raw JSON array of strings.
     Example output: ["500g tomatoes", "1 onion", "200ml pasta water"]
-    
+
     Recipe: {recipe_query}
     """
 
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
     payload = {
-        "model": "gpt-3.5-turbo", # Or gpt-4o
-        "messages": [
-            {"role": "system", "content": "You output strict JSON arrays of strings."},
-            {"role": "user", "content": prompt}
-        ],
-        "temperature": 0.3
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {"responseMimeType": "application/json"}
     }
-    
+
     try:
-        response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload, timeout=10)
-        response.raise_for_status()
+        response = requests.post(url, headers={"Content-Type": "application/json"}, json=payload, timeout=10)
+        
+        if response.status_code != 200:
+            print(f"API Error: {response.text}")
+            response.raise_for_status()
+            
         data = response.json()
         
-        # Extract the content from the AI's response
-        content = data["choices"][0]["message"]["content"].strip()
-        
+        # Extract response text
+        raw_text = data["candidates"][0]["content"]["parts"][0]["text"]
+
         # Try to parse it as JSON
-        ingredients = json.loads(content)
+        ingredients = json.loads(raw_text)
         if isinstance(ingredients, list):
             return ingredients
         return []
-    except requests.exceptions.RequestException as e:
-        print(f"Error connecting to OpenAI API: {e}. Falling back to mock data.")
+    except Exception as e:
+        print(f"Error connecting to Gemini API or parsing response: {e}. Falling back to mock data.")
         return fallback_ingredients()
-    except json.JSONDecodeError as e:
-        print(f"Error parsing AI response to JSON: {e}\nResponse was: {content}. Falling back to mock data.")
-        return fallback_ingredients()
+
+def get_budget_meal_ideas(budget_str):
+    """
+    Uses Gemini to suggest 3 cheap meal ideas that roughly fit the given budget.
+    Returns a strict JSON array of strings (the meal titles).
+    """
+    api_key = os.environ.get("GEMINI_API_KEY")
+    
+    if not api_key:
+        return ["Tomato Pasta", "Fried Rice with Eggs", "Lentil Soup"]
+        
+    prompt = f"""
+    You are a strict, ultra-frugal budget culinary assistant. The user has a STRICT maximum budget of {budget_str}.
+    You MUST provide exactly 3 distinct, radically cheap meal ideas where the TOTAL COMBINED COST of all ingredients to make the meal is GUARANTEED to be UNDER {budget_str}.
+    Only choose meals that rely on extremely basic, inexpensive ingredients like rice, pasta, beans, lentils, or cheap seasonal vegetables. Do NOT suggest meals with expensive meats, seafood, or exotic spices.
+    Just return a STRICT JSON array of strings representing the meal names ONLY.
+    Do NOT include prices or descriptions in the strings, just the meal names.
+    Example when budget is $5: ["Spaghetti Aglio e Olio", "Vegetable Stir Fry", "Black Bean Tacos"]
+    """
+
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
+    payload = {
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {"responseMimeType": "application/json"}
+    }
+
+    try:
+        response = requests.post(url, headers={"Content-Type": "application/json"}, json=payload, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+        raw_text = data["candidates"][0]["content"]["parts"][0]["text"]
+        meals = json.loads(raw_text)
+        if isinstance(meals, list):
+            return meals
+        return []
+    except Exception as e:
+        print(f"Error connecting to Gemini API for budget meals: {e}")
+        return ["Tomato Pasta", "Fried Rice with Eggs", "Lentil Soup"]
 
 # Quick test if run directly
 if __name__ == "__main__":
