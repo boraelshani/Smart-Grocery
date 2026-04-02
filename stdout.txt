@@ -1,0 +1,5 @@
+INFO: Loaded .env from C:\Users\beni\Desktop\Smart-Grocery\.env
+INFO: MongoDB connection verified.
+INFO: Connected to MongoDB database: smart_grocery
+ * Serving Flask app 'app'
+ * Debug mode: on
