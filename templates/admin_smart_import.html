@@ -1,0 +1,142 @@
+{% extends "admin_layout.html" %}
+
+{% block admin_title %}AI Smart Import{% endblock %}
+{% block admin_subtitle %}Extract data from any public store URL securely{% endblock %}
+
+{% block admin_content %}
+<div class="row g-4">
+    <div class="col-lg-12">
+        <div class="card shadow-sm border-0 h-100 rounded-4">
+            <div class="card-body p-4">
+                <form id="ai-import-form">
+                    <div class="mb-3">
+                        <label class="form-label text-secondary fw-semibold">Paste Store Link (e.g. Billa, Spar)</label>
+                        <div class="input-group">
+                            <input type="url" class="form-control form-control-lg bg-light" id="store_url" required placeholder="https://..." style="border: 2px solid #e2e8f0;">
+                            <button type="button" class="btn btn-primary px-4 fw-bold shadow-sm" onclick="fetchAIProduct()" id="extractBtn">
+                                <i class="fas fa-robot me-2"></i> Extract
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-12">
+        <div id="result-container" class="card shadow-sm border-0 d-none h-100 rounded-4">
+            <div class="card-body p-4">
+                <form id="save-product-form" action="/admin/api/products" method="POST">
+                    <input type="hidden" name="image_url" id="res_image">
+                    
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-muted text-uppercase">Name (English)</label>
+                            <input type="text" name="name_en" id="res_name_en" class="form-control bg-light border" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-muted text-uppercase">Name (German)</label>
+                            <input type="text" name="name_de" id="res_name_de" class="form-control bg-light border" required>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold small text-muted text-uppercase">Brand</label>
+                            <input type="text" name="brandId" id="res_brand" class="form-control bg-light border">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold small text-muted text-uppercase">Category</label>
+                            <input type="text" name="categoryId" id="res_category" class="form-control bg-light border">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold small text-muted text-uppercase">Live Price</label>
+                            <div class="input-group">
+                                <span class="input-group-text border bg-white">€</span>
+                                <input type="number" step="0.01" name="price" id="res_price" class="form-control bg-light border" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-muted text-uppercase">Description (English)</label>
+                            <textarea name="description_en" id="res_desc_en" class="form-control bg-light border" rows="3"></textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-muted text-uppercase">Description (German)</label>
+                            <textarea name="description_de" id="res_desc_de" class="form-control bg-light border" rows="3"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-muted text-uppercase">Extracted Size / Volume</label>
+                            <input type="text" name="size" id="res_size" class="form-control bg-light border">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-muted text-uppercase">Calculated Unit Price</label>
+                            <input type="text" name="unit_price" id="res_unit_price" class="form-control bg-light border">
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex align-items-center mt-3">
+                        <img src="" id="res_img_preview" class="rounded shadow-sm border d-none me-3 bg-white" style="max-height: 64px; max-width: 64px; object-fit: contain;">
+                        <button type="submit" class="btn btn-success px-4 py-2 fw-bold"><i class="fas fa-save me-2"></i> Save to Catalog</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+async function fetchAIProduct() {
+    const url = document.getElementById("store_url").value;
+    const btn = document.getElementById("extractBtn");
+    if (!url) return;
+
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    btn.disabled = true;
+
+    try {
+        const response = await fetch('/admin/api/products/smart-extract', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ url: url })
+        });
+        const res = await response.json();
+        
+        if (res.success) {
+            document.getElementById("result-container").classList.remove("d-none");
+            const data = res.data;
+            document.getElementById("res_name_en").value = data.name_en || "";
+            document.getElementById("res_name_de").value = data.name_de || "";
+            document.getElementById("res_desc_en").value = data.description_en || "";
+            document.getElementById("res_desc_de").value = data.description_de || "";
+            document.getElementById("res_brand").value = data.brand || data.brandId || "";
+            document.getElementById("res_category").value = data.categoryId || data.category_path || "";
+            document.getElementById("res_price").value = data.price || "";
+            document.getElementById("res_image").value = data.image_url || "";
+            
+            document.getElementById("res_size").value = data.size || "";
+            document.getElementById("res_unit_price").value = data.unit_price || "";
+            
+            if (data.image_url) {
+                document.getElementById("res_img_preview").src = data.image_url;
+                document.getElementById("res_img_preview").classList.remove("d-none");
+            } else {
+                document.getElementById("res_img_preview").classList.add("d-none");
+            }
+        } else {
+            alert("Failed: " + res.error);
+        }
+    } catch (err) {
+        alert("Error: " + err);
+    } finally {
+        btn.innerHTML = '<i class="fas fa-robot me-2"></i> Extract';
+        btn.disabled = false;
+    }
+}
+</script>
+{% endblock %}

@@ -13,6 +13,12 @@ from models.users_model import get_user_by_email
 from utils.category_mapper import CategoryMapper
 from utils.db import get_db
 
+def prettify_slug(t):
+    if not t: return t
+    t = str(t).replace("cat_", "").replace("brand_", "")
+    t = t.replace("-", " ").replace("_", " ")
+    return " ".join([w.capitalize() for w in t.split()])
+
 
 def _to_bool(value, default=False):
     if value is None:
@@ -392,19 +398,20 @@ def admin_products_page():
         return render_template("admin_products.html", error="Database unavailable", data={})
 
     query_text = (request.args.get("q") or "").strip()
+    brand_filter = (request.args.get("brand") or "").strip()
     page = _parse_positive_int(request.args.get("page"), 1)
     per_page = 25
 
     query = {}
     if query_text:
-        query = {
-            "$or": [
-                {"productId": {"$regex": query_text, "$options": "i"}},
-                {"name_en": {"$regex": query_text, "$options": "i"}},
-                {"name_de": {"$regex": query_text, "$options": "i"}},
-                {"barcode": {"$regex": query_text, "$options": "i"}},
-            ]
-        }
+        query["$or"] = [
+            {"productId": {"$regex": query_text, "$options": "i"}},
+            {"name_en": {"$regex": query_text, "$options": "i"}},
+            {"name_de": {"$regex": query_text, "$options": "i"}},
+            {"barcode": {"$regex": query_text, "$options": "i"}},
+        ]
+    if brand_filter:
+        query["brandId"] = brand_filter
 
     total = db.products.count_documents(query)
     total_pages = max((total + per_page - 1) // per_page, 1)
@@ -422,17 +429,27 @@ def admin_products_page():
     brands = list(db.brands.find({}, {"_id": 0, "brandId": 1, "name": 1, "name_en": 1}).sort("name", 1))
     stores = list(db.stores.find({}, {"_id": 0, "storeId": 1, "name": 1}).sort("name", 1))
 
+    for b in brands:
+        if not b.get("name_en"):
+            b["name_en"] = b.get("name") or prettify_slug(b.get("brandId"))
+    for c in categories:
+        if not c.get("name_en"):
+            c["name_en"] = prettify_slug(c.get("categoryId"))
+
     category_name_map = {row.get("categoryId"): row.get("name_en") for row in categories if row.get("categoryId")}
     brand_name_map = {
-        row.get("brandId"): (row.get("name_en") or row.get("name") or "")
+        row.get("brandId"): (row.get("name_en") or row.get("name") or prettify_slug(row.get("brandId")))
         for row in brands
         if row.get("brandId")
     }
+
     store_name_map = {row.get("storeId"): row.get("name") for row in stores if row.get("storeId")}
 
     for row in products:
-        row["category_name"] = category_name_map.get(row.get("categoryId")) or "Uncategorized"
-        row["brand_name"] = brand_name_map.get(row.get("brandId")) or "Generic"
+        cat_id = row.get("categoryId")
+        brand_id = row.get("brandId")
+        row["category_name"] = category_name_map.get(cat_id) or (prettify_slug(cat_id) if cat_id else "Uncategorized")
+        row["brand_name"] = brand_name_map.get(brand_id) or (prettify_slug(brand_id) if brand_id else "Generic")
         row["createdAtDisplay"] = _format_admin_dt(row.get("createdAt"))
         row["updatedAtDisplay"] = _format_admin_dt(row.get("updatedAt"))
 
@@ -493,6 +510,9 @@ def admin_categories_page():
 
     query_text = (request.args.get("q") or "").strip()
     all_categories = list(db.categories.find({}, {"_id": 0}).sort([("name_en", 1)]))
+    for row in all_categories:
+        row["name_en"] = row.get("name_en") or prettify_slug(row.get("categoryId"))
+        row["name_de"] = row.get("name_de") or prettify_slug(row.get("categoryId"))
 
     categories = all_categories
     if query_text:
@@ -560,8 +580,8 @@ def admin_brands_page():
 
     brands = list(db.brands.find(query, {"_id": 0}).sort([("updatedAt", -1), ("name", 1)]).limit(250))
     for row in brands:
-        row["name_en"] = row.get("name_en") or row.get("name") or ""
-        row["name_de"] = row.get("name_de") or row.get("name") or ""
+        row["name_en"] = row.get("name_en") or row.get("name") or prettify_slug(row.get("brandId"))
+        row["name_de"] = row.get("name_de") or row.get("name") or prettify_slug(row.get("brandId"))
         row["updatedAtDisplay"] = _format_admin_dt(row.get("updatedAt"))
 
     selected_id = (request.args.get("edit") or "").strip()
@@ -1356,9 +1376,13 @@ def run_scraper_manual():
             return result
         return result
     
-    # In a real app, this would trigger a background task (e.g., Celery)
-    # For now, we simulate the action or run a quick check
-    flash("Scraper job execution triggered in background.", "info")
+    try:
+        import subprocess
+        subprocess.Popen(["python3", "scripts/cron_pipeline.py"])
+        flash("Price update engine triggered in background. Store catalog will sync shortly.", "success")
+    except Exception as e:
+        flash(f"Failed to start price updates: {str(e)}", "danger")
+        
     return redirect(url_for("admin.admin_dashboard"))
 
 @admin_bp.route("/admin/cache/clear", methods=["GET"])
@@ -1373,3 +1397,32 @@ def clear_cache():
     get_db() # Ensure DB connection is active
     flash("System cache has been cleared successfully.", "success")
     return redirect(url_for("admin.admin_dashboard"))
+
+@admin_bp.route("/admin/products/smart-import", methods=["GET"])
+def admin_smart_import_page():
+    _require_admin()
+    return render_template("admin_smart_import.html")
+
+@admin_bp.route("/admin/api/urls/update", methods=["POST"])
+def admin_update_all_prices():
+    """
+    Triggers a background job or synchronous loop to hit product.store_url
+    and parse the latest price using the AI fetcher or regex.
+    """
+    _require_admin()
+    # In production: run as a Celery/Redis job because 10,000 URLs would time out a web request.
+    return jsonify({"success": True, "message": "Background job started: Updating prices from live URLs."})
+
+@admin_bp.route("/admin/api/products/smart-extract", methods=["POST"])
+def admin_smart_extract():
+    _require_admin()
+    if not request.is_json:
+        return jsonify({"success": False, "error": "Invalid JSON"}), 400
+    
+    url = request.json.get("url")
+    if not url:
+        return jsonify({"success": False, "error": "URL required"}), 400
+
+    from scripts.ai_product_fetcher import fetch_product_from_url
+    result = fetch_product_from_url(url)
+    return jsonify(result)

@@ -1,115 +1,147 @@
 {% extends "admin_layout.html" %}
-{% block title %}Admin Categories - Smart Grocery{% endblock %}
 
-{% set admin_title = "Categories" %}
-{% set admin_subtitle = "Parent-first taxonomy management with expandable category levels." %}
-{% set admin_section = "categories" %}
-
-{% block admin_styles %}
-<style>
-  .cat-tree details {
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    background: #fff;
-    margin-bottom: 0.6rem;
-  }
-
-  .cat-tree summary {
-    cursor: pointer;
-    padding: 0.65rem 0.85rem;
-    font-weight: 700;
-    color: #0f172a;
-  }
-
-  .cat-tree .node-inner {
-    padding: 0 0.85rem 0.85rem;
-  }
-
-  .cat-form-hidden {
-    display: none;
-  }
-
-  .cat-form-visible {
-    display: block;
-  }
-</style>
-{% endblock %}
+{% block admin_title %}Categories Structure{% endblock %}
+{% block admin_subtitle %}Manage taxonomy and global grocery catalog{% endblock %}
 
 {% block admin_content %}
-{% set show_form = (request.args.get('showForm') == '1') or data.selected_category %}
-
-<section class="admin-panel mb-4">
-  <div class="panel-head d-flex justify-content-between align-items-center flex-wrap gap-2">
-    <div>
-      <h2>Category Hierarchy</h2>
-      <p>Only top-level categories are shown first. Click a parent category to open child levels.</p>
+<div class="row mb-4 align-items-center">
+    <div class="col-md-8">
     </div>
-    <a href="{{ url_for('admin.admin_categories_page', showForm=1) }}" class="btn btn-primary admin-btn">Create Category</a>
-  </div>
-  <div class="panel-body">
-    <form method="get" action="{{ url_for('admin.admin_categories_page') }}" class="admin-form-grid mb-3">
-      <input type="hidden" name="showForm" value="{{ '1' if show_form else '0' }}">
-      <div class="span-9"><input class="form-control" name="q" value="{{ data.q or '' }}" placeholder="Search categories by name, slug, or id"></div>
-      <div class="span-3 d-grid"><button class="btn btn-primary admin-btn">Search</button></div>
-    </form>
-
-    <div class="cat-tree">
-      {% macro render_node(node) %}
-      <details>
-        <summary>
-          {{ node.name_en }}
-          <span class="small text-secondary">({{ node.categoryId }})</span>
-        </summary>
-        <div class="node-inner">
-          <div class="small text-secondary mb-2">German: {{ node.name_de or 'auto-filled when missing' }}</div>
-          <div class="small text-secondary mb-2">Slug: {{ node.slug or '-' }}</div>
-          <a class="btn btn-sm btn-outline-primary rounded-pill" href="{{ url_for('admin.admin_categories_page', q=data.q, showForm=1, edit=node.categoryId) }}">Edit</a>
-          {% for child in node.children %}
-          {{ render_node(child) }}
-          {% endfor %}
-        </div>
-      </details>
-      {% endmacro %}
-
-      {% if data.category_tree %}
-      {% for root in data.category_tree %}
-      {{ render_node(root) }}
-      {% endfor %}
-      {% else %}
-      <div class="text-secondary">No categories found.</div>
-      {% endif %}
+    <div class="col-md-4 text-md-end">
+        <button class="btn btn-primary rounded-pill px-4 shadow-sm fw-bold" onclick="prepareCategoryModal('new')" data-bs-toggle="modal" data-bs-target="#categoryModal">
+            <i class="fas fa-plus me-1"></i> New Category
+        </button>
     </div>
-  </div>
-</section>
+</div>
 
-<section class="admin-panel {{ 'cat-form-visible' if show_form else 'cat-form-hidden' }}">
-  <div class="panel-head d-flex justify-content-between align-items-center flex-wrap gap-2">
-    <div>
-      <h2>{{ 'Edit Category' if data.selected_category else 'Create Category' }}</h2>
-      <p>Provide English values. German fields are auto-filled when omitted.</p>
+<div class="card shadow-sm border-0 rounded-4 overflow-hidden mb-4">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0 bg-white">
+            <thead class="bg-light">
+                <tr>
+                    <th class="text-uppercase text-muted text-xs fw-bold py-3 ps-4">Category Name</th>
+                    <th class="text-uppercase text-muted text-xs fw-bold py-3">Slug</th>
+                    <th class="text-uppercase text-muted text-xs fw-bold py-3">Parent</th>
+                    <th class="text-uppercase text-muted text-xs fw-bold py-3 text-end pe-4">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in data.categories or [] %}
+                <tr>
+                    <td class="ps-4">
+                        <h6 class="mb-0 fw-bold text-dark">{{ c.name_en or c.categoryId }}</h6>
+                        {% if c.name_de %}
+                        <span class="text-muted small">{{ c.name_de }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 px-2 py-1">{{ c.categoryId }}</span>
+                    </td>
+                    <td>
+                        {% if c.parentId %}
+                        <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 px-2 py-1">{{ c.parentId }}</span>
+                        {% else %}
+                        <span class="text-muted small">Top Level</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end pe-4">
+                        <button class="btn btn-sm btn-light border shadow-sm rounded-pill text-primary fw-bold px-3" onclick='prepareCategoryModal("edit", {"categoryId":"{{c.categoryId}}", "name_en":"{{c.name_en}}", "name_de":"{{c.name_de}}", "parentId":"{{c.parentId}}"})' data-bs-toggle="modal" data-bs-target="#categoryModal">
+                            <i class="fas fa-pen"></i> Edit
+                        </button>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4" class="text-center py-5 text-muted">
+                        <div class="mb-3"><i class="fas fa-tags fs-1 text-muted text-opacity-50"></i></div>
+                        <h6 class="fw-bold">No categories found.</h6>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
-    <a href="{{ url_for('admin.admin_categories_page', q=data.q) }}" class="admin-toggle-btn">Hide Form</a>
-  </div>
-  <div class="panel-body">
-    {% set selected = data.selected_category or {} %}
-    <form method="post" action="{{ url_for('admin.admin_save_category') }}" class="admin-form-grid">
-      <input type="hidden" name="redirectTo" value="categories">
-      <input type="hidden" name="categoryId" value="{{ selected.categoryId or '' }}">
+</div>
 
-      <div class="span-6"><input class="form-control" name="name_en" value="{{ selected.name_en or '' }}" placeholder="Name (English)" required></div>
-      <div class="span-6"><input class="form-control" name="name_de" value="{{ selected.name_de or '' }}" placeholder="Name (German, optional)"></div>
-
-      <div class="span-12">
-        <select class="form-select" name="parentId">
-          <option value="">Parent category (optional)</option>
-          {% for root in data.root_categories or [] %}
-          <option value="{{ root.categoryId }}" {% if selected.parentId == root.categoryId %}selected{% endif %}>{{ root.name_en }}</option>
-          {% endfor %}
-        </select>
+<!-- Modal: Category Editor -->
+<div class="modal fade" id="categoryModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 rounded-4 shadow-lg">
+      <div class="modal-header bg-light border-bottom-0 pb-0 pt-4 px-4">
+        <h5 class="modal-title fw-bold text-dark d-flex align-items-center" id="categoryModalLabel">
+            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2 shadow-sm" style="width: 32px; height: 32px; font-size: 0.9rem;"><i class="fas fa-tags"></i></div>
+            <span>Category Details</span>
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <div class="span-12"><input class="form-control" name="slug" value="{{ selected.slug or '' }}" placeholder="Slug (optional custom value)"></div>
-      <div class="span-12 d-grid"><button class="btn btn-primary admin-btn">Save Category</button></div>
-    </form>
+      <form method="post" action="{{ url_for('admin.admin_save_category') }}">
+        <div class="modal-body p-4">
+           <input type="hidden" name="categoryId" id="field_categoryId_hidden">
+           
+           <div class="mb-3">
+              <label class="form-label small fw-bold text-muted text-uppercase mb-1">Category Slug / ID <span class="text-danger">*</span></label>
+              <input type="text" class="form-control form-control-lg bg-light border" name="categoryId_new" id="field_categoryId" placeholder="e.g. dairy-eggs" required>
+           </div>
+           
+           <div class="row g-3 mb-3">
+              <div class="col-md-6">
+                 <label class="form-label small fw-bold text-muted text-uppercase mb-1">Name (EN)</label>
+                 <input type="text" class="form-control form-control-lg bg-light border" name="name_en" id="field_cat_name_en">
+              </div>
+              <div class="col-md-6">
+                 <label class="form-label small fw-bold text-muted text-uppercase mb-1">Name (DE)</label>
+                 <input type="text" class="form-control form-control-lg bg-light border" name="name_de" id="field_cat_name_de">
+              </div>
+           </div>
+
+           <div class="mb-2">
+              <label class="form-label small fw-bold text-muted text-uppercase mb-1">Parent Category</label>
+              <select class="form-select form-control-lg bg-light border" name="parentId" id="field_cat_parentId">
+                 <option value="">(None - Top Level)</option>
+                 {% for c in data.categories %}
+                 <option value="{{ c.categoryId }}">{{ c.name_en or c.categoryId }}</option>
+                 {% endfor %}
+              </select>
+           </div>
+        </div>
+        <div class="modal-footer border-top-0 px-4 pb-4 pt-0 justify-content-between">
+           <button type="button" class="btn btn-light rounded-pill px-4 fw-bold shadow-sm" data-bs-dismiss="modal">Cancel</button>
+           <div class="d-flex gap-2">
+              <button type="submit" formaction="" class="btn btn-outline-danger rounded-pill px-4 fw-bold shadow-sm d-none" id="btn_delete_cat" onclick="return confirm('Delete this category?')"><i class="fas fa-trash-alt me-1"></i> Delete</button>
+              <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm"><i class="fas fa-save me-1"></i> Save Category</button>
+           </div>
+        </div>
+      </form>
+    </div>
   </div>
-</section>
+</div>
+
+<script>
+function prepareCategoryModal(mode, category) {
+   const label = document.getElementById('categoryModalLabel').querySelector('span');
+   const delBtn = document.getElementById('btn_delete_cat');
+   
+   if (mode === 'new' || !category) {
+      label.innerText = "Create New Category";
+      document.getElementById('field_categoryId_hidden').value = '';
+      document.getElementById('field_categoryId').value = '';
+      document.getElementById('field_categoryId').readOnly = false;
+      document.getElementById('field_cat_name_en').value = '';
+      document.getElementById('field_cat_name_de').value = '';
+      document.getElementById('field_cat_parentId').value = '';
+      delBtn.classList.add('d-none');
+      delBtn.removeAttribute('formaction');
+   } else {
+      label.innerText = `Edit: ${category.name_en || category.categoryId}`;
+      document.getElementById('field_categoryId_hidden').value = category.categoryId || '';
+      document.getElementById('field_categoryId').value = category.categoryId || '';
+      document.getElementById('field_categoryId').readOnly = true;
+      document.getElementById('field_cat_name_en').value = category.name_en || '';
+      document.getElementById('field_cat_name_de').value = category.name_de || '';
+      document.getElementById('field_cat_parentId').value = category.parentId || '';
+      delBtn.classList.remove('d-none');
+      delBtn.setAttribute('formaction', `/admin/categories/delete/${category.categoryId}`);
+   }
+}
+</script>
 {% endblock %}

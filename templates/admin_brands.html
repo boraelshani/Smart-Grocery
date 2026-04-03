@@ -1,135 +1,150 @@
 {% extends "admin_layout.html" %}
-{% block title %}Admin Brands - Smart Grocery{% endblock %}
 
-{% set admin_title = "Brands" %}
-{% set admin_subtitle = "Centralized brand management with automatic German fallback." %}
-{% set admin_section = "brands" %}
+{% block admin_title %}Brands Directory{% endblock %}
+{% block admin_subtitle %}Manage all available brands for the catalog{% endblock %}
 
 {% block admin_content %}
-{% set show_form = (request.args.get('showForm') == '1') or data.selected_brand %}
-
-<div class="row g-4">
-  <!-- Left Column: List -->
-  <div class="{{ 'col-lg-8' if show_form else 'col-12' }} transition-all">
-    <div class="card border-0 shadow-sm h-100">
-      <div class="card-header bg-white border-bottom-0 py-3 d-flex justify-content-between align-items-center">
-        <h5 class="mb-0 fw-bold">Brand List</h5>
-        <a href="{{ url_for('admin.admin_brands_page', showForm=1) }}" class="btn btn-primary btn-sm rounded-pill px-3">
-          <i class="bi bi-plus-lg me-1"></i> New Brand
-        </a>
-      </div>
-      
-      <!-- Search -->
-      <div class="px-3 pb-3 border-bottom">
-        <form method="get" action="{{ url_for('admin.admin_brands_page') }}" class="d-flex gap-2">
-          <input type="hidden" name="showForm" value="{{ '1' if show_form else '0' }}">
-          <div class="flex-grow-1 position-relative">
-            <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-secondary"></i>
-            <input class="form-control rounded-pill ps-5 bg-light border-0" name="q" value="{{ data.q or '' }}" placeholder="Search brands...">
-          </div>
-          <button type="submit" class="btn btn-dark rounded-pill px-3">Search</button>
-        </form>
-      </div>
-      
-      <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
-          <thead class="bg-light">
-            <tr>
-              <th class="ps-4">Brand Info</th>
-              <th>German Name</th>
-              <th>Website</th>
-              <th>Updated</th>
-              <th class="text-end pe-4">Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for b in data.brands or [] %}
-            <tr>
-              <td class="ps-4">
-                <div class="fw-bold text-dark">{{ b.name_en or b.name }}</div>
-                <div class="small font-monospace text-secondary" style="font-size: 0.75rem;">{{ b.brandId }}</div>
-              </td>
-              <td>
-                {% if b.name_de %}
-                {{ b.name_de }}
-                {% else %}
-                <span class="text-secondary small fst-italic">Auto</span>
-                {% endif %}
-              </td>
-              <td>
-                {% if b.website %}
-                <a href="{{ b.website }}" target="_blank" rel="noopener" class="text-decoration-none small">
-                  {{ b.website|replace('https://', '')|replace('http://', '')|truncate(20) }} <i class="bi bi-box-arrow-up-right ms-1" style="font-size: 10px;"></i>
-                </a>
-                {% else %}
-                <span class="text-secondary small">-</span>
-                {% endif %}
-              </td>
-              <td class="small text-secondary">{{ b.updatedAtDisplay }}</td>
-              <td class="text-end pe-4">
-                <a class="btn btn-sm btn-outline-primary rounded-pill px-3" href="{{ url_for('admin.admin_brands_page', q=data.q, showForm=1, edit=b.brandId) }}">Edit</a>
-              </td>
-            </tr>
-            {% else %}
-            <tr><td colspan="5" class="text-center py-5 text-secondary">No brands found.</td></tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
+<div class="row mb-4 align-items-center">
+    <div class="col-md-8">
+        <!-- Optional search or filters could go here in the future -->
     </div>
-  </div>
-
-  <!-- Right Column: Form (Sticky) -->
-  {% if show_form %}
-  <div class="col-lg-4">
-    <div class="card border-0 shadow-sm border-top border-4 border-primary position-sticky" style="top: 8rem;">
-      <div class="card-body p-4">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-          <h5 class="mb-0 fw-bold">{{ 'Edit Brand' if data.selected_brand else 'New Brand' }}</h5>
-          <a href="{{ url_for('admin.admin_brands_page', q=data.q) }}" class="btn-close" aria-label="Close"></a>
-        </div>
-
-        {% set selected = data.selected_brand or {} %}
-        <form method="post" action="{{ url_for('admin.admin_save_brand') }}">
-          <input type="hidden" name="redirectTo" value="brands">
-          <input type="hidden" name="brandId" value="{{ selected.brandId or '' }}">
-
-          <div class="mb-3">
-            <label class="form-label small fw-bold text-secondary">Brand Name <span class="text-danger">*</span></label>
-            <input class="form-control" name="name_en" value="{{ selected.name_en or selected.name or '' }}" placeholder="International Name" required>
-            <div class="form-text small">Used as primary display name.</div>
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label small fw-bold text-secondary">German Name (Optional)</label>
-            <input class="form-control" name="name_de" value="{{ selected.name_de or '' }}" placeholder="Localized Name">
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label small fw-bold text-secondary">Website</label>
-            <input class="form-control" name="website" value="{{ selected.website or '' }}" placeholder="https://example.com">
-          </div>
-          
-          <div class="mb-4">
-            <label class="form-label small fw-bold text-secondary">Logo URL</label>
-            <div class="input-group">
-               <span class="input-group-text bg-light text-secondary"><i class="bi bi-image"></i></span>
-               <input class="form-control border-start-0" name="logoUrl" value="{{ selected.logoUrl or '' }}" placeholder="https://...">
-            </div>
-          </div>
-
-          <div class="d-grid gap-2">
-            <button type="submit" class="btn btn-primary">Save Brand</button>
-            {% if selected.brandId %}
-            <button type="submit" formaction="{{ url_for('admin.admin_delete_brand', brand_id=selected.brandId) }}" class="btn btn-outline-danger btn-sm" onclick="return confirm('Delete this brand? Ensure no products are linked.')">
-              Delete
-            </button>
-            {% endif %}
-          </div>
-        </form>
-      </div>
+    <div class="col-md-4 text-md-end">
+        <button class="btn btn-primary rounded-pill px-4 shadow-sm fw-bold" onclick="prepareBrandModal('new')" data-bs-toggle="modal" data-bs-target="#brandModal">
+            <i class="fas fa-plus me-1"></i> New Brand
+        </button>
     </div>
-  </div>
-  {% endif %}
 </div>
+
+<div class="card shadow-sm border-0 rounded-4 overflow-hidden mb-4">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0 bg-white">
+            <thead class="bg-light">
+                <tr>
+                    <th class="text-uppercase text-muted text-xs fw-bold py-3 ps-4">Brand Information</th>
+                    <th class="text-uppercase text-muted text-xs fw-bold py-3">Slug</th>
+                    <th class="text-uppercase text-muted text-xs fw-bold py-3 text-end pe-4">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for b in data.brands or [] %}
+                <tr>
+                    <td class="ps-4">
+                        <div class="d-flex align-items-center">
+                            <div class="me-3 bg-light rounded d-flex justify-content-center align-items-center overflow-hidden border" style="width: 48px; height: 48px;">
+                                {% if b.image_url %}
+                                <img src="{{ b.image_url }}" alt="..." style="width: 100%; height: 100%; object-fit: contain;">
+                                {% else %}
+                                <i class="fas fa-copyright text-muted text-opacity-50 fs-4"></i>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <h6 class="mb-0 fw-bold text-dark">{{ b.name_en or b.brandId }}</h6>
+                                {% if b.name_de %}
+                                <span class="text-muted small">{{ b.name_de }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 px-2 py-1">{{ b.brandId }}</span>
+                    </td>
+                    <td class="text-end pe-4">
+                        <button class="btn btn-sm btn-light border shadow-sm rounded-pill text-primary fw-bold px-3" onclick='prepareBrandModal("edit", {"brandId":"{{b.brandId}}", "name_en":"{{b.name_en}}", "name_de":"{{b.name_de}}", "image_url":"{{b.image_url}}"})' data-bs-toggle="modal" data-bs-target="#brandModal">
+                            <i class="fas fa-pen"></i> Edit
+                        </button>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="3" class="text-center py-5 text-muted">
+                        <div class="mb-3"><i class="fas fa-copyright fs-1 text-muted text-opacity-50"></i></div>
+                        <h6 class="fw-bold">No brands found.</h6>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal: Brand Editor -->
+<div class="modal fade" id="brandModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 rounded-4 shadow-lg">
+      <div class="modal-header bg-light border-bottom-0 pb-0 pt-4 px-4">
+        <h5 class="modal-title fw-bold text-dark d-flex align-items-center" id="brandModalLabel">
+            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2 shadow-sm" style="width: 32px; height: 32px; font-size: 0.9rem;"><i class="fas fa-copyright"></i></div>
+            <span>Brand Details</span>
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="post" action="{{ url_for('admin.admin_save_brand') }}">
+        <div class="modal-body p-4">
+           <input type="hidden" name="brandId" id="field_brandId_hidden">
+           
+           <div class="mb-3">
+              <label class="form-label small fw-bold text-muted text-uppercase mb-1">Brand Slug / ID <span class="text-danger">*</span></label>
+              <input type="text" class="form-control form-control-lg bg-light border" name="brandId_new" id="field_brandId" placeholder="e.g. coca-cola" required>
+              <small class="text-muted mt-1 text-xs">Used internally to link products. Must be unique.</small>
+           </div>
+           
+           <div class="row g-3 mb-3">
+              <div class="col-md-6">
+                 <label class="form-label small fw-bold text-muted text-uppercase mb-1">Name (EN)</label>
+                 <input type="text" class="form-control form-control-lg bg-light border" name="name_en" id="field_brand_name_en">
+              </div>
+              <div class="col-md-6">
+                 <label class="form-label small fw-bold text-muted text-uppercase mb-1">Name (DE)</label>
+                 <input type="text" class="form-control form-control-lg bg-light border" name="name_de" id="field_brand_name_de">
+              </div>
+           </div>
+
+           <div class="mb-2">
+              <label class="form-label small fw-bold text-muted text-uppercase mb-1">Logo URL</label>
+              <div class="input-group input-group-lg bg-light border rounded">
+                 <span class="input-group-text bg-transparent border-0"><i class="fas fa-image text-muted"></i></span>
+                 <input type="text" class="form-control bg-transparent border-0 ps-0 shadow-none" name="image_url" id="field_brand_image" placeholder="https://...">
+              </div>
+           </div>
+        </div>
+        <div class="modal-footer border-top-0 px-4 pb-4 pt-0 justify-content-between">
+           <button type="button" class="btn btn-light rounded-pill px-4 fw-bold shadow-sm" data-bs-dismiss="modal">Cancel</button>
+           <div class="d-flex gap-2">
+              <button type="submit" formaction="" class="btn btn-outline-danger rounded-pill px-4 fw-bold shadow-sm d-none" id="btn_delete_brand" onclick="return confirm('Delete this brand?')"><i class="fas fa-trash-alt me-1"></i> Delete</button>
+              <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm"><i class="fas fa-save me-1"></i> Save Brand</button>
+           </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+function prepareBrandModal(mode, brand) {
+   const label = document.getElementById('brandModalLabel').querySelector('span');
+   const delBtn = document.getElementById('btn_delete_brand');
+   
+   if (mode === 'new' || !brand) {
+      label.innerText = "Create New Brand";
+      document.getElementById('field_brandId_hidden').value = '';
+      document.getElementById('field_brandId').value = '';
+      document.getElementById('field_brandId').readOnly = false;
+      document.getElementById('field_brand_name_en').value = '';
+      document.getElementById('field_brand_name_de').value = '';
+      document.getElementById('field_brand_image').value = '';
+      delBtn.classList.add('d-none');
+      delBtn.removeAttribute('formaction');
+   } else {
+      label.innerText = `Edit: ${brand.name_en || brand.brandId}`;
+      document.getElementById('field_brandId_hidden').value = brand.brandId || '';
+      document.getElementById('field_brandId').value = brand.brandId || '';
+      document.getElementById('field_brandId').readOnly = true; // Cannot edit slug once created
+      document.getElementById('field_brand_name_en').value = brand.name_en || '';
+      document.getElementById('field_brand_name_de').value = brand.name_de || '';
+      document.getElementById('field_brand_image').value = brand.image_url || '';
+      delBtn.classList.remove('d-none');
+      delBtn.setAttribute('formaction', `/admin/brands/delete/${brand.brandId}`);
+   }
+}
+</script>
 {% endblock %}
