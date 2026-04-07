@@ -208,9 +208,7 @@
     <div class="d-inline-flex bg-white rounded-pill p-1 mb-4 shadow-sm">
       <button type="button" class="btn btn-primary rounded-pill px-4 fw-bold" id="tabRecipe" onclick="toggleSearch('recipe')">By Recipe</button>
       <button type="button" class="btn btn-light text-dark rounded-pill px-4 fw-bold border-0 bg-transparent" id="tabBudget" onclick="toggleSearch('budget')">By Budget</button>
-    </div>
-
-    <form id="recipeForm" class="search-box w-100 mx-auto position-relative">
+        <button type="button" class="btn btn-light text-dark rounded-pill px-4 fw-bold border-0 bg-transparent" id="tabBook" onclick="toggleSearch('book')">My Recipe Book</button>
       <input type="text" id="recipeInput"
              placeholder="e.g. Spaghetti Carbonara, Chicken Tikka Masala..." required
              autocomplete="off">
@@ -243,37 +241,7 @@
   </div>
 
   {% if session.get('user') and saved_recipes %}
-  <div id="savedRecipesSection" class="mb-5">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-      <h3 class="fw-bold" style="color: #1a202c;"><i class="bi bi-journal-bookmark text-primary me-2"></i>Saved Meals</h3>
-    </div>
-    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
-      {% for recipe in saved_recipes %}
-      <div class="col" id="saved-recipe-{{ recipe._id }}">
-        <div class="card h-100 border-0 shadow-sm" style="border-radius: 20px; transition: transform 0.2s;">
-          <div class="card-body p-4">
-            <div class="d-flex justify-content-between align-items-start mb-2">
-              <h5 class="fw-bold text-premium-dark">{{ recipe.title }}</h5>
-              <button class="btn btn-sm btn-outline-danger border-0 rounded-circle" onclick="deleteSavedRecipe('{{ recipe._id }}')" title="Delete Recipe">
-                <i class="bi bi-trash"></i>
-              </button>
-            </div>
-            <p class="text-muted small mb-3"><i class="bi bi-calendar3 me-1"></i>{{ recipe.created_at[:10] }}</p>
-            <div class="d-flex justify-content-between align-items-center mb-0">
-              <span class="badge bg-light text-dark border">{{ recipe.matched_items }}/{{ recipe.total_items }} items</span>
-              <span class="fw-bold text-success">€{{ "%.2f"|format(recipe.total_price) }}</span>
-            </div>
-          </div>
-          <div class="card-footer bg-transparent border-0 p-4 pt-0">
-            <button class="btn w-100 btn-outline-primary rounded-pill fw-bold" onclick='loadSavedRecipe({{ recipe|tojson|safe }})'>
-              <i class="bi bi-arrow-repeat me-1"></i> Load Items
-            </button>
-          </div>
-        </div>
-      </div>
-      {% endfor %}
-    </div>
-  </div>
+  {% include "book.html" ignore missing %}
   {% endif %}
 
   <div id="loadingState" class="text-center py-5 d-none bg-white rounded-4 p-5" style="border-radius: 24px; border: 1px solid #f1f5f9; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);">
@@ -291,9 +259,18 @@
         <span class="badge rounded-pill px-3 py-2 fs-6 shadow-sm" style="background: linear-gradient(135deg, #7c3aed, #6366f1); color: white;" id="itemCountBadge">0 items</span>
       </div>
       
+
       <div id="ingredientsList">
         <!-- Javascript will inject ingredient cards here -->
       </div>
+      
+      <div id="recipePreparationBlock" class="mt-5 p-4 bg-white" style="border-radius: 24px; border: 1px solid #f1f5f9; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.02);">
+        <h3 class="fw-bold m-0 mb-4" style="color: #1a202c;"><i class="bi bi-journal-text text-primary me-2"></i>Preparation Steps</h3>
+        <div id="instructionsList" class="ps-3" style="border-left: 3px solid #e2e8f0; font-size: 1.1rem; line-height: 1.6; color: #475569;">
+          <!-- JS will inject steps here -->
+        </div>
+      </div>
+
     </div>
     
     <div class="col-lg-4">
@@ -381,20 +358,30 @@ document.addEventListener('DOMContentLoaded', () => {
         const bForm = document.getElementById('budgetForm');
         const bBtn = document.getElementById('tabBudget');
         const rBtn = document.getElementById('tabRecipe');
+        const bkBtn = document.getElementById('tabBook');
+        const resultsContainer = document.getElementById('resultsContainer');
+        const savedRecipesSection = document.getElementById('savedRecipesSection') || document.getElementById('grandBookSection');
+
+        rBtn.className = 'btn btn-light text-dark rounded-pill px-4 fw-bold border-0 bg-transparent';
+        bBtn.className = 'btn btn-light text-dark rounded-pill px-4 fw-bold border-0 bg-transparent';
+        if(bkBtn) bkBtn.className = 'btn btn-light text-dark rounded-pill px-4 fw-bold border-0 bg-transparent';
 
         if (mode === 'budget') {
             rForm.classList.add('d-none');
             bForm.classList.remove('d-none');
-            rBtn.className = 'btn btn-light text-dark rounded-pill px-4 fw-bold border-0 bg-transparent';
-            
-            
+            if (savedRecipesSection) savedRecipesSection.classList.add('d-none');
             bBtn.className = 'btn btn-primary rounded-pill px-4 fw-bold text-white border-0';
+        } else if (mode === 'book') {
+            rForm.classList.add('d-none');
+            bForm.classList.add('d-none');
+            if (resultsContainer) resultsContainer.classList.add('d-none');
+            if (savedRecipesSection) savedRecipesSection.classList.remove('d-none');
+            if(bkBtn) bkBtn.className = 'btn btn-primary rounded-pill px-4 fw-bold text-white border-0';
         } else {
             bForm.classList.add('d-none');
             rForm.classList.remove('d-none');
-            bBtn.className = 'btn btn-light text-dark rounded-pill px-4 fw-bold border-0 bg-transparent';
-            
-            
+            if (resultsContainer) resultsContainer.classList.add('d-none');
+            if (savedRecipesSection) savedRecipesSection.classList.add('d-none');
             rBtn.className = 'btn btn-primary rounded-pill px-4 fw-bold text-white border-0';
         }
     };
@@ -410,7 +397,7 @@ document.addEventListener('DOMContentLoaded', () => {
             resultsContainer.classList.add('d-none');
             if (budgetIdeasSection) budgetIdeasSection.classList.add('d-none');
             loadingState.classList.remove('d-none');
-            const savedRecipesSection = document.getElementById('savedRecipesSection');
+            const savedRecipesSection = document.getElementById('savedRecipesSection') || document.getElementById('grandBookSection');
             if (savedRecipesSection) savedRecipesSection.classList.add('d-none');
 
             document.querySelector('#loadingState h3').textContent = "Finding meals for your budget...";
@@ -478,7 +465,7 @@ document.addEventListener('DOMContentLoaded', () => {
         recipeInput.disabled = true;
         resultsContainer.classList.add('d-none');
         loadingState.classList.remove('d-none');
-        const savedRecipesSection = document.getElementById('savedRecipesSection');
+        const savedRecipesSection = document.getElementById('savedRecipesSection') || document.getElementById('grandBookSection');
         if (savedRecipesSection) savedRecipesSection.classList.add('d-none');
         matchedProductsData = [];
 
@@ -531,6 +518,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
         ingredientsList.innerHTML = '';
         matchedProductsData = [];
+
+        const prepBlock = document.getElementById('recipePreparationBlock');
+        const instList = document.getElementById('instructionsList');
+        if (prepBlock && instList) {
+            instList.innerHTML = '';
+            if (data.instructions && data.instructions.length > 0) {
+                prepBlock.classList.remove('d-none');
+                data.instructions.forEach((step, idx) => {
+                    instList.innerHTML += `<div class="mb-3"><strong class="text-primary me-2">${idx+1}.</strong><span style="color: #475569;">${escapeHtml(step)}</span></div>`;
+                });
+            } else {
+                prepBlock.classList.add('d-none');
+            }
+        }
 
         data.results.forEach(item => {
             const card = document.createElement('div');
@@ -747,7 +748,7 @@ document.addEventListener('DOMContentLoaded', () => {
             matched_items: recipeData.matched_items,
             total_price: recipeData.total_price,
             results: recipeData.ingredients
-        };        const savedRecipesSection = document.getElementById('savedRecipesSection');
+        };        const savedRecipesSection = document.getElementById('savedRecipesSection') || document.getElementById('grandBookSection');
         if (savedRecipesSection) savedRecipesSection.classList.add('d-none');        currentFullRecipeData = mappedData;
         if(window._renderResultsHook) window._renderResultsHook(mappedData);
     };    // Provide global access to renderResults
