@@ -24,6 +24,7 @@ def save_recipe(user_email, recipe_data):
             "user_email": user_email,
             "title": recipe_data.get('recipe', 'Untitled Recipe'),
             "ingredients": recipe_data.get('results', []),
+            "instructions": recipe_data.get('instructions', []),
             "total_items": recipe_data.get('total_items', 0),
             "matched_items": recipe_data.get('matched_items', 0),
             "total_price": recipe_data.get('total_price', 0),
