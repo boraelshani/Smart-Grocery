@@ -1,0 +1,371 @@
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap');
+
+.grand-book-container {
+    position: relative;
+    max-width: 850px;
+    margin: 0 auto;
+}
+
+.grand-book-shadow {
+    position: relative;
+    border-radius: 12px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    background: #e2e8f0;
+    padding: 10px;
+}
+
+.grand-book {
+    display: flex;
+    background: #fdfbf7;
+    min-height: 480px;
+    border-radius: 8px;
+    position: relative;
+    box-shadow: inset 0 0 20px rgba(0,0,0,0.05);
+}
+
+/* Spine shading effect */
+.book-spine {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 60px;
+    transform: translateX(-50%);
+    background: linear-gradient(
+        to right,
+        rgba(255,255,255,0) 0%,
+        rgba(0,0,0,0.08) 30%,
+        rgba(0,0,0,0.15) 50%,
+        rgba(0,0,0,0.08) 70%,
+        rgba(255,255,255,0) 100%
+    );
+    z-index: 5;
+    pointer-events: none;
+}
+
+.book-page {
+    flex: 1;
+    padding: 2rem 3rem;
+    position: relative;
+    width: 50%;
+    overflow-y: auto;
+    max-height: 480px;
+}
+
+.book-page::-webkit-scrollbar { width: 6px; }
+.book-page::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+
+.left-page {
+    border-right: 1px solid rgba(0,0,0,0.05);
+}
+.right-page {
+    border-left: 1px solid rgba(255,255,255,0.5);
+}
+
+.book-title-font {
+    font-family: 'Playfair Display', serif;
+}
+
+/* Navigation buttons */
+.page-turn-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: white;
+    border: 2px solid #e2e8f0;
+    color: #4f46e5;
+    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+    z-index: 10;
+    transition: all 0.2s;
+}
+.page-turn-btn:hover {
+    background: #4f46e5;
+    color: white;
+    border-color: #4f46e5;
+}
+.prev-btn { left: -25px; }
+.next-btn { right: -25px; }
+
+.page-num {
+    position: absolute;
+    bottom: 20px;
+    font-family: monospace;
+    color: #94a3b8;
+    font-size: 0.9rem;
+}
+.left-page .page-num { left: 20px; }
+.right-page .page-num { right: 20px; }
+
+/* Responsive break for smaller screens */
+@media (max-width: 900px) {
+    .grand-book { flex-direction: column; }
+    .book-spine { display: none; }
+    .book-page { width: 100%; padding: 2rem; border: none !important; }
+    .page-turn-btn { top: auto; bottom: -25px; }
+    .prev-btn { left: 20%; transform: translateX(-50%); }
+    .next-btn { right: 20%; transform: translateX(50%); }
+}
+</style>
+
+<div class="grand-book-container my-5" id="grandBookSection">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="fw-bold" style="color: #1a202c;">
+      <i class="bi bi-book-half text-primary me-2"></i>My Recipe Book
+    </h3>
+    <div class="input-group" style="max-width: 300px;">
+       <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+       <input type="text" id="recipeBookSearch" class="form-control border-start-0" placeholder="Search by name...">
+    </div>
+  </div>
+
+  <div class="grand-book-shadow">
+    <div class="grand-book">
+      <div class="book-spine"></div>
+      
+      <!-- Left Page -->
+      <div class="book-page left-page" id="bookLeftPage">
+         <!-- Dynamic Content -->
+      </div>
+      
+      <!-- Right Page -->
+      <div class="book-page right-page" id="bookRightPage">
+         <!-- Dynamic Content -->
+      </div>
+
+      <button class="page-turn-btn prev-btn" id="bookPrevBtn"><i class="bi bi-chevron-left"></i></button>
+      <button class="page-turn-btn next-btn" id="bookNextBtn"><i class="bi bi-chevron-right"></i></button>
+    </div>
+  </div>
+  
+  <div class="text-center mt-3 text-muted fw-bold" id="bookPageIndicator"></div>
+  <div class="text-center mt-4 text-muted fw-bold" id="bookEmptyState" style="display: none;">
+     <i class="bi bi-journal-x fs-2 d-block mb-2 text-secondary"></i>
+     No recipes found matching your search.
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const rawRecipes = {{ saved_recipes | tojson | safe }};
+    let displayRecipes = [...rawRecipes];
+    let currentIndex = 0;
+
+    const leftPage = document.getElementById('bookLeftPage');
+    const rightPage = document.getElementById('bookRightPage');
+    const searchInput = document.getElementById('recipeBookSearch');
+    const prevBtn = document.getElementById('bookPrevBtn');
+    const nextBtn = document.getElementById('bookNextBtn');
+    const emptyState = document.getElementById('bookEmptyState');
+    const bookShadow = document.querySelector('.grand-book-shadow');
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.toString()
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function renderBook() {
+        if (displayRecipes.length === 0) {
+            if(bookShadow) bookShadow.style.display = 'none';
+            if(emptyState) emptyState.style.display = 'block';
+            const indicator = document.getElementById('bookPageIndicator');
+            if(indicator) indicator.textContent = '';
+
+            if(leftPage) leftPage.innerHTML = '';
+            if(rightPage) rightPage.innerHTML = '';
+            return;
+        }
+        
+        if(bookShadow) bookShadow.style.display = 'block';
+        const indicator = document.getElementById('bookPageIndicator');
+        if(indicator) indicator.textContent = `Recipe ${currentIndex + 1} of ${displayRecipes.length}`;
+
+        if(emptyState) emptyState.style.display = 'none';
+
+        const recipe = displayRecipes[currentIndex];
+        
+        let ingredientsHtml = '';
+        if (recipe.ingredients && recipe.ingredients.length > 0) {
+            ingredientsHtml = recipe.ingredients.map(item => {
+                const name = escapeHtml(item.original || item.name || "Item");
+                const matched = !!item.product;
+                if (matched) {
+                    const price = parseFloat(item.product.price_val || item.product.price || 0).toFixed(2);
+                    return `
+                        <div class="d-flex justify-content-between py-1 border-bottom border-light">
+                            <span><i class="bi bi-check-circle-fill me-2" style="color:#10b981;"></i>${name}</span>
+                            <span class="fw-bold">€${price}</span>
+                        </div>
+                    `;
+                } else {
+                    return `
+                        <div class="d-flex justify-content-between py-1 border-bottom border-light opacity-75">
+                            <span class="text-decoration-line-through text-muted"><i class="bi bi-x-circle me-2 text-danger"></i>${name}</span>
+                            <span class="text-muted">Out of stock</span>
+                        </div>
+                    `;
+                }
+            }).join('');
+        } else {
+            ingredientsHtml = '<p class="text-muted">No ingredients.</p>';
+        }
+
+        const totalItems = recipe.ingredients ? recipe.ingredients.length : 0;
+        const totalCost = parseFloat(recipe.total_price || 0).toFixed(2);
+        const title = escapeHtml(recipe.title || "Untitled Recipe");
+        const rId = recipe._id ? (recipe._id.$oid || recipe._id) : "";
+
+        if(leftPage) leftPage.innerHTML = `
+            <div class="d-flex justify-content-between align-items-start mb-3">
+                <h3 class="book-title-font fw-bold m-0" style="color: #1e293b; line-height: 1.2; padding-right: 15px;">${title}</h3>
+                <button class="btn btn-sm btn-outline-danger border-0 rounded-circle" onclick="removeBookRecipe('${rId}')" title="Delete Recipe">
+                    <i class="bi bi-trash fs-5"></i>
+                </button>
+            </div>
+            
+            <p class="text-muted small fw-bold mb-3"><i class="bi bi-calendar3 me-1"></i> Saved Recipe</p>
+            
+            <div class="row g-2 mb-3">
+               <div class="col-6">
+                  <div class="bg-white p-2 rounded-3 shadow-sm text-center border">
+                      <span class="d-block small text-muted">Items</span>
+                      <span class="fs-5 fw-bold">${totalItems}</span>
+                  </div>
+               </div>
+               <div class="col-6">
+                  <div class="bg-white p-2 rounded-3 shadow-sm text-center border">
+                      <span class="d-block small text-muted">Cost</span>
+                      <span class="fs-5 fw-bold text-success">€${totalCost}</span>
+                  </div>
+               </div>
+            </div>
+
+            <h6 class="fw-bold mb-2" style="color:#4f46e5;"><i class="bi bi-basket-fill me-2"></i>Shopping List</h6>
+            <div class="mb-4 small">
+                ${ingredientsHtml}
+            </div>
+
+            <div class="mt-auto text-center">
+                <button class="btn btn-primary rounded-pill px-4 py-2 shadow-sm" onclick="setupActivePlanner()" style="background: linear-gradient(135deg, #7c3aed, #6366f1); border: 0;">
+                    <i class="bi bi-arrow-repeat me-1"></i> Load to Planner
+                </button>
+            </div>
+            
+            <div class="page-num">Pg. ${(currentIndex * 2) + 1}</div>
+        `;
+
+        let instructionsHtml = '';
+        if (recipe.instructions && recipe.instructions.length > 0) {
+            instructionsHtml = recipe.instructions.map((step, i) => `
+                <div class="d-flex mb-2">
+                    <div class="fs-5 fw-bold me-2 text-danger book-title-font">${i + 1}.</div>
+                    <div class="pt-1 text-secondary small" style="line-height: 1.5;">${escapeHtml(step)}</div>
+                </div>
+            `).join('');
+        } else {
+            instructionsHtml = `
+                <div class="text-center text-muted mt-4 opacity-50">
+                   <i class="bi bi-fire fs-2 d-block mb-2"></i>
+                   <p>No instructions saved.</p>
+                </div>
+            `;
+        }
+
+        if(rightPage) rightPage.innerHTML = `
+            <div class="mb-3 pb-2" style="border-bottom: 2px dashed #fecdd3;">
+                <h5 class="fw-bold m-0" style="color: #e11d48;"><i class="bi bi-journal-text me-2"></i>Preparation</h5>
+            </div>
+            <div>
+                ${instructionsHtml}
+            </div>
+            <div class="page-num">Pg. ${(currentIndex * 2) + 2}</div>
+        `;
+
+        if(prevBtn) prevBtn.style.visibility = currentIndex === 0 ? 'hidden' : 'visible';
+        if(nextBtn) nextBtn.style.visibility = currentIndex === displayRecipes.length - 1 ? 'hidden' : 'visible';
+    }
+
+    if(prevBtn) prevBtn.addEventListener('click', () => {
+        if (currentIndex > 0) {
+            currentIndex--;
+            renderBook();
+        }
+    });
+
+    if(nextBtn) nextBtn.addEventListener('click', () => {
+        if (currentIndex < displayRecipes.length - 1) {
+            currentIndex++;
+            renderBook();
+        }
+    });
+
+    if(searchInput) searchInput.addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase();
+        displayRecipes = rawRecipes.filter(r => r.title && r.title.toLowerCase().includes(query));
+        currentIndex = 0;
+        renderBook();
+    });
+
+    window.removeBookRecipe = async function(id) {
+        if(confirm('Are you sure you want to remove this recipe from your book?')) {
+            try {
+                const res = await fetch('/api/recipe/delete/' + id, { method: 'DELETE' });
+                const data = await res.json();
+                if (data.success) {
+                    const indexToRemove = rawRecipes.findIndex(r => {
+                        const rId = r._id?.$oid || r._id;
+                        return rId === id;
+                    });
+                    if (indexToRemove !== -1) rawRecipes.splice(indexToRemove, 1);
+                    
+                    const displayIndex = displayRecipes.findIndex(r => {
+                        const rId = r._id?.$oid || r._id;
+                        return rId === id;
+                    });
+                    if (displayIndex !== -1) displayRecipes.splice(displayIndex, 1);
+
+                    if (currentIndex >= displayRecipes.length) currentIndex = Math.max(0, displayRecipes.length - 1);
+                    renderBook();
+                } else {
+                    alert(data.error);
+                }
+            } catch (e) {
+                console.error(e);
+                alert('Failed to delete recipe.');
+            }
+        }
+    };
+
+    window.setupActivePlanner = function() {
+        const recipe = displayRecipes[currentIndex];
+        if(!recipe) return;
+        // Assuming global 'loadSavedRecipe' exists in recipe_planner.html
+        if (typeof window.loadSavedRecipe === 'function') {
+            window.loadSavedRecipe(recipe);
+        } else {
+            console.log('Cannot find loadSavedRecipe, implementing fallback.');
+            // Attempt fallback to populate main form
+            const input = document.getElementById('recipeInput');
+            if (input) input.value = recipe.title;
+            // Scroll up to main area
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    };
+
+    renderBook();
+});
+</script>
