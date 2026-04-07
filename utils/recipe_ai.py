@@ -58,6 +58,8 @@ def get_recipe_details(recipe_query):
         
         # Extract response text
         raw_text = data["candidates"][0]["content"]["parts"][0]["text"]
+        raw_text = raw_text.strip().removeprefix('```json').removesuffix('```').strip()
+        raw_text = raw_text.removeprefix('```').strip()
 
         # Try to parse it as JSON
         recipe_data = json.loads(raw_text)
@@ -99,6 +101,8 @@ def get_budget_meal_ideas(budget_str):
         response.raise_for_status()
         data = response.json()
         raw_text = data["candidates"][0]["content"]["parts"][0]["text"]
+        raw_text = raw_text.strip().removeprefix('```json').removesuffix('```').strip()
+        raw_text = raw_text.removeprefix('```').strip()
         meals = json.loads(raw_text)
         if isinstance(meals, list):
             return meals
@@ -136,6 +140,8 @@ def get_ingredient_alternatives(recipe_query, missing_ingredients):
         response.raise_for_status()
         data = response.json()
         raw_text = data["candidates"][0]["content"]["parts"][0]["text"]
+        raw_text = raw_text.strip().removeprefix('```json').removesuffix('```').strip()
+        raw_text = raw_text.removeprefix('```').strip()
         alts = json.loads(raw_text)
         if isinstance(alts, list) and len(alts) == len(missing_ingredients):
             return alts

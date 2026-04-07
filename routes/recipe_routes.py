@@ -61,9 +61,8 @@ def generate_recipe_plan():
                     alt_res['original_request'] = f"{alt_res['original_request']} (Alt for {orig})"
                     matched_results[idx] = alt_res
 
-        # Filter out ingredients that STILL have no matches
-        # (user requested: "when there is not a ingrediant dont show it")
-        final_results = [m for m in matched_results if m.get('matches')]
+        # We will keep all results so the UI can list them neutrally
+        final_results = matched_results
 
         # Structure the results exactly how the UI expects them
         formatted_results = []

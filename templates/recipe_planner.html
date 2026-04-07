@@ -570,17 +570,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 `;
             } else {
-                card.classList.add('unmatched-card');
-                bodyHTML = `
-                    <div class="ingredient-header">
-                        <span class="d-flex align-items-center text-muted"><i class="bi bi-dash-circle text-secondary me-2 fs-5"></i><del>${originalName}</del></span>
-                        <span class="badge rounded-pill badge-store" style="background: #f8fafc; color: #94a3b8; border: 1px solid #e2e8f0;"><i class="bi bi-ban me-1"></i>Not in stock</span>
-                    </div>
-                    <div class="ingredient-body justify-content-center py-4">
-                         <div class="text-center text-muted">
-                             <i class="bi bi-info-circle fs-4 d-block mb-2 text-secondary"></i>
-                             <span class="fw-medium">No direct match found in database for this ingredient.</span>
-                         </div>
+                  card.classList.add('unmatched-card', 'opacity-75'); // slightly faded but not crossed out
+                  bodyHTML = `
+                      <div class="ingredient-header">
+                          <span class="d-flex align-items-center" style="color: #475569; font-weight: 500;"><i class="bi bi-bookmark text-secondary me-2 fs-5"></i>${originalName}</span>
+                          <span class="badge rounded-pill" style="background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; font-weight: 600;"><i class="bi bi-info-circle me-1"></i>Not in Catalog</span>
+                      </div>
+                      <div class="ingredient-body justify-content-center py-3">
+                           <div class="text-center text-muted">
+                               <span class="fw-medium" style="font-size: 0.9rem;">This item is required for the recipe, but is not currently available in our system.</span>
                     </div>
                 `;
             }
