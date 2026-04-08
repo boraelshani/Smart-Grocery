@@ -2,6 +2,7 @@ from flask import render_template, request, jsonify, session
 from routes import recipe_bp
 from utils.recipe_ai import get_recipe_details, get_budget_meal_ideas, get_ingredient_alternatives
 from utils.recipe_matcher import match_ingredients_to_products
+from utils.recipe_image_fetcher import fetch_bing_image
 from models.saved_recipes_model import get_saved_recipes, save_recipe, delete_recipe
 import traceback
 
@@ -98,13 +99,29 @@ def generate_budget_ideas():
     try:
         data = request.get_json()
         budget = data.get('budget', '').strip()
+        preference = data.get('preference', 'any').strip()
+        max_time = data.get('max_time', 'any').strip()
         if not budget:
             return jsonify({'success': False, 'error': 'Missing budget.'}), 400
         
-        meals = get_budget_meal_ideas(budget)
+        meals = get_budget_meal_ideas(budget, preference, max_time)
         return jsonify({'success': True, 'meals': meals})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
+
+@recipe_bp.route('/api/recipe/image', methods=['GET'])
+def get_recipe_image_proxy():
+    """Returns a highly relevant dynamic food image URL for a given meal name."""
+    query = request.args.get('q', '').strip()
+    if not query:
+        return jsonify({'success': False, 'url': None}), 400
+    try:
+        url = fetch_bing_image(query)
+        if url:
+            return jsonify({'success': True, 'url': url})
+        return jsonify({'success': False, 'url': None})
+    except Exception as e:
+        return jsonify({'success': False, 'url': None, 'error': str(e)}), 500
 
 @recipe_bp.route('/api/recipe/save', methods=['POST'])
 def api_save_recipe():

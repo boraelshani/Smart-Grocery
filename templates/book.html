@@ -198,31 +198,46 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const recipe = displayRecipes[currentIndex];
         
-        let ingredientsHtml = '';
-        if (recipe.ingredients && recipe.ingredients.length > 0) {
-            ingredientsHtml = recipe.ingredients.map(item => {
-                const name = escapeHtml(item.original || item.name || "Item");
-                const matched = !!item.product;
-                if (matched) {
-                    const price = parseFloat(item.product.price_val || item.product.price || 0).toFixed(2);
-                    return `
-                        <div class="d-flex justify-content-between py-1 border-bottom border-light">
-                            <span><i class="bi bi-check-circle-fill me-2" style="color:#10b981;"></i>${name}</span>
-                            <span class="fw-bold">€${price}</span>
-                        </div>
-                    `;
-                } else {
-                    return `
-                        <div class="d-flex justify-content-between py-1 border-bottom border-light opacity-75">
-                            <span class="text-decoration-line-through text-muted"><i class="bi bi-x-circle me-2 text-danger"></i>${name}</span>
-                            <span class="text-muted">Out of stock</span>
-                        </div>
-                    `;
-                }
-            }).join('');
-        } else {
-            ingredientsHtml = '<p class="text-muted">No ingredients.</p>';
-        }
+                  let ingredientsHtml = '';
+          let unmatchedHtml = '';
+          if (recipe.ingredients && recipe.ingredients.length > 0) {
+              const matchedItems = recipe.ingredients.filter(item => !!(item.matched_product || item.product));
+              const unmatchedItems = recipe.ingredients.filter(item => !(item.matched_product || item.product));
+              
+              if (matchedItems.length > 0) {
+                  ingredientsHtml = matchedItems.map(item => {
+                      const name = escapeHtml(item.original || item.name || "Item");
+                      const prod = item.matched_product || item.product;
+                      const price = parseFloat(prod.price_val || prod.price || 0).toFixed(2);
+                      const prodId = prod._id || prod.id;
+                      const storeName = prod.store || 'Unknown';
+                      return `
+                          <div class="d-flex justify-content-between py-1 border-bottom border-light">
+                              <span><i class="bi bi-check-circle-fill me-2" style="color:#10b981;"></i><a href="/product/${prodId}?store=${encodeURIComponent(storeName)}" class="text-decoration-none text-dark">${name}</a></span>
+                              <span class="fw-bold">€${price}</span>
+                          </div>
+                      `;
+                  }).join('');
+              } else {
+                  ingredientsHtml = '<p class="text-muted" style="font-size:0.9rem;">No matched products.</p>';
+              }
+              
+              if (unmatchedItems.length > 0) {
+                  unmatchedHtml = `
+                      <div class="mt-3 mb-5 pb-2">
+                      <h6 class="fw-bold mb-2" style="color:#64748b;"><i class="bi bi-cart-x me-2"></i>Additional Products</h6>
+                      <div class="d-flex flex-wrap gap-1">
+                          ${unmatchedItems.map(item => {
+                              const name = escapeHtml(item.original || item.name || "Item");
+                              return `<a href="/home?q=${encodeURIComponent(name)}" class="badge bg-light text-dark border p-1 px-2 text-decoration-none hover-bg-light shadow-sm" style="font-size: 0.75rem;">${name}</a>`;
+                          }).join('')}
+                      </div>
+                    </div>
+                  `;
+              }
+          } else {
+              ingredientsHtml = '<p class="text-muted">No ingredients.</p>';
+          }
 
         const totalItems = recipe.ingredients ? recipe.ingredients.length : 0;
         const totalCost = parseFloat(recipe.total_price || 0).toFixed(2);
@@ -255,11 +270,12 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
 
             <h6 class="fw-bold mb-2" style="color:#4f46e5;"><i class="bi bi-basket-fill me-2"></i>Shopping List</h6>
-            <div class="mb-4 small">
+            <div class="mb-2 small">
                 ${ingredientsHtml}
             </div>
+            ${unmatchedHtml}
 
-            <div class="mt-auto text-center">
+            <div class="text-center mt-4 mb-5">
                 <button class="btn btn-primary rounded-pill px-4 py-2 shadow-sm" onclick="setupActivePlanner()" style="background: linear-gradient(135deg, #7c3aed, #6366f1); border: 0;">
                     <i class="bi bi-arrow-repeat me-1"></i> Load to Planner
                 </button>

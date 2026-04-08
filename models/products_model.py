@@ -130,12 +130,12 @@ class ProductsModel:
         return {
             **doc,
             "id": str(doc.get("_id")) if doc.get("_id") is not None else str(doc.get("productId") or ""),
-            "name": doc.get("name_en") or doc.get("name_de"),
-            "category": category_map.get(doc.get("categoryId")) or doc.get("categoryId"),
-            "image": doc.get("defaultImageUrl"),
-            "price": cheapest,
-            "price_val": cheapest,
-            "stores": stores,
+            "name": doc.get("name_en") or doc.get("name_de") or doc.get("name"),
+            "category": category_map.get(doc.get("categoryId")) or doc.get("categoryId") or doc.get("category"),
+            "image": doc.get("defaultImageUrl") or doc.get("image"),
+            "price": cheapest if cheapest is not None else doc.get("price"),
+            "price_val": cheapest if cheapest is not None else doc.get("price_val"),
+            "stores": stores if stores else doc.get("stores", []),
         }
 
     def _translate_legacy_query_for_new(self, query: dict):
@@ -358,8 +358,13 @@ class ProductsModel:
                 doc = self.db.products.find_one({"id": str(product_id)})
             if not doc:
                 return None
-            hydrated = self.list_products(query={"productId": doc.get("productId")}, limit=1)
-            return hydrated[0] if hydrated else None
+                
+            pid = doc.get("productId")
+            if pid:
+                hydrated = self.list_products(query={"productId": pid}, limit=1)
+                return hydrated[0] if hydrated else None
+            else:
+                return self._hydrate_new_product(doc)
 
         try:
             doc = self.db.products.find_one({"_id": ObjectId(product_id)})

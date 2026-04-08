@@ -214,13 +214,39 @@
       </button>
     </form>
 
-    <form id="budgetForm" class="search-box w-100 mx-auto position-relative mb-4 d-none">
-      <input type="text" id="budgetInput"
-             placeholder="Enter your budget (e.g., $10 or 15€)..." required
-             autocomplete="off">
-      <button type="submit" id="budgetBtn" class="bg-warning text-dark border-0">
-        <i class="bi bi-lightbulb-fill"></i> Get Ideas
-      </button>
+    <form id="budgetForm" class="mx-auto" style="max-width: 750px;">
+      <div class="search-box w-100 position-relative mb-3">
+        <input type="text" id="budgetInput"
+               placeholder="Budget (e.g. 15€)..." required
+               autocomplete="off">
+        <button type="submit" id="budgetBtn" class="bg-warning text-dark border-0">
+          <i class="bi bi-lightbulb-fill"></i> Get Ideas
+        </button>
+      </div>
+      
+      <div class="d-flex flex-wrap justify-content-center gap-3 mb-4 bg-white p-3 rounded-4 shadow-sm border">
+        <div class="d-flex align-items-center gap-2 me-3">
+            <span class="small fw-bold text-muted text-uppercase" style="letter-spacing: 0.5px;">Diet:</span>
+            <select class="form-select form-select-sm border-0 bg-light fw-bold" id="dietPreference" style="width: auto; border-radius: 10px;">
+                <option value="any">🍲 Any</option>
+                <option value="vegetarian">🥗 Vegetarian</option>
+                <option value="vegan">🌿 Vegan</option>
+                <option value="meat-based">🥩 Meat-based</option>
+                <option value="quick">⚡ Quick & Easy</option>
+                <option value="keto">🥑 Keto</option>
+            </select>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <span class="small fw-bold text-muted text-uppercase" style="letter-spacing: 0.5px;">Max Time:</span>
+            <select class="form-select form-select-sm border-0 bg-light fw-bold" id="timePreference" style="width: auto; border-radius: 10px;">
+                <option value="any">Any time</option>
+                <option value="15">15 mins</option>
+                <option value="30">30 mins</option>
+                <option value="45">45 mins</option>
+                <option value="60">60+ mins</option>
+            </select>
+        </div>
+      </div>
     </form>
 
     <div class="d-inline-flex bg-white rounded-pill p-1 mb-4 shadow-sm">
@@ -238,7 +264,7 @@
     <div class="d-flex justify-content-between align-items-center mb-3">
       <h3 class="fw-bold" style="color: #1a202c;"><i class="bi bi-lightbulb-fill text-warning me-2"></i>Friendly Budget Ideas</h3>
     </div>
-    <div class="row row-cols-1 row-cols-md-3 g-4" id="budgetIdeasContainer">
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4" id="budgetIdeasContainer">
       <!-- AI meals go here -->
     </div>
   </div>
@@ -265,6 +291,14 @@
 
       <div id="ingredientsList">
         <!-- Javascript will inject ingredient cards here -->
+      </div>
+
+      <div id="additionalProductsSection" class="mt-4 p-4 bg-white d-none" style="border-radius: 24px; border: 1px solid #f1f5f9; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.02);">
+        <h4 class="fw-bold mb-3" style="color: #1a202c;"><i class="bi bi-plus-circle text-secondary me-2"></i>Additional Ingredients</h4>
+        <p class="text-muted small mb-3">These recipe items were not found directly in our catalog. You might need to pick them up separately.</p>
+        <div id="additionalProductsList" class="d-flex flex-wrap gap-2">
+          <!-- JS will inject badges here -->
+        </div>
       </div>
       
       <div id="recipePreparationBlock" class="mt-5 p-4 bg-white" style="border-radius: 24px; border: 1px solid #f1f5f9; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.02);">
@@ -372,6 +406,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (mode === 'budget') {
             rForm.classList.add('d-none');
             bForm.classList.remove('d-none');
+            bForm.parentElement.classList.remove('d-none'); // Ensure container visible
             if (savedRecipesSection) savedRecipesSection.classList.add('d-none');
             bBtn.className = 'btn btn-primary rounded-pill px-4 fw-bold text-white border-0';
         } else if (mode === 'book') {
@@ -390,10 +425,16 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     if (budgetForm) {
+        // Start hidden initially if diet choices provided
+        budgetForm.classList.add('d-none');
+
         budgetForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const budgetVal = budgetInput.value.trim();
             if (!budgetVal) return;
+
+            const dietPref = document.getElementById('dietPreference').value;
+            const timePref = document.getElementById('timePreference').value;
 
             budgetBtn.disabled = true;
             budgetInput.disabled = true;
@@ -404,13 +445,17 @@ document.addEventListener('DOMContentLoaded', () => {
             if (savedRecipesSection) savedRecipesSection.classList.add('d-none');
 
             document.querySelector('#loadingState h3').textContent = "Finding meals for your budget...";
-            document.querySelector('#loadingState p').textContent = "Consulting our culinary AI for cheap ideas.";
+            document.querySelector('#loadingState p').textContent = `Consulting our culinary AI for cheap ${dietPref} ideas within ${timePref} mins.`;
 
             try {
                 const res = await fetch('/api/recipe/budget', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ budget: budgetVal })
+                    body: JSON.stringify({ 
+                      budget: budgetVal,
+                      preference: dietPref,
+                      max_time: timePref
+                    })
                 });
                 const data = await res.json();
                 
@@ -420,13 +465,81 @@ document.addEventListener('DOMContentLoaded', () => {
                     budgetIdeasSection.classList.remove('d-none');
                     budgetIdeasContainer.innerHTML = '';
                     
-                    data.meals.forEach(meal => {
-                        budgetIdeasContainer.innerHTML += `
+                    // Simple local keyword matcher using fast, permanent, high-quality Unsplash image URLs
+                    function getFoodImage(name) {
+                        const lowerName = name.toLowerCase();
+                        
+                        // Breakfast / Sweets
+                        if (lowerName.includes('pancake') || lowerName.includes('waffle') || lowerName.includes('crepe')) return 'https://images.unsplash.com/photo-1528207776546-3221869f3dcb?w=400&h=250&fit=crop';
+                        if (lowerName.includes('oat') || lowerName.includes('porridge') || lowerName.includes('cereal') || lowerName.includes('banana')) return 'https://images.unsplash.com/photo-1517673132405-a56a62b18caf?w=400&h=250&fit=crop';
+                        
+                        // Main staples
+                        if (lowerName.includes('burger')) return 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&h=250&fit=crop';
+                        if (lowerName.includes('pizza')) return 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400&h=250&fit=crop';
+                        if (lowerName.includes('pasta') || lowerName.includes('spaghetti') || lowerName.includes('macaroni') || lowerName.includes('noodle')) return 'https://images.unsplash.com/photo-1473093295043-cdd812d0e601?w=400&h=250&fit=crop';
+                        if (lowerName.includes('salad') || lowerName.includes('greens') || lowerName.includes('kale')) return 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&h=250&fit=crop';
+                        if (lowerName.includes('soup') || lowerName.includes('stew') || lowerName.includes('chili') || lowerName.includes('broth') || lowerName.includes('dal')) return 'https://images.unsplash.com/photo-1547592180-85f173990554?w=400&h=250&fit=crop';
+                        if (lowerName.includes('rice') || lowerName.includes('fried rice') || lowerName.includes('risotto')) return 'https://images.unsplash.com/photo-1536304929831-ee1ca9d44906?w=400&h=250&fit=crop';
+                        
+                        // Meats
+                        if (lowerName.includes('chicken')) return 'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=400&h=250&fit=crop';
+                        if (lowerName.includes('beef') || lowerName.includes('steak')) return 'https://images.unsplash.com/photo-1558030006-450675393462?w=400&h=250&fit=crop';
+                        if (lowerName.includes('pork') || lowerName.includes('sausage')) return 'https://images.unsplash.com/photo-1432139555190-58524dae6a55?w=400&h=250&fit=crop';
+                        if (lowerName.includes('fish') || lowerName.includes('salmon') || lowerName.includes('shrimp')) return 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=400&h=250&fit=crop';
+                        
+                        // Mexican / Wraps
+                        if (lowerName.includes('taco') || lowerName.includes('fajita') || lowerName.includes('burrito') || lowerName.includes('quesadilla')) return 'https://images.unsplash.com/photo-1551504734-5ee1c4a1479b?w=400&h=250&fit=crop';
+                        if (lowerName.includes('sandwich') || lowerName.includes('wrap') || lowerName.includes('toast') || lowerName.includes('bagel')) return 'https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=400&h=250&fit=crop';
+                        
+                        // Veggies / Other
+                        if (lowerName.includes('egg') || lowerName.includes('omelet') || lowerName.includes('shakshuka')) return 'https://images.unsplash.com/photo-1525385133512-2f3bdd039054?w=400&h=250&fit=crop';
+                        if (lowerName.includes('curry') || lowerName.includes('masala')) return 'https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=400&h=250&fit=crop';
+                        if (lowerName.includes('potato') || lowerName.includes('hash') || lowerName.includes('mash') || lowerName.includes('fry') || lowerName.includes('bake')) return 'https://images.unsplash.com/photo-1518977622024-5399ac18c41f?w=400&h=250&fit=crop';
+                        if (lowerName.includes('bean') || lowerName.includes('chickpea') || lowerName.includes('lentil')) return 'https://images.unsplash.com/photo-1515543237350-b3eea1ec8082?w=400&h=250&fit=crop';
+                        if (lowerName.includes('tofu') || lowerName.includes('vegan') || lowerName.includes('veg')) return 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=250&fit=crop';
+                        
+                        // Default gorgeous STRICTLY FOOD backgrounds for anything else
+                        const defaults = [
+                            'https://images.unsplash.com/photo-1490818387583-1b5ef2245271?w=400&h=250&fit=crop', // Steak/gourmet dish
+                            'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400&h=250&fit=crop', // Fancy plate spread
+                            'https://images.unsplash.com/photo-1466637574441-749b8f19452f?w=400&h=250&fit=crop', // Cooking/cutting board
+                            'https://images.unsplash.com/photo-1484723091791-00d3121d51de?w=400&h=250&fit=crop', // Bowl of hearty food
+                            'https://images.unsplash.com/photo-1482049016688-2d3e1b311543?w=400&h=250&fit=crop'  // Avocado toast
+                        ];
+                        // Pick a consistent fallback based on string length
+                        return defaults[(name.length) % defaults.length];
+                    }
+
+                    let htmlString = "";
+                    data.meals.forEach((meal, i) => {
+                        const mealName = typeof meal === 'string' ? meal : (meal.name || "Unknown Meal");
+                        const mealTime = (meal && meal.time) ? meal.time : "";
+                        const ingredientsRange = (meal && meal.ingredients_range) ? meal.ingredients_range : (meal && meal.ingredients_count ? meal.ingredients_count : "?");
+                        
+                        // Fallback check if rendering fails
+                        const finalRangeStr = (ingredientsRange && ingredientsRange !== "?") ? ingredientsRange : "?";
+
+                        const imgSrc = getFoodImage(mealName);
+
+                        htmlString += `
                             <div class="col">
-                                <div class="card h-100 border-0 shadow-sm" style="border-radius: 20px; transition: transform 0.2s;">
-                                    <div class="card-body p-4 text-center">
-                                        <h5 class="fw-bold text-premium-dark mb-3">${meal}</h5>
-                                        <button class="btn w-100 btn-outline-primary rounded-pill fw-bold" onclick="selectBudgetMeal('${escapeHtml(meal)}')">
+                                <div class="card h-100 border-0 shadow-sm" style="border-radius: 20px; transition: transform 0.2s; overflow: hidden;">
+                                    <div id="budget-img-${i}" style="height: 150px; background-image: url('${imgSrc}'); background-size: cover; background-position: center; position: relative;">
+                                        <div style="position: absolute; top: 15px; right: 15px;">
+                                            <button class="btn btn-light text-danger border-0 rounded-circle p-0 shadow-sm" onclick="this.classList.toggle('text-danger'); this.classList.toggle('text-muted');" title="Quick Favorite" style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;">
+                                                <i class="bi bi-heart-fill"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="card-body p-4">
+                                        <div class="d-flex justify-content-center mb-3">
+                                            <div class="d-flex flex-wrap justify-content-center gap-2">
+                                                ${mealTime ? `<span class="badge bg-light text-muted border p-1 px-2"><i class="bi bi-clock me-1"></i>${mealTime}</span>` : ''}
+                                                <span class="badge bg-light text-muted border p-1 px-2"><i class="bi bi-basket me-1"></i>${finalRangeStr} items</span>
+                                            </div>
+                                        </div>
+                                        <h5 class="fw-bold text-premium-dark mb-4 text-center" style="min-height: 48px; display: flex; align-items: center; justify-content: center;">${mealName}</h5>
+                                        <button class="btn w-100 btn-outline-primary rounded-pill fw-bold" onclick="selectBudgetMeal('${escapeHtml(mealName)}')">
                                             <i class="bi bi-stars me-1"></i> Cost This Meal
                                         </button>
                                     </div>
@@ -434,6 +547,33 @@ document.addEventListener('DOMContentLoaded', () => {
                             </div>
                         `;
                     });
+                      budgetIdeasContainer.innerHTML = htmlString;
+                      
+                      // Fetch high fidelity images sequentially/dynamically
+                      data.meals.forEach((meal, i) => {
+                          const mealName = typeof meal === "string" ? meal : (meal.name || "Unknown");
+                          fetch(`https://www.themealdb.com/api/json/v1/1/search.php?s=${encodeURIComponent(mealName)}`)
+                              .then(r => r.json())
+                              .then(md => {
+                                  if (md && md.meals && md.meals[0] && md.meals[0].strMealThumb) {
+                                      const el = document.getElementById(`budget-img-${i}`);
+                                      if(el) el.style.backgroundImage = `url('${md.meals[0].strMealThumb}/preview')`;
+                                  } else {
+                                      fetch(`/api/recipe/image?q=${encodeURIComponent(mealName)}`)
+                                          .then(r => r.json())
+                                          .then(proxy => {
+                                              if (proxy.success && proxy.url) {
+                                                  let img = new Image();
+                                                  img.onload = () => { 
+                                                      const el = document.getElementById(`budget-img-${i}`);
+                                                      if(el) el.style.backgroundImage = `url('${proxy.url}')`; 
+                                                  };
+                                                  img.src = proxy.url;
+                                              }
+                                          }).catch(console.error);
+                                  }
+                              }).catch(console.error);
+                      });
                 } else {
                     if (typeof showNotification === 'function') showNotification('Failed to get budget ideas.', 'danger');
                 }
@@ -520,7 +660,13 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('confirmItemCount').textContent = data.matched_items;
 
         ingredientsList.innerHTML = '';
+        const addSection = document.getElementById('additionalProductsSection');
+        const addList = document.getElementById('additionalProductsList');
+        if(addList) addList.innerHTML = '';
+        if(addSection) addSection.classList.add('d-none');
         matchedProductsData = [];
+
+        let hasUnmatched = false;
 
         const prepBlock = document.getElementById('recipePreparationBlock');
         const instList = document.getElementById('instructionsList');
@@ -537,55 +683,50 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         data.results.forEach(item => {
-            const card = document.createElement('div');
-            card.className = 'ingredient-card';
-
             const originalName = escapeHtml(item.original);
             const isMatched = !!item.matched_product;
-            
-            let bodyHTML = '';
             
             if (isMatched) {
                 const prod = item.matched_product;
                 matchedProductsData.push(prod);
                 
+                const card = document.createElement('div');
+                card.className = 'ingredient-card';
+                card.style.cursor = 'pointer';
                 const storeBadgeClass = prod.store === 'Billa' ? 'bg-warning text-dark' : 'text-white';
                 const storeBadgeStyle = prod.store !== 'Billa' ? 'background: linear-gradient(135deg, #7c3aed, #6366f1);' : '';
                 const imageUrl = prod.image_url && prod.image_url.startsWith('http') ? prod.image_url : '/static/img/placeholder.png';
                 
-                bodyHTML = `
-                    <div class="ingredient-header">
-                        <span class="d-flex align-items-center" style="color: #475569;"><i class="bi bi-magic me-2 fs-5" style="color: #7c3aed;"></i>${originalName}</span>
-                        <span class="badge ${storeBadgeClass} rounded-pill shadow-sm badge-store" style="${storeBadgeStyle}"><i class="bi bi-shop me-1"></i>${escapeHtml(prod.store)}</span>
-                    </div>
-                    <div class="ingredient-body">
-                        <img src="${imageUrl}" class="matched-product-img" alt="Product Image">
-                        <div class="flex-grow-1">
-                            <h5 class="mb-1 fw-bold" style="color: #1a202c;">${escapeHtml(prod.name)}</h5>
-                            <p class="text-muted mb-0"><i class="bi bi-tag text-secondary me-1"></i>${escapeHtml(prod.brand || 'No Brand')}</p>
+                card.innerHTML = `
+                    <a href="/product/${prod._id || prod.id}" style="text-decoration: none; color: inherit; display: block;">
+                        <div class="ingredient-header">
+                            <span class="d-flex align-items-center" style="color: #475569;"><i class="bi bi-magic me-2 fs-5" style="color: #7c3aed;"></i>${originalName}</span>
+                            <span class="badge ${storeBadgeClass} rounded-pill shadow-sm badge-store" style="${storeBadgeStyle}"><i class="bi bi-shop me-1"></i>${escapeHtml(prod.store)}</span>
                         </div>
-                        <div class="text-end">
-                            <h4 class="fw-bold text-success m-0">€${parseFloat(prod.price_val || prod.price || 0).toFixed(2)}</h4>
+                        <div class="ingredient-body">
+                            <img src="${imageUrl}" class="matched-product-img" alt="Product Image">
+                            <div class="flex-grow-1">
+                                <h5 class="mb-1 fw-bold" style="color: #1a202c;">${escapeHtml(prod.name)}</h5>
+                                <p class="text-muted mb-0"><i class="bi bi-tag text-secondary me-1"></i>${escapeHtml(prod.brand || 'No Brand')}</p>
+                            </div>
+                            <div class="text-end">
+                                <h4 class="fw-bold text-success m-0">€${parseFloat(prod.price_val || prod.price || 0).toFixed(2)}</h4>
+                            </div>
                         </div>
-                    </div>
+                    </a>
                 `;
+                ingredientsList.appendChild(card);
             } else {
-                  card.classList.add('unmatched-card', 'opacity-75'); // slightly faded but not crossed out
-                  bodyHTML = `
-                      <div class="ingredient-header">
-                          <span class="d-flex align-items-center" style="color: #475569; font-weight: 500;"><i class="bi bi-bookmark text-secondary me-2 fs-5"></i>${originalName}</span>
-                          <span class="badge rounded-pill" style="background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; font-weight: 600;"><i class="bi bi-info-circle me-1"></i>Not in Catalog</span>
-                      </div>
-                      <div class="ingredient-body justify-content-center py-3">
-                           <div class="text-center text-muted">
-                               <span class="fw-medium" style="font-size: 0.9rem;">This item is required for the recipe, but is not currently available in our system.</span>
-                    </div>
-                `;
+                hasUnmatched = true;
+                if(addList) {
+                    addList.innerHTML += `<span class="badge bg-light text-dark border p-2 shadow-sm" style="font-size: 0.9rem;"><i class="bi bi-cart-x me-1 text-danger"></i> ${originalName}</span>`;
+                }
             }
-
-            card.innerHTML = bodyHTML;
-            ingredientsList.appendChild(card);
         });
+        
+        if (hasUnmatched && addSection) {
+            addSection.classList.remove('d-none');
+        }
     }
 
     async function loadUserLists() {
