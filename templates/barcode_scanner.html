@@ -1,0 +1,271 @@
+{% extends "base.html" %}
+
+{% block title %}Barcode Scanner | Smart Grocery{% endblock %}
+
+{% block navbar %}{% endblock %}
+
+{% block styles %}
+<style>
+    .scanner-page-container {
+        min-height: calc(100vh - 80px);
+        margin-top: 80px;
+        background: #0f172a; /* Dark sleek background */
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        padding-bottom: 5rem;
+    }
+
+    #interactive.viewport {
+        width: 100%;
+        max-width: 600px;
+        height: 450px;
+        position: relative;
+        overflow: hidden;
+        border-radius: 24px;
+        box-shadow: 0 0 50px rgba(124, 58, 237, 0.3);
+        background: #000;
+        margin-bottom: 2rem;
+    }
+
+    #interactive.viewport > canvas, #interactive.viewport > video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    /* Scanning animation overlay */
+    .scanner-laser {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(to bottom, transparent, #22c55e, transparent);
+        box-shadow: 0 0 15px #22c55e;
+        z-index: 10;
+        animation: laserMove 2s infinite ease-in-out;
+    }
+
+    @keyframes laserMove {
+        0% { top: 10%; }
+        50% { top: 90%; }
+        100% { top: 10%; }
+    }
+
+    .scanner-overlay {
+        position: absolute;
+        inset: 0;
+        border: 40px solid rgba(0,0,0,0.5);
+        z-index: 5;
+        pointer-events: none;
+    }
+
+    .scanner-target {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 250px;
+        height: 150px;
+        border: 2px solid white;
+        border-radius: 12px;
+        z-index: 6;
+    }
+
+    .scanner-controls {
+        width: 100%;
+        max-width: 600px;
+        padding: 0 2rem;
+        text-align: center;
+    }
+
+    .scanner-status {
+        color: #94a3b8;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+        letter-spacing: 1px;
+    }
+
+    .scanner-btn-group {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+    }
+
+    .scanner-btn {
+        padding: 1rem 2rem;
+        border-radius: 16px;
+        font-weight: 700;
+        font-size: 1rem;
+        transition: all 0.3s;
+        border: none;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .btn-stop {
+        background: #ef4444;
+        color: white;
+    }
+
+    .btn-start {
+        background: #7c3aed;
+        color: white;
+    }
+
+    /* Result Modal Styling */
+    .scan-result-card {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        margin-top: 2rem;
+        display: none;
+        width: 100%;
+        max-width: 500px;
+        animation: slideUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @keyframes slideUp {
+        from { transform: translateY(50px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="scanner-page-container">
+    <a href="{{ url_for('main.home') }}" style="position: absolute; top: 20px; right: 20px; color: white; font-size: 2rem; z-index: 1000; text-decoration: none;" aria-label="Close Scanner">
+        <i class="bi bi-x-circle-fill"></i>
+    </a>
+    <div class="container text-center mb-5">
+        <h1 class="text-white fw-black">Barcode Scanner</h1>
+        <p class="text-white">Scan any product to find the cheapest price nearby.</p>
+    </div>
+
+    <!-- Scanner Viewport -->
+    <div id="interactive" class="viewport">
+        <div class="scanner-laser"></div>
+        <div class="scanner-overlay"></div>
+        <div class="scanner-target"></div>
+    </div>
+
+    <div class="scanner-controls">
+        <div class="scanner-status" id="scanner-status">ALIGNED PRODUCT BARCODE WITHIN THE BOX</div>
+        
+        <div class="scanner-btn-group">
+            <button id="toggle-scanner" class="scanner-btn btn-start">
+                <i class="bi bi-camera-fill"></i> <span id="btn-text">Start Scanning</span>
+            </button>
+            <a href="{{ url_for('main.compare_prices') }}" class="scanner-btn" style="background: rgba(255,255,255,0.1); color: white;">
+                <i class="bi bi-search"></i> Manual Search
+            </a>
+        </div>
+    </div>
+
+    <!-- Live Result Preview -->
+    <div id="scan-result" class="scan-result-card">
+        <div class="d-flex align-items-center gap-3">
+            <img id="result-img" src="" style="width: 80px; height: 80px; object-fit: contain; border-radius: 12px;">
+            <div class="text-start">
+                <h5 class="fw-bold mb-1" id="result-name">Product Name</h5>
+                <p class="text-success fw-bold mb-0" id="result-price">EUR 0.00</p>
+                <small class="text-muted" id="result-store">Available at 3 stores</small>
+            </div>
+            <a id="result-link" href="#" class="btn btn-primary ms-auto rounded-pill px-4 fw-bold">View</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- QuaggaJS Barcode Library -->
+<script src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2/dist/quagga.min.js"></script>
+<script>
+    let isScanning = false;
+    const btnText = document.getElementById('btn-text');
+    const toggleBtn = document.getElementById('toggle-scanner');
+
+    toggleBtn.addEventListener('click', () => {
+        if (!isScanning) {
+            startScanner();
+        } else {
+            stopScanner();
+        }
+    });
+
+    function startScanner() {
+        Quagga.init({
+            inputStream: {
+                name: "Live",
+                type: "LiveStream",
+                target: document.querySelector('#interactive'),
+                constraints: {
+                    width: 640,
+                    height: 480
+                },
+            },
+            decoder: {
+                readers: ["ean_reader", "ean_8_reader", "upc_reader", "code_128_reader"]
+            }
+        }, function(err) {
+            if (err) {
+                console.error(err);
+                alert("Could not access camera. Please check permissions.");
+                return;
+            }
+            Quagga.start();
+            isScanning = true;
+            btnText.innerText = "Stop Scanner";
+            toggleBtn.classList.replace('btn-start', 'btn-stop');
+        });
+
+        Quagga.onDetected(handleDetection);
+    }
+
+    function stopScanner() {
+        Quagga.stop();
+        isScanning = false;
+        btnText.innerText = "Start Scanning";
+        toggleBtn.classList.replace('btn-stop', 'btn-start');
+    }
+
+    function handleDetection(data) {
+        const code = data.codeResult.code;
+        console.log("Barcode detected:", code);
+        
+        // Haptic feedback if supported
+        if ("vibrate" in navigator) navigator.vibrate(100);
+
+        // API Call to search product by barcode
+        fetch(`/api/compare/search?search=${code}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.products && data.products.length > 0) {
+                    showResult(data.products[0]);
+                    stopScanner();
+                } else {
+                    document.getElementById('scanner-status').innerText = "PRODUCT NOT FOUND. TRY ANOTHER Barcode.";
+                    document.getElementById('scanner-status').style.color = "#ef4444";
+                }
+            })
+            .catch(err => {
+                console.error('Search API error:', err);
+                document.getElementById('scanner-status').innerText = "ERROR FETCHING DATA.";
+            });
+    }
+
+    function showResult(product) {
+        document.getElementById('scanner-status').innerText = "PRODUCT FOUND!";
+        document.getElementById('scanner-status').style.color = "#22c55e";
+        document.getElementById('result-name').innerText = product.name;
+        document.getElementById('result-price').innerText = `EUR ${product.best_price_value || product.price || '??'}`;
+        document.getElementById('result-img').src = product.image || '/static/placeholder.svg';
+        document.getElementById('result-link').href = `/product/${product._id || product.id}`;
+        document.getElementById('scan-result').style.display = 'block';
+    }
+</script>
+{% endblock %}

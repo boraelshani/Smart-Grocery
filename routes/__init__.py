@@ -1,19 +1,28 @@
 from flask import Blueprint
 
-# Create blueprints for route organization
+# Base Blueprints
 main_bp = Blueprint('main', __name__)
 auth_bp = Blueprint('auth', __name__)
-admin_bp = Blueprint('admin', __name__)
-compare_engine_bp = Blueprint('compare_engine', __name__, url_prefix='/api/compare')
-recipe_bp = Blueprint('recipe', __name__)
 
-from .ui_routes import *
-from .lists_routes import *
-from .api_routes import *
-from .notify_routes import *
-from .misc_routes import *
-from .compare_engine_routes import *
-from .recipe_routes import *
+# Modular Package Imports
+# The following lines import and register routes from the modern package structure.
+# Each package (ui, auth, admin, api, compare, recipe) has its own __init__.py 
+# that manages its internal exports.
 
-from .auth_routes import *
-from .admin_routes import *
+# 1. UI Package (Home, Products, Stores details)
+from .ui import *
+
+# 2. Auth Package (Login, Signup)
+from .auth import auth_bp
+
+# 3. Admin Package (Dashboard, Management)
+from .admin import admin_bp
+
+# 4. API Package (Lists, Notifications, Common)
+from .api import api_bp
+
+# 5. Compare Package (Comparison Engine)
+from .compare import compare_bp as compare_engine_bp
+
+# 6. Recipe Package (Smart Planner)
+from .recipe import recipe_bp

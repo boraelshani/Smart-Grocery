@@ -1,0 +1,317 @@
+{% extends "base.html" %}
+
+{% block styles %}
+<style>
+    :root {
+        --comp-sidebar-width: 380px;
+        --accent-green: #10b981;
+        --accent-purple: #7c3aed;
+        --text-muted: #94a3b8;
+        --bg-glass: rgba(255, 255, 255, 0.85);
+    }
+
+    body {
+        background-color: #f8fafc;
+        overflow-x: hidden;
+    }
+
+    /* Split Layout */
+    .comparison-container {
+        display: flex;
+        min-height: calc(100vh - 80px);
+        margin-top: 80px;
+        position: relative;
+    }
+
+    /* Left Sidebar - Sticky */
+    .comparison-sidebar {
+        width: var(--comp-sidebar-width);
+        height: calc(100vh - 80px);
+        position: sticky;
+        top: 80px;
+        background: white;
+        border-right: 1px solid #e2e8f0;
+        padding: 2.5rem;
+        display: flex;
+        flex-direction: column;
+        z-index: 10;
+        overflow-y: auto;
+    }
+
+    /* Right Content - Scrollable */
+    .comparison-main {
+        flex: 1;
+        padding: 3rem;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    /* Product Context UI */
+    .product-hero-card {
+        text-align: center;
+    }
+
+    .hero-image-wrapper {
+        background: white;
+        border-radius: 24px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+        border: 1px solid #f1f5f9;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 320px;
+    }
+
+    .hero-image-wrapper img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+    }
+
+    .badge-cheapest {
+        background: var(--accent-green);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 12px;
+        font-weight: 800;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        display: inline-block;
+        margin-bottom: 1rem;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+
+    .product-title {
+        font-size: 1.75rem;
+        font-weight: 900;
+        color: #1e293b;
+        margin-bottom: 0.5rem;
+        line-height: 1.2;
+    }
+
+    .product-meta-sidebar {
+        color: var(--text-muted);
+        font-size: 0.95rem;
+        font-weight: 500;
+        margin-bottom: 2rem;
+    }
+
+    /* Comparison Rows */
+    .comparison-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .offer-row {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem 2rem;
+        display: grid;
+        grid-template-columns: 80px 1fr 180px 150px;
+        align-items: center;
+        gap: 2rem;
+        border: 2px solid transparent;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+
+    .offer-row:hover {
+        transform: scale(1.02);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+
+    .offer-row.best-deal {
+        border-color: var(--accent-green);
+        background: #f0fdf4; /* Very light green */
+    }
+
+    .store-logo-wrapper {
+        width: 64px;
+        height: 64px;
+        border-radius: 14px;
+        background: white;
+        padding: 8px;
+        border: 1px solid #f1f5f9;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .store-logo-wrapper img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+    }
+
+    .store-info h3 {
+        font-size: 1.2rem;
+        font-weight: 700;
+        margin-bottom: 0.2rem;
+        color: #1e293b;
+    }
+
+    .store-info span {
+        font-weight: 600;
+        color: var(--text-muted);
+        font-size: 0.85rem;
+    }
+
+    .price-tag {
+        text-align: right;
+    }
+
+    .price-value {
+        font-size: 1.8rem;
+        font-weight: 900;
+        color: var(--accent-purple);
+        display: block;
+        line-height: 1;
+    }
+
+    .best-deal .price-value {
+        color: var(--accent-green);
+    }
+
+    .price-diff {
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: var(--text-muted);
+    }
+
+    .action-btn {
+        background: var(--accent-purple);
+        color: white !important;
+        border: none;
+        padding: 0.8rem 1.5rem;
+        border-radius: 12px;
+        font-weight: 700;
+        transition: all 0.2s;
+        text-decoration: none;
+        text-align: center;
+    }
+
+    .action-btn:hover {
+        filter: brightness(1.1);
+        transform: translateY(-2px);
+    }
+
+    .btn-best {
+        background: var(--accent-green);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+
+    /* Mobile Adaptations */
+    @media (max-width: 992px) {
+        .comparison-container {
+            flex-direction: column;
+        }
+        .comparison-sidebar {
+            width: 100%;
+            height: auto;
+            position: relative;
+            top: 0;
+            border-right: none;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .offer-row {
+            grid-template-columns: 60px 1fr 1fr;
+            gap: 1rem;
+            padding: 1.25rem;
+        }
+        .action-btn {
+            grid-column: span 3;
+            margin-top: 0.5rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="comparison-container">
+    <!-- Sticky Product Panel -->
+    <aside class="comparison-sidebar">
+        <div class="product-hero-card">
+            <div class="badge-cheapest" id="best-badge">
+                Cheapest at {{ product.best_store or 'Select' }}
+            </div>
+            
+            <div class="hero-image-wrapper">
+                <img src="{{ product.image or url_for('static', filename='placeholder.svg') }}" alt="{{ product.name }}">
+            </div>
+            
+            <h1 class="product-title">{{ product.name }}</h1>
+            <div class="product-meta-sidebar">
+                {{ product.unit or 'Standard Size' }} | {{ product.category or 'Grocery' }}
+            </div>
+
+            <button class="add-to-list-btn mt-4" onclick="handleSharedAddToList()">
+                <i class="bi bi-cart-plus-fill me-2"></i> Add to Active List
+            </button>
+        </div>
+    </aside>
+
+    <!-- Scrollable Comparison Main -->
+    <main class="comparison-main">
+        <header class="mb-5 d-flex justify-content-between align-items-center">
+            <div>
+                <h2 class="fw-black mb-1" style="font-size: 2rem;">Compare Stores</h2>
+                <p class="text-muted fw-medium">We found this product at {{ product.stores|length }} retailers.</p>
+            </div>
+            <div class="d-none d-md-block">
+                <div class="dropdown">
+                    <button class="btn btn-white dropdown-toggle border-0 fw-bold shadow-sm px-4 rounded-pill" type="button" data-bs-toggle="dropdown">
+                        Sort by: Price
+                    </button>
+                    <ul class="dropdown-menu border-0 shadow-lg">
+                        <li><a class="dropdown-item fw-bold" href="#">Lowest Price</a></li>
+                        <li><a class="dropdown-item fw-bold" href="#">Highest Price</a></li>
+                    </ul>
+                </div>
+            </div>
+        </header>
+
+        <div class="comparison-list">
+            {% for store in product.stores|sort(attribute='price') %}
+            <div class="offer-row {{ 'best-deal' if loop.first else '' }}">
+                <div class="store-logo-wrapper">
+                    <img src="{{ store.logo or url_for('static', filename='placeholder.svg') }}" alt="{{ store.name }}">
+                </div>
+                <div class="store-info">
+                    <h3>{{ store.name }}</h3>
+                    <span>Verified {{ store.updated_at_relative or 'today' }}</span>
+                </div>
+                <div class="price-tag">
+                    <span class="price-value">€{{ "%.2f"|format(store.price) }}</span>
+                    {% if not loop.first %}
+                    <span class="price-diff">+€{{ "%.2f"|format(store.price - product.stores[0].price) }} diff</span>
+                    {% else %}
+                    <span class="price-diff text-success" style="color: var(--accent-green) !important;">Lowest Price Found</span>
+                    {% endif %}
+                </div>
+                <a href="{{ store.url or '#' }}" target="_blank" class="action-btn {{ 'btn-best' if loop.first else '' }}">
+                    Visit {{ store.name }}
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <div class="mt-5 pt-4 border-top">
+            <h4 class="fw-bold mb-3"><i class="bi bi-info-circle me-2 text-primary"></i>About this comparison</h4>
+            <p class="text-muted">Price data is sourced from official store pages via AI scraping. Prices may vary based on local store inventory and weekly promotions.</p>
+        </div>
+    </main>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function handleSharedAddToList() {
+        // Implementation of list adding...
+        console.log("Add to list triggered");
+    }
+</script>
+{% endblock %}

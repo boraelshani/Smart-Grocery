@@ -686,7 +686,7 @@
     <div class="bg-shape shape-3"></div> <!-- Abstract animated background circles -->
     
     <div class="container text-center position-relative" style="z-index: 2;"> <!-- Content centered over moving shapes -->
-      <h1 class="display-3 fw-bold mb-3 text-white">Shop Smarter,<br>Save Bigger.</h1> <!-- Bold value proposition heading -->
+      <h1 class="display-3 fw-bold mb-3 text-white">Shop Smarter<br>Save Bigger</h1> <!-- Bold value proposition heading -->
       <p class="lead mx-auto mb-5 opacity-90 text-white" style="max-width: 700px;">The ultimate destination to track prices, find exclusive coupons, and coordinate your grocery trips across all major retailers.</p> <!-- Contextual background for the app's purpose -->
       
       <div class="search-box mx-auto"> <!-- Centered Global Search Input -->
@@ -1108,7 +1108,7 @@
         </button>
         <div class="scroll-wrapper d-flex flex-nowrap" id="store-products-scroll" style="overflow-x: auto; gap: 24px; scrollbar-width: none; -ms-overflow-style: none;"> <!-- Products from specific shop row -->
           {% for product in store_products %} <!-- JINJA LOOP for specific store items -->
-          {% set detail_url = url_for('main.product_info', product_id=product.id, store_name=store_name, store_price=product.price or '', store_image=product.image or '', store_url=product.url or '') %} <!-- Route link construction -->
+          {% set detail_url = url_for('main.product_detail', product_id=product.id, store_name=store_name, store_price=product.price or '', store_image=product.image or '', store_url=product.url or '') %} <!-- Route link construction -->
           {% set offer_obj = product.get('offer') if product.get('offer') is mapping else None %} <!-- Deal check -->
           {% set offer_x = offer_obj.x if offer_obj is not none else (product.get('buy_quantity') or product.get('multibuy_buy') or '') %} <!-- Quantity X -->
           {% set offer_y = offer_obj.y if offer_obj is not none else (product.get('free_quantity') or product.get('multibuy_free') or '') %} <!-- Quantity Y -->
@@ -1191,7 +1191,7 @@
           {% set store_data = (product.get('stores') or [{}])[0] %} <!-- Best store preview -->
           {% set pid = product.get('id') or product.get('_id') %} <!-- ID cleanup -->
           {% set store_name = store_data.get('store') or store_data.get('store_name') or 'Partner' %} <!-- Identification of source retailer -->
-          {% set detail_url = url_for('main.product_info', product_id=pid, store_name=store_name, store_price=store_data.get('price') or product.get('best_price') or product.get('price') or '0.00', store_image=product.get('image') or '', store_url=store_data.get('url') or product.get('url') or '') %} <!-- Contextual link generation -->
+          {% set detail_url = url_for('main.product_detail', product_id=pid, store_name=store_name, store_price=store_data.get('price') or product.get('best_price') or product.get('price') or '0.00', store_image=product.get('image') or '', store_url=store_data.get('url') or product.get('url') or '') %} <!-- Contextual link generation -->
           {% set offer_obj = product.get('offer') if product.get('offer') is mapping else None %} <!-- Promotion data -->
           {% set offer_x = offer_obj.x if offer_obj is not none else (product.get('buy_quantity') or product.get('multibuy_buy') or '') %} <!-- Multi-X -->
           {% set offer_y = offer_obj.y if offer_obj is not none else (product.get('free_quantity') or product.get('multibuy_free') or '') %} <!-- Multi-Y -->

@@ -213,8 +213,8 @@ except Exception:
 # Register blueprints - these organize routes into logical groups (Main, Auth, Admin)
 app.register_blueprint(main_bp)
 app.register_blueprint(auth_bp)
-app.register_blueprint(admin_bp)
-app.register_blueprint(compare_engine_bp)
+app.register_blueprint(admin_bp, url_prefix='/admin')
+app.register_blueprint(compare_engine_bp, url_prefix='/api/compare')
 app.register_blueprint(recipe_bp)
 
 

@@ -72,6 +72,7 @@
             <a class="nav-link {% if request.endpoint == 'main.compare_prices' %}active{% endif %} rounded-pill px-3 py-2" 
                href="{{ url_for('main.compare_prices') }}"><i class="bi bi-search me-1"></i>Compare</a>
           </li>
+
           <li class="nav-item">
             <a class="nav-link {% if request.endpoint == 'recipe.recipe_planner' %}active{% endif %} rounded-pill px-3 py-2" 
                href="{{ url_for('recipe.recipe_planner') }}"><i class="bi bi-magic me-1"></i>Recipe Planner</a>
@@ -92,6 +93,11 @@
           </li>
         </ul>
         <ul class="navbar-nav align-items-center gap-3 d-none d-lg-flex">
+          <li class="nav-item">
+            <a href="{{ url_for('main.barcode_scanner') }}" class="nav-bell-btn position-relative text-dark d-flex align-items-center justify-content-center bg-light rounded-circle" style="width: 40px; height: 40px; text-decoration: none;" aria-label="Scanner">
+              <i class="bi bi-upc-scan fs-5"></i>
+            </a>
+          </li>
           {% if session.get('user') %}
           <li class="nav-item">
             <a href="{{ url_for('main.notifications_page') }}" 
@@ -235,6 +241,10 @@
               <a class="navbar-menu-link" href="{{ url_for('main.notifications_page') }}">
                 <i class="bi bi-bell-fill"></i>
                 <span>Notifications</span>
+              </a>
+              <a class="navbar-menu-link {% if request.endpoint == 'main.barcode_scanner' %}active{% endif %}" href="{{ url_for('main.barcode_scanner') }}">
+                <i class="bi bi-upc-scan"></i>
+                <span>Scanner</span>
               </a>
               {% if is_admin_nav %}
               <a class="navbar-menu-link {% if request.endpoint and request.endpoint.startswith('admin.') %}active{% endif %}" href="{{ url_for('admin.admin_dashboard') }}">

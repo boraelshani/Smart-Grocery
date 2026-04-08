@@ -332,7 +332,7 @@
           <div class="col-md-6 col-lg-4 col-xl-3 product-item" 
                data-category="{{ product.category }}" 
                data-name="{{ product.name|lower }}">
-            {% set detail_url = url_for('main.product_info', product_id=product.get('_id') or product.get('id'),
+            {% set detail_url = url_for('main.product_detail', product_id=product.get('_id') or product.get('id'),
                 store_name=store_name, store_price=product.store_price or product.price or '', store_image=product.store_image
                 or product.image or '', store_url=product.get('url') or store.get('website') or store.get('url') or '') %}
             

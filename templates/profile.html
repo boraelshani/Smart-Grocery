@@ -1039,7 +1039,7 @@
                         {% for fav in user_data.favorites %} <!-- Loop through each item in the favorites list -->
                             <div class="col"> <!-- Individual grid column for the favorite item -->
                                 <div class="position-relative h-100 group"> <!-- Styled wrapper for item card -->
-                                    {% set view_url = url_for('main.product_info', product_id=fav.id, store_name=fav.store, store_price=fav.best_price or fav.price) %} <!-- Construct product link URL -->
+                                    {% set view_url = url_for('main.product_detail', product_id=fav.id, store_name=fav.store, store_price=fav.best_price or fav.price) %} <!-- Construct product link URL -->
                                     
                                     <!-- Delete Button (Top Right) --> <!-- Control to remove item from list -->
                                     <button class="btn btn-light shadow-sm position-absolute top-0 end-0 m-3 z-3 border-0 delete-fav-btn" 
