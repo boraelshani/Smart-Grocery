@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-5" style="margin-top: 60px;">
+    <div class="text-center mb-5">
+        <h1 class="display-5 fw-bold" style="background: linear-gradient(135deg, #7c3aed 0%, #0ea5a3 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Discover Inspiration</h1>
+        <p class="text-muted fs-5">Everything you need to plan your next grocery trip.</p>
+    </div>
+    
+    <div class="row g-4 justify-content-center">
+        <!-- Recipes -->
+        <div class="col-md-5">
+            <a href="{{ url_for('recipe.recipe_planner') }}" class="text-decoration-none">
+                <div class="card border-0 shadow-sm rounded-4 h-100 overflow-hidden" style="transition: transform 0.2s;">
+                    <div style="height: 180px; background: url('/static/placeholder.svg') center/cover; background-color: #f1f5f9;" class="d-flex align-items-center justify-content-center">
+                        <i class="bi bi-magic text-primary" style="font-size: 4rem; opacity: 0.5;"></i>
+                    </div>
+                    <div class="card-body p-4 text-dark">
+                        <h4 class="fw-bold text-primary mb-2">Recipe Planner</h4>
+                        <p class="text-muted mb-0">Generate or find recipes, then instantly move all ingredients to your comparison search.</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        
+        <!-- Deals -->
+        <div class="col-md-5">
+            <a href="{{ url_for('main.featured_deals_page') }}" class="text-decoration-none">
+                <div class="card border-0 shadow-sm rounded-4 h-100 overflow-hidden" style="transition: transform 0.2s;">
+                    <div style="height: 180px; background: url('/static/placeholder.svg') center/cover; background-color: #fef2f2;" class="d-flex align-items-center justify-content-center">
+                        <i class="bi bi-tags text-danger" style="font-size: 4rem; opacity: 0.5;"></i>
+                    </div>
+                    <div class="card-body p-4 text-dark">
+                        <h4 class="fw-bold text-danger mb-2">Trending Deals</h4>
+                        <p class="text-muted mb-0">Browse the latest BOGO offers, multi-buys, and massive discounts across all stores.</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

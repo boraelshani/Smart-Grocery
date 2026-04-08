@@ -65,36 +65,30 @@
       <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav ms-auto mb-1 mb-lg-0 align-items-center me-4 gap-1">
           <li class="nav-item">
-            <a class="nav-link {% if request.endpoint == 'main.home' %}active{% endif %} rounded-pill px-3 py-2" 
-               href="{{ url_for('main.home') }}"><i class="bi bi-house-door me-1"></i>Home</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link {% if request.endpoint == 'main.compare_prices' %}active{% endif %} rounded-pill px-3 py-2" 
+            <a class="nav-link {% if request.endpoint == 'main.compare_prices' %}active{% endif %} rounded-pill px-3 py-2 text-nowrap" 
                href="{{ url_for('main.compare_prices') }}"><i class="bi bi-search me-1"></i>Compare</a>
           </li>
 
           <li class="nav-item">
-            <a class="nav-link {% if request.endpoint == 'recipe.recipe_planner' %}active{% endif %} rounded-pill px-3 py-2" 
+            <a class="nav-link {% if request.endpoint == 'recipe.recipe_planner' %}active{% endif %} rounded-pill px-3 py-2 text-nowrap" 
                href="{{ url_for('recipe.recipe_planner') }}"><i class="bi bi-magic me-1"></i>Recipe Planner</a>
           </li>
+
           <li class="nav-item">
-            <a class="nav-link {% if request.endpoint == 'main.featured_deals_page' %}active{% endif %} rounded-pill px-3 py-2" 
-               href="{{ url_for('main.featured_deals_page') }}"><i class="bi bi-tags me-1"></i>Deals</a>
+            <a class="nav-link {% if request.endpoint == 'main.featured_deals_page' %}active{% endif %} rounded-pill px-3 py-2 text-nowrap" 
+               href="{{ url_for('main.featured_deals_page') }}"><i class="bi bi-tags-fill me-1"></i>Deals</a>
           </li>
+
           {% if session.get('user') %}
           <li class="nav-item">
-            <a class="nav-link {% if request.endpoint == 'main.shopping_list' %}active{% endif %} rounded-pill px-3 py-2" 
-               href="{{ url_for('main.shopping_list') }}"><i class="bi bi-card-list me-1"></i>Lists</a>
+            <a class="nav-link {% if request.endpoint == 'main.shopping_list' %}active{% endif %} rounded-pill px-3 py-2 text-nowrap" 
+               href="{{ url_for('main.shopping_list') }}"><i class="bi bi-card-list me-1"></i>My List</a>
           </li>
           {% endif %}
-          <li class="nav-item">
-            <a class="nav-link {% if request.endpoint == 'main.stores_page' %}active{% endif %} rounded-pill px-3 py-2" 
-               href="{{ url_for('main.stores_page') }}"><i class="bi bi-shop me-1"></i>Stores</a>
-          </li>
         </ul>
         <ul class="navbar-nav align-items-center gap-3 d-none d-lg-flex">
           <li class="nav-item">
-            <a href="{{ url_for('main.barcode_scanner') }}" class="nav-bell-btn position-relative text-dark d-flex align-items-center justify-content-center bg-light rounded-circle" style="width: 40px; height: 40px; text-decoration: none;" aria-label="Scanner">
+            <a href="{{ url_for('main.barcode_scanner') }}" class="nav-bell-btn position-relative" aria-label="Scanner">
               <i class="bi bi-upc-scan fs-5"></i>
             </a>
           </li>
@@ -173,6 +167,11 @@
                     <div class="bg-light rounded p-2 text-warning d-flex align-items-center justify-content-center"><i class="bi bi-sliders2"></i></div> Preferences
                   </a>
                 </li>
+                <li>
+                  <a class="dropdown-item py-2 px-3 fw-medium d-flex align-items-center gap-3 transition-all {% if request.endpoint == 'main.stores_page' %}active{% endif %}" href="{{ url_for('main.stores_page') }}" onmouseover="this.style.backgroundColor='#f8f9fa'" onmouseout="this.style.backgroundColor='transparent'">
+                    <div class="bg-light rounded p-2 text-success d-flex align-items-center justify-content-center"><i class="bi bi-shop"></i></div> Browse Stores
+                  </a>
+                </li>
                 {% if is_admin_nav %}
                 <li>
                   <a class="dropdown-item py-2 px-3 fw-medium d-flex align-items-center gap-3 transition-all {% if request.endpoint and request.endpoint.startswith('admin.') %}active{% endif %}" href="{{ url_for('admin.admin_dashboard') }}" onmouseover="this.style.backgroundColor='#f8f9fa'" onmouseout="this.style.backgroundColor='transparent'">
@@ -237,6 +236,10 @@
               <a class="navbar-menu-link {% if request.endpoint == 'main.profile_preferences' %}active{% endif %}" href="{{ url_for('main.profile_preferences') }}">
                 <i class="bi bi-sliders2"></i>
                 <span>Preferences</span>
+              </a>
+              <a class="navbar-menu-link {% if request.endpoint == 'main.stores_page' %}active{% endif %}" href="{{ url_for('main.stores_page') }}">
+                <i class="bi bi-shop"></i>
+                <span>Stores</span>
               </a>
               <a class="navbar-menu-link" href="{{ url_for('main.notifications_page') }}">
                 <i class="bi bi-bell-fill"></i>

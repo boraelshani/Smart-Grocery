@@ -4,12 +4,12 @@ from core.auth import require_admin
 from utils.db import get_db
 from core.utils import now_utc, prettify_slug
 
-@admin_bp.route("/admin/products/smart-import", methods=["GET"])
+@admin_bp.route("/products/smart-import", methods=["GET"])
 def admin_smart_import_page():
     require_admin()
     return render_template("admin_smart_import.html")
 
-@admin_bp.route("/admin/api/products/smart-extract", methods=["POST"])
+@admin_bp.route("/api/products/smart-extract", methods=["POST"])
 def admin_smart_extract():
     require_admin()
     if not request.is_json:
@@ -23,7 +23,7 @@ def admin_smart_extract():
     result = fetch_product_from_url(url)
     return jsonify(result)
 
-@admin_bp.route("/admin/scraper/run", methods=["GET"])
+@admin_bp.route("/scraper/run", methods=["GET"])
 def run_scraper_manual():
     require_admin()
     try:

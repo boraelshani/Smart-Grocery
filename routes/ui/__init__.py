@@ -3,3 +3,4 @@ from .public import *
 from .store import *
 from .deal import *
 from .user import *
+from .discover import *

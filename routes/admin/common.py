@@ -184,7 +184,7 @@ def admin_dashboard():
     ok, res = _require_admin()
     if not ok: return res
     db = get_db()
-    if not db: return render_template("admin_dashboard.html", error="DB offline", data={})
+    if db is None: return render_template("admin_dashboard.html", error="DB offline", data={})
     return render_template("admin_dashboard.html", data=_dashboard_payload(db), user_email=res)
 
 @admin_bp.route("/products")
@@ -192,7 +192,7 @@ def admin_products_page():
     ok, res = _require_admin()
     if not ok: return res
     db = get_db()
-    if not db: return render_template("admin_products.html", error="DB offline", data={})
+    if db is None: return render_template("admin_products.html", error="DB offline", data={})
     qt = (request.args.get("q") or "").strip(); bf = (request.args.get("brand") or "").strip()
     page = _parse_positive_int(request.args.get("page"), 1); per = 25; q = {}
     if qt: q["$or"] = [{"productId": {"$regex": qt, "$options": "i"}}, {"name_en": {"$regex": qt, "$options": "i"}}, {"name_de": {"$regex": qt, "$options": "i"}}, {"barcode": {"$regex": qt, "$options": "i"}}]
@@ -225,7 +225,7 @@ def admin_categories_page():
     ok, res = _require_admin()
     if not ok: return res
     db = get_db()
-    if not db: return render_template("admin_categories.html", error="DB offline", data={})
+    if db is None: return render_template("admin_categories.html", error="DB offline", data={})
     qt = (request.args.get("q") or "").strip()
     all_cats = list(db.categories.find({}, {"_id": 0}).sort([("name_en", 1)]))
     for r in all_cats:
@@ -249,7 +249,7 @@ def admin_brands_page():
     ok, res = _require_admin()
     if not ok: return res
     db = get_db()
-    if not db: return render_template("admin_brands.html", error="DB offline", data={})
+    if db is None: return render_template("admin_brands.html", error="DB offline", data={})
     qt = (request.args.get("q") or "").strip(); q = {}
     if qt: q = {"$or": [{"brandId": {"$regex": qt, "$options": "i"}}, {"name": {"$regex": qt, "$options": "i"}}]}
     brands = list(db.brands.find(q, {"_id": 0}).sort([("updatedAt", -1), ("name", 1)]).limit(250))
@@ -264,7 +264,7 @@ def admin_lists_page():
     ok, res = _require_admin()
     if not ok: return res
     db = get_db()
-    if not db: return render_template("admin_lists.html", error="DB offline", data={})
+    if db is None: return render_template("admin_lists.html", error="DB offline", data={})
     lists = list(db.lists.find({}, {"_id": 0}).sort("updatedAt", -1).limit(80))
     pub_lists = list(db.public_lists.find({}, {"_id": 0}).sort("createdAt", -1).limit(80))
     prods = list(db.products.find({}, {"_id": 0, "productId": 1, "name_en": 1}).sort("name_en", 1).limit(500))
@@ -284,7 +284,7 @@ def admin_feedback_page():
     ok, res = _require_admin()
     if not ok: return res
     db = get_db()
-    if not db: return render_template("admin_feedback.html", error="DB offline", data={})
+    if db is None: return render_template("admin_feedback.html", error="DB offline", data={})
     sf = (request.args.get("status") or "all").strip().lower(); q = {}
     if sf != "all": q["status"] = sf
     fb = list(db.feedback.find(q, {"_id": 0}).sort("createdAt", -1).limit(120))
@@ -296,7 +296,7 @@ def admin_overview_api():
     ok, res = _require_admin()
     if not ok: return res
     db = get_db()
-    if not db: return jsonify({"status": "error"}), 500
+    if db is None: return jsonify({"status": "error"}), 500
     return jsonify({"status": "ok", "data": _dashboard_payload(db)})
 
 @admin_bp.route("/stores/save", methods=["POST"])
@@ -330,6 +330,136 @@ def admin_save_category():
     path, full = _build_category_path(db, cid)
     db.categories.update_one({"categoryId": cid}, {"$set": {"path": path, "fullPathNames": full, "updatedAt": _now_utc()}})
     flash("Category saved", "success"); return _redirect_admin("admin.admin_categories_page", edit=cid)
+
+
+@admin_bp.route("/products/save-ai", methods=["POST"])
+def admin_save_ai_product():
+    ok, res = _require_admin(); db = get_db()
+    if not ok: return res
+    if db is None: return res
+    pid = _id("prod")
+    cid = (request.form.get("categoryId") or "").strip()
+    path, _ = _build_category_path(db, cid)
+    
+    en = request.form.get("name_en")
+    de = request.form.get("name_de")
+    if not en:
+        flash("Name required", "error")
+        return redirect(url_for("admin.admin_smart_import_page"))
+        
+    payload = {
+        "productId": pid, 
+        "name_en": en, 
+        "name_de": de, 
+        "brandId": (request.form.get("brandId") or "").strip() or None, 
+        "categoryId": cid or None, 
+        "categoryPath": path, 
+        "unitSize": (request.form.get("size") or "").strip(), 
+        "defaultImageUrl": (request.form.get("image_url") or "").strip(), 
+        "description_en": request.form.get("description_en"), 
+        "description_de": request.form.get("description_de"), 
+        "updatedAt": _now_utc()
+    }
+    
+    db.products.update_one({"productId": pid}, {"$set": payload, "$setOnInsert": {"createdAt": _now_utc()}}, upsert=True)
+    
+    # Try to map to store
+    store_url = request.form.get("store_url") or ""
+    price_val = request.form.get("price")
+    try:
+        price_val = float(price_val)
+    except:
+        price_val = None
+        
+    if store_url and price_val is not None:
+        # naive store detect
+        store_id = None
+        if "billa" in store_url.lower(): store_id = "billa"
+        elif "spar" in store_url.lower(): store_id = "spar"
+        elif "hofer" in store_url.lower(): store_id = "hofer"
+        
+        if store_id:
+            spid = _id("sp")
+            sp_payload = {
+                "storeProductId": spid,
+                "productId": pid,
+                "storeId": store_id,
+                "productPageUrl": store_url,
+                "basePrice": price_val,
+                "promoPrice": None,
+                "isAvailable": True,
+                "lastPriceUpdate": _now_utc(),
+                "updatedAt": _now_utc()
+            }
+            db.store_products.update_one({"storeProductId": spid}, {"$set": sp_payload, "$setOnInsert": {"createdAt": _now_utc()}}, upsert=True)
+            db.price_history.insert_one({
+                "historyId": _id("hist"), 
+                "storeProductId": spid, 
+                "oldPrice": None, 
+                "newPrice": price_val, 
+                "timestamp": _now_utc()
+            })
+
+    _recompute_product_state(db, pid)
+    flash("AI Product imported successfully!", "success")
+    return redirect(url_for("admin.admin_products_page"))
+
+
+@admin_bp.route("/api/products/search", methods=["GET"])
+def admin_api_products_search():
+    ok, res = _require_admin(); db = get_db()
+    if not ok or db is None: return jsonify([])
+    q = (request.args.get("q") or "").strip()
+    if not q: return jsonify([])
+    query = {"$or": [
+        {"name_en": {"$regex": q, "$options": "i"}}, {"name": {"$regex": q, "$options": "i"}},
+        {"name_de": {"$regex": q, "$options": "i"}},
+        {"productId": {"$regex": q, "$options": "i"}}
+    ]}
+    docs = list(db.products.find(query, {"_id": 0, "productId": 1, "name_en": 1, "name": 1}).sort("name_en", 1).limit(20))
+    return jsonify([{"id": d.get("productId"), "text": d.get("name_en") or d.get("name") or d.get("productId")} for d in docs])
+
+@admin_bp.route("/products/merge", methods=["POST"])
+def admin_merge_products():
+    ok, res = _require_admin(); db = get_db()
+    if not ok or db is None: return _redirect_admin("admin.admin_dashboard")
+    
+    target_id = (request.form.get("targetProductId") or "").strip()
+    source_id = (request.form.get("sourceProductId") or "").strip()
+    
+    if not target_id or not source_id or target_id == source_id:
+        flash("Invalid merge parameters.", "error")
+        return _redirect_admin("admin.admin_products_page")
+        
+    target_prod = db.products.find_one({"productId": target_id})
+    source_prod = db.products.find_one({"productId": source_id})
+    
+    if not target_prod or not source_prod:
+        flash("One or both products not found.", "error")
+        return _redirect_admin("admin.admin_products_page")
+        
+    # Move all store_products from source to target
+    db.store_products.update_many(
+        {"productId": source_id},
+        {"$set": {"productId": target_id, "updatedAt": _now_utc()}}
+    )
+    
+    # Update user shopping lists
+    db.lists.update_many(
+        {"items.productId": source_id},
+        {"$set": {"items.$[elem].productId": target_id}},
+        array_filters=[{"elem.productId": source_id}]
+    )
+    
+    # Delete the source product
+    db.products.delete_one({"productId": source_id})
+    
+    # Recompute state for target
+    _recompute_product_state(db, target_id)
+    _recompute_lists_for_product(db, target_id)
+    
+    flash(f"Successfully merged {source_prod.get('name_en')} into {target_prod.get('name_en')}.", "success")
+    return _redirect_admin("admin.admin_products_page")
 
 @admin_bp.route("/products/save", methods=["POST"])
 def admin_save_product():
@@ -395,6 +525,12 @@ def run_scraper_manual():
 def clear_cache():
     ok, res = _require_admin(); flash("Cache cleared", "success"); return redirect(url_for("admin.admin_dashboard"))
 
+@admin_bp.route("/products/smart-import", methods=["GET"])
+def admin_smart_import_page():
+    ok, res = _require_admin()
+    if not ok: return res
+    return render_template("admin_smart_import.html")
+
 @admin_bp.route("/api/products/smart-extract", methods=["POST"])
 def admin_smart_extract():
     ok, res = _require_admin()
@@ -402,3 +538,53 @@ def admin_smart_extract():
     if not url: return jsonify({"success": False}), 400
     from scripts.ai_product_fetcher import fetch_product_from_url
     return jsonify(fetch_product_from_url(url))
+
+@admin_bp.route("/scans", methods=["GET"])
+def pending_scans():
+    db = get_db()
+    if db is None:
+        return "No DB", 500
+    pending = list(db.pending_products.find({"status": "pending"}).sort("created_at", -1))
+    return render_template("admin_pending_scans.html", scancount=len(pending), pending_scans=pending)
+
+@admin_bp.route("/api/scans/<barcode>/approve", methods=["POST"])
+def approve_scan(barcode):
+    db = get_db()
+    if db is None: return jsonify({"success": False})
+    
+    data = request.get_json() or {}
+    name = data.get("name")
+    category = data.get("category")
+    price = data.get("price")
+    store = data.get("store")
+    
+    db.pending_products.update_one({"barcode": barcode}, {"$set": {"status": "approved"}})
+    
+    # insert into products directly
+    import uuid
+    pid = str(uuid.uuid4())
+    db.products.insert_one({
+        "id": pid,
+        "name": name,
+        "name_en": name,
+        "barcode": barcode,
+        "category": category,
+        "categoryId": category.lower(),
+        "created_at": datetime.now(timezone.utc)
+    })
+    if price and store:
+         db.store_products.insert_one({
+             "productId": pid,
+             "storeId": store.lower(),
+             "price": float(price),
+             "currency": "EUR"
+         })
+         
+    return jsonify({"success": True})
+
+@admin_bp.route("/api/scans/<barcode>/reject", methods=["POST"])
+def reject_scan(barcode):
+    db = get_db()
+    if db is None: return jsonify({"success": False})
+    db.pending_products.update_one({"barcode": barcode}, {"$set": {"status": "rejected"}})
+    return jsonify({"success": True})

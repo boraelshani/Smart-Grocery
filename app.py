@@ -167,7 +167,7 @@ except Exception as e:
     print('INFO: Running in fallback mode with local JSON data.')
 
 # Now import the blueprints (after PyMongo attempted initialization)
-from routes import main_bp, auth_bp, admin_bp, compare_engine_bp, recipe_bp
+from routes import main_bp, auth_bp, admin_bp, api_bp, compare_engine_bp, recipe_bp
 
 # Log connection info
 try:
@@ -214,6 +214,7 @@ except Exception:
 app.register_blueprint(main_bp)
 app.register_blueprint(auth_bp)
 app.register_blueprint(admin_bp, url_prefix='/admin')
+app.register_blueprint(api_bp, url_prefix='/api')
 app.register_blueprint(compare_engine_bp, url_prefix='/api/compare')
 app.register_blueprint(recipe_bp)
 

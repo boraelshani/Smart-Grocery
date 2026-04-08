@@ -920,7 +920,7 @@
               <i class="bi {{ 'bi-heart-fill' if deal.get('is_favorited') else 'bi-heart' }}"></i> <!-- Fill heart if already in favorites -->
             </button>
             <div class="card-image-wrapper cursor-pointer" 
-                 data-url="{{ url_for('main.featured_deal_detail', deal_id=deal_id) }}"
+                 data-url="{{ url_for('main.product_detail', product_id=deal_id) }}"
                  onclick="window.location=this.dataset.url;"> <!-- Click image to see logic details -->
               <img src="{{ deal.get('image') or 'https://via.placeholder.com/280x200' }}" alt="{{ deal.get('title') or deal.get('name') }}"> <!-- Deal visual -->
             </div>
@@ -950,7 +950,7 @@
                         data-offer-y="{{ offer_y }}"> <!-- Primary Add button with huge payload for list persistence -->
                   <i class="bi bi-cart-plus-fill me-1"></i> Add to List <!-- "Quick-add" label -->
                 </button>
-                <a href="{{ url_for('main.featured_deal_detail', deal_id=deal_id) }}" class="btn btn-premium btn-premium-view btn-sm w-100"> <!-- Link to logic page -->
+                <a href="{{ url_for('main.product_detail', product_id=deal_id) }}" class="btn btn-premium btn-premium-view btn-sm w-100"> <!-- Link to logic page -->
                   <i class="bi bi-info-circle me-1"></i> View Details <!-- Education label -->
                 </a>
               </div>

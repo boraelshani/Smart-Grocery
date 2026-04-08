@@ -26,9 +26,9 @@
     <div class="col-lg-12">
         <div id="result-container" class="card shadow-sm border-0 d-none h-100 rounded-4">
             <div class="card-body p-4">
-                <form id="save-product-form" action="/admin/api/products" method="POST">
+                <form id="save-product-form" action="/admin/products/save-ai" method="POST">
                     <input type="hidden" name="image_url" id="res_image">
-                    
+                    <input type="hidden" name="store_url" id="res_store_url">                    
                     <div class="row g-3 mb-3">
                         <div class="col-md-6">
                             <label class="form-label fw-bold small text-muted text-uppercase">Name (English)</label>
@@ -118,7 +118,7 @@ async function fetchAIProduct() {
             document.getElementById("res_category").value = data.categoryId || data.category_path || "";
             document.getElementById("res_price").value = data.price || "";
             document.getElementById("res_image").value = data.image_url || "";
-            
+            document.getElementById("res_store_url").value = url || "";            
             document.getElementById("res_size").value = data.size || "";
             document.getElementById("res_unit_price").value = data.unit_price || "";
             

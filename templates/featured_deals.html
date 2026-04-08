@@ -291,7 +291,7 @@
           data-name="{{ p.get('title','')|lower }}" 
           data-category="{{ p.get('category','')|lower }}">
           
-          {% set detail_url = url_for('main.featured_deal_detail', deal_id=p.get('id') or p.get('_id')) %}
+          {% set detail_url = url_for('main.product_detail', product_id=p.get('id') or p.get('_id')) %}
           
           <!-- CLICKABLE CARD AREA -->
           <div class="card product-card-inner h-100 shadow-sm border-0" 

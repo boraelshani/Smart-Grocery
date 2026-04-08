@@ -1,7 +1,203 @@
 {% extends "admin_layout.html" %}
 
-{% block admin_title %}Products Directory{% endblock %}
-{% block admin_subtitle %}Manage canonical products, brands, and search{% endblock %}
+{% block admin_title %}Products Directory
+<!-- Modal: Merge Product -->
+<div class="modal fade" id="mergeModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 rounded-4 shadow-lg">
+      <div class="modal-header bg-info bg-opacity-10 border-bottom-0 pb-0 pt-4 px-4">
+        <h5 class="modal-title fw-bold text-dark d-flex align-items-center">
+            <div class="bg-info text-white rounded-circle d-flex align-items-center justify-content-center me-2 shadow-sm" style="width: 32px; height: 32px; font-size: 0.9rem;"><i class="fas fa-link"></i></div>
+            <span>Merge / Link Products</span>
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="post" action="/admin/products/merge">
+        <div class="modal-body p-4">
+           <input type="hidden" name="targetProductId" id="field_targetProductId">
+           
+           <div class="mb-4">
+              <label class="form-label small fw-bold text-muted text-uppercase mb-1">Target Product (Kept)</label>
+              <input type="text" class="form-control form-control-lg bg-light border fw-bold text-success" id="display_targetName" readonly>
+              <small class="text-muted"><i class="fas fa-info-circle me-1"></i> This product will keep its ID, Name, and Image.</small>
+           </div>
+           
+           <div class="mb-4">
+              <label class="form-label small fw-bold text-muted text-uppercase mb-1">Source Product to Merge (Will be deleted)</label>
+              <div class="position-relative">
+                  <input type="text" class="form-control form-control-lg bg-white border border-info" id="search_sourceProduct" placeholder="Search by name or ID..." autocomplete="off">
+                  <div id="search_results" class="list-group position-absolute w-100 shadow" style="display: none; z-index: 1000; max-height: 200px; overflow-y: auto;"></div>
+              </div>
+              <input type="hidden" name="sourceProductId" id="field_sourceProductId" required>
+              <small class="text-muted"><i class="fas fa-info-circle me-1"></i> Its store offers will be moved to the target product. The source product itself will be permanently deleted.</small>
+           </div>
+           
+        </div>
+        <div class="modal-footer border-top-0 px-4 pb-4 pt-0 justify-content-between">
+           <button type="button" class="btn btn-light rounded-pill px-4 fw-bold shadow-sm" data-bs-dismiss="modal">Cancel</button>
+           <button type="submit" class="btn btn-info text-white rounded-pill px-4 fw-bold shadow-sm" id="btn_confirm_merge" disabled><i class="fas fa-compress-arrows-alt me-1"></i> Merge Stores</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+function prepareMergeModal(targetId, targetName) {
+    document.getElementById('field_targetProductId').value = targetId;
+    document.getElementById('display_targetName').value = targetName + " (ID: " + targetId.substring(targetId.length - 6) + ")";
+    document.getElementById('field_sourceProductId').value = "";
+    document.getElementById('search_sourceProduct').value = "";
+    document.getElementById('btn_confirm_merge').disabled = true;
+}
+
+document.getElementById('search_sourceProduct').addEventListener('input', async function(e) {
+    const q = e.target.value.trim();
+    const resultsContainer = document.getElementById('search_results');
+    document.getElementById('field_sourceProductId').value = "";
+    document.getElementById('btn_confirm_merge').disabled = true;
+    
+    if (q.length < 2) {
+        resultsContainer.style.display = 'none';
+        return;
+    }
+    
+    try {
+        const response = await fetch('/admin/api/products/search?q=' + encodeURIComponent(q));
+        const data = await response.json();
+        
+        resultsContainer.innerHTML = '';
+        if (data.length > 0) {
+            data.forEach(item => {
+                const a = document.createElement('a');
+                a.className = 'list-group-item list-group-item-action list-group-item-info cursor-pointer border-bottom';
+                a.innerHTML = `<strong>${item.text}</strong> <small class="text-muted float-end">ID: ${item.id.substring(item.id.length-6)}</small>`;
+                a.onclick = function() {
+                    document.getElementById('search_sourceProduct').value = item.text + " (ID: " + item.id.substring(item.id.length-6) + ")";
+                    document.getElementById('field_sourceProductId').value = item.id;
+                    document.getElementById('btn_confirm_merge').disabled = false;
+                    resultsContainer.style.display = 'none';
+                };
+                resultsContainer.appendChild(a);
+            });
+            resultsContainer.style.display = 'block';
+        } else {
+            resultsContainer.innerHTML = '<div class="list-group-item text-muted">No products found</div>';
+            resultsContainer.style.display = 'block';
+        }
+    } catch(err) {
+        console.error("Search error", err);
+    }
+});
+
+// Hide dropdown when clicking outside
+document.addEventListener('click', function(e) {
+    if (e.target.id !== 'search_sourceProduct') {
+        document.getElementById('search_results').style.display = 'none';
+    }
+});
+</script>
+
+{% endblock %}
+{% block admin_subtitle %}Manage canonical products, brands, and search
+<!-- Modal: Merge Product -->
+<div class="modal fade" id="mergeModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 rounded-4 shadow-lg">
+      <div class="modal-header bg-info bg-opacity-10 border-bottom-0 pb-0 pt-4 px-4">
+        <h5 class="modal-title fw-bold text-dark d-flex align-items-center">
+            <div class="bg-info text-white rounded-circle d-flex align-items-center justify-content-center me-2 shadow-sm" style="width: 32px; height: 32px; font-size: 0.9rem;"><i class="fas fa-link"></i></div>
+            <span>Merge / Link Products</span>
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="post" action="/admin/products/merge">
+        <div class="modal-body p-4">
+           <input type="hidden" name="targetProductId" id="field_targetProductId">
+           
+           <div class="mb-4">
+              <label class="form-label small fw-bold text-muted text-uppercase mb-1">Target Product (Kept)</label>
+              <input type="text" class="form-control form-control-lg bg-light border fw-bold text-success" id="display_targetName" readonly>
+              <small class="text-muted"><i class="fas fa-info-circle me-1"></i> This product will keep its ID, Name, and Image.</small>
+           </div>
+           
+           <div class="mb-4">
+              <label class="form-label small fw-bold text-muted text-uppercase mb-1">Source Product to Merge (Will be deleted)</label>
+              <div class="position-relative">
+                  <input type="text" class="form-control form-control-lg bg-white border border-info" id="search_sourceProduct" placeholder="Search by name or ID..." autocomplete="off">
+                  <div id="search_results" class="list-group position-absolute w-100 shadow" style="display: none; z-index: 1000; max-height: 200px; overflow-y: auto;"></div>
+              </div>
+              <input type="hidden" name="sourceProductId" id="field_sourceProductId" required>
+              <small class="text-muted"><i class="fas fa-info-circle me-1"></i> Its store offers will be moved to the target product. The source product itself will be permanently deleted.</small>
+           </div>
+           
+        </div>
+        <div class="modal-footer border-top-0 px-4 pb-4 pt-0 justify-content-between">
+           <button type="button" class="btn btn-light rounded-pill px-4 fw-bold shadow-sm" data-bs-dismiss="modal">Cancel</button>
+           <button type="submit" class="btn btn-info text-white rounded-pill px-4 fw-bold shadow-sm" id="btn_confirm_merge" disabled><i class="fas fa-compress-arrows-alt me-1"></i> Merge Stores</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+function prepareMergeModal(targetId, targetName) {
+    document.getElementById('field_targetProductId').value = targetId;
+    document.getElementById('display_targetName').value = targetName + " (ID: " + targetId.substring(targetId.length - 6) + ")";
+    document.getElementById('field_sourceProductId').value = "";
+    document.getElementById('search_sourceProduct').value = "";
+    document.getElementById('btn_confirm_merge').disabled = true;
+}
+
+document.getElementById('search_sourceProduct').addEventListener('input', async function(e) {
+    const q = e.target.value.trim();
+    const resultsContainer = document.getElementById('search_results');
+    document.getElementById('field_sourceProductId').value = "";
+    document.getElementById('btn_confirm_merge').disabled = true;
+    
+    if (q.length < 2) {
+        resultsContainer.style.display = 'none';
+        return;
+    }
+    
+    try {
+        const response = await fetch('/admin/api/products/search?q=' + encodeURIComponent(q));
+        const data = await response.json();
+        
+        resultsContainer.innerHTML = '';
+        if (data.length > 0) {
+            data.forEach(item => {
+                const a = document.createElement('a');
+                a.className = 'list-group-item list-group-item-action list-group-item-info cursor-pointer border-bottom';
+                a.innerHTML = `<strong>${item.text}</strong> <small class="text-muted float-end">ID: ${item.id.substring(item.id.length-6)}</small>`;
+                a.onclick = function() {
+                    document.getElementById('search_sourceProduct').value = item.text + " (ID: " + item.id.substring(item.id.length-6) + ")";
+                    document.getElementById('field_sourceProductId').value = item.id;
+                    document.getElementById('btn_confirm_merge').disabled = false;
+                    resultsContainer.style.display = 'none';
+                };
+                resultsContainer.appendChild(a);
+            });
+            resultsContainer.style.display = 'block';
+        } else {
+            resultsContainer.innerHTML = '<div class="list-group-item text-muted">No products found</div>';
+            resultsContainer.style.display = 'block';
+        }
+    } catch(err) {
+        console.error("Search error", err);
+    }
+});
+
+// Hide dropdown when clicking outside
+document.addEventListener('click', function(e) {
+    if (e.target.id !== 'search_sourceProduct') {
+        document.getElementById('search_results').style.display = 'none';
+    }
+});
+</script>
+
+{% endblock %}
 
 {% block admin_content %}
 <div class="row mb-4 align-items-center">
@@ -97,6 +293,9 @@
                         {% endif %}
                     </td>
                     <td class="text-end pe-4">
+                        <button class="btn btn-sm btn-outline-info border shadow-sm rounded-pill fw-bold px-3 me-1" onclick='prepareMergeModal("{{p.productId}}", "{{p.name_en or p.name}}")' data-bs-toggle="modal" data-bs-target="#mergeModal" title="Merge duplicate products into this one">
+                            <i class="fas fa-link"></i> Link
+                        </button>
                         <button class="btn btn-sm btn-light border shadow-sm rounded-pill text-primary fw-bold px-3 btn-edit-product" onclick='prepareProductModal("edit", {"productId":"{{p.productId}}", "name_en": "{{p.name_en}}", "name_de": "{{p.name_de}}", "qty_str": "{{p.qty_str}}", "brandId": "{{p.brandId}}", "categoryId": "{{p.categoryId}}", "image_url": "{{p.image_url}}"})' data-bs-toggle="modal" data-bs-target="#productModal">
                             <i class="fas fa-pen"></i> Edit
                         </button>
@@ -239,4 +438,102 @@ function prepareProductModal(mode, product) {
    }
 }
 </script>
+
+<!-- Modal: Merge Product -->
+<div class="modal fade" id="mergeModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 rounded-4 shadow-lg">
+      <div class="modal-header bg-info bg-opacity-10 border-bottom-0 pb-0 pt-4 px-4">
+        <h5 class="modal-title fw-bold text-dark d-flex align-items-center">
+            <div class="bg-info text-white rounded-circle d-flex align-items-center justify-content-center me-2 shadow-sm" style="width: 32px; height: 32px; font-size: 0.9rem;"><i class="fas fa-link"></i></div>
+            <span>Merge / Link Products</span>
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="post" action="/admin/products/merge">
+        <div class="modal-body p-4">
+           <input type="hidden" name="targetProductId" id="field_targetProductId">
+           
+           <div class="mb-4">
+              <label class="form-label small fw-bold text-muted text-uppercase mb-1">Target Product (Kept)</label>
+              <input type="text" class="form-control form-control-lg bg-light border fw-bold text-success" id="display_targetName" readonly>
+              <small class="text-muted"><i class="fas fa-info-circle me-1"></i> This product will keep its ID, Name, and Image.</small>
+           </div>
+           
+           <div class="mb-4">
+              <label class="form-label small fw-bold text-muted text-uppercase mb-1">Source Product to Merge (Will be deleted)</label>
+              <div class="position-relative">
+                  <input type="text" class="form-control form-control-lg bg-white border border-info" id="search_sourceProduct" placeholder="Search by name or ID..." autocomplete="off">
+                  <div id="search_results" class="list-group position-absolute w-100 shadow" style="display: none; z-index: 1000; max-height: 200px; overflow-y: auto;"></div>
+              </div>
+              <input type="hidden" name="sourceProductId" id="field_sourceProductId" required>
+              <small class="text-muted"><i class="fas fa-info-circle me-1"></i> Its store offers will be moved to the target product. The source product itself will be permanently deleted.</small>
+           </div>
+           
+        </div>
+        <div class="modal-footer border-top-0 px-4 pb-4 pt-0 justify-content-between">
+           <button type="button" class="btn btn-light rounded-pill px-4 fw-bold shadow-sm" data-bs-dismiss="modal">Cancel</button>
+           <button type="submit" class="btn btn-info text-white rounded-pill px-4 fw-bold shadow-sm" id="btn_confirm_merge" disabled><i class="fas fa-compress-arrows-alt me-1"></i> Merge Stores</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+function prepareMergeModal(targetId, targetName) {
+    document.getElementById('field_targetProductId').value = targetId;
+    document.getElementById('display_targetName').value = targetName + " (ID: " + targetId.substring(targetId.length - 6) + ")";
+    document.getElementById('field_sourceProductId').value = "";
+    document.getElementById('search_sourceProduct').value = "";
+    document.getElementById('btn_confirm_merge').disabled = true;
+}
+
+document.getElementById('search_sourceProduct').addEventListener('input', async function(e) {
+    const q = e.target.value.trim();
+    const resultsContainer = document.getElementById('search_results');
+    document.getElementById('field_sourceProductId').value = "";
+    document.getElementById('btn_confirm_merge').disabled = true;
+    
+    if (q.length < 2) {
+        resultsContainer.style.display = 'none';
+        return;
+    }
+    
+    try {
+        const response = await fetch('/admin/api/products/search?q=' + encodeURIComponent(q));
+        const data = await response.json();
+        
+        resultsContainer.innerHTML = '';
+        if (data.length > 0) {
+            data.forEach(item => {
+                const a = document.createElement('a');
+                a.className = 'list-group-item list-group-item-action list-group-item-info cursor-pointer border-bottom';
+                a.innerHTML = `<strong>${item.text}</strong> <small class="text-muted float-end">ID: ${item.id.substring(item.id.length-6)}</small>`;
+                a.onclick = function() {
+                    document.getElementById('search_sourceProduct').value = item.text + " (ID: " + item.id.substring(item.id.length-6) + ")";
+                    document.getElementById('field_sourceProductId').value = item.id;
+                    document.getElementById('btn_confirm_merge').disabled = false;
+                    resultsContainer.style.display = 'none';
+                };
+                resultsContainer.appendChild(a);
+            });
+            resultsContainer.style.display = 'block';
+        } else {
+            resultsContainer.innerHTML = '<div class="list-group-item text-muted">No products found</div>';
+            resultsContainer.style.display = 'block';
+        }
+    } catch(err) {
+        console.error("Search error", err);
+    }
+});
+
+// Hide dropdown when clicking outside
+document.addEventListener('click', function(e) {
+    if (e.target.id !== 'search_sourceProduct') {
+        document.getElementById('search_results').style.display = 'none';
+    }
+});
+</script>
+
 {% endblock %}

@@ -94,28 +94,3 @@ def featured_deals_page():
                           search_query=search_query,
                           using_fallback=using_fallback)
 
-@main_bp.route('/featured-deal/<deal_id>')
-def featured_deal_detail(deal_id):
-    """Display a single featured deal."""
-    deal = featured_deals_model.get_deal_by_id(deal_id) or \
-           multibuy_offers_model.get_offer_by_id(deal_id) or \
-           quantity_discounts_model.get_discount_by_id(deal_id)
-    
-    if not deal:
-        fallbacks = load_featured_deals_fallback()
-        deal = next((d for d in fallbacks if str(d.get('id')) == str(deal_id)), None)
-
-    if not deal:
-        return render_template('404.html'), 404
-
-    # Normalize
-    if not deal.get('title'): deal['title'] = deal.get('name') or "Special Offer"
-    if deal.get('price') is None: deal['price'] = deal.get('new_price')
-    
-    is_favorited = False
-    user_email = session.get('user')
-    if user_email:
-        try: is_favorited = favorites_model.is_favorited(user_email, str(deal.get('_id') or deal.get('id')))
-        except: pass
-
-    return render_template('featured_deal_detail.html', deal=helpers.sanitize_mongo_doc(deal), is_favorited=is_favorited)

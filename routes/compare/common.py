@@ -46,7 +46,26 @@ def compare_list():
     product_query = dict(query)
     if search_query:
         search_regex = {'$regex': search_query, '$options': 'i'}
-        product_query['$or'] = [{'name': search_regex}, {'title': search_regex}, {'category': search_regex}, {'stores.store': search_regex}, {'stores.name': search_regex}]
+        
+        # Build the $or list
+        or_list = [
+            {'name': search_regex}, 
+            {'title': search_regex}, 
+            {'category': search_regex}, 
+            {'stores.store': search_regex}, 
+            {'stores.name': search_regex},
+            {'barcode': search_query},
+            {'gtin': search_query},
+            {'ean': search_query},
+            {'upc': search_query}
+        ]
+        import bson
+        try:
+            if bson.ObjectId.is_valid(search_query):
+                or_list.append({'_id': bson.ObjectId(search_query)})
+        except: pass
+        
+        product_query['$or'] = or_list
     total_products = products_model.count_products(product_query)
     total_pages = (total_products + per_page - 1) // per_page if total_products else 1
     page = min(page, total_pages) if total_products else 1

@@ -26,7 +26,7 @@ def login():
                 if n.get('type') == 'list_share' and not n.get('is_toasted'):
                     flash(n.get('message', 'A new list was shared!'), 'info')
                     db = get_db()
-                    if db: db.notifications.update_one({'_id': n['_id']}, {'$set': {'is_toasted': True}})
+                    if db is not None: db.notifications.update_one({'_id': n['_id']}, {'$set': {'is_toasted': True}})
             resp = redirect(url_for('main.home'))
             resp.set_cookie('auth_token', token, httponly=True, samesite='Lax', secure=bool(os.environ.get('COOKIE_SECURE')))
             return resp

@@ -900,7 +900,7 @@
            for client-side sorting and filtering without reloading.
         #}
         {% for p in products %}
-        <div class="col-md-6 col-lg-4 product-card" 
+        <div class="col-md-6 col-lg-3 col-xl-3 product-card" 
           data-stores='{{ p.get("stores")|tojson }}'
           data-price="{{ (p.get('cheapest') and p.get('cheapest').get('price')) or p.get('price','') }}"
           data-name="{{ p.get('name','') |lower }}" 
@@ -935,9 +935,7 @@
             <div class="card-body pb-0" style="background-color: #fff;">
               <div class="d-flex justify-content-between align-items-start mb-3">
                 <h5 class="card-title mb-0 fw-bold">{{ p.get('name') or p.get('title','') }}</h5>
-                {% if p.get('category') %}
-                <span class="badge category-badge ms-2">{{ p.get('category') }}</span>
-                {% endif %}
+                
               </div>
 
               {% set confidence = p.get('confidence', {}) %}
@@ -956,7 +954,6 @@
                   <span class="status-pill js-price-status"
                     data-confidence-label="{{ confidence_label }}"
                     data-report-count="{{ report_count }}"><i class="bi bi-shield-check"></i> Price: {{ status_text }}</span>
-                  <span class="stores-pill js-store-count" data-store-count="{{ store_count }}"><i class="bi bi-shop"></i> {{ store_count }} store{{ 's' if store_count != 1 else '' }}</span>
                 </div>
 
                 <div class="inline-actions" aria-label="Quick card actions">
@@ -984,70 +981,59 @@
               </div>
               {% endif %}
 
-              {% if p.get('stores') %}
-              <div class="mb-3">
-                {# 
-                   NESTED LOOP: STORES
-                   Shows store options where this product is found.
-                #}
-                <div class="js-store-list">
-                {% for s in p.get('stores') %}
-                {# Store Item: Clickable to select specific store price #}
-                <div class="store-item" data-store-name="{{ s.get('store') or s.get('name') }}"
-                  data-store-price="{{ s.get('price') }}" data-product-id="{{ p.get('id') }}"
-                  data-store-unit-price="{{ s.get('normalized_unit_price') if s.get('normalized_unit_price') is not none else '' }}"
-                  data-store-unit-label="{{ s.get('normalized_unit_label', '') }}"
-                  data-image="{{ prefer_processed(s.get('image') if (s.get('image') and 'logo' not in s.get('image')|lower and 'brand' not in s.get('image')|lower) else p.get('image') or (p.get('images') and p.get('images')[0]) or url_for('static', filename='placeholder.svg')) }}">
-                  <div class="d-flex justify-content-between align-items-center gap-1">
-                    <div class="d-flex align-items-center gap-2 flex-grow-1" style="min-width:0;">
-                      <img
-                        src="{{ prefer_processed(s.get('logo') or s.get('store_image') or url_for('static', filename='placeholder.svg')) }}"
-                        alt="{{ s.get('store') or s.get('name') }}"
-                        style="width: 24px; height: 24px; object-fit: contain; border-radius: 4px; background: white; padding: 2px; border: 1px solid #eee;"
-                        data-fallback-src="{{ url_for('static', filename='placeholder.svg') }}"
-                        onerror="this.src=this.dataset.fallbackSrc">
-                      <div class="lh-sm overflow-hidden">
-                        <span class="fw-semibold text-truncate d-block" style="color: #7c3aed;">{{ s.get('store') or
-                          s.get('name')
-                          }}</span>
-                      </div>
-                    </div>
-                    <div class="text-end d-flex align-items-center gap-2" style="min-width: 130px;">
-                      <div>
-                        <span class="text-success fw-bold fs-5 d-block price-main">
-                        {# Add Star Icon for "Cheapest" option #}
-                        {% if p.get('cheapest') and (s.get('price')|string) ==
-                        (p.get('cheapest').get('price')|string) %}
-                        <span class="star-slot"><i class="bi bi-star-fill" style="color: #ffc107;"></i></span>
-                        {% else %}
-                        <span class="star-slot empty"><i class="bi bi-star-fill"></i></span>
-                        {% endif %}
-                        €{{ s.get('price') }}
-                        </span>
-                        {% if s.get('normalized_unit_price') is not none and s.get('normalized_unit_label') %}
-                        <small class="text-muted js-store-unit-price">({{ s.get('normalized_unit_label') }}: €{{ '%.2f'|format(s.get('normalized_unit_price')) }})</small>
-                        {% else %}
-                        <small class="text-muted js-store-unit-price" style="display:none;"></small>
-                        {% endif %}
-                      </div>
-                      {% if s.get('offer') %}
-                      <span class="badge bg-danger" style="font-size:0.7rem;">-{{ s.offer.discount_percentage }}%</span>
-                      {% endif %}
-                      {% if s.get('url') %}
-                      <a href="{{ s.get('url') }}" target="_blank" rel="noopener noreferrer"
-                        class="btn btn-sm btn-go-store p-1" title="Go to official store"
-                        style="background: #f0f0ff; border-radius: 6px; color: #7c3aed; border: 1px solid #dadaff; line-height: 1;">
-                        <i class="bi bi-box-arrow-up-right" style="font-size: 0.85rem;"></i>
-                      </a>
-                      {% endif %}
-                    </div>
+                            </div>  {# unconditionally close card-body pb-0 #}              {% if p.get('stores') %}
+              <!-- Stores Expanded Section -->
+              <div class="px-3 pb-2 pt-1" style="background-color: #fff;">
+                {% set sorted_stores = p.get('stores')|sort(attribute='price') %}
+                {% set cheapest_store = sorted_stores[0] %}
+                
+                <div class="d-flex align-items-center justify-content-between p-2 rounded mb-2" style="background: #f8f9fa; border: 1px solid #eee;">
+                  <div class="d-flex align-items-center gap-2">
+                    <img src="{{ prefer_processed(cheapest_store.get('logo') or cheapest_store.get('store_image') or url_for('static', filename='placeholder.svg')) }}" 
+                         alt="{{ cheapest_store.get('store') or cheapest_store.get('name') }}" 
+                         style="width: 24px; height: 24px; object-fit: contain; border-radius: 4px;">
+                    <span class="fw-semibold small text-truncate" style="max-width: 100px;">{{ cheapest_store.get('store') or cheapest_store.get('name') }}</span>
+                  </div>
+                  <div class="text-end">
+                    <span class="fw-bold text-success d-block lh-1">€{{ cheapest_store.get('price') }}</span>
+                    {% if cheapest_store.get('normalized_unit_price') %}
+                    <small class="text-muted" style="font-size: 0.65rem;">({{ cheapest_store.get('normalized_unit_label') }}: €{{ "%.2f"|format(cheapest_store.get('normalized_unit_price')) }})</small>
+                    {% endif %}
                   </div>
                 </div>
-                {% endfor %}
+                
+                {% if sorted_stores|length > 1 %}
+                <button class="btn btn-sm w-100 fw-medium d-flex align-items-center justify-content-between" 
+                   type="button" data-bs-toggle="collapse" data-bs-target="#stores-collapse-{{ p.get('id') }}" aria-expanded="false"
+                   style="background-color: #f8f6ff; color: #7c3aed; border: 1px solid #e9d5ff; border-radius: 8px; padding: 6px 10px; font-size: 0.85rem;"
+                   onclick="this.querySelector('.bi-chevron-down').classList.toggle('rotate-180')">
+                   <span><i class="bi bi-chevron-down transition-transform me-1" style="transition: transform 0.2s;"></i> Compare {{ sorted_stores|length - 1 }} other store{{ 's' if (sorted_stores|length - 1) != 1 else '' }}</span>
+                   <span class="text-xs opacity-75">Click to view</span>
+                </button>
+
+                <div class="collapse mt-2" id="stores-collapse-{{ p.get('id') }}">
+                  <div class="d-flex flex-column gap-2">
+                    {% for s in sorted_stores[1:] %}
+                    <div class="d-flex justify-content-between align-items-center">
+                      <div class="d-flex align-items-center gap-2">
+                        <img src="{{ prefer_processed(s.get('logo') or s.get('store_image') or url_for('static', filename='placeholder.svg')) }}" 
+                             alt="{{ s.get('store') or s.get('name') }}" 
+                             style="width: 18px; height: 18px; object-fit: contain; border-radius: 3px; filter: grayscale(20%);">
+                        <span class="small text-muted text-truncate" style="max-width: 90px;">{{ s.get('store') or s.get('name') }}</span>
+                      </div>
+                      <div class="text-end">
+                        <span class="fw-semibold small d-block lh-1 text-dark">€{{ s.get('price') }}</span>
+                         {% if s.get('normalized_unit_price') %}
+                          <small class="text-muted" style="font-size: 0.6rem;">({{ s.get('normalized_unit_label') }}: €{{ "%.2f"|format(s.get('normalized_unit_price')) }})</small>
+                         {% endif %}
+                      </div>
+                    </div>
+                    {% endfor %}
+                  </div>
                 </div>
+                {% endif %}
               </div>
-            </div>
-            {% endif %}
+              {% endif %}
 
             <div class="card-body pt-2 mt-auto" style="background-color: #fff;">
               <div class="mt-auto">

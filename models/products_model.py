@@ -161,6 +161,26 @@ class ProductsModel:
                 {"name_en": {"$regex": query["name"]["$regex"], "$options": query["name"].get("$options", "i")}},
                 {"name_de": {"$regex": query["name"]["$regex"], "$options": query["name"].get("$options", "i")}},
             ]
+            
+        if "$or" in query:
+            new_or = out.get("$or", [])
+            for cond in query["$or"]:
+                if "name" in cond:
+                    new_or.append({"name_en": cond["name"]})
+                    new_or.append({"name_de": cond["name"]})
+                elif "title" in cond:
+                    new_or.append({"name_en": cond["title"]})
+                    new_or.append({"name_de": cond["title"]})
+                elif "barcode" in cond:
+                    new_or.append({"barcode": cond["barcode"]})
+                elif "gtin" in cond or "ean" in cond or "upc" in cond:
+                    new_or.append({"barcode": cond.get("gtin") or cond.get("ean") or cond.get("upc")})
+                elif "_id" in cond:
+                    new_or.append({"_id": cond["_id"]})
+            if new_or:
+                out["$or"] = new_or
+            else:
+                out["_id"] = "__none__"
 
         return out
 

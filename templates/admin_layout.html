@@ -125,6 +125,9 @@
     <a href="/admin/products/smart-import" class="nav-item-admin {{ 'active' if 'smart-import' in request.path else '' }}">
       <i class="fas fa-magic"></i> Smart Import (AI)
     </a>
+    <a href="/admin/scans" class="nav-item-admin {{ 'active' if '/admin/scans' in request.path else '' }}">
+      <i class="fas fa-barcode"></i> Pending Scans
+    </a>
     <a href="/admin/categories" class="nav-item-admin {{ 'active' if '/admin/categories' in request.path else '' }}">
       <i class="fas fa-tags"></i> Categories
     </a>

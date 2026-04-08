@@ -113,3 +113,35 @@ def api_community_price_report_create():
         res = get_db().community_price_reports.insert_one(doc)
         return jsonify({'success': True, 'id': str(res.inserted_id)})
     except Exception as e: return jsonify({'error': str(e)}), 500
+
+@api_bp.route('/products/submit-pending', methods=['POST'])
+def submit_pending_product():
+    try:
+        data = request.get_json() or {}
+        barcode = data.get('barcode')
+        name = data.get('name')
+        image = data.get('image')
+        
+        if not barcode:
+            return jsonify({'success': False, 'error': 'Missing barcode'}), 400
+            
+        db = get_db()
+        if db is None:
+            return jsonify({'success': False, 'error': 'Database unavailable'}), 500
+            
+        # Check if it already exists to avoid dupes
+        existing = db.pending_products.find_one({"barcode": barcode})
+        if existing:
+            return jsonify({'success': True, 'message': 'Already pending'})
+            
+        db.pending_products.insert_one({
+            "barcode": barcode,
+            "name": name,
+            "image": image,
+            "status": "pending",
+            "submitted_by": session.get('user') or 'anonymous',
+            "created_at": datetime.now(timezone.utc)
+        })
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500

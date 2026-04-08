@@ -1,33 +1,34 @@
 {% extends "base.html" %}
 
-{% block title %}Barcode Scanner | Smart Grocery{% endblock %}
+{% block title %}Smart Scanner | Price Compare{% endblock %}
 
 {% block navbar %}{% endblock %}
 
 {% block styles %}
 <style>
     .scanner-page-container {
-        min-height: calc(100vh - 80px);
-        margin-top: 80px;
-        background: #0f172a; /* Dark sleek background */
+        min-height: 100vh;
+        background: #0f172a; 
         display: flex;
         flex-direction: column;
         align-items: center;
-        justify-content: center;
-        position: relative;
+        justify-content: flex-start;
+        padding-top: 2rem;
         padding-bottom: 5rem;
+        position: relative;
     }
 
     #interactive.viewport {
         width: 100%;
-        max-width: 600px;
-        height: 450px;
+        max-width: 500px;
+        height: 60vh;
+        max-height: 500px;
         position: relative;
         overflow: hidden;
-        border-radius: 24px;
-        box-shadow: 0 0 50px rgba(124, 58, 237, 0.3);
+        border-radius: 20px;
+        box-shadow: 0 10px 40px rgba(124, 58, 237, 0.4);
         background: #000;
-        margin-bottom: 2rem;
+        margin: 1.5rem auto;
     }
 
     #interactive.viewport > canvas, #interactive.viewport > video {
@@ -36,236 +37,547 @@
         object-fit: cover;
     }
 
-    /* Scanning animation overlay */
     .scanner-laser {
         position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 4px;
-        background: linear-gradient(to bottom, transparent, #22c55e, transparent);
-        box-shadow: 0 0 15px #22c55e;
+        top: 0; left: 0; right: 0; height: 3px;
+        background: #22c55e;
+        box-shadow: 0 0 15px #22c55e, 0 0 30px #22c55e;
         z-index: 10;
-        animation: laserMove 2s infinite ease-in-out;
+        animation: laserMove 2.5s infinite linear;
     }
 
     @keyframes laserMove {
-        0% { top: 10%; }
-        50% { top: 90%; }
-        100% { top: 10%; }
+        0% { top: 5%; }
+        50% { top: 95%; }
+        100% { top: 5%; }
     }
 
     .scanner-overlay {
-        position: absolute;
-        inset: 0;
-        border: 40px solid rgba(0,0,0,0.5);
+        position: absolute; inset: 0;
+        background: rgba(0, 0, 0, 0.6);
         z-index: 5;
         pointer-events: none;
+        clip-path: polygon(0% 0%, 0% 100%, 15% 100%, 15% 25%, 85% 25%, 85% 75%, 15% 75%, 15% 100%, 100% 100%, 100% 0%);
     }
 
-    .scanner-target {
+    .scanner-frame {
         position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 250px;
-        height: 150px;
-        border: 2px solid white;
-        border-radius: 12px;
+        top: 25%; left: 15%; right: 15%; bottom: 25%;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-radius: 8px;
         z-index: 6;
+        box-shadow: inset 0 0 0 1px rgba(255,255,255,0.1);
     }
+    
+    .scanner-frame::before, .scanner-frame::after,
+    .scanner-corners::before, .scanner-corners::after {
+        content: ''; position: absolute; width: 25px; height: 25px; border-color: #7c3aed; border-style: solid;
+    }
+    
+    .scanner-frame::before { top: -2px; left: -2px; border-width: 4px 0 0 4px; border-top-left-radius: 8px; }
+    .scanner-frame::after { top: -2px; right: -2px; border-width: 4px 4px 0 0; border-top-right-radius: 8px; }
+    .scanner-corners::before { bottom: -2px; left: -2px; border-width: 0 0 4px 4px; border-bottom-left-radius: 8px; }
+    .scanner-corners::after { bottom: -2px; right: -2px; border-width: 0 4px 4px 0; border-bottom-right-radius: 8px; }
 
-    .scanner-controls {
-        width: 100%;
-        max-width: 600px;
-        padding: 0 2rem;
+    .scanner-status {
+        color: #e2e8f0; font-weight: 700; letter-spacing: 1px;
+        font-size: 0.9rem; margin-bottom: 1.5rem; text-transform: uppercase;
+        animation: pulseText 2s infinite;
         text-align: center;
     }
 
-    .scanner-status {
-        color: #94a3b8;
-        font-weight: 600;
-        margin-bottom: 1.5rem;
-        letter-spacing: 1px;
-    }
+    @keyframes pulseText { 0% { opacity: 0.7; } 50% { opacity: 1; text-shadow: 0 0 10px rgba(255,255,255,0.5); } 100% { opacity: 0.7; } }
 
-    .scanner-btn-group {
-        display: flex;
-        gap: 1rem;
-        justify-content: center;
-    }
-
-    .scanner-btn {
-        padding: 1rem 2rem;
-        border-radius: 16px;
-        font-weight: 700;
-        font-size: 1rem;
-        transition: all 0.3s;
-        border: none;
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-    }
-
-    .btn-stop {
-        background: #ef4444;
-        color: white;
-    }
-
-    .btn-start {
-        background: #7c3aed;
-        color: white;
-    }
-
-    /* Result Modal Styling */
     .scan-result-card {
-        background: white;
-        border-radius: 20px;
-        padding: 1.5rem;
-        margin-top: 2rem;
-        display: none;
-        width: 100%;
-        max-width: 500px;
-        animation: slideUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        background: white; border-radius: 24px; padding: 1.5rem;
+        margin-top: 1rem; width: 90%; max-width: 500px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+        display: none; animation: slideUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
 
-    @keyframes slideUp {
-        from { transform: translateY(50px); opacity: 0; }
-        to { transform: translateY(0); opacity: 1; }
+    @keyframes slideUp { from { transform: translateY(100px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+    .store-row {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 0.75rem; border-radius: 12px; background: #f8fafc;
+        border: 1px solid #e2e8f0; transition: transform 0.2s; margin-bottom: 0.5rem;
     }
+    .store-row:hover { transform: translateY(-2px); background: #f1f5f9; }
+    
+    .store-img { width: 32px; height: 32px; object-fit: contain; border-radius: 8px; background: white; padding: 4px; border: 1px solid #e2e8f0; }
+
+    .header-nav { width: 100%; max-width: 500px; padding: 0 1.5rem; display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+    
+    .close-btn { width: 45px; height: 45px; background: rgba(255,255,255,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; text-decoration: none; font-size: 1.5rem; backdrop-filter: blur(10px); transition: all 0.3s; }
+    .close-btn:hover { background: rgba(255,255,255,0.2); color: white; border: none; }
+    
+    .action-btn-circle { width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: #f1f5f9; border: none; color: #475569; transition: all 0.2s; text-decoration: none;}
+    .action-btn-circle:hover { background: #e2e8f0; color: #0f172a; }
+
+    /* For list modal */
+    .modal-backdrop.show { opacity: 0.8; }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="scanner-page-container">
-    <a href="{{ url_for('main.home') }}" style="position: absolute; top: 20px; right: 20px; color: white; font-size: 2rem; z-index: 1000; text-decoration: none;" aria-label="Close Scanner">
-        <i class="bi bi-x-circle-fill"></i>
-    </a>
-    <div class="container text-center mb-5">
-        <h1 class="text-white fw-black">Barcode Scanner</h1>
-        <p class="text-white">Scan any product to find the cheapest price nearby.</p>
+    <div class="header-nav">
+        <a href="{{ url_for('main.home') }}" class="close-btn" aria-label="Close"><i class="bi bi-x-lg"></i></a>
+        <div class="text-center">
+            <h5 class="text-white fw-bold mb-0">Smart Scanner</h5>
+            <small class="text-gray-400" style="color: #94a3b8;">Find & Compare</small>
+        </div>
+        <div style="width: 45px;"></div> <!-- Spacer -->
     </div>
 
-    <!-- Scanner Viewport -->
-    <div id="interactive" class="viewport">
-        <div class="scanner-laser"></div>
-        <div class="scanner-overlay"></div>
-        <div class="scanner-target"></div>
-    </div>
+    <div class="container text-center w-100 px-3">
+        <div id="interactive" class="viewport">
+            <div class="scanner-laser"></div>
+            <div class="scanner-overlay"></div>
+            <div class="scanner-frame"><div class="scanner-corners"></div></div>
+        </div>
 
-    <div class="scanner-controls">
-        <div class="scanner-status" id="scanner-status">ALIGNED PRODUCT BARCODE WITHIN THE BOX</div>
+        <div class="scanner-status" id="scanner-status">Align barcode inside the frame</div>
         
-        <div class="scanner-btn-group">
-            <button id="toggle-scanner" class="scanner-btn btn-start">
-                <i class="bi bi-camera-fill"></i> <span id="btn-text">Start Scanning</span>
+        <div class="d-flex gap-3 justify-content-center" id="scanner-controls">
+            <button id="toggle-scanner" class="btn text-white fw-bold rounded-pill px-4 py-2 flex-grow-1 border-0" style="background: #7c3aed; max-width: 200px;">
+                <i class="bi bi-camera-video-off-fill me-2"></i> Pause Scanner
             </button>
-            <a href="{{ url_for('main.compare_prices') }}" class="scanner-btn" style="background: rgba(255,255,255,0.1); color: white;">
-                <i class="bi bi-search"></i> Manual Search
+            <a href="{{ url_for('main.compare_prices') }}" class="btn text-white fw-bold rounded-pill px-4 py-2 flex-grow-1 border-0" style="background: #334155; max-width: 200px;">
+                <i class="bi bi-search me-2"></i> Search
             </a>
         </div>
     </div>
 
     <!-- Live Result Preview -->
-    <div id="scan-result" class="scan-result-card">
-        <div class="d-flex align-items-center gap-3">
-            <img id="result-img" src="" style="width: 80px; height: 80px; object-fit: contain; border-radius: 12px;">
-            <div class="text-start">
-                <h5 class="fw-bold mb-1" id="result-name">Product Name</h5>
-                <p class="text-success fw-bold mb-0" id="result-price">EUR 0.00</p>
-                <small class="text-muted" id="result-store">Available at 3 stores</small>
+    <div id="scan-result" class="scan-result-card mx-auto">
+        <div class="d-flex align-items-start gap-3 border-bottom pb-3 mb-3">
+            <img id="result-img" src="" style="width: 90px; height: 90px; object-fit: contain; border-radius: 16px; border: 1px solid #e2e8f0; padding: 5px;">
+            <div class="text-start flex-grow-1 overflow-hidden">
+                <h5 class="fw-bold mb-1 text-dark text-truncate" id="result-name">Product Name</h5>
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <span class="badge bg-success bg-opacity-10 text-success border border-success fw-bold px-2 py-1 fs-6" id="result-best-price">€0.00</span>
+                    <span class="text-muted fw-medium fs-sm text-truncate" id="result-category"><i class="bi bi-tag-fill me-1 text-gray-400"></i> Category</span>
+                </div>
             </div>
-            <a id="result-link" href="#" class="btn btn-primary ms-auto rounded-pill px-4 fw-bold">View</a>
+            <a id="result-link" href="#" class="action-btn-circle ms-2" aria-label="View">
+                <i class="bi bi-arrow-right-short fs-4"></i>
+            </a>
+        </div>
+        
+        <div class="text-start">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h6 class="fw-bold text-slate-500 mb-0 fs-sm text-uppercase" style="letter-spacing: 0.5px; color: #64748b;">Prices Nearby</h6>
+                <span class="badge bg-primary rounded-pill" id="result-count">0</span>
+            </div>
+            <div id="result-stores-list" class="d-flex flex-column mb-4 overflow-auto pe-1" style="max-height: 180px;">
+                <!-- Stores injected here -->
+            </div>
+            
+            <div class="p-3 rounded-3 mb-3" style="background: #f8fafc; border: 1px dashed #cbd5e1;">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="d-block text-xs fw-bold text-uppercase text-muted" style="font-size: 0.7rem;">Potential Savings</span>
+                        <span class="d-block fw-black text-success fs-5 pb-0 mb-0" id="result-savings" style="line-height: 1;">€0.00</span>
+                    </div>
+                    <i class="bi bi-cart-check fs-1 text-success opacity-50"></i>
+                </div>
+            </div>
+        </div>
+        
+        <div class="d-flex gap-2">
+            <button onclick="resumeScanner()" class="btn btn-light border flex-grow-1 rounded-pill fw-bold py-2 text-slate-700">
+                <i class="bi bi-upc-scan me-1"></i> Scan Next
+            </button>
+            <button id="add-to-list-btn" class="btn btn-primary flex-grow-1 rounded-pill fw-bold py-2 shadow-sm" style="background: #7c3aed; border: none;" data-bs-toggle="modal" data-bs-target="#addToListModal">
+                <i class="bi bi-plus-lg me-1"></i> Add to List
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Add To List Modal -->
+<div class="modal fade" id="addToListModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden text-dark">
+            <div class="modal-header border-0 pb-0 pt-4 px-4">
+                <h5 class="modal-title fw-bold"><i class="bi bi-card-list me-2 text-primary"></i>Add to List</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4 pt-3 text-center">
+                <div class="d-inline-flex align-items-center justify-content-center p-3 rounded-circle bg-light mb-3">
+                    <img id="modal-img" src="" width="48" height="48" style="object-fit: contain;">
+                </div>
+                <h6 id="modal-name" class="fw-bold mb-3">Loading...</h6>
+                
+                <div class="d-flex justify-content-between align-items-center bg-light rounded-3 p-2 px-3 mb-4">
+                    <button class="btn btn-sm btn-white rounded-circle shadow-sm bg-white" onclick="modalQty(this, -1)" style="width:32px;height:32px; border: 1px solid #e2e8f0; color: #0f172a;"><i class="bi bi-dash"></i></button>
+                    <span class="fw-bold fs-5" id="modal-qty">1</span>
+                    <button class="btn btn-sm btn-white rounded-circle shadow-sm bg-white" onclick="modalQty(this, 1)" style="width:32px;height:32px; border: 1px solid #e2e8f0; color: #0f172a;"><i class="bi bi-plus"></i></button>
+                </div>
+                
+                <button class="btn btn-primary w-100 rounded-pill fw-bold py-2" id="confirm-add-btn" style="background: #7c3aed; border: none;">Add to Shopping List</button>
+            </div>
         </div>
     </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
-<!-- QuaggaJS Barcode Library -->
 <script src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2/dist/quagga.min.js"></script>
 <script>
     let isScanning = false;
-    const btnText = document.getElementById('btn-text');
+    let cameraActive = false;
     const toggleBtn = document.getElementById('toggle-scanner');
+    const statusText = document.getElementById('scanner-status');
+    const resultCard = document.getElementById('scan-result');
+    const interactive = document.getElementById('interactive');
+    const controls = document.getElementById('scanner-controls');
+    
+    let currentScannedProduct = null;
 
     toggleBtn.addEventListener('click', () => {
-        if (!isScanning) {
-            startScanner();
+        if (isScanning) {
+            pauseScanner();
         } else {
-            stopScanner();
+            resumeScanner();
         }
     });
 
-    function startScanner() {
+    function initScanner() {
+        // Reset DOM before init to prevent duplicate canvases/videos
+        interactive.innerHTML = `
+            <div class="scanner-laser"></div>
+            <div class="scanner-overlay"></div>
+            <div class="scanner-frame"><div class="scanner-corners"></div></div>
+        `;
+
         Quagga.init({
             inputStream: {
                 name: "Live",
                 type: "LiveStream",
-                target: document.querySelector('#interactive'),
+                target: interactive,
                 constraints: {
-                    width: 640,
-                    height: 480
+                    facingMode: "environment", // Best for mobile
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 }
                 },
             },
             decoder: {
-                readers: ["ean_reader", "ean_8_reader", "upc_reader", "code_128_reader"]
+                readers: ["ean_reader", "ean_8_reader", "upc_reader", "upc_e_reader", "code_128_reader"]
+            },
+            locator: {
+                patchSize: "medium",
+                halfSample: true
             }
         }, function(err) {
             if (err) {
                 console.error(err);
-                alert("Could not access camera. Please check permissions.");
+                statusText.innerText = "Camera Access Denied";
+                statusText.style.color = "#ef4444";
                 return;
             }
+            cameraActive = true;
             Quagga.start();
             isScanning = true;
-            btnText.innerText = "Stop Scanner";
-            toggleBtn.classList.replace('btn-start', 'btn-stop');
+            resultCard.style.display = 'none';
+            interactive.style.display = 'block';
+            controls.style.display = 'flex';
+            statusText.innerText = "Align barcode inside the frame";
+            statusText.style.color = "#e2e8f0";
+            toggleBtn.innerHTML = '<i class="bi bi-camera-video-off-fill me-2"></i> Pause Scanner';
         });
 
+        // Ensure we only bind this once
+        Quagga.offDetected(handleDetection);
         Quagga.onDetected(handleDetection);
     }
 
-    function stopScanner() {
-        Quagga.stop();
-        isScanning = false;
-        btnText.innerText = "Start Scanning";
-        toggleBtn.classList.replace('btn-stop', 'btn-start');
+    function resumeScanner() {
+        if (!cameraActive) {
+            initScanner();
+            return;
+        }
+        
+        // Since we stopped Quagga, we must re-initialize it entirely
+        cameraActive = false;
+        initScanner();
     }
 
+    function pauseScanner() {
+        if (typeof Quagga !== 'undefined') Quagga.stop();
+        isScanning = false;
+        cameraActive = false;
+        statusText.innerText = "Scanner Paused";
+        statusText.style.color = "#94a3b8";
+        toggleBtn.innerHTML = '<i class="bi bi-camera-video-fill me-2"></i> Resume Scanner';
+    }
+
+    let lastScannedTime = 0;
+    
     function handleDetection(data) {
+        const now = new Date().getTime();
+        if (now - lastScannedTime < 3000) return; // Cooldown 3s
+        lastScannedTime = now;
+        
         const code = data.codeResult.code;
         console.log("Barcode detected:", code);
         
-        // Haptic feedback if supported
-        if ("vibrate" in navigator) navigator.vibrate(100);
+        if ("vibrate" in navigator) navigator.vibrate([100, 50, 100]); // Haptic
 
-        // API Call to search product by barcode
-        fetch(`/api/compare/search?search=${code}`)
-            .then(res => res.json())
-            .then(data => {
-                if (data.products && data.products.length > 0) {
-                    showResult(data.products[0]);
-                    stopScanner();
+        pauseScanner();
+        interactive.style.display = 'none';
+        controls.style.display = 'none';
+        
+        statusText.innerText = "SEARCHING DATABASE...";
+        statusText.style.color = "#22c55e";
+
+        searchLocalDB(code)
+            .then(product => {
+                if (product) {
+                    renderResult(product, code);
                 } else {
-                    document.getElementById('scanner-status').innerText = "PRODUCT NOT FOUND. TRY ANOTHER Barcode.";
-                    document.getElementById('scanner-status').style.color = "#ef4444";
+                    statusText.innerText = "IDENTIFYING PRODUCT...";
+                    statusText.style.color = "#f59e0b";
+                    return fetch(`https://world.openfoodfacts.org/api/v0/product/${code}.json`)
+                        .then(r => r.json())
+                        .then(offData => {
+                            if (offData.status === 1 && offData.product && offData.product.product_name) {
+                                const pName = offData.product.product_name;
+                                statusText.innerText = `FOUND "${pName.toUpperCase()}"... COMPARING!`;
+                                return searchLocalDB(pName).then(p => {
+                                    if(p) renderResult(p, code, pName, offData.product.image_front_url);
+                                    else renderNotFound(code, pName, offData.product.image_front_url);
+                                });
+                            } else {
+                                renderNotFound(code);
+                            }
+                        });
                 }
             })
             .catch(err => {
-                console.error('Search API error:', err);
-                document.getElementById('scanner-status').innerText = "ERROR FETCHING DATA.";
+                console.error(err);
+                renderNotFound(code);
+            });
+    }
+    
+    function searchLocalDB(query) {
+        return fetch(`/api/compare/search?search=${encodeURIComponent(query)}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.products && data.products.length > 0) return data.products[0];
+                return null;
             });
     }
 
-    function showResult(product) {
-        document.getElementById('scanner-status').innerText = "PRODUCT FOUND!";
-        document.getElementById('scanner-status').style.color = "#22c55e";
-        document.getElementById('result-name').innerText = product.name;
-        document.getElementById('result-price').innerText = `EUR ${product.best_price_value || product.price || '??'}`;
-        document.getElementById('result-img').src = product.image || '/static/placeholder.svg';
-        document.getElementById('result-link').href = `/product/${product._id || product.id}`;
-        document.getElementById('scan-result').style.display = 'block';
+    function renderResult(product, code, fallbackName, fallbackImg) {
+        currentScannedProduct = product;
+        
+        statusText.innerText = "PRICE COMPARISON READY!";
+        statusText.style.color = "#38bdf8";
+
+        const name = product.name || fallbackName || "Unknown Product";
+        document.getElementById('result-name').innerText = name;
+        document.getElementById('result-category').innerHTML = `<i class="bi bi-tag-fill me-1 text-gray-400"></i> ${product.category || 'Snacks'}`;
+        
+        const img = product.image || fallbackImg || '/static/placeholder.svg';
+        document.getElementById('result-img').src = img;
+        
+        const priceText = product.best_price_value ? `€${parseFloat(product.best_price_value).toFixed(2)}` : '€--';
+        document.getElementById('result-best-price').innerText = priceText;
+        
+        document.getElementById('result-link').href = `/product/${product.id || product._id || ''}`;
+        
+        const storesList = document.getElementById('result-stores-list');
+        storesList.innerHTML = '';
+        
+        let highestPrice = 0;
+        let lowestPrice = 9999;
+        
+        if (product.stores && product.stores.length > 0) {
+            document.getElementById('result-count').innerText = product.stores.length;
+            
+            const sortedStores = [...product.stores].sort((a, b) => {
+                const aP = a.price ? parseFloat(a.price) : 999;
+                const bP = b.price ? parseFloat(b.price) : 999;
+                return aP - bP;
+            });
+            
+            sortedStores.forEach((s, idx) => {
+                let p = 999;
+                if(s.price) p = parseFloat(s.price);
+                
+                if(p !== 999 && p > highestPrice) highestPrice = p;
+                if(p !== 999 && p < lowestPrice && p > 0) lowestPrice = p;
+                
+                const isBest = idx === 0 && p !== 999;
+                const badge = isBest ? `<span class="badge bg-success ms-2 px-1 py-1" style="font-size: 0.65rem;">BEST</span>` : '';
+                
+                const iconOrImg = s.logo 
+                    ? `<img src="${s.logo}" class="store-img shadow-sm" alt="${s.store}">` 
+                    : `<div class="store-img shadow-sm d-flex align-items-center justify-content-center bg-white"><i class="bi bi-shop text-primary"></i></div>`;
+                
+                const priceTxt = p === 999 ? 'N/A' : `€${p.toFixed(2)}`;
+                
+                storesList.innerHTML += `
+                    <div class="store-row ${isBest ? 'border-success' : ''}" style="${isBest ? 'background: #f0fdf4;' : ''}">
+                        <div class="d-flex align-items-center gap-3">
+                            ${iconOrImg}
+                            <span class="fw-bold text-dark fs-sm">${s.store || s.name} ${badge}</span>
+                        </div>
+                        <span class="fw-bold ${isBest ? 'text-success' : 'text-dark'} fs-5">${priceTxt}</span>
+                    </div>
+                `;
+            });
+            
+            const savings = highestPrice - lowestPrice;
+            if (savings > 0 && product.stores.length > 1) {
+                document.getElementById('result-savings').innerText = `€${savings.toFixed(2)}`;
+            } else {
+                document.getElementById('result-savings').innerText = `Max Optimized`;
+            }
+        } else {
+            document.getElementById('result-count').innerText = "0";
+            storesList.innerHTML = `<div class="text-center p-3 text-muted fw-medium"><i class="bi bi-info-circle me-2"></i> Not found in monitored stores.</div>`;
+            document.getElementById('result-savings').innerText = `€0.00`;
+        }
+
+        document.getElementById('add-to-list-btn').disabled = false;
+        resultCard.style.display = 'block';
     }
+
+    window.resumeScanner = resumeScanner;
+
+    function renderNotFound(code, externalName, externalImg) {
+        currentScannedProduct = null; 
+        resultCard.style.display = 'block';
+        statusText.innerText = "PRODUCT NOT IN DB";
+        statusText.style.color = "#f43f5e";
+        
+        document.getElementById('result-name').innerText = externalName || `Barcode: ${code}`;
+        document.getElementById('result-category').innerHTML = `<i class="bi bi-upc-scan me-1 text-gray-400"></i> Local stores missing`;
+        document.getElementById('result-img').src = externalImg || '/static/placeholder.svg';
+        document.getElementById('result-best-price').innerText = "N/A";
+        
+        document.getElementById('result-count').innerText = "0";
+        document.getElementById('result-stores-list').innerHTML = `
+            <div class="text-center p-4 bg-light rounded-3 text-muted border">
+                <i class="bi bi-search fs-2 d-block mb-2"></i>
+                <span class="fw-bold d-block mb-3">Not found in Smart Grocery catalog yet.</span>
+                <button id="submit-admin-btn" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-bold" onclick="submitToAdmin('${code}', '${(externalName || '').replace(/'/g, "\\'")}', '${externalImg || ''}')">
+                    <i class="bi bi-cloud-arrow-up me-1"></i> Submit for Admin Approval
+                </button>
+            </div>
+        `;
+        document.getElementById('result-savings').innerText = `€0.00`;
+        document.getElementById('result-link').href = "#";
+        document.getElementById('add-to-list-btn').disabled = true;
+    }
+
+    window.submitToAdmin = function(code, name, img) {
+        if (!code) return;
+        const btn = document.getElementById('submit-admin-btn');
+        if (btn) {
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Submitting...';
+            btn.disabled = true;
+        }
+
+        fetch('/api/products/submit-pending', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ barcode: code, name: name || ('Unknown Product ' + code), image: img })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                if (btn) {
+                    btn.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i> Submitted to Admin!';
+                    btn.classList.replace('btn-outline-primary', 'btn-success');
+                }
+                statusText.innerText = "PRODUCT SUBMITTED!";
+                statusText.style.color = "#22c55e";
+            } else {
+                alert(data.error || 'Failed to submit product');
+                if (btn) {
+                    btn.innerHTML = '<i class="bi bi-exclamation-circle me-1"></i> Retry Submit';
+                    btn.disabled = false;
+                }
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert('Error connecting to server.');
+            if (btn) {
+                btn.innerHTML = '<i class="bi bi-exclamation-circle me-1"></i> Retry Submit';
+                btn.disabled = false;
+            }
+        });
+    };
+
+    document.addEventListener("DOMContentLoaded", () => {
+        initScanner();
+    });
+
+    let qty = 1;
+    const qtySpan = document.getElementById('modal-qty');
+
+    document.getElementById('add-to-list-btn').addEventListener('click', () => {
+        if (!currentScannedProduct) return;
+        qty = 1;
+        qtySpan.innerText = qty;
+        document.getElementById('modal-name').innerText = currentScannedProduct.name || 'Unknown Product';
+        document.getElementById('modal-img').src = currentScannedProduct.image || '/static/placeholder.svg';
+    });
+
+    window.modalQty = function(btn, change) {
+        qty += change;
+        if(qty < 1) qty = 1;
+        if(qty > 99) qty = 99;
+        qtySpan.innerText = qty;
+    };
+
+    document.getElementById('confirm-add-btn').addEventListener('click', () => {
+        if(!currentScannedProduct) return;
+        const pid = currentScannedProduct.id || currentScannedProduct._id;
+        if(!pid) return;
+
+        const btn = document.getElementById('confirm-add-btn');
+        const ogText = btn.innerHTML;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Adding...';
+        btn.disabled = true;
+
+        fetch('/api/lists/default/items', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ product_id: pid, quantity: qty })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if(data.success) {
+                btn.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i> Added!';
+                btn.classList.replace('btn-primary', 'btn-success');
+                setTimeout(() => {
+                    const addToListModal = document.getElementById('addToListModal');
+                    const modal = bootstrap.Modal.getInstance(addToListModal);
+                    if(modal) modal.hide();
+                    
+                    btn.innerHTML = ogText;
+                    btn.classList.replace('btn-success', 'btn-primary');
+                    btn.disabled = false;
+                    resumeScanner();
+                }, 1000);
+            } else {
+                alert(data.error || 'Failed to add item');
+                btn.innerHTML = ogText;
+                btn.disabled = false;
+            }
+        })
+        .catch(err => {
+            alert('Login is required to add items to your list.');
+            btn.innerHTML = ogText;
+            btn.disabled = false;
+            window.location.href = "{{ url_for('auth.login') }}";
+        });
+    });
 </script>
 {% endblock %}

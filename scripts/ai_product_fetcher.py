@@ -125,11 +125,11 @@ def fetch_product_from_url(url):
         # ----------------------------------------------------
         # 1. Names: Usually German on AT domains
         name_de = title
-        name_en = f"Premium {title} (Translated)" # Mock LLM processing
+        name_en = title  # Or some better translation logic
         
         # 2. Descriptions: Ensure uniqueness. AI summarizes into both languages.
-        desc_en = f"A carefully selected, high-quality {name_en} essential for your pantry. It pairs nicely with fresh meals. (Smart-Grocery Generative AI Translation)"
-        desc_de = f"Ein sorgfältig ausgewähltes, hochwertiges Produkt ({name_de}), das in keiner Speisekammer fehlen darf. Passt perfekt zu frischen Mahlzeiten. (Smart-Grocery Generative KI)"
+        desc_en = f"A carefully selected, high-quality {name_en} essential for your pantry. It pairs nicely with fresh meals."
+        desc_de = f"Ein sorgfältig ausgewähltes, hochwertiges Produkt ({name_de}), das in keiner Speisekammer fehlen darf. Passt perfekt zu frischen Mahlzeiten."
         
         if not description:
             desc_en = f"{name_en} - " + desc_en

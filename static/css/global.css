@@ -99,3 +99,4 @@ input[type=number] {
 .text-muted { color: #a78bfa; }
 .text-decoration-line-through { text-decoration: line-through; }
 
+.rotate-180 { transform: rotate(180deg) !important; } .transition-transform { transition: transform 0.3s ease; }

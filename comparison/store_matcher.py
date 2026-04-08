@@ -35,6 +35,11 @@ def normalize_store_entry(entry: Dict[str, Any]) -> Dict[str, Any]:
         'logo': entry.get('logo'),
         'store_image': entry.get('store_image') or entry.get('store_display_image'),
         'offer': entry.get('offer'),
+        'has_deal': entry.get('has_deal'),
+        'original_price': entry.get('original_price'),
+        'discount_label': entry.get('discount_label'),
+        'valid_until': entry.get('valid_until'),
+        'deal_info': entry.get('deal_info'),
     }
     if unit_price is not None:
         out['normalized_unit_price'] = unit_price
