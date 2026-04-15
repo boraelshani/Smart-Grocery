@@ -1050,43 +1050,7 @@
   </section>
   {% endif %}
 
-  <!-- Popular Stores Section --> <!-- Highlights of partnered retailers -->
-  <section class="content-section"> <!-- Layout container -->
-    <div class="container"> <!-- Standard alignment -->
-      <div class="section-header"> <!-- Section metadata -->
-        <div>
-          <h2 class="section-title"><i class="bi bi-shop-window text-premium-purple me-2"></i>Verified Partners</h2> <!-- Store header icon -->
-          <p class="section-subtitle">Exclusive catalogs from the region's top grocery chains</p> <!-- Description -->
-        </div>
-        <a href="{{ url_for('main.stores_page') }}" class="view-all-btn"> <!-- Global store index link -->
-          View All <i class="bi bi-arrow-right ms-1"></i>
-        </a>
-      </div>
-      <div class="scroll-container"> <!-- Interaction layer -->
-        <button class="scroll-arrow left" onclick="scrollSection('stores', 'left')" aria-label="Scroll left"> <!-- Store Nav Left -->
-          <i class="bi bi-chevron-left"></i>
-        </button>
-        <div class="scroll-wrapper d-flex flex-nowrap" id="stores-scroll" style="overflow-x: auto; gap: 24px; scrollbar-width: none; -ms-overflow-style: none;"> <!-- Store Row -->
-          {% for store in stores %} <!-- Iterating through available retailers -->
-          <a href="{{ url_for('main.store_products_page', store_name=store.get('name')) }}" class="store-card premium-outline-hover" style="min-width: 280px;"> <!-- Visual card linking to retailer's inventory -->
-            <div class="store-card-image">
-              <img src="{{ store.get('image') or 'https://via.placeholder.com/250x150' }}" alt="{{ store.get('name') }}"> <!-- Store logo/branding -->
-            </div>
-            <div class="store-card-body text-center">
-              <div class="store-name text-dark fw-bold">{{ store.get('name') }}</div> <!-- Retailer Name -->
-              <div class="badge bg-soft-purple text-premium-purple mt-2">
-                <i class="bi bi-box-seam me-1"></i>{{ store.get('product_count', 0) }} Products <!-- Catalog size indicator -->
-              </div>
-            </div>
-          </a>
-          {% endfor %} <!-- Store termination -->
-        </div>
-        <button class="scroll-arrow right" onclick="scrollSection('stores', 'right')" aria-label="Scroll right"> <!-- Store Nav Right -->
-          <i class="bi bi-chevron-right"></i>
-        </button>
-      </div>
-    </div>
-  </section>
+
 
   <!-- Products from Preferred/Random Store --> <!-- Focused retailer highlights -->
   {% if store_products and store_products|length > 0 %} <!-- Display logic -->

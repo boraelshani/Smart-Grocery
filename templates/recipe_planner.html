@@ -714,20 +714,26 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
+        const storeGroups = {};
+
         data.results.forEach(item => {
             const originalName = escapeHtml(item.original);
             const isMatched = !!item.matched_product;
             
             if (isMatched) {
                 const prod = item.matched_product;
-                matchedProductsData.push(prod);
                 
-                const card = document.createElement('div');
-                card.className = 'ingredient-card';
-                card.style.cursor = 'pointer';
                 const rawStoreName = (prod.cheapest && prod.cheapest.store) ? prod.cheapest.store : (prod.store || 'Unknown Store');
                 const storeName = resolveStoreTie(rawStoreName);
                 const storePrice = (prod.cheapest && prod.cheapest.price) ? prod.cheapest.price : (prod.price_val || prod.price || 0);
+
+                prod.resolvedStoreName = storeName;
+                prod.resolvedStorePrice = storePrice;
+                matchedProductsData.push(prod);
+                
+                const card = document.createElement('div');
+                card.className = 'ingredient-card mb-3';
+                card.style.cursor = 'pointer';
 
                 const storeBadgeClass = storeName.toUpperCase() === 'BILLA' ? 'bg-warning text-dark' : 'text-white';
                 const storeBadgeStyle = storeName.toUpperCase() !== 'BILLA' ? 'background: linear-gradient(135deg, #7c3aed, #6366f1);' : '';
@@ -751,13 +757,38 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                     </a>
                 `;
-                ingredientsList.appendChild(card);
+                
+                if (!storeGroups[storeName]) {
+                    storeGroups[storeName] = [];
+                }
+                storeGroups[storeName].push(card);
             } else {
                 hasUnmatched = true;
                 if(addList) {
                     addList.innerHTML += `<span class="badge bg-light text-dark border p-2 shadow-sm" style="font-size: 0.9rem;"><i class="bi bi-cart-x me-1 text-danger"></i> ${originalName}</span>`;
                 }
             }
+        });
+
+        // Object.keys(storeGroups) helps us iterate over each store
+        // Sort keys to have consistent rendering (e.g. Billa then Hofer)
+        Object.keys(storeGroups).sort().forEach(store => {
+            const groupHeader = document.createElement('div');
+            groupHeader.className = 'w-100 my-4 pt-3';
+            groupHeader.innerHTML = `
+                <div class="d-flex align-items-center justify-content-center w-100 mb-3">
+                    <hr class="flex-grow-1" style="border-top: 2px solid #e2e8f0; opacity: 1;">
+                    <h5 class="fw-bold m-0 mx-3 text-dark d-flex align-items-center">
+                        <i class="bi bi-cart shadow-sm rounded p-2 me-2" style="background: white; color: #6366f1;"></i> What to buy in ${escapeHtml(store)}
+                    </h5>
+                    <hr class="flex-grow-1" style="border-top: 2px solid #e2e8f0; opacity: 1;">
+                </div>
+            `;
+            ingredientsList.appendChild(groupHeader);
+            
+            storeGroups[store].forEach(card => {
+                ingredientsList.appendChild(card);
+            });
         });
         
         if (hasUnmatched && addSection) {
@@ -811,9 +842,11 @@ document.addEventListener('DOMContentLoaded', () => {
             let successCount = 0;
             
             for (const prod of matchedProductsData) {
+                // Since we stored resolved data during renderResults, we use those.
+                // If they don't exist for some reason, calculate them as fallback.
                 const rawStoreName = (prod.cheapest && prod.cheapest.store) ? prod.cheapest.store : (prod.store || 'Unknown');
-                const storeName = resolveStoreTie(rawStoreName);
-                const storePrice = (prod.cheapest && prod.cheapest.price) ? prod.cheapest.price : (prod.price_val || prod.price || 0);
+                const storeName = prod.resolvedStoreName || rawStoreName;
+                const storePrice = prod.resolvedStorePrice || ((prod.cheapest && prod.cheapest.price) ? prod.cheapest.price : (prod.price_val || prod.price || 0));
 
                 const payload = {
                     list_id: listId,

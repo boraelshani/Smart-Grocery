@@ -51,17 +51,45 @@ def profile():
 def profile_favorites():
     user_email = session.get('user')
     if not user_email: return redirect(url_for('auth.login'))
+    
+    from models.users_model import get_user_by_email
+    user_data = get_user_by_email(user_email)
+    
     from models.favorites_model import favorites_model
     favs = favorites_model.get_user_favorites(user_email)
-    return render_template('account_favorites.html', favorites=helpers.sanitize_mongo_doc(favs), account_section='favorites')
+    return render_template('account_favorites.html', user_data=helpers.sanitize_mongo_doc(user_data), favorites=helpers.sanitize_mongo_doc(favs), account_section='favorites')
 
-@main_bp.route('/profile/settings')
+@main_bp.route('/profile/settings', methods=['GET', 'POST'])
 def profile_settings():
-    return render_template('account_settings.html', account_section='settings')
+    user_email = session.get('user')
+    if not user_email: return redirect(url_for('auth.login'))
+    
+    from models.users_model import get_user_by_email, update_user
+    
+    if request.method == 'POST':
+        update_data = {
+            'name': request.form.get('name'),
+            'phone': request.form.get('phone_number'),
+            'address': request.form.get('address'),
+            'avatar': request.form.get('avatar')
+        }
+        # Remove empty fields
+        update_data = {k: v for k, v in update_data.items() if v is not None}
+        update_user(user_email, update_data)
+        return redirect(url_for('main.profile_settings'))
+        
+    user_data = get_user_by_email(user_email)
+    return render_template('account_settings.html', user_data=helpers.sanitize_mongo_doc(user_data), account_section='settings')
 
 @main_bp.route('/profile/preferences')
 def profile_preferences():
-    return render_template('account_preferences.html', account_section='preferences')
+    user_email = session.get('user')
+    if not user_email: return redirect(url_for('auth.login'))
+    
+    from models.users_model import get_user_by_email
+    user_data = get_user_by_email(user_email)
+    
+    return render_template('account_preferences.html', user_data=helpers.sanitize_mongo_doc(user_data), account_section='preferences')
 
 @main_bp.route('/update-stores', methods=['POST'])
 def update_stores():

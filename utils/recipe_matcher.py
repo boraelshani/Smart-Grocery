@@ -79,6 +79,11 @@ def match_ingredients_to_products(ingredients):
         # Using a regex on name or name_lower
         # NOTE: If we get zero matches, we could try falling back to just the first word
         escaped_search = re.escape(search_term).replace(r"\ ", " ")
+        
+        # We add a scoring/sorting field to deprioritize non-ingredient categories
+        # so things like "Pringles Paprika" (Snacks) don't beat real "Paprika" (Produce/Pantry)
+        exclusion_cats = ["Snacks", "Beverages", "Household", "Baby food", "Fast Food & To Go"]
+        
         pipeline = [
             {
                 "$match": {
@@ -89,12 +94,33 @@ def match_ingredients_to_products(ingredients):
                     ]
                 }
             },
-            # Sort cheapest first
-            {"$sort": {"price": 1, "price_val": 1}},
-            {"$limit": 3}
+            {
+                "$addFields": {
+                    "is_junk": {
+                        "$cond": {
+                            "if": {"$in": ["$category", exclusion_cats]},
+                            "then": 1,
+                            "else": 0
+                        }
+                    }
+                }
+            },
+            # Sort: prioritized categories first (is_junk=0), then cheapest
+            {"$sort": {"is_junk": 1, "price": 1, "price_val": 1}},
+            {"$limit": 10}
         ]
 
-        matches = list(mongo.db.products.aggregate(pipeline))
+        raw_matches = list(mongo.db.products.aggregate(pipeline))
+        
+        # Filter out junk categories unless the search term implies a snack/beverage
+        snack_keywords = ["chocolate", "chip", "cookie", "candy", "drink", "soda", "beer", "wine", "juice", "water", "snack"]
+        matches = []
+        for m in raw_matches:
+            if m.get("category") in exclusion_cats and not any(k in search_term.lower() for k in snack_keywords):
+                continue
+            matches.append(m)
+            if len(matches) == 3:
+                break
 
         # If no strict match, fallback to the last main word of the ingredient  
         # (e.g., if 'yellow onion' didn't match, maybe just 'onion' will)       
@@ -112,10 +138,26 @@ def match_ingredients_to_products(ingredients):
                             ]
                         }
                     },
-                    {"$sort": {"price": 1, "price_val": 1}},
-                    {"$limit": 3}
+                    {
+                        "$addFields": {
+                            "is_junk": {
+                                "$cond": {
+                                    "if": {"$in": ["$category", exclusion_cats]},
+                                    "then": 1,
+                                    "else": 0
+                                }
+                            }
+                        }
+                    },
+                    {"$sort": {"is_junk": 1, "price": 1, "price_val": 1}},
+                    {"$limit": 10}
                 ]
-                matches = list(mongo.db.products.aggregate(pipeline_fallback))
+                raw_matches_fb = list(mongo.db.products.aggregate(pipeline_fallback))
+                for m in raw_matches_fb:
+                    if m.get("category") in exclusion_cats and not any(k in search_term.lower() for k in snack_keywords):
+                        continue
+                    if len(matches) < 3:
+                        matches.append(m)
         
         # Sanitize matches for frontend
         sanitized_matches = []
