@@ -668,6 +668,38 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let hasUnmatched = false;
 
+        // Calculate store frequencies (mode) across all matches to resolve multi-store ties
+        const storeFrequencies = {};
+        data.results.forEach(item => {
+            const isMatched = !!item.matched_product;
+            if (isMatched) {
+                const prod = item.matched_product;
+                const cheapestStoreRaw = (prod.cheapest && prod.cheapest.store) ? prod.cheapest.store : (prod.store || 'Unknown Store');
+                // if it's a string like "BILLA, SPAR", split and count each
+                const stores = cheapestStoreRaw.split(',').map(s => s.trim()).filter(s => s.length > 0);
+                if (stores.length === 1) { // Only count definitive single stores for frequency weighting
+                    storeFrequencies[stores[0]] = (storeFrequencies[stores[0]] || 0) + 1;
+                }
+            }
+        });
+
+        const resolveStoreTie = (rawStoreString) => {
+            const stores = rawStoreString.split(',').map(s => s.trim()).filter(s => s.length > 0);
+            if (stores.length <= 1) return rawStoreString;
+
+            let bestStore = stores[0];
+            let maxCount = -1;
+            
+            for (let s of stores) {
+                const count = storeFrequencies[s] || 0;
+                if (count > maxCount) {
+                    maxCount = count;
+                    bestStore = s;
+                }
+            }
+            return bestStore;
+        };
+
         const prepBlock = document.getElementById('recipePreparationBlock');
         const instList = document.getElementById('instructionsList');
         if (prepBlock && instList) {
@@ -693,15 +725,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 const card = document.createElement('div');
                 card.className = 'ingredient-card';
                 card.style.cursor = 'pointer';
-                const storeBadgeClass = prod.store === 'Billa' ? 'bg-warning text-dark' : 'text-white';
-                const storeBadgeStyle = prod.store !== 'Billa' ? 'background: linear-gradient(135deg, #7c3aed, #6366f1);' : '';
-                const imageUrl = prod.image_url && prod.image_url.startsWith('http') ? prod.image_url : '/static/img/placeholder.png';
+                const rawStoreName = (prod.cheapest && prod.cheapest.store) ? prod.cheapest.store : (prod.store || 'Unknown Store');
+                const storeName = resolveStoreTie(rawStoreName);
+                const storePrice = (prod.cheapest && prod.cheapest.price) ? prod.cheapest.price : (prod.price_val || prod.price || 0);
+
+                const storeBadgeClass = storeName.toUpperCase() === 'BILLA' ? 'bg-warning text-dark' : 'text-white';
+                const storeBadgeStyle = storeName.toUpperCase() !== 'BILLA' ? 'background: linear-gradient(135deg, #7c3aed, #6366f1);' : '';
+                const imageUrl = (prod.image_url && prod.image_url.startsWith('http')) ? prod.image_url : (prod.image && prod.image.startsWith('http') ? prod.image : '/static/placeholder.svg');
                 
                 card.innerHTML = `
                     <a href="/product/${prod._id || prod.id}" style="text-decoration: none; color: inherit; display: block;">
                         <div class="ingredient-header">
                             <span class="d-flex align-items-center" style="color: #475569;"><i class="bi bi-magic me-2 fs-5" style="color: #7c3aed;"></i>${originalName}</span>
-                            <span class="badge ${storeBadgeClass} rounded-pill shadow-sm badge-store" style="${storeBadgeStyle}"><i class="bi bi-shop me-1"></i>${escapeHtml(prod.store)}</span>
+                            <span class="badge ${storeBadgeClass} rounded-pill shadow-sm badge-store" style="${storeBadgeStyle}"><i class="bi bi-shop me-1"></i>${escapeHtml(storeName)}</span>
                         </div>
                         <div class="ingredient-body">
                             <img src="${imageUrl}" class="matched-product-img" alt="Product Image">
@@ -710,7 +746,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <p class="text-muted mb-0"><i class="bi bi-tag text-secondary me-1"></i>${escapeHtml(prod.brand || 'No Brand')}</p>
                             </div>
                             <div class="text-end">
-                                <h4 class="fw-bold text-success m-0">€${parseFloat(prod.price_val || prod.price || 0).toFixed(2)}</h4>
+                                <h4 class="fw-bold text-success m-0">€${parseFloat(storePrice).toFixed(2)}</h4>
                             </div>
                         </div>
                     </a>
@@ -775,14 +811,18 @@ document.addEventListener('DOMContentLoaded', () => {
             let successCount = 0;
             
             for (const prod of matchedProductsData) {
+                const rawStoreName = (prod.cheapest && prod.cheapest.store) ? prod.cheapest.store : (prod.store || 'Unknown');
+                const storeName = resolveStoreTie(rawStoreName);
+                const storePrice = (prod.cheapest && prod.cheapest.price) ? prod.cheapest.price : (prod.price_val || prod.price || 0);
+
                 const payload = {
                     list_id: listId,
                     item: {
                         id: prod._id,
                         name: prod.name,
-                        price: (prod.price_val || prod.price) ? parseFloat(prod.price_val || prod.price).toFixed(2) : '0.00',
-                        store: prod.store || 'Unknown',
-                        image_url: prod.image_url || '/static/img/placeholder.png'
+                        price: storePrice ? parseFloat(storePrice).toFixed(2) : '0.00',
+                        store: storeName,
+                        image_url: prod.image_url || prod.image || '/static/placeholder.svg'
                     }
                 };
 
