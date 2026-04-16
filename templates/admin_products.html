@@ -245,8 +245,8 @@ document.addEventListener('click', function(e) {
                     <td class="ps-4">
                         <div class="d-flex align-items-center">
                             <div class="me-3 bg-light rounded d-flex justify-content-center align-items-center overflow-hidden border" style="width: 48px; height: 48px;">
-                                {% if p.image_url %}
-                                <img src="{{ p.image_url }}" alt="..." style="width: 100%; height: 100%; object-fit: contain;">
+                                {% if p.defaultImageUrl %}
+                                <img src="{{ p.defaultImageUrl }}" alt="..." style="width: 100%; height: 100%; object-fit: contain;">
                                 {% else %}
                                 <i class="fas fa-image text-muted text-opacity-50 fs-4"></i>
                                 {% endif %}
@@ -270,12 +270,12 @@ document.addEventListener('click', function(e) {
                                 <span class="badge bg-light text-secondary border px-2 py-1" style="font-size: 0.7rem;">+{{ offers|length - 3 }} more</span>
                             {% endif %}
                             </div>
-                            <a href="#" class="text-xs text-decoration-none fw-bold text-primary d-inline-block mt-1" title="Manage {{ offers|length }} offers"><i class="fas fa-cog me-1"></i>Manage Offers ></a>
+                            <a href="#" class="text-xs text-decoration-none fw-bold text-primary d-inline-block mt-1" onclick='prepareStoreModal("{{p.productId}}")' data-bs-toggle="modal" data-bs-target="#storeModal" title="Manage offers"><i class="fas fa-cog me-1"></i>Add / Manage Offers ></a>
                         {% else %}
                             <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 px-2 py-1 mb-1 shadow-sm">
                                 <i class="fas fa-exclamation-circle me-1"></i> Unlinked
                             </span>
-                            <br><a href="#" class="text-xs text-decoration-none fw-bold text-muted mt-1"><i class="fas fa-plus me-1"></i>Add Offer</a>
+                            <br><a href="#" class="text-xs text-decoration-none fw-bold text-muted mt-1" onclick='prepareStoreModal("{{p.productId}}")' data-bs-toggle="modal" data-bs-target="#storeModal"><i class="fas fa-plus me-1"></i>Add Offer</a>
                         {% endif %}
                     </td>
                     <td>
@@ -296,7 +296,7 @@ document.addEventListener('click', function(e) {
                         <button class="btn btn-sm btn-outline-info border shadow-sm rounded-pill fw-bold px-3 me-1" onclick='prepareMergeModal("{{p.productId}}", "{{p.name_en or p.name}}")' data-bs-toggle="modal" data-bs-target="#mergeModal" title="Merge duplicate products into this one">
                             <i class="fas fa-link"></i> Link
                         </button>
-                        <button class="btn btn-sm btn-light border shadow-sm rounded-pill text-primary fw-bold px-3 btn-edit-product" onclick='prepareProductModal("edit", {"productId":"{{p.productId}}", "name_en": "{{p.name_en}}", "name_de": "{{p.name_de}}", "qty_str": "{{p.qty_str}}", "brandId": "{{p.brandId}}", "categoryId": "{{p.categoryId}}", "image_url": "{{p.image_url}}"})' data-bs-toggle="modal" data-bs-target="#productModal">
+                        <button class="btn btn-sm btn-light border shadow-sm rounded-pill text-primary fw-bold px-3 btn-edit-product" onclick='prepareProductModal("edit", {"productId":"{{p.productId}}", "name_en": "{{p.name_en}}", "name_de": "{{p.name_de}}", "qty_str": "{{p.qty_str}}", "brandId": "{{p.brandId}}", "categoryId": "{{p.categoryId}}", "image_url": "{{p.defaultImageUrl}}"})' data-bs-toggle="modal" data-bs-target="#productModal">
                             <i class="fas fa-pen"></i> Edit
                         </button>
                     </td>
@@ -313,6 +313,69 @@ document.addEventListener('click', function(e) {
             </tbody>
         </table>
     </div>
+</div>
+
+<!-- Modal: Store Offer Editor -->
+<div class="modal fade" id="storeModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 rounded-4 shadow-lg">
+      <div class="modal-header bg-light border-bottom-0 pb-0 pt-4 px-4">
+        <h5 class="modal-title fw-bold text-dark d-flex align-items-center">
+            <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center me-2 shadow-sm" style="width: 32px; height: 32px; font-size: 0.9rem;"><i class="fas fa-store"></i></div>
+            <span>Manage Store Offer</span>
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="post" action="{{ url_for('admin.admin_save_store_product') }}">
+        <div class="modal-body p-4">
+           <input type="hidden" name="redirectTo" value="products">
+           <input type="hidden" name="storeProductId" id="field_sp_id">
+           <input type="hidden" name="productId" id="field_sp_productId">
+           
+           <div class="mb-3">
+              <label class="form-label small fw-bold text-muted text-uppercase mb-1">Store <span class="text-danger">*</span></label>
+              <select name="storeId" id="field_sp_storeId" class="form-select bg-light border" required>
+                 <option value="">Select Store...</option>
+                 {% for s in data.stores %}
+                 <option value="{{ s.storeId }}">{{ s.name }}</option>
+                 {% endfor %}
+              </select>
+           </div>
+           
+           <div class="mb-3">
+              <label class="form-label small fw-bold text-muted text-uppercase mb-1">Store Product URL <span class="text-danger">*</span></label>
+              <input type="url" name="productPageUrl" id="field_sp_url" class="form-control bg-light border" placeholder="https://..." required>
+           </div>
+           
+           <div class="row g-3 mb-3">
+              <div class="col-md-6">
+                 <label class="form-label small fw-bold text-muted text-uppercase mb-1">Base Price <span class="text-danger">*</span></label>
+                 <div class="input-group">
+                    <span class="input-group-text bg-white border">€</span>
+                    <input type="number" step="0.01" name="basePrice" id="field_sp_base" class="form-control bg-light border" required>
+                 </div>
+              </div>
+              <div class="col-md-6">
+                 <label class="form-label small fw-bold text-muted text-uppercase mb-1">Promo Price (Optional)</label>
+                 <div class="input-group">
+                    <span class="input-group-text bg-white border">€</span>
+                    <input type="number" step="0.01" name="promoPrice" id="field_sp_promo" class="form-control bg-white border border-success">
+                 </div>
+              </div>
+           </div>
+
+           <div class="form-check mt-2">
+               <input class="form-check-input" type="checkbox" name="isAvailable" id="field_sp_avail" checked>
+               <label class="form-check-label fw-bold" for="field_sp_avail">Product is Available/In Stock</label>
+           </div>
+        </div>
+        <div class="modal-footer border-top-0 px-4 pb-4 pt-0 justify-content-between">
+           <button type="button" class="btn btn-light rounded-pill px-4 fw-bold shadow-sm" data-bs-dismiss="modal">Cancel</button>
+           <button type="submit" class="btn btn-success rounded-pill px-4 fw-bold shadow-sm">Save Offer</button>
+        </div>
+      </form>
+    </div>
+  </div>
 </div>
 
 <div class="d-flex justify-content-center align-items-center mb-5">
@@ -409,6 +472,16 @@ document.addEventListener('click', function(e) {
 </div>
 
 <script>
+function prepareStoreModal(productId) {
+    document.getElementById('field_sp_productId').value = productId || '';
+    document.getElementById('field_sp_id').value = '';
+    document.getElementById('field_sp_storeId').value = '';
+    document.getElementById('field_sp_url').value = '';
+    document.getElementById('field_sp_base').value = '';
+    document.getElementById('field_sp_promo').value = '';
+    document.getElementById('field_sp_avail').checked = true;
+}
+
 function prepareProductModal(mode, product) {
    const label = document.getElementById('productModalLabel').querySelector('span');
    const delBtn = document.getElementById('btn_delete_prod');

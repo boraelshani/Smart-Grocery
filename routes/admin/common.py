@@ -56,8 +56,10 @@ def _translate_text(text, source_lang="en", target_lang="de"):
         if resp.ok:
             translated = (resp.json().get("translatedText") or "").strip() or None
             _TRANSLATION_CACHE[key] = translated or val
+        else:
+            _TRANSLATION_CACHE[key] = val
     except: _TRANSLATION_CACHE[key] = val
-    return _TRANSLATION_CACHE[key]
+    return _TRANSLATION_CACHE.get(key, val)
 
 def _localized_pair(name_en, name_de):
     en = (name_en or "").strip(); de = (name_de or "").strip()
@@ -363,42 +365,44 @@ def admin_save_ai_product():
     
     db.products.update_one({"productId": pid}, {"$set": payload, "$setOnInsert": {"createdAt": _now_utc()}}, upsert=True)
     
-    # Try to map to store
-    store_url = request.form.get("store_url") or ""
-    price_val = request.form.get("price")
-    try:
-        price_val = float(price_val)
-    except:
-        price_val = None
+    # Array of stores
+    store_urls = request.form.getlist("store_url")
+    prices = request.form.getlist("price")
+    store_ids = request.form.getlist("store_id")
+    
+    for i in range(min(len(store_urls), len(prices))):
+        s_url = store_urls[i].strip()
+        p_val = prices[i].strip()
+        s_id = store_ids[i].strip() if i < len(store_ids) else None
         
-    if store_url and price_val is not None:
-        # naive store detect
-        store_id = None
-        if "billa" in store_url.lower(): store_id = "billa"
-        elif "spar" in store_url.lower(): store_id = "spar"
-        elif "hofer" in store_url.lower(): store_id = "hofer"
+        if not s_url or not p_val or not s_id:
+            continue
+            
+        try:
+            p_val = float(p_val)
+        except:
+            continue
+            
+        spid = _id("sp")
+        db.store_products.update_one({"storeProductId": spid}, {"$set": {
+            "storeProductId": spid,
+            "productId": pid,
+            "storeId": s_id,
+            "productPageUrl": s_url,
+            "basePrice": p_val,
+            "promoPrice": None,
+            "isAvailable": True,
+            "lastPriceUpdate": _now_utc(),
+            "updatedAt": _now_utc()
+        }, "$setOnInsert": {"createdAt": _now_utc()}}, upsert=True)
         
-        if store_id:
-            spid = _id("sp")
-            sp_payload = {
-                "storeProductId": spid,
-                "productId": pid,
-                "storeId": store_id,
-                "productPageUrl": store_url,
-                "basePrice": price_val,
-                "promoPrice": None,
-                "isAvailable": True,
-                "lastPriceUpdate": _now_utc(),
-                "updatedAt": _now_utc()
-            }
-            db.store_products.update_one({"storeProductId": spid}, {"$set": sp_payload, "$setOnInsert": {"createdAt": _now_utc()}}, upsert=True)
-            db.price_history.insert_one({
-                "historyId": _id("hist"), 
-                "storeProductId": spid, 
-                "oldPrice": None, 
-                "newPrice": price_val, 
-                "timestamp": _now_utc()
-            })
+        db.price_history.insert_one({
+            "historyId": _id("hist"), 
+            "storeProductId": spid, 
+            "oldPrice": None, 
+            "newPrice": p_val, 
+            "timestamp": _now_utc()
+        })
 
     _recompute_product_state(db, pid)
     flash("AI Product imported successfully!", "success")
@@ -474,7 +478,9 @@ def admin_save_product():
         if inf_leaf: cid = inf_leaf; path, _ = _build_category_path(db, cid)
     en, de = _localized_pair(request.form.get("name_en"), request.form.get("name_de"))
     den, dde = _localized_optional_pair(request.form.get("description_en"), request.form.get("description_de"))
-    payload = {"productId": pid, "name_en": en, "name_de": de, "brandId": (request.form.get("brandId") or "").strip() or None, "categoryId": cid or None, "categoryPath": path, "unitSize": (request.form.get("unitSize") or "").strip(), "barcode": (request.form.get("barcode") or "").strip(), "defaultImageUrl": (request.form.get("defaultImageUrl") or "").strip(), "labels": [i.strip() for i in (request.form.get("labels") or "").split(",") if i.strip()], "description_en": den, "description_de": dde, "updatedAt": _now_utc()}
+    # Fallback to image_url if defaultImageUrl is empty
+    img_url = (request.form.get("defaultImageUrl") or request.form.get("image_url") or "").strip()
+    payload = {"productId": pid, "name_en": en, "name_de": de, "brandId": (request.form.get("brandId") or "").strip() or None, "categoryId": cid or None, "categoryPath": path, "unitSize": (request.form.get("unitSize") or "").strip(), "barcode": (request.form.get("barcode") or "").strip(), "defaultImageUrl": img_url, "labels": [i.strip() for i in (request.form.get("labels") or "").split(",") if i.strip()], "description_en": den, "description_de": dde, "updatedAt": _now_utc()}
     if not payload["name_en"]: flash("Name required", "error"); return _redirect_admin("admin.admin_dashboard")
     db.products.update_one({"productId": pid}, {"$set": payload, "$setOnInsert": {"createdAt": _now_utc()}}, upsert=True)
     _recompute_product_state(db, pid); flash("Product saved", "success"); return _redirect_admin("admin.admin_dashboard")
@@ -529,15 +535,36 @@ def clear_cache():
 def admin_smart_import_page():
     ok, res = _require_admin()
     if not ok: return res
-    return render_template("admin_smart_import.html")
+    db = get_db()
+    categories = list(db.categories.find().sort("name_en", 1)) if db is not None else []
+    return render_template("admin_smart_import.html", categories=categories)
 
 @admin_bp.route("/api/products/smart-extract", methods=["POST"])
 def admin_smart_extract():
-    ok, res = _require_admin()
-    url = (request.json or {}).get("url")
-    if not url: return jsonify({"success": False}), 400
-    from scripts.ai_product_fetcher import fetch_product_from_url
-    return jsonify(fetch_product_from_url(url))
+    try:
+        ok, res = _require_admin()
+        if not ok:
+            return jsonify({"success": False, "error": "Unauthorized"}), 401
+        
+        url = (request.json or {}).get("url")
+        if not url: 
+            return jsonify({"success": False, "error": "No URL provided"}), 400
+        
+        from scripts.ai_product_fetcher import fetch_product_from_url
+        result = fetch_product_from_url(url)
+            
+        if result and result.get("success") and result.get("data"):
+            data = result["data"]
+            name_de = data.get("name_de", "")
+            if name_de:
+                # Translating the German name extracted from the store page to English
+                data["name_en"] = _translate_text(name_de, "de", "en")
+                # Update the description with the new translated English name
+                data["description_en"] = f"A carefully selected, high-quality {data['name_en']} essential for your pantry. It pairs nicely with fresh meals."
+        
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"success": False, "error": f"Internal Server Error: {str(e)}"}), 500
 
 @admin_bp.route("/scans", methods=["GET"])
 def pending_scans():
