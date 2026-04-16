@@ -1014,20 +1014,26 @@
                 <div class="collapse mt-2" id="stores-collapse-{{ p.get('id') }}">
                   <div class="d-flex flex-column gap-2">
                     {% for s in sorted_stores[1:] %}
-                    <a href="{{ s.get('url') or '#' }}" target="_blank" class="text-decoration-none text-dark d-flex justify-content-between align-items-center p-2 rounded" style="border: 1px solid transparent; transition: all 0.2s;" onmouseover="this.style.background='#f1f5f9'; this.style.borderColor='#e2e8f0';" onmouseout="this.style.background='transparent'; this.style.borderColor='transparent';">
+                    <div class="store-item d-flex justify-content-between align-items-center p-2" 
+                         data-store-name="{{ s.get('store') or s.get('name') }}"
+                         data-store-price="{{ s.get('price') }}"
+                         data-image="{{ prefer_processed(s.get('logo') or s.get('store_image') or url_for('static', filename='placeholder.svg')) }}">
                       <div class="d-flex align-items-center gap-2">
                         <img src="{{ prefer_processed(s.get('logo') or s.get('store_image') or url_for('static', filename='placeholder.svg')) }}"
                              alt="{{ s.get('store') or s.get('name') }}"
                              style="width: 24px; height: 24px; object-fit: contain; border-radius: 4px;">
                         <span class="small fw-semibold text-truncate" style="max-width: 90px;">{{ s.get('store') or s.get('name') }}</span>
                       </div>
-                      <div class="text-end">
-                        <span class="fw-semibold small d-block lh-1 text-dark">€{{ s.get('price') }}</span>
-                         {% if s.get('normalized_unit_price') %}
-                          <small class="text-muted" style="font-size: 0.65rem;">({{ s.get('normalized_unit_label') }}: €{{ "%.2f"|format(s.get('normalized_unit_price')) }})</small>
-                         {% endif %}
+                      <div class="d-flex align-items-center gap-2">
+                        <div class="text-end">
+                          <span class="fw-semibold small d-block lh-1 text-dark">€{{ s.get('price') }}</span>
+                           {% if s.get('normalized_unit_price') %}
+                            <small class="text-muted" style="font-size: 0.65rem;">({{ s.get('normalized_unit_label') }}: €{{ "%.2f"|format(s.get('normalized_unit_price')) }})</small>
+                           {% endif %}
+                        </div>
+                        <a href="{{ s.get('url') or '#' }}" target="_blank" class="btn-go-store text-muted p-1 ms-1 hover-primary" title="Go to store external page" style="font-size: 0.9rem;" onclick="event.stopPropagation();"><i class="bi bi-box-arrow-up-right"></i></a>
                       </div>
-                    </a>
+                    </div>
                     {% endfor %}
                   </div>
                 </div>

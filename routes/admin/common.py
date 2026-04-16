@@ -615,3 +615,44 @@ def reject_scan(barcode):
     if db is None: return jsonify({"success": False})
     db.pending_products.update_one({"barcode": barcode}, {"$set": {"status": "rejected"}})
     return jsonify({"success": True})
+
+
+
+@admin_bp.route('/api/products/bulk-delete', methods=['POST'])
+def bulk_delete_products():
+    from flask import request, jsonify
+    from bson import ObjectId
+    from utils.db import get_db
+    
+    try:
+        data = request.get_json()
+        if not data or 'ids' not in data:
+            return jsonify({'error': 'Missing product IDs'}), 400
+            
+        ids = data['ids']
+        if not isinstance(ids, list):
+            return jsonify({'error': 'IDs must be a list'}), 400
+            
+        db = get_db()
+        object_ids = []
+        for id_str in ids:
+            try:
+                object_ids.append(ObjectId(id_str))
+            except Exception:
+                object_ids.append(id_str)
+                
+        if not object_ids:
+            return jsonify({'error': 'No valid IDs provided'}), 400
+            
+        # Hardcoding the mongo query to avoid powershell var stripping issues
+        query = {'': [{'_id': {'': object_ids}}, {'productId': {'': object_ids}}]}
+        result = db.products.delete_many(query)
+        
+        return jsonify({
+            'message': f'Successfully deleted {result.deleted_count} products.', 
+            'deleted_count': result.deleted_count
+        })
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500

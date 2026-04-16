@@ -94,17 +94,14 @@ window.handleAddToCart = async function (event, name, price, image, store) { // 
         const hasStoreOptions = productCard.querySelector('.store-item'); // Multiple retailers found?
         if (hasStoreOptions) { // User MUST pick 1 store to add
             const selectedStoreItem = productCard.querySelector('.store-item.selected');
-            if (!selectedStoreItem) { // If nothing clicked yet
-                showNotification('Please select a store first', 'warning'); // Direct the user
-                return; // Stop flow
-            }
+            // Removed restriction, defaults to main button price
             
             // Extract attributes with specific Store Overrides
             const itemName = btn.getAttribute('data-name') || btn.getAttribute('data-title') || 'Item';
             // Prefer the price specific to the selected store badge
-            let itemPrice = selectedStoreItem.getAttribute('data-store-price') || btn.getAttribute('data-price') || '';
-            const itemStore = selectedStoreItem.getAttribute('data-store-name') || btn.getAttribute('data-store') || '';
-            const itemImage = selectedStoreItem.getAttribute('data-image') || btn.getAttribute('data-image') || '';
+            let itemPrice = (selectedStoreItem ? selectedStoreItem.getAttribute('data-store-price') : null) || btn.getAttribute('data-price') || '';
+            const itemStore = (selectedStoreItem ? selectedStoreItem.getAttribute('data-store-name') : null) || btn.getAttribute('data-store') || '';
+            const itemImage = (selectedStoreItem ? selectedStoreItem.getAttribute('data-image') : null) || btn.getAttribute('data-image') || '';
             const itemId = btn.getAttribute('data-id') || null;
             
             // Extract complex Offer meta-data
