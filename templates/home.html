@@ -2,7 +2,71 @@
 
 {% block styles %}
 <style> /* Internal CSS for page-specific visual modules */
-    /* Animated Hero Section */
+    
+    /* Interactive Animation Keyframes */
+    @keyframes basketFloat {
+      0%, 100% { transform: translateY(0) scale(1); filter: drop-shadow(0 20px 20px rgba(0,0,0,0.2)); }
+      50% { transform: translateY(-15px) scale(1.02); filter: drop-shadow(0 30px 25px rgba(0,0,0,0.3)); }
+    }
+    @keyframes itemDrop {
+      0% { transform: translateY(-80px) scale(0.6) rotate(15deg); opacity: 0; }
+      20% { opacity: 1; transform: translateY(-20px) scale(1.1) rotate(0deg); }
+      70% { transform: translateY(120px) scale(0.9) rotate(-15deg); opacity: 1; }
+      90%, 100% { transform: translateY(150px) scale(0.5); opacity: 0; }
+    }
+    @keyframes tagFloat {
+      0% { transform: translateY(30px) scale(0.8); opacity: 0; }
+      20% { opacity: 1; transform: translateY(0px) scale(1.1); }
+      80% { opacity: 0.8; transform: translateY(-40px) scale(1); }
+      100% { transform: translateY(-60px) scale(0.9); opacity: 0; }
+    }
+    @keyframes spin {
+      100% { transform: rotate(360deg); }
+    }
+    @keyframes spinReverse {
+      100% { transform: rotate(-360deg); }
+    }
+    
+    .hero-graphic-container .animated-basket {
+        transition: color 0.3s;
+    }
+    .hero-graphic-container:hover .animated-basket {
+        color: #fce7f3 !important; /* Glow pink on interaction */
+    }
+
+
+    /* Interactive Animation Keyframes */
+    @keyframes basketFloat {
+      0%, 100% { transform: translateY(0) scale(1); filter: drop-shadow(0 20px 20px rgba(0,0,0,0.2)); }
+      50% { transform: translateY(-15px) scale(1.02); filter: drop-shadow(0 30px 25px rgba(0,0,0,0.3)); }
+    }
+    @keyframes itemDrop {
+      0% { transform: translateY(-80px) scale(0.6) rotate(15deg); opacity: 0; }
+      20% { opacity: 1; transform: translateY(-20px) scale(1.1) rotate(0deg); }
+      70% { transform: translateY(120px) scale(0.9) rotate(-15deg); opacity: 1; }
+      90%, 100% { transform: translateY(150px) scale(0.5); opacity: 0; }
+    }
+    @keyframes tagFloat {
+      0% { transform: translateY(30px) scale(0.8); opacity: 0; }
+      20% { opacity: 1; transform: translateY(0px) scale(1.1); }
+      80% { opacity: 0.8; transform: translateY(-40px) scale(1); }
+      100% { transform: translateY(-60px) scale(0.9); opacity: 0; }
+    }
+    @keyframes spin {
+      100% { transform: rotate(360deg); }
+    }
+    @keyframes spinReverse {
+      100% { transform: rotate(-360deg); }
+    }
+    
+    .hero-graphic-container .animated-basket {
+        transition: color 0.3s;
+    }
+    .hero-graphic-container:hover .animated-basket {
+        color: #fce7f3 !important; /* Glow pink on interaction */
+    }
+
+/* Animated Hero Section */
     .hero-section {
       background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #8b5cf6 100%); /* Vibrant purple/blue brand gradient */
       color: white; /* Contrast text color for high readability */
@@ -680,37 +744,77 @@
   
 
   <!-- Unified Premium Hero Section --> <!-- Major attention-grabbing header for product discovery -->
-  <header class="premium-hero"> <!-- Styled container for main CTAs and branding -->
+  <header class="premium-hero" style="overflow: hidden;"> <!-- Styled container for main CTAs and branding -->
     <div class="bg-shape shape-1"></div> <!-- Abstract animated background circles -->
     <div class="bg-shape shape-2"></div> <!-- Abstract animated background circles -->
     <div class="bg-shape shape-3"></div> <!-- Abstract animated background circles -->
     
-    <div class="container text-center position-relative" style="z-index: 2;"> <!-- Content centered over moving shapes -->
-      <h1 class="display-3 fw-bold mb-3 text-white">Shop Smarter<br>Save Bigger</h1> <!-- Bold value proposition heading -->
-      <p class="lead mx-auto mb-5 opacity-90 text-white" style="max-width: 700px;">The ultimate destination to track prices, find exclusive coupons, and coordinate your grocery trips across all major retailers.</p> <!-- Contextual background for the app's purpose -->
-      
-      <div class="search-box mx-auto"> <!-- Centered Global Search Input -->
-        <i class="bi bi-search ms-3 text-muted fs-5"></i> <!-- Decorative magnifying glass -->
-        <div style="flex:1; position:relative; display:flex;">
-          <input type="text" placeholder="Search brands, products, or stores..." id="hero-search" autocomplete="off"> <!-- Interactive user query field -->
-        </div>
-        <button onclick="handleHeroSearch()" class="me-1"> <!-- Trigger for JavaScript search handler -->
-          Explore Deals
-        </button>
-        <!-- The live results absolute container -->
-        <div class="search-results-dropdown" id="search-results">
-        </div>
-      </div>
+    <div class="container position-relative py-5" style="z-index: 2;"> <!-- Content centered over moving shapes -->
+      <div class="row align-items-center py-4">
+        <!-- Text & Search Column (Left) -->
+        <div class="col-lg-6 text-center text-lg-start mb-5 mb-lg-0 pe-lg-5">
+          
+          <h1 class="display-3 fw-bold text-white mb-3" style="line-height: 1.1; letter-spacing: -0.04em;">Shop Smarter<br><span style="color: #fce7f3;">Save Bigger</span></h1> <!-- Bold value proposition heading -->
+          <p class="lead mb-5 opacity-90 text-white fw-light" style="max-width: 500px; margin: 0 auto 0 0 !important;text-align: inherit;">The ultimate destination to track prices, find exclusive coupons, and coordinate your grocery trips across all major retailers.</p> <!-- Contextual background for the app's purpose -->
+          
+          <div class="search-box mx-auto mx-lg-0 mt-3" style="max-width: 100%;"> <!-- Adjusted Global Search Input -->
+            <i class="bi bi-search ms-3 text-muted fs-5"></i> <!-- Decorative magnifying glass -->
+            <div style="flex:1; position:relative; display:flex;">
+              <input type="text" placeholder="Search brands, products, or stores..." id="hero-search" autocomplete="off" class="border-0 shadow-none bg-transparent" style="outline: none; box-shadow: none;"> <!-- Interactive user query field -->
+            </div>
+            <button onclick="handleHeroSearch()" class="me-1 px-4 text-white shadow" style="background:#8b5cf6;"> <!-- Trigger for JavaScript search handler -->
+              Explore Deals
+            </button>
+            <!-- The live results absolute container -->
+            <div class="search-results-dropdown text-start shadow-lg border-0" id="search-results">
+            </div>
+          </div>
 
-      <div class="mt-5 d-flex justify-content-center gap-4 flex-wrap opacity-75"> <!-- Key feature value tags -->
-        <div class="d-flex align-items-center text-white small">
-          <i class="bi bi-check-circle-fill me-2 text-info"></i> Real-time Tracking <!-- Benefit: Live data -->
+          <div class="mt-4 pt-2 d-flex justify-content-center justify-content-lg-start gap-4 flex-wrap opacity-75"> <!-- Key feature value tags -->
+            <div class="d-flex align-items-center text-white small fw-medium">
+              <i class="bi bi-shield-check me-2 fs-5 text-info"></i> Real-time tracking
+            </div>
+            <div class="d-flex align-items-center text-white small fw-medium">
+              <i class="bi bi-piggy-bank-fill me-2 fs-5 text-warning"></i> Exclusive coupons
+            </div>
+          </div>
         </div>
-        <div class="d-flex align-items-center text-white small">
-          <i class="bi bi-check-circle-fill me-2 text-info"></i> Exclusive Coupons <!-- Benefit: Discounts -->
-        </div>
-        <div class="d-flex align-items-center text-white small">
-          <i class="bi bi-check-circle-fill me-2 text-info"></i> Shared Lists <!-- Benefit: Coordination -->
+        
+        <!-- Animated Graphic Column (Right) -->
+        <div class="col-lg-6 position-relative d-none d-lg-block"> <!-- Hid animation on tiny phones to save space -->
+          <div class="hero-graphic-container mx-auto" style="position: relative; width: 400px; height: 400px; display: flex; align-items: center; justify-content: center; perspective: 1000px;">
+            
+            <!-- Central spinning/floating basket -->
+            <div class="animated-basket" style="font-size: 10rem; color: rgba(255,255,255,0.9); filter: drop-shadow(0 20px 20px rgba(0,0,0,0.2)); animation: basketFloat 3s ease-in-out infinite; z-index: 10;">
+              <i class="bi bi-basket2-fill"></i>
+            </div>
+            
+            <!-- Items falling into the basket -->
+            <div class="animated-item animated-item-apple" style="position: absolute; top: -50px; left: 100px; font-size: 3rem; color: #ff6b6b; z-index: 5; opacity: 0; animation: itemDrop 3s cubic-bezier(0.5, 0, 0.75, 0) infinite;">
+              <i class="bi bi-apple"></i>
+            </div>
+            <div class="animated-item animated-item-milk" style="position: absolute; top: -80px; left: 200px; font-size: 3.5rem; color: #fff; z-index: 4; opacity: 0; animation: itemDrop 3s cubic-bezier(0.5, 0, 0.75, 0) infinite; animation-delay: 0.8s;">
+              <i class="bi bi-cup-straw"></i>
+            </div>
+            <div class="animated-item animated-item-bread" style="position: absolute; top: -40px; left: 280px; font-size: 3.2rem; color: #f59e0b; z-index: 6; opacity: 0; animation: itemDrop 3s cubic-bezier(0.5, 0, 0.75, 0) infinite; animation-delay: 1.6s;">
+              <i class="bi bi-bag-plus-fill"></i>
+            </div>
+            
+            <!-- Price Tags flying out of basket -->
+            <div class="animated-tag tag1 shadow" style="position: absolute; right: 20px; top: 120px; background: #10b981; color: white; padding: 6px 14px; border-radius: 12px; font-weight: 800; opacity: 0; animation: tagFloat 3s ease-out infinite; z-index: 15; font-size: 1.1rem;">
+              <i class="bi bi-arrow-down-short me-1"></i>25% OFF
+            </div>
+            <div class="animated-tag tag2 shadow-sm fw-bold" style="position: absolute; left: 10px; top: 150px; background: #f43f5e; color: white; padding: 6px 14px; border-radius: 12px; opacity: 0; animation: tagFloat 4s ease-out infinite; z-index: 12; font-size: 1rem; animation-delay: 1.2s;">
+              BEST DEAL
+            </div>
+            <div class="animated-tag tag3 shadow-sm fw-bold d-flex align-items-center" style="position: absolute; right: 80px; top: 60px; background: #3b82f6; color: white; padding: 6px 14px; border-radius: 12px; opacity: 0; animation: tagFloat 3.5s ease-out infinite; z-index: 14; font-size: 1rem; animation-delay: 2.1s;">
+              <i class="bi bi-currency-euro me-1"></i>1.99
+            </div>
+            
+            <!-- Orbital Decorative Rings -->
+            <div class="animation-ring ring-inner" style="position: absolute; width: 200px; height: 200px; border: 2px dashed rgba(255,255,255,0.2); border-radius: 50%; opacity: 0.5; animation: spin 10s linear infinite;"></div>
+            <div class="animation-ring ring-outer" style="position: absolute; width: 320px; height: 320px; border: 1px dotted rgba(255,255,255,0.15); border-radius: 50%; opacity: 0.7; animation: spinReverse 15s linear infinite;"></div>
+          </div>
         </div>
       </div>
     </div>
