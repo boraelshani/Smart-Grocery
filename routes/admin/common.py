@@ -644,9 +644,9 @@ def bulk_delete_products():
         if not object_ids:
             return jsonify({'error': 'No valid IDs provided'}), 400
             
-        # Hardcoding the mongo query to avoid powershell var stripping issues
-        query = {'': [{'_id': {'': object_ids}}, {'productId': {'': object_ids}}]}
+        query = {'$or': [{'_id': {'$in': object_ids}}, {'productId': {'$in': object_ids}}]}
         result = db.products.delete_many(query)
+        db.store_products.delete_many({'productId': {'$in': object_ids}})
         
         return jsonify({
             'message': f'Successfully deleted {result.deleted_count} products.', 

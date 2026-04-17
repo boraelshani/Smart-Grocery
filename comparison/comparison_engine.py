@@ -75,6 +75,12 @@ def build_compare_product_payload(
         'updated': cheapest.get('updated') or product.get('updated_at') or product.get('price_confirmed_at'),
     }
 
+    try:
+        from models.price_predictor_model import PricePredictorModel
+        deal_eval = PricePredictorModel.evaluate_deal(product)
+    except Exception:
+        deal_eval = None
+
     payload = {
         'id': product_id,
         'name': product.get('name') or product.get('title') or 'Product',
@@ -82,6 +88,7 @@ def build_compare_product_payload(
         'image': product.get('image') or (product.get('images') or [None])[0],
         'stores': stores,
         'cheapest': cheapest_node,
+        'deal_eval': deal_eval,
         'price': cheapest.get('price') if cheapest else to_float(product.get('price')),
         'normalized_unit_price': normalized_unit_price,
         'normalized_unit_label': normalized_unit_label,

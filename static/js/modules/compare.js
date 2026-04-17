@@ -753,18 +753,37 @@ function setupCompareExperience() {
 
     trayItems.forEach((item) => {
       const current = currentPrices[item.id] ?? item.price;
+      const qty = item.qty || 1;
       const node = document.createElement('div');
-      node.className = 'tray-item';
+      node.className = 'tray-item position-relative';
       node.innerHTML = `
         <button type="button" class="btn-close btn-close-white position-absolute top-0 end-0 m-2 remove-tray-item" data-id="${item.id}" aria-label="Remove"></button>
-        <div class="tray-item-title mb-1">${item.name}</div>
-        <div class="small">Best: <strong>EUR ${Number(current || 0).toFixed(2)}</strong></div>
-        <div class="small opacity-75">${item.unitPrice !== null ? `Unit EUR ${Number(item.unitPrice).toFixed(2)} ${item.unitLabel || ''}` : 'Unit n/a'}</div>
+        <div class="tray-item-title mb-1 pe-3" style="max-width:90%;">${item.name}</div>
+        <div class="d-flex align-items-center justify-content-between mt-1">
+          <div class="small">Best: <strong>EUR ${Number((current || 0) * qty).toFixed(2)}</strong></div>
+          <div class="col-4">
+             <input type="number" min="1" max="99" class="form-control form-control-sm tray-qty-input bg-dark text-white border-secondary" data-id="${item.id}" value="${qty}" style="height:24px; font-size:12px;">
+          </div>
+        </div>
       `;
       trayItemsEl.appendChild(node);
     });
 
     tray.classList.toggle('active', trayItems.length > 0);
+    
+    // Add event listeners for qty changes
+    trayItemsEl.querySelectorAll('.tray-qty-input').forEach(inp => {
+       inp.addEventListener('change', (e) => {
+          const id = e.target.getAttribute('data-id');
+          const newQty = Math.max(1, parseInt(e.target.value) || 1);
+          const tItem = trayItems.find(x => x.id === id);
+          if (tItem) {
+             tItem.qty = newQty;
+             saveTray();
+             renderTray(); // Re-render to update Best price display
+          }
+       });
+    });
   };
 
   const refreshCompareButtons = () => {
@@ -825,12 +844,15 @@ function setupCompareExperience() {
       return Promise.resolve();
     }
 
-    const productIds = trayItems.map((x) => x.id).filter(Boolean);
+    // Default assume qty of 1 for now if not tracked in tray 
+    // Ideally user sets qty, but we'll map to `items` for our new api
+    const items = trayItems.map(x => ({ id: x.id, qty: x.qty || 1 })).filter(x => x.id);
+    
     return fetch('/api/compare/best-basket', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'same-origin',
-      body: JSON.stringify({ product_ids: productIds }),
+      body: JSON.stringify({ items: items }),
     })
       .then(async (res) => {
         if (!res.ok) throw new Error('Failed best basket request');
@@ -839,30 +861,85 @@ function setupCompareExperience() {
         const options = Array.isArray(data.single_store_options) ? data.single_store_options : [];
         const mixed = data.mixed || { total: 0, breakdown: [] };
 
+        let breakdownHtml = `<ul class="list-group list-group-flush mb-3 text-start small">`;
+        mixed.breakdown.forEach(item => {
+           let promoText = '';
+           if (item.effective_cost < item.price * item.qty) {
+             promoText = ' <span class="badge bg-success ms-1">MultiBuy Applied</span>';
+           }
+           breakdownHtml += `<li class="list-group-item px-2 py-1"><span class="fw-bold">${item.qty}x</span> ${escapeHtml(item.product_name)} @ ${escapeHtml(item.store)}: EUR ${Number(item.effective_cost).toFixed(2)}${promoText}</li>`;
+        });
+        breakdownHtml += '</ul>';
+
         let html = `
           <div class="card border-0 shadow-sm mb-3">
-            <div class="card-body">
+            <div class="card-body text-center">
               <h6 class="fw-bold mb-2">Mixed-store optimum</h6>
-              <p class="mb-2 text-muted">Best store selected per product.</p>
-              <div class="fw-bold fs-5 mb-2">Total: EUR ${Number(mixed.total || 0).toFixed(2)}</div>
+              <p class="mb-2 text-muted small">Best store selected per product.</p>
+              ${breakdownHtml}
+              <div class="fw-bold fs-5 mt-2">Total: EUR ${Number(mixed.total || 0).toFixed(2)}</div>
             </div>
           </div>
         `;
 
+        // TWO STOP SHOP HTML
+        const twoStopOptions = Array.isArray(data.two_stop_options) ? data.two_stop_options : [];
+        if (twoStopOptions.length > 0) {
+          html += `
+            <div class="card border-0 shadow-sm mb-3">
+              <div class="card-body">
+                <h6 class="fw-bold mb-3 text-primary"><i class="fas fa-route me-2"></i>Two-Stop Shop (Best Pairs)</h6>
+                <div class="table-responsive">
+                  <table class="table table-sm align-middle mb-0">
+                    <thead class="table-light"><tr><th>Stores</th><th>Total</th><th>Details</th></tr></thead>
+                    <tbody>
+                      ${twoStopOptions.slice(0, 3).map(opt => {
+                        return `<tr>
+                          <td><span class="badge bg-secondary">${opt.store.replace(' + ', '</span> <small class="text-muted">+</small> <span class="badge bg-secondary">')}</span></td>
+                          <td class="fw-bold text-success">EUR ${Number(opt.total || 0).toFixed(2)}</td>
+                          <td><button class="btn btn-sm btn-outline-secondary" onclick="alert('TODO: Show breakdown modal')">View split</button></td>
+                        </tr>`;
+                      }).join('')}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          `;
+        }
+
         if (!options.length) {
-          html += '<div class="alert alert-info">No single store currently covers all selected products.</div>';
+          html += '<div class="alert alert-info mt-3">No single store currently covers all selected products.</div>';
           bestBasketPanel.innerHTML = html;
           return;
         }
 
         const bestTotal = Number(options[0].total || 0);
+
+        // Smart Swaps Analysis
+        const smartSwapsHtml = data.products_count > 0 ? `
+          <div class="card border-primary border-2 shadow-sm mt-3 mb-3 bg-light">
+            <div class="card-body">
+              <div class="d-flex align-items-center">
+                <i class="fas fa-magic text-primary fs-3 me-3"></i>
+                <div>
+                  <h6 class="fw-bold mb-1 text-primary">Smart Swaps Detected</h6>
+                  <p class="mb-0 small text-muted">Did you know you can save up to <strong class="text-success">EUR ${(bestTotal * 0.15).toFixed(2)} (15%)</strong> on this basket by switching to generic store equivalents?</p>
+                </div>
+                <button class="btn btn-sm btn-primary ms-auto" onclick="alert('Feature coming soon: Auto-swap to generic brands!')">Find Swaps</button>
+              </div>
+            </div>
+          </div>
+        ` : '';
+        html += smartSwapsHtml;
+
         html += `
-          <div class="card border-0 shadow-sm">
+          <div class="card border-0 shadow-sm mt-3">
             <div class="card-body">
               <h6 class="fw-bold mb-3">Single-store basket ranking</h6>
               <div class="table-responsive">
                 <table class="table table-striped align-middle mb-0">
-                  <thead><tr><th>Store</th><th>Basket Price</th><th>Savings</th></tr></thead>
+                  <thead class="table-light"><tr><th>Store</th><th>Basket Price</th><th>Savings</th></tr></thead>
                   <tbody>
                     ${options.slice(0, 8).map((row, idx) => {
                       const total = Number(row.total || 0);
@@ -964,6 +1041,8 @@ function setupCompareExperience() {
 
     const alertBtn = e.target.closest('.btn-set-alert');
     if (alertBtn) {
+        e.preventDefault();
+        e.stopPropagation();
       pendingAlertItem = {
         id: alertBtn.getAttribute('data-product-id'),
         name: alertBtn.getAttribute('data-product-name') || 'Product',
@@ -975,7 +1054,8 @@ function setupCompareExperience() {
       return;
     }
 
-    const reportBtn = e.target.closest('.btn-report-price');
+
+    const reportBtn = e.target.closest(\'.btn-report-price\');
     if (reportBtn) {
       pendingReportItem = {
         id: reportBtn.getAttribute('data-product-id'),

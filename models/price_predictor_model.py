@@ -87,7 +87,7 @@ class PricePredictorModel:
             # Form the new store object memory-only
             predicted_store_obj = {
                 "store": store_name,
-                "price": f"{final_predicted:.2f}",
+                "price": float(f"{final_predicted:.2f}"),
                 "is_estimated": True, # CRITICAL: This lets UI label it as AI Estimated
             }
             extended_product['stores'].append(predicted_store_obj)
@@ -99,3 +99,32 @@ class PricePredictorModel:
             pass
             
         return extended_product
+
+    @staticmethod
+    def evaluate_deal(product):
+        """
+        Determines if the product has a 'Great Deal' relative to historical prices.
+        Since we don't have real time-series in this prototype, we simulate a 'Deal'.
+        Returns 0-1 score, 1 = amazing deal, or None if no valid metric.
+        """
+        stores = product.get('stores', [])
+        valid_prices = []
+        for s in stores:
+            try:
+                valid_prices.append((float(s.get('price')), s.get('store', '')))
+            except:
+                pass
+        if not valid_prices: return None
+        
+        # Calculate base average
+        calculated_base_prices = []
+        for price, s_name in valid_prices:
+             calculated_base_prices.append(price / PricePredictorModel._get_store_multiplier(s_name))
+             
+        avg_base = sum(calculated_base_prices) / len(calculated_base_prices)
+        cheapest_p = min([p for p, s in valid_prices])
+        
+        # If the cheapest is > 10% below the base avg (normalized), it's a great deal.
+        if cheapest_p < (avg_base * 0.85):
+            return {"is_great_deal": True, "discount_pct": float(f"{(1 - (cheapest_p / avg_base)) * 100:.1f}")}
+        return {"is_great_deal": False, "discount_pct": 0.0}

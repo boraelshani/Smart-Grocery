@@ -489,9 +489,15 @@
       align-items: center;
       gap: 0.4rem;
       flex-shrink: 0;
+      position: relative;
+      z-index: 50;
     }
 
     .inline-action-btn {
+      position: relative;
+      z-index: 50;
+      cursor: pointer;
+      pointer-events: auto;
       border: 1px solid #dbeafe;
       background: linear-gradient(135deg, #f8fbff, #eef2ff);
       color: #1d4ed8;
@@ -925,7 +931,8 @@
                   class="card-img-top product-image" alt="{{ p.get('name') or p.get('title','Product') }}">
                 
                 {# Price Badge: Shows cheapest available price #}
-                <span class="price-badge">
+                
+                  <span class="price-badge">
                   <i class="bi bi-tag-fill"></i> €<span class="js-compare-price">{{ (p.get('cheapest') and p.get('cheapest').get('price')) or
                   p.get('price','N/A') }}</span>
                 </span>
@@ -957,15 +964,10 @@
                 </div>
 
                 <div class="inline-actions" aria-label="Quick card actions">
-                  <button type="button" class="inline-action-btn btn-set-alert"
-                    title="Set alert"
-                    data-product-id="{{ p.get('id') }}"
-                    data-product-name="{{ p.get('name') or p.get('title','')|e }}"
-                    data-product-price="{{ (p.get('cheapest') and p.get('cheapest').get('price')) or p.get('price','') }}">
-                    <i class="bi bi-bell"></i>
-                  </button>
+                  
 
-                  <button type="button" class="inline-action-btn btn-report-price"
+                  
+                    <button type="button" class="inline-action-btn btn-report-price"
                     title="Report price"
                     data-product-id="{{ p.get('id') }}"
                     data-product-name="{{ p.get('name') or p.get('title','')|e }}"
@@ -1411,9 +1413,29 @@
       <!-- Modal: Global Unified Shopping List Selector -->
       
       </div>
+
+
 {% endblock %}
 
+
+
+</div>
+
+
+
+</div>
+
+
+
+</div>
+
 {% block scripts %}
+
+
+
+
+
+
 <script>
         // Trigger logic for keyword-based comparative search
         // Essential for server-side persistence of search state across pages
