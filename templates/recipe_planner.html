@@ -252,7 +252,9 @@
     <div class="d-inline-flex bg-white rounded-pill p-1 mb-4 shadow-sm">
       <button type="button" class="btn btn-primary rounded-pill px-4 fw-bold" id="tabRecipe" onclick="toggleSearch('recipe')">By Recipe</button>
       <button type="button" class="btn btn-light text-dark rounded-pill px-4 fw-bold border-0 bg-transparent" id="tabBudget" onclick="toggleSearch('budget')">By Budget</button>
+      {% if session.get('user') %}
       <button type="button" class="btn btn-light text-dark rounded-pill px-4 fw-bold border-0 bg-transparent" id="tabBook" onclick="toggleSearch('book')">My Recipe Book</button>
+      {% endif %}
     </div>
   </div>
 </section>
@@ -269,7 +271,7 @@
     </div>
   </div>
 
-  {% if session.get('user') and saved_recipes %}
+  {% if session.get('user') %}
   {% include "book.html" ignore missing %}
   {% endif %}
 
@@ -419,10 +421,13 @@ document.addEventListener('DOMContentLoaded', () => {
             bForm.classList.add('d-none');
             rForm.classList.remove('d-none');
             if (resultsContainer) resultsContainer.classList.add('d-none');
-            if (savedRecipesSection) savedRecipesSection.classList.add('d-none');
+            if (savedRecipesSection) savedRecipesSection.classList.remove('d-none');
             rBtn.className = 'btn btn-primary rounded-pill px-4 fw-bold text-white border-0';
         }
     };
+    
+    // Set default view on load
+    toggleSearch('recipe');
 
     if (budgetForm) {
         // Start hidden initially if diet choices provided
