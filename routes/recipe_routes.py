@@ -182,10 +182,11 @@ def generate_budget_ideas():
         budget = data.get('budget', '').strip()
         preference = data.get('preference', 'any').strip()
         max_time = data.get('max_time', 'any').strip()
+        max_ingredients = data.get('max_ingredients', 'any').strip()
         if not budget:
             return jsonify({'success': False, 'error': 'Missing budget.'}), 400
         
-        meals = get_budget_meal_ideas(budget, preference, max_time)
+        meals = get_budget_meal_ideas(budget, preference, max_time, max_ingredients)
         return jsonify({'success': True, 'meals': meals})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500

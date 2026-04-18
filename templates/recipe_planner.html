@@ -224,27 +224,59 @@
         </button>
       </div>
       
-      <div class="d-flex flex-wrap justify-content-center gap-3 mb-4 bg-white p-3 rounded-4 shadow-sm border">
-        <div class="d-flex align-items-center gap-2 me-3">
-            <span class="small fw-bold text-muted text-uppercase" style="letter-spacing: 0.5px;">Diet:</span>
-            <select class="form-select form-select-sm border-0 bg-light fw-bold" id="dietPreference" style="width: auto; border-radius: 10px;">
-                <option value="any">🍲 Any</option>
-                <option value="vegetarian">🥗 Vegetarian</option>
-                <option value="vegan">🌿 Vegan</option>
-                <option value="meat-based">🥩 Meat-based</option>
-                <option value="quick">⚡ Quick & Easy</option>
-                <option value="keto">🥑 Keto</option>
-            </select>
-        </div>
+      <div class="d-flex flex-wrap justify-content-center gap-4 mb-4 p-3 rounded-4 shadow-sm border" style="background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px);">
+        <!-- Diet Filter -->
         <div class="d-flex align-items-center gap-2">
-            <span class="small fw-bold text-muted text-uppercase" style="letter-spacing: 0.5px;">Max Time:</span>
-            <select class="form-select form-select-sm border-0 bg-light fw-bold" id="timePreference" style="width: auto; border-radius: 10px;">
-                <option value="any">Any time</option>
-                <option value="15">15 mins</option>
-                <option value="30">30 mins</option>
-                <option value="45">45 mins</option>
-                <option value="60">60+ mins</option>
-            </select>
+            <div class="bg-light d-flex align-items-center justify-content-center rounded-circle" style="width: 32px; height: 32px;">
+                <i class="bi bi-person-hearts text-primary"></i>
+            </div>
+            <div class="d-flex flex-column text-start">
+                <span class="small fw-bold text-muted text-uppercase mb-1" style="font-size: 0.65rem; letter-spacing: 0.5px; line-height: 1;">Diet</span>
+                <select class="form-select form-select-sm border-0 bg-transparent fw-bold p-0 text-dark shadow-none" id="dietPreference" style="cursor: pointer; width: auto;">
+                    <option value="any">🍲 Any Diet</option>
+                    <option value="vegetarian">🥗 Vegetarian</option>
+                    <option value="vegan">🌿 Vegan</option>
+                    <option value="meat-based">🥩 Meat-based</option>
+                    <option value="keto">🥑 Keto</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="vr bg-secondary opacity-25 d-none d-sm-block"></div>
+
+        <!-- Time Filter -->
+        <div class="d-flex align-items-center gap-2">
+            <div class="bg-light d-flex align-items-center justify-content-center rounded-circle" style="width: 32px; height: 32px;">
+                <i class="bi bi-stopwatch text-danger"></i>
+            </div>
+            <div class="d-flex flex-column text-start">
+                <span class="small fw-bold text-muted text-uppercase mb-1" style="font-size: 0.65rem; letter-spacing: 0.5px; line-height: 1;">Max Time</span>
+                <select class="form-select form-select-sm border-0 bg-transparent fw-bold p-0 text-dark shadow-none" id="timePreference" style="cursor: pointer; width: auto;">
+                    <option value="any">Any time</option>
+                    <option value="15">15 mins</option>
+                    <option value="30">30 mins</option>
+                    <option value="45">45 mins</option>
+                    <option value="60">60+ mins</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="vr bg-secondary opacity-25 d-none d-sm-block"></div>
+
+        <!-- Ingredients Filter -->
+        <div class="d-flex align-items-center gap-2">
+            <div class="bg-light d-flex align-items-center justify-content-center rounded-circle" style="width: 32px; height: 32px;">
+                <i class="bi bi-basket2 text-success"></i>
+            </div>
+            <div class="d-flex flex-column text-start">
+                <span class="small fw-bold text-muted text-uppercase mb-1" style="font-size: 0.65rem; letter-spacing: 0.5px; line-height: 1;">Max Ingredients</span>
+                <select class="form-select form-select-sm border-0 bg-transparent fw-bold p-0 text-dark shadow-none" id="ingredientsPreference" style="cursor: pointer; width: auto;">
+                    <option value="any">Any amount</option>
+                    <option value="5">Up to 5 items</option>
+                    <option value="10">Up to 10 items</option>
+                    <option value="15">Up to 15 items</option>
+                </select>
+            </div>
         </div>
       </div>
     </form>
@@ -440,6 +472,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const dietPref = document.getElementById('dietPreference').value;
             const timePref = document.getElementById('timePreference').value;
+            const ingredientsPref = document.getElementById('ingredientsPreference').value;
 
             budgetBtn.disabled = true;
             budgetInput.disabled = true;
@@ -449,8 +482,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const savedRecipesSection = document.getElementById('savedRecipesSection') || document.getElementById('grandBookSection');
             if (savedRecipesSection) savedRecipesSection.classList.add('d-none');
 
+            let loadingText = `Consulting our culinary AI for cheap ${dietPref} ideas`;
+            if (timePref !== 'any') loadingText += ` within ${timePref} mins`;
+            if (ingredientsPref !== 'any') loadingText += ` using max ${ingredientsPref} ingredients`;
+            
             document.querySelector('#loadingState h3').textContent = "Finding meals for your budget...";
-            document.querySelector('#loadingState p').textContent = `Consulting our culinary AI for cheap ${dietPref} ideas within ${timePref} mins.`;
+            document.querySelector('#loadingState p').textContent = loadingText + ".";
 
             try {
                 const res = await fetch('/api/recipe/budget', {
@@ -459,7 +496,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     body: JSON.stringify({ 
                       budget: budgetVal,
                       preference: dietPref,
-                      max_time: timePref
+                      max_time: timePref,
+                      max_ingredients: ingredientsPref
                     })
                 });
                 const data = await res.json();

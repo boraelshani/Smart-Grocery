@@ -126,7 +126,7 @@ def get_recipe_details(recipe_query):
         print(f"Error connecting to Gemini API or parsing response: {e}. Falling back to mock data.")
         return fallback_details()
 
-def get_budget_meal_ideas(budget_str, preference="any", max_time="any"):
+def get_budget_meal_ideas(budget_str, preference="any", max_time="any", max_ingredients="any"):
     """
     Uses Gemini to suggest 6 cheap meal ideas that roughly fit the given budget and dietary preference.
     Returns a strict JSON array of dicts: [{"name": "Meal Name", "time": "20 mins"}]
@@ -173,11 +173,13 @@ def get_budget_meal_ideas(budget_str, preference="any", max_time="any"):
         
     pref_instruction = f"The user prefers {preference} meals." if preference != "any" else ""
     time_instruction = f"The maximum preparation time should be {max_time} minutes." if max_time != "any" else ""
+    ingredients_instruction = f"The meal MUST use a maximum of {max_ingredients} ingredients." if max_ingredients != "any" else ""
     
     prompt = f"""
     You are a strict, ultra-frugal budget culinary assistant. The user has a STRICT maximum budget of {budget_str}.
     {pref_instruction}
     {time_instruction}
+    {ingredients_instruction}
 
     You MUST provide exactly 9 distinct, radically cheap meal ideas where the TOTAL COMBINED COST of all ingredients is GUARANTEED to be UNDER {budget_str}.
     
@@ -190,6 +192,7 @@ def get_budget_meal_ideas(budget_str, preference="any", max_time="any"):
     - Generate a DIVERSE list of EXACTLY 9 items every time. Do not stop early.
     - Avoid common recipes like 'Pasta with Tomato Sauce' unless it's the only option. 
     - If the user specified 'Quick', focus on meals under 15 minutes.
+    - {ingredients_instruction}
     - MAKE SURE EVERY single object has the "ingredients_range" property.
     
     Do NOT return any markdown formatting, just the raw JSON array containing 9 objects.
