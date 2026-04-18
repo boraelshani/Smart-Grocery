@@ -65,10 +65,83 @@ def generate_recipe_plan():
         # We will keep all results so the UI can list them neutrally
         final_results = matched_results
 
+        # --- BASKET-LEVEL OPTIMIZATION (Convenience Threshold) ---
+        # 1. Determine the primary store for this recipe basket
+        store_counts = {}
+        for item in final_results:
+            matches = item.get('matches', [])
+            if matches:
+                # The first match is the absolute cheapest for this ingredient
+                cheapest_obj = matches[0].get('cheapest', {})
+                s = cheapest_obj.get('store')
+                if s:
+                    store_counts[s] = store_counts.get(s, 0) + 1
+        
+        primary_store = None
+        if store_counts:
+            # Find the store with the most items
+            primary_store = max(store_counts, key=store_counts.get)
+            
+        CONVENIENCE_THRESHOLD = 0.50
+
         # Structure the results exactly how the UI expects them
         formatted_results = []
         for item in final_results:
-            matched_product = item['matches'][0] if item.get('matches') else None
+            matches = item.get('matches', [])
+            matched_product = matches[0] if matches else None
+            
+            # 2. Check if we should override with a convenience pick from the primary store
+            if matched_product and primary_store:
+                cheapest_obj = matched_product.get('cheapest', {})
+                current_store = cheapest_obj.get('store')
+                current_price = float(cheapest_obj.get('price', 0))
+                
+                if current_store and current_store != primary_store:
+                    found_convenience_pick = False
+                    
+                    # Look through all matched products for this ingredient
+                    for alt_match in matches:
+                        if found_convenience_pick:
+                            break
+                            
+                        # Case A: Same product is sold at the primary store
+                        for st in alt_match.get('stores', []):
+                            s_name = st.get('store', st.get('name'))
+                            s_price = st.get('price')
+                            
+                            if s_name == primary_store and s_price is not None:
+                                price_diff = float(s_price) - current_price
+                                if 0 <= price_diff <= CONVENIENCE_THRESHOLD:
+                                    matched_product = alt_match.copy()
+                                    matched_product['cheapest'] = {
+                                        'store': primary_store,
+                                        'price': float(s_price),
+                                        'convenience_pick': True,
+                                        'original_cheapest_store': current_store,
+                                        'original_cheapest_price': current_price
+                                    }
+                                    found_convenience_pick = True
+                                    break
+                                    
+                        # Case B: Primary store's cheapest overall product is different but within threshold
+                        if not found_convenience_pick:
+                            alt_cheapest = alt_match.get('cheapest', {})
+                            alt_store = alt_cheapest.get('store')
+                            alt_price = float(alt_cheapest.get('price', 0))
+                            
+                            if alt_store == primary_store:
+                                price_diff = alt_price - current_price
+                                if 0 <= price_diff <= CONVENIENCE_THRESHOLD:
+                                    matched_product = alt_match.copy()
+                                    matched_product['cheapest'] = {
+                                        'store': primary_store,
+                                        'price': alt_price,
+                                        'convenience_pick': True,
+                                        'original_cheapest_store': current_store,
+                                        'original_cheapest_price': current_price
+                                    }
+                                    found_convenience_pick = True
+
             formatted_results.append({
                 'original': item.get('original_request', ''),
                 'cleaned': item.get('search_term', ''),
