@@ -154,9 +154,18 @@
   </div>
 </div>
 
+<script id="savedRecipesData" type="application/json">
+{{ saved_recipes | tojson | safe }}
+</script>
+
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    const rawRecipes = {{ saved_recipes | tojson | safe }};
+    let rawRecipes = [];
+    try {
+        rawRecipes = JSON.parse(document.getElementById('savedRecipesData').textContent || '[]');
+    } catch (e) {
+        console.error("Could not parse saved recipes data", e);
+    }
     let displayRecipes = [...rawRecipes];
     let currentIndex = 0;
 
