@@ -180,13 +180,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderBook() {
         if (displayRecipes.length === 0) {
-            if(bookShadow) bookShadow.style.display = 'none';
-            if(emptyState) emptyState.style.display = 'block';
+            if(bookShadow) bookShadow.style.display = 'block';
+            if(emptyState) emptyState.style.display = 'none';
             const indicator = document.getElementById('bookPageIndicator');
-            if(indicator) indicator.textContent = '';
+            if(indicator) indicator.textContent = 'Page 0 of 0';
 
-            if(leftPage) leftPage.innerHTML = '';
-            if(rightPage) rightPage.innerHTML = '';
+            if(leftPage) leftPage.innerHTML = '<div class="d-flex flex-column justify-content-center align-items-center text-muted text-center" style="height: 100%; min-height: 250px;"><i class="bi bi-journal-x" style="font-size: 3.5rem; color: #cbd5e1;"></i><h4 class="mt-3 fw-bold" style="color: #64748b;">No Recipes Found</h4><p class="small">You do not have any recipes matching this search.</p></div>';
+            if(rightPage) rightPage.innerHTML = '<div class="d-flex flex-column justify-content-center align-items-center text-muted text-center" style="height: 100%; min-height: 250px;"><i class="bi bi-egg-fried" style="font-size: 3.5rem; color: #cbd5e1;"></i><h4 class="mt-3 fw-bold" style="color: #64748b;">Start Cooking!</h4><p class="small">Use the Planner above to generate and save meals here.</p></div>';
+            
+            if(prevBtn) prevBtn.style.visibility = 'hidden';
+            if(nextBtn) nextBtn.style.visibility = 'hidden';
             return;
         }
         
