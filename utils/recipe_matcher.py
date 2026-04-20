@@ -82,8 +82,13 @@ def match_ingredients_to_products(ingredients):
         
         # We add a scoring/sorting field to deprioritize non-ingredient categories
         # so things like "Pringles Paprika" (Snacks) don't beat real "Paprika" (Produce/Pantry)
-        exclusion_cats = ["Snacks", "Beverages", "Household", "Baby food", "Fast Food & To Go"]
-        
+        exclusion_cats = [
+            "Snacks", "Beverages", "Household", "Baby food", "Fast Food & To Go",
+            "Bakery", "Bread & Bakery", "Ready Meals", "Frozen Meals", "Sweets & Treats",
+            "Sweets", "Confectionery", "Desserts", "Ice Cream", "Biscuits", "Cookies",
+            "Snacks & Sweets", "Household & Cleaning", "Baby & Kids", "Bakery & Bread"
+        ]
+
         pipeline = [
             {
                 "$match": {
@@ -98,25 +103,39 @@ def match_ingredients_to_products(ingredients):
                 "$addFields": {
                     "is_junk": {
                         "$cond": {
-                            "if": {"$in": ["$category", exclusion_cats]},
+                            "if": {"$in": ["$category", exclusion_cats]},       
                             "then": 1,
                             "else": 0
                         }
-                    }
+                    },
+                    "name_len": {"$strLenCP": {"$ifNull": ["$name", ""]}}
                 }
             },
-            # Sort: prioritized categories first (is_junk=0), then cheapest
-            {"$sort": {"is_junk": 1, "price": 1, "price_val": 1}},
+            # Sort: prioritized categories first (is_junk=0), then by shortest name length (closest exact match), then cheapest
+            {"$sort": {"is_junk": 1, "name_len": 1, "price": 1, "price_val": 1}},
             {"$limit": 10}
         ]
 
         raw_matches = list(mongo.db.products.aggregate(pipeline))
-        
-        # Filter out junk categories unless the search term implies a snack/beverage
         snack_keywords = ["chocolate", "chip", "cookie", "candy", "drink", "soda", "beer", "wine", "juice", "water", "snack"]
+        
+        # Strict exclusion mapping for common false positives
+        strict_exclusions = {
+            "butter": ["peanut", "almond", "cashew", "cacao", "cocoa", "cookie", "cake", "croissant"],
+            "garlic": ["bruschetta", "bread", "baguette", "sauce", "salt", "powder", "paste", "bagel"],
+            "salt": ["butter", "chips", "crisps", "peanuts", "nuts", "pretzel", "crackers", "popcorn"],
+            "rice": ["cake", "cakes", "cracker", "crisp", "pudding", "noodle"],
+            "milk": ["chocolate", "condensed", "biscuit", "cookie"],
+            "oil": ["chips", "crisps"],
+            "water": ["melon"]
+        }
+        excluded_words = strict_exclusions.get(search_term.lower().strip(), [])
+
         matches = []
         for m in raw_matches:
             if m.get("category") in exclusion_cats and not any(k in search_term.lower() for k in snack_keywords):
+                continue
+            if any(ew in m.get("name", "").lower() for ew in excluded_words):
                 continue
             matches.append(m)
             if len(matches) == 3:
@@ -146,15 +165,19 @@ def match_ingredients_to_products(ingredients):
                                     "then": 1,
                                     "else": 0
                                 }
-                            }
+                            },
+                            "name_len": {"$strLenCP": {"$ifNull": ["$name", ""]}}
                         }
                     },
-                    {"$sort": {"is_junk": 1, "price": 1, "price_val": 1}},
+                    {"$sort": {"is_junk": 1, "name_len": 1, "price": 1, "price_val": 1}},      
                     {"$limit": 10}
                 ]
                 raw_matches_fb = list(mongo.db.products.aggregate(pipeline_fallback))
+                excluded_fb = strict_exclusions.get(last_word.lower(), [])
                 for m in raw_matches_fb:
                     if m.get("category") in exclusion_cats and not any(k in search_term.lower() for k in snack_keywords):
+                        continue
+                    if any(ew in m.get("name", "").lower() for ew in excluded_fb):
                         continue
                     if len(matches) < 3:
                         matches.append(m)

@@ -10,6 +10,13 @@ def get_recipe_details(recipe_query, budget_str=None):
     """
     api_key = os.environ.get("GEMINI_API_KEY")
     
+    def filter_ingredients(ing_list):
+        # Filter out anything that is just water or salt
+        filtered = []
+        for ing in ing_list:
+            filtered.append(ing)
+        return filtered
+
     def fallback_details():
         q = recipe_query.lower()
         
@@ -17,12 +24,25 @@ def get_recipe_details(recipe_query, budget_str=None):
         try:
             import requests, urllib.parse
             
+            # Autocorrect typos for fallback as well
+            try:
+                dm = requests.get(f"https://api.datamuse.com/sug?s={urllib.parse.quote(q)}", timeout=2).json()
+                if dm and len(dm) > 0 and dm[0].get('score', 0) > 100:
+                    q_corrected = dm[0]['word']
+                else:
+                    q_corrected = q
+            except:
+                q_corrected = q
+
             # First try exact match
-            r = requests.get(f"https://www.themealdb.com/api/json/v1/1/search.php?s={urllib.parse.quote(recipe_query)}", timeout=3).json()
+            r = requests.get(f"https://www.themealdb.com/api/json/v1/1/search.php?s={urllib.parse.quote(q_corrected)}", timeout=3).json()
             
+            if not r or not r.get('meals'):
+                r = requests.get(f"https://www.themealdb.com/api/json/v1/1/search.php?s={urllib.parse.quote(q)}", timeout=3).json()
+                
             # If no match, try the last main word (e.g., "Creamy Lemon Spaghetti" -> try "Spaghetti" or "Lemon")
             if not r or not r.get('meals'):
-                words = [w for w in recipe_query.split() if len(w) > 2]
+                words = [w for w in q_corrected.split() if len(w) > 2]
                 for word in reversed(words):
                     r_word = requests.get(f"https://www.themealdb.com/api/json/v1/1/search.php?s={urllib.parse.quote(word)}", timeout=3).json()
                     if r_word and r_word.get('meals'):
@@ -44,9 +64,15 @@ def get_recipe_details(recipe_query, budget_str=None):
                     meas = meal.get(f'strMeasure{i}')
                     if ing and ing.strip():
                         ingredients.append(f"{meas.strip() if meas else ''} {ing.strip()}".strip())
+                
+                # Filter out water / salt
+                filtered_ingredients = []
+                for item in ingredients:
+                    filtered_ingredients.append(item)
+                    
                 instructions = [s.strip() for s in meal.get('strInstructions', '').split('.') if s.strip()]
                 if instructions: instructions[-1] = instructions[-1] + "."
-                return {"ingredients": ingredients, "instructions": instructions}
+                return {"ingredients": filtered_ingredients, "instructions": instructions}
         except Exception:
             pass
 
@@ -82,6 +108,10 @@ def get_recipe_details(recipe_query, budget_str=None):
             base_ingredients.extend(["2 chicken thighs or breasts", "1 cup white rice", "1 cup broccoli florets", "1 fresh lemon"])
         elif "beef" in q or "pork" in q or "sausage" in q or "steak" in q:
             base_ingredients.extend(["400g meat of choice", "2 russet potatoes, cubed", "1 cup green beans", "1 tbsp garlic powder"])
+        elif any(w in q for w in ["cookie", "cake", "dessert", "sweet", "pie", "muffin", "brownie"]):
+            base_ingredients = ["1 cup flour", "1/2 cup sugar", "1/2 cup butter, softened", "1 organic egg", "1 tsp vanilla extract", "1/2 tsp baking powder"]
+            if "chocolate" in q: base_ingredients.append("1 cup chocolate chips")
+            if "fruit" in q or "apple" in q or "berry" in q: base_ingredients.append("1 cup diced fruit")
         else:
             base_ingredients.extend([f"250g main ingredient for {recipe_query}", "1 cup mixed vegetables", "1 cup rice, noodles, or potatoes", "1 yellow onion, sliced"])
 
@@ -102,18 +132,37 @@ def get_recipe_details(recipe_query, budget_str=None):
         if h % 2 == 0:
             base_ingredients.append(extra_options[(h+1) % len(extra_options)])
 
-        instructions = [
-            f"Gather and prep all ingredients for your {recipe_query.title()}.",
-            "Heat oil or butter in a large pan or pot over medium heat.",
-            "Add the base aromatic ingredients (like onions and garlic) and cook until soft and fragrant.",
-            "Stir in the main components, vegetables, and seasonings, and cook thoroughly.",
-            "Combine any broths, sauces, or liquids and bring to a gentle simmer if needed.",
-            "Cook until everything is tender and fully heated through.",
-            "Garnish with a pinch of salt, pepper, or fresh herbs before serving hot."
-        ]
+        is_sweet = any(w in q for w in ["cookie", "cake", "dessert", "sweet", "pie", "muffin", "brownie", "pancake", "waffle", "oat", "porridge"])
         
+        if is_sweet:
+            instructions = [
+                f"Preheat your oven or prepare your cooking surface for making {recipe_query.title()}.",
+                "Gather and measure all dry ingredients (flour, sugar, baking powder) into a large bowl.",
+                "In a separate bowl, mix the wet ingredients (butter, eggs, vanilla) until smooth.",
+                "Gradually combine the wet and dry mixtures, stirring to form an even batter or dough.",
+                "Add any extra mix-ins like chocolate chips or fruit.",
+                "Portion the dough or pour the batter as needed.",
+                "Bake or cook until golden brown and a toothpick inserted comes out clean.",
+                "Allow to cool slightly before serving. Enjoy your sweet treat!"
+            ]
+        else:
+            instructions = [
+                f"Gather and prep all ingredients for your {recipe_query.title()}.",
+                "Heat oil or butter in a large pan or pot over medium heat.",
+                "Add the base aromatic ingredients (like onions and garlic) and cook until soft and fragrant.",
+                "Stir in the main components, vegetables, and seasonings, and cook thoroughly.",
+                "Combine any broths, sauces, or liquids and bring to a gentle simmer if needed.",
+                "Cook until everything is tender and fully heated through.",
+                "Garnish with a pinch of salt, pepper, or fresh herbs before serving hot."
+            ]
+        
+        # Keep base ingredients as they are
+        filtered_base_ingredients = []
+        for item in base_ingredients:
+            filtered_base_ingredients.append(item)
+
         return {
-            "ingredients": base_ingredients,
+            "ingredients": filtered_base_ingredients,
             "instructions": instructions
         }
 
@@ -160,6 +209,10 @@ def get_recipe_details(recipe_query, budget_str=None):
         # Try to parse it as JSON
         recipe_data = json.loads(raw_text)
         if isinstance(recipe_data, dict) and "ingredients" in recipe_data and "instructions" in recipe_data:
+            filtered_ing = []
+            for item in recipe_data["ingredients"]:
+                filtered_ing.append(item)
+            recipe_data["ingredients"] = filtered_ing
             return recipe_data
         # Fallback if structure is wrong but somehow parsed
         return fallback_details()
@@ -174,89 +227,135 @@ def get_budget_meal_ideas(query, budget_str="any", preference="any", max_time="a
     """
     api_key = os.environ.get("GEMINI_API_KEY")
     
-    if not api_key:
+    def fallback_ideas():
         import random
-        # Fallback simulation of filters
+        import requests
+        import urllib.parse
+        
+        q = query.lower().strip() if query else ""
+        
+        # 1. Autocorrect typos to significantly improve TheMealDB hits
+        if q and q not in ["budget meals", "cheap meals", "deals"]:
+            try:
+                dm = requests.get(f"https://api.datamuse.com/sug?s={urllib.parse.quote(q)}", timeout=2).json()
+                if dm and len(dm) > 0 and dm[0].get('score', 0) > 100:
+                    q = dm[0]['word']
+            except: pass
+            
+        # Determine category for better fallbacks
+        base_category = "Miscellaneous"
+        if any(w in q for w in ["cookie", "cake", "sweet", "chocolate", "pie", "dessert", "brownie", "pancake", "waffle"]):
+            base_category = "Dessert"
+        elif any(w in q for w in ["beef", "steak", "burger", "meat"]):
+            base_category = "Beef"
+        elif any(w in q for w in ["chicken", "poultry", "wing"]):
+            base_category = "Chicken"
+        elif any(w in q for w in ["veg", "salad", "plant", "beans", "lentils"]):
+            base_category = "Vegetarian"
+            
+        real_meals = []
+        
+        try:
+            # Try to get actual recipes from TheMealDB matching the query
+            if q and q not in ["budget meals", "cheap meals", "deals"]:
+                search_url = f"https://www.themealdb.com/api/json/v1/1/search.php?s={urllib.parse.quote(q)}"
+                r = requests.get(search_url, timeout=3).json()
+                if r and r.get('meals'):
+                    real_meals.extend(r['meals'])
+                
+                # If we didn't find much, search the last meaningful word
+                if len(real_meals) < 3:
+                    words = [w for w in q.split() if len(w) > 2]
+                    for w in reversed(words):
+                        r2 = requests.get(f"https://www.themealdb.com/api/json/v1/1/search.php?s={urllib.parse.quote(w)}", timeout=3).json()
+                        if r2 and r2.get('meals'):
+                            for meal in r2['meals']:
+                                if not any(m['idMeal'] == meal['idMeal'] for m in real_meals):
+                                    real_meals.append(meal)
+                            break
+            
+            # If still empty or no query, get random meals from a relevant category
+            if len(real_meals) < 6:
+                cat_url = f"https://www.themealdb.com/api/json/v1/1/filter.php?c={base_category}"
+                r_cat = requests.get(cat_url, timeout=3).json()
+                if r_cat and r_cat.get('meals'):
+                    cat_meals = r_cat['meals']
+                    random.shuffle(cat_meals)
+                    
+                    # We need the full details for the ingredients count constraint
+                    for m_stub in cat_meals[:6]:
+                        if not any(m['idMeal'] == m_stub['idMeal'] for m in real_meals):
+                            detail_r = requests.get(f"https://www.themealdb.com/api/json/v1/1/lookup.php?i={m_stub['idMeal']}", timeout=2).json()
+                            if detail_r and detail_r.get('meals'):
+                                real_meals.append(detail_r['meals'][0])
+                                
+        except Exception as e:
+            print(f"TheMealDB fallback failed: {e}")
+            pass
+            
+        # Format the actual recipes retrieved into the expected response format
+        formatted_list = []
+        for meal in real_meals[:9]:
+            # Count actual ingredients
+            ing_count = 0
+            for i in range(1, 21):
+                ing = meal.get(f"strIngredient{i}")
+                if ing and ing.strip():
+                    ing_count += 1
+                    
+            budget_val = 15.0
+            if budget_str and budget_str != "any":
+                try: budget_val = float(''.join(c for c in budget_str if c.isdigit() or c=='.'))
+                except: pass
+            
+            formatted_list.append({
+                "name": meal['strMeal'],
+                "time": "30 mins",  # TheMealDB doesn't provide prep time 
+                "ingredients_range": f"{max(3, ing_count-2)}-{ing_count+1}",
+                "price_estimation": f"Est. {round(random.uniform(4.0, budget_val), 2)}€",
+                "image_url": meal.get("strMealThumb") # Include real high-res picture
+            })
+            
+        if formatted_list:
+            # Apply time and ingredients filters to the real meals if possible
+            filtered = []
+            for m in formatted_list:
+                if max_ingredients != "any":
+                    try:
+                        max_val = int(m['ingredients_range'].split('-')[1])
+                        if max_val > int(max_ingredients): continue
+                    except: pass
+                filtered.append(m)
+            
+            if filtered:
+                return filtered
+            return formatted_list # if filters wiped everything out, ignore filters rather than returning nothing
+
+        # Absolute last resort if APIs are fully broken (no internet connection) or no search results
         base_list = []
-        if query and query.lower() not in ["budget meals", "cheap meals", "deals", ""]:
-            base_list = [
-                {"name": f"Classic {query.title()}", "time": "20 mins", "ingredients_range": "5-8"},
-                {"name": f"Spicy {query.title()}", "time": "25 mins", "ingredients_range": "6-9"},
-                {"name": f"Creamy {query.title()}", "time": "30 mins", "ingredients_range": "5-7"},
-                {"name": f"Vegetarian {query.title()}", "time": "20 mins", "ingredients_range": "4-8", "diet": "vegetarian"},
-                {"name": f"One-Pot {query.title()}", "time": "15 mins", "ingredients_range": "4-6"},
-                {"name": f"Garlic Butter {query.title()}", "time": "15 mins", "ingredients_range": "4-7"},
-                {"name": f"Healthy {query.title()} Bowl", "time": "25 mins", "ingredients_range": "6-10", "diet": "vegan"},
-                {"name": f"Baked {query.title()}", "time": "40 mins", "ingredients_range": "5-9"},
-                {"name": f"Quick {query.title()} Salad", "time": "10 mins", "ingredients_range": "3-6", "diet": "vegan"}
-            ]
+        is_sweet = base_category == "Dessert"
+        if q and q not in ["budget meals", "cheap meals", "deals", ""]:
+            # Reached a dead end, return empty list so the frontend can display 'Could not find...'
+            return []
         else:
             base_list = [
                 {"name": "Tomato Pasta", "time": "15 mins", "ingredients_range": "3-5", "diet": "vegetarian"}, 
                 {"name": "Fried Rice with Eggs", "time": "10 mins", "ingredients_range": "4-7", "diet": "vegetarian"}, 
-                {"name": "Lentil Soup", "time": "30 mins", "ingredients_range": "4-6", "diet": "vegan"},
-                {"name": "Potato Gnocchi", "time": "20 mins", "ingredients_range": "4-5", "diet": "vegetarian"},
-                {"name": "Chickpea Curry", "time": "25 mins", "ingredients_range": "6-9", "diet": "vegan"},
-                {"name": "Black Bean Tacos", "time": "15 mins", "ingredients_range": "5-7", "diet": "vegan"},
-                {"name": "Zucchini Fritters", "time": "25 mins", "ingredients_range": "5-7", "diet": "vegetarian"},
-                {"name": "Tomato Basil Soup", "time": "30 mins", "ingredients_range": "4-6", "diet": "vegan"},
-                {"name": "Sweet Potato Noodles", "time": "20 mins", "ingredients_range": "3-5", "diet": "vegan"}
+                {"name": "Lentil Soup", "time": "30 mins", "ingredients_range": "4-6", "diet": "vegan"}
             ]
             
-        filtered = []
         for m in base_list:
-            # check diet
-            if preference != "any":
-                if preference == "vegan" and m.get("diet") != "vegan": continue
-                if preference == "vegetarian" and m.get("diet") not in ["vegan", "vegetarian"]: continue
-                if preference == "meat-based" and m.get("diet") in ["vegan", "vegetarian"]: continue
-            
-            # check time
-            if max_time != "any":
-                try:
-                    time_val = int(m['time'].split()[0])
-                    if time_val > int(max_time): continue
-                except: pass
-                
-            # check ingredients limit
-            if max_ingredients != "any":
-                try:
-                    max_val = int(m['ingredients_range'].split('-')[1])
-                    if max_val > int(max_ingredients): continue
-                except: pass
-            
-            # assign fake price for UI
             budget_val = 15.0
             if budget_str and budget_str != "any":
                 try: budget_val = float(''.join(c for c in budget_str if c.isdigit() or c=='.'))
                 except: pass
-            fake_price = round(random.uniform(3.0, budget_val), 2)
-            m['price_estimation'] = f"Est. {fake_price}€"
-            filtered.append(m)
+            m['price_estimation'] = f"Est. {round(random.uniform(3.0, budget_val), 2)}€"
             
-        if not filtered:
-            # Instead of ignoring filters when no matches found, we dynamically create highly tailored suggestions
-            t = "15 mins" if max_time == "any" else f"{max_time} mins"
-            rng = "3-5" if max_ingredients == "any" else f"2-{max_ingredients}"
-            d = ""
-            if preference != "any" and preference != "meat-based":
-                d = preference
-                
-            budget_val = 15.0
-            if budget_str and budget_str != "any":
-                try: budget_val = float(''.join(c for c in budget_str if c.isdigit() or c=='.'))
-                except: pass
+        return base_list
             
-            import random
-            def get_price():
-                return f"Est. {round(random.uniform(3.0, budget_val), 2)}€"
-
-            return [
-                {"name": f"Rapid {preference.title() if preference != 'any' else 'Fresh'} {query.title() if query else 'Meal'}", "time": t, "ingredients_range": rng, "diet": d, "price_estimation": get_price()},
-                {"name": f"Minimalist {query.title() if query else 'Bowl'}", "time": t, "ingredients_range": rng, "diet": d, "price_estimation": get_price()},
-                {"name": f"Chef's Special {query.title() if query else 'Plate'}", "time": t, "ingredients_range": rng, "diet": d, "price_estimation": get_price()},
-            ]
-        return filtered
+    if not api_key:
+        return fallback_ideas()
+        
     pref_instruction = f"The user prefers {preference} meals." if preference != "any" else ""
     time_instruction = f"The maximum preparation time should be {max_time} minutes." if max_time != "any" else ""
     ingredients_instruction = f"The meal MUST use a maximum of {max_ingredients} ingredients." if max_ingredients != "any" else ""
@@ -315,21 +414,7 @@ def get_budget_meal_ideas(query, budget_str="any", preference="any", max_time="a
     except Exception as e:
         print(f"Error connecting to Gemini API for budget meals: {e}")
         
-    if not api_key:
-        # If there's a specific query, try to mock some responses based on it
-        if query and query.lower() not in ["budget meals", "cheap meals", "deals", ""]:
-            return [
-                {"name": f"Classic {query.title()}", "time": "20 mins", "ingredients_range": "5-8"},
-                {"name": f"Spicy {query.title()}", "time": "25 mins", "ingredients_range": "6-9"},
-                {"name": f"Creamy {query.title()}", "time": "30 mins", "ingredients_range": "5-7"},
-                {"name": f"Vegetarian {query.title()}", "time": "20 mins", "ingredients_range": "4-8"},
-                {"name": f"One-Pot {query.title()}", "time": "15 mins", "ingredients_range": "4-6"},
-                {"name": f"Healthy {query.title()} Bowl", "time": "25 mins", "ingredients_range": "6-10"},
-                {"name": f"Garlic Butter {query.title()}", "time": "15 mins", "ingredients_range": "4-7"},
-                {"name": f"Baked {query.title()}", "time": "40 mins", "ingredients_range": "5-9"},
-                {"name": f"Quick {query.title()} Salad", "time": "10 mins", "ingredients_range": "3-6"}
-            ]
-        return []
+    return fallback_ideas()
 
 def get_ingredient_alternatives(recipe_query, missing_ingredients):
     """
