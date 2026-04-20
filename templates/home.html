@@ -752,7 +752,7 @@
     <div class="container position-relative py-5" style="z-index: 2;"> <!-- Content centered over moving shapes -->
       <div class="row align-items-center py-4">
         <!-- Text & Search Column (Left) -->
-        <div class="col-lg-6 text-center text-lg-start mb-5 mb-lg-0 pe-lg-5">
+        <div class="col-lg-6 text-center text-lg-start mb-5 mb-lg-0 ps-lg-5">
           
           <h1 class="display-3 fw-bold text-white mb-3" style="line-height: 1.1; letter-spacing: -0.04em;">Shop Smarter<br><span style="color: #fce7f3;">Save Bigger</span></h1> <!-- Bold value proposition heading -->
           <p class="lead mb-5 opacity-90 text-white fw-light" style="max-width: 500px; margin: 0 auto 0 0 !important;text-align: inherit;">The ultimate destination to track prices, find exclusive coupons, and coordinate your grocery trips across all major retailers.</p> <!-- Contextual background for the app's purpose -->
@@ -763,7 +763,7 @@
               <input type="text" placeholder="Search brands, products, or stores..." id="hero-search" autocomplete="off" class="border-0 shadow-none bg-transparent" style="outline: none; box-shadow: none;"> <!-- Interactive user query field -->
             </div>
             <button onclick="handleHeroSearch()" class="me-1 px-4 text-white shadow" style="background:#8b5cf6;"> <!-- Trigger for JavaScript search handler -->
-              Explore Deals
+              Compare
             </button>
             <!-- The live results absolute container -->
             <div class="search-results-dropdown text-start shadow-lg border-0" id="search-results">
@@ -1166,9 +1166,7 @@
           <h2 class="section-title"><i class="bi bi-shop-window text-premium-purple me-2"></i>Store Highlights: {{ store_name }}</h2> <!-- Dynamic retailer Title -->
           <p class="section-subtitle">Fresh highlights and trending essentials from your selected shop</p> <!-- Description -->
         </div>
-        <a href="{{ url_for('main.store_products_page', store_name=store_name) }}" class="view-all-btn"> <!-- Link to full store stock -->
-          Explore Catalog <i class="bi bi-arrow-right ms-1"></i>
-        </a>
+        
       </div>
       <div class="scroll-container"> <!-- Interaction wrapper -->
         <button class="scroll-arrow left" onclick="scrollSection('store-products', 'left')" aria-label="Scroll left"> <!-- Highlight Left Nav -->
@@ -1346,7 +1344,7 @@
           <h6 class="fw-bold mb-3">Quick Links</h6> <!-- Sub-header -->
           <ul class="list-unstyled"> <!-- Navigation List -->
             <li class="mb-2"><a href="{{ url_for('main.home') }}" class="text-white-50 text-decoration-none">Home</a></li>
-            <li class="mb-2"><a href="{{ url_for('main.stores_page') }}" class="text-white-50 text-decoration-none">Stores</a></li>
+            
             <li class="mb-2"><a href="{{ url_for('main.featured_deals_page') }}" class="text-white-50 text-decoration-none">Deals</a></li>
             <li class="mb-2"><a href="{{ url_for('main.compare_prices') }}" class="text-white-50 text-decoration-none">Compare</a></li>
           </ul>

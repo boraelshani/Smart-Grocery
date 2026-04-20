@@ -315,7 +315,7 @@ def admin_save_brand():
     ok, res = _require_admin(); db = get_db()
     en, de = _localized_pair(request.form.get("name_en") or request.form.get("name"), request.form.get("name_de"))
     bid = (request.form.get("brandId") or "").strip() or _id("brand")
-    payload = {"brandId": bid, "name": en, "name_en": en, "name_de": de, "logoUrl": (request.form.get("logoUrl") or "").strip(), "website": (request.form.get("website") or "").strip(), "updatedAt": _now_utc()}
+    payload = {"brandId": bid, "name": en, "name_en": en, "name_de": de, "image_url": (request.form.get("image_url") or "").strip(), "website": (request.form.get("website") or "").strip(), "updatedAt": _now_utc()}
     if not payload["name_en"]: flash("Name required", "error"); return _redirect_admin("admin.admin_brands_page")
     db.brands.update_one({"brandId": bid}, {"$set": payload, "$setOnInsert": {"createdAt": _now_utc()}}, upsert=True)
     flash("Brand saved", "success"); return _redirect_admin("admin.admin_brands_page", edit=bid)
@@ -325,7 +325,7 @@ def admin_save_category():
     ok, res = _require_admin(); db = get_db()
     cid = (request.form.get("categoryId") or "").strip() or _id("cat")
     en, de = _localized_pair(request.form.get("name_en"), request.form.get("name_de"))
-    payload = {"categoryId": cid, "name_en": en, "name_de": de, "slug": (request.form.get("slug") or "").strip(), "parentId": (request.form.get("parentId") or "").strip() or None, "updatedAt": _now_utc()}
+    payload = {"categoryId": cid, "name_en": en, "name_de": de, "slug": (request.form.get("slug") or "").strip(), "image_url": (request.form.get("image_url") or "").strip(), "parentId": (request.form.get("parentId") or "").strip() or None, "updatedAt": _now_utc()}
     if not payload["slug"]: payload["slug"] = _slugify(en or de) or cid
     if not payload["name_en"]: flash("Name required", "error"); return _redirect_admin("admin.admin_categories_page")
     db.categories.update_one({"categoryId": cid}, {"$set": payload, "$setOnInsert": {"createdAt": _now_utc()}}, upsert=True)

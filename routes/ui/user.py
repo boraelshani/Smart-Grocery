@@ -6,15 +6,18 @@ from models.multibuy_offers_model import multibuy_offers_model
 from models.quantity_discounts_model import quantity_discounts_model
 from utils import helpers
 from bson.decimal128 import Decimal128
+from models.users_model import get_user_lists, get_user_by_email, update_user
+from models.favorites_model import favorites_model
+
 
 @main_bp.route('/shopping-list')
 def shopping_list():
     """Display and manage the user's shopping lists."""
-    user_email = session.get('user')
+    user_email = helpers.get_user_email()
     if not user_email:
         return redirect(url_for('auth.login'))
 
-    from models.users_model import get_user_lists, get_user_by_email
+    
     lists_data = get_user_lists(user_email) or {'lists': [], 'active_list_id': None}
     all_lists = lists_data.get('lists', [])
     active_list_id = lists_data.get('active_list_id')
@@ -41,30 +44,30 @@ def shopping_list():
 
 @main_bp.route('/profile')
 def profile():
-    user_email = session.get('user')
+    user_email = helpers.get_user_email()
     if not user_email: return redirect(url_for('auth.login'))
-    from models.users_model import get_user_by_email
+    
     user_data = get_user_by_email(user_email)
     return render_template('profile.html', user_data=helpers.sanitize_mongo_doc(user_data))
 
 @main_bp.route('/profile/favorites')
 def profile_favorites():
-    user_email = session.get('user')
+    user_email = helpers.get_user_email()
     if not user_email: return redirect(url_for('auth.login'))
     
-    from models.users_model import get_user_by_email
+    
     user_data = get_user_by_email(user_email)
     
-    from models.favorites_model import favorites_model
+    
     favs = favorites_model.get_user_favorites(user_email)
     return render_template('account_favorites.html', user_data=helpers.sanitize_mongo_doc(user_data), favorites=helpers.sanitize_mongo_doc(favs), account_section='favorites')
 
 @main_bp.route('/profile/settings', methods=['GET', 'POST'])
 def profile_settings():
-    user_email = session.get('user')
+    user_email = helpers.get_user_email()
     if not user_email: return redirect(url_for('auth.login'))
     
-    from models.users_model import get_user_by_email, update_user
+    
     
     if request.method == 'POST':
         update_data = {
@@ -83,10 +86,10 @@ def profile_settings():
 
 @main_bp.route('/profile/preferences')
 def profile_preferences():
-    user_email = session.get('user')
+    user_email = helpers.get_user_email()
     if not user_email: return redirect(url_for('auth.login'))
     
-    from models.users_model import get_user_by_email
+    
     user_data = get_user_by_email(user_email)
     
     return render_template('account_preferences.html', user_data=helpers.sanitize_mongo_doc(user_data), account_section='preferences')
@@ -96,7 +99,7 @@ def update_stores():
     user_email = helpers.get_user_email()
     if not user_email: return redirect(url_for('auth.login'))
     selected_stores = request.form.getlist('stores')
-    from models.users_model import update_user
+    
     update_user(user_email, {'preferred_stores': selected_stores})
     return redirect(url_for('main.profile'))
 
@@ -105,6 +108,6 @@ def update_categories():
     user_email = helpers.get_user_email()
     if not user_email: return redirect(url_for('auth.login'))
     selected_categories = request.form.getlist('categories')
-    from models.users_model import update_user
+    
     update_user(user_email, {'preferred_categories': selected_categories})
     return redirect(url_for('main.profile'))

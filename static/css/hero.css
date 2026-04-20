@@ -24,7 +24,7 @@ GOAL: Visuals for the Landing Page.
 /* Standard Hero */
 .hero {
   background: linear-gradient(135deg, #f3e8ff, #ede9fe);
-  padding: 80px 0;
+  padding: 130px 0 60px;
   text-align: center;
 }
 .hero h1 {
@@ -45,7 +45,7 @@ GOAL: Visuals for the Landing Page.
   background-size: 400% 400%;
   animation: gradientBG 15s ease infinite;
   margin-top: 0;
-  padding-top: 8rem;
+  padding-top: 11rem;
   padding-bottom: 9rem;
   position: relative;
   overflow: hidden;

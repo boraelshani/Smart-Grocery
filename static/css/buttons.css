@@ -146,3 +146,45 @@ GOAL: Standardized button styles, gradients, and hover effects.
 .btn.rounded-circle i.bi-heart-fill { color: #dc2626 !important; }
 .btn-favorite.active i { color: #ff4757 !important; }
 
+
+/* Refined Report Button Style */
+.js-report-btn {
+    border-radius: 20px !important;
+    font-weight: 500 !important;
+    font-size: 0.75rem !important;
+    border: 1px solid #e2e8f0 !important;
+    color: #64748b !important;
+    background-color: transparent !important;
+    padding: 0.25rem 0.6rem !important;
+    transition: all 0.2s ease-in-out !important;
+}
+
+.js-report-btn:hover {
+    background-color: #f1f5f9 !important;
+    color: #0f172a !important;
+    border-color: #cbd5e1 !important;
+}
+
+/* Make sure modal for report looks sleek */
+#priceReportModal .modal-content {
+    border: none;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+#priceReportModal .modal-header {
+    border-bottom: 1px solid #f1f5f9;
+    padding: 1.25rem 1.5rem;
+}
+#priceReportModal .modal-footer {
+    border-top: 1px solid #f1f5f9;
+    padding: 1rem 1.5rem;
+}
+#priceReportModal .form-control, #priceReportModal .form-select {
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    padding: 0.6rem 1rem;
+}
+#priceReportModal .form-control:focus, #priceReportModal .form-select:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 0.25rem rgba(59, 130, 246, 0.1);
+}

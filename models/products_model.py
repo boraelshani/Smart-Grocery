@@ -184,14 +184,18 @@ class ProductsModel:
 
         return out
 
-    def list_products(self, query: Optional[dict] = None, skip: int = 0, limit: int = 0) -> List[dict]:
+    def list_products(self, query: Optional[dict] = None, skip: int = 0, limit: int = 0, sort: Optional[list] = None) -> List[dict]:
         db = self.db if self.db is not None else self._refresh_db()
         if db is None:
             return []
 
         if self._is_new_schema_enabled():
             new_query = self._translate_legacy_query_for_new(query or {})
-            cursor = db.products.find(new_query).sort("updatedAt", -1)
+            cursor = db.products.find(new_query)
+            if sort:
+                cursor = cursor.sort(sort)
+            else:
+                cursor = cursor.sort("updatedAt", -1)
             if skip:
                 cursor = cursor.skip(skip)
             if limit:
@@ -217,6 +221,8 @@ class ProductsModel:
             ]
 
         cursor = db.products.find(query or {})
+        if sort:
+            cursor = cursor.sort(sort)
         if skip:
             cursor = cursor.skip(skip)
         if limit:

@@ -29,10 +29,21 @@
                 {% for c in data.categories or [] %}
                 <tr>
                     <td class="ps-4">
-                        <h6 class="mb-0 fw-bold text-dark">{{ c.name_en or c.categoryId }}</h6>
+                        <div class="d-flex align-items-center">
+                            <div class="me-3 bg-light rounded d-flex justify-content-center align-items-center overflow-hidden border" style="width: 48px; height: 48px;">
+                                {% if c.image_url %}
+                                <img src="{{ c.image_url }}" alt="..." style="width: 100%; height: 100%; object-fit: contain;">
+                                {% else %}
+                                <i class="fas fa-image text-muted text-opacity-50 fs-4"></i>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <h6 class="mb-0 fw-bold text-dark">{{ c.name_en or c.categoryId }}</h6>
                         {% if c.name_de %}
                         <span class="text-muted small">{{ c.name_de }}</span>
                         {% endif %}
+                            </div>
+                        </div>
                     </td>
                     <td>
                         <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 px-2 py-1">{{ c.categoryId }}</span>
@@ -45,7 +56,7 @@
                         {% endif %}
                     </td>
                     <td class="text-end pe-4">
-                        <button class="btn btn-sm btn-light border shadow-sm rounded-pill text-primary fw-bold px-3" onclick='prepareCategoryModal("edit", {"categoryId":"{{c.categoryId}}", "name_en":"{{c.name_en}}", "name_de":"{{c.name_de}}", "parentId":"{{c.parentId}}"})' data-bs-toggle="modal" data-bs-target="#categoryModal">
+                        <button class="btn btn-sm btn-light border shadow-sm rounded-pill text-primary fw-bold px-3" onclick='prepareCategoryModal("edit", {"categoryId":"{{c.categoryId}}", "name_en":"{{c.name_en}}", "name_de":"{{c.name_de}}", "image_url": "{{c.image_url}}", "parentId":"{{c.parentId}}"})' data-bs-toggle="modal" data-bs-target="#categoryModal">
                             <i class="fas fa-pen"></i> Edit
                         </button>
                     </td>
@@ -94,6 +105,11 @@
               </div>
            </div>
 
+           <div class="mb-3">
+              <label class="form-label small fw-bold text-muted text-uppercase mb-1">Image URL</label>
+              <input type="text" class="form-control form-control-lg bg-light border" name="image_url" id="field_cat_image_url" placeholder="https://...">
+           </div>
+
            <div class="mb-2">
               <label class="form-label small fw-bold text-muted text-uppercase mb-1">Parent Category</label>
               <select class="form-select form-control-lg bg-light border" name="parentId" id="field_cat_parentId">
@@ -128,6 +144,7 @@ function prepareCategoryModal(mode, category) {
       document.getElementById('field_categoryId').readOnly = false;
       document.getElementById('field_cat_name_en').value = '';
       document.getElementById('field_cat_name_de').value = '';
+      document.getElementById('field_cat_image_url').value = '';
       document.getElementById('field_cat_parentId').value = '';
       delBtn.classList.add('d-none');
       delBtn.removeAttribute('formaction');
@@ -138,6 +155,7 @@ function prepareCategoryModal(mode, category) {
       document.getElementById('field_categoryId').readOnly = true;
       document.getElementById('field_cat_name_en').value = category.name_en || '';
       document.getElementById('field_cat_name_de').value = category.name_de || '';
+      document.getElementById('field_cat_image_url').value = category.image_url || '';
       document.getElementById('field_cat_parentId').value = category.parentId || '';
       delBtn.classList.remove('d-none');
       delBtn.setAttribute('formaction', `/admin/categories/delete/${category.categoryId}`);

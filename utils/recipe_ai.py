@@ -2,7 +2,7 @@ import os
 import requests
 import json
 
-def get_recipe_details(recipe_query):
+def get_recipe_details(recipe_query, budget_str=None):
     """
     Calls the Google Gemini API (or fallback) to extract ingredients and step-by-step instructions.
     
@@ -16,9 +16,28 @@ def get_recipe_details(recipe_query):
         # 1. Try TheMealDB dynamically for actual matching ingredients/instructions
         try:
             import requests, urllib.parse
+            
+            # First try exact match
             r = requests.get(f"https://www.themealdb.com/api/json/v1/1/search.php?s={urllib.parse.quote(recipe_query)}", timeout=3).json()
+            
+            # If no match, try the last main word (e.g., "Creamy Lemon Spaghetti" -> try "Spaghetti" or "Lemon")
+            if not r or not r.get('meals'):
+                words = [w for w in recipe_query.split() if len(w) > 2]
+                for word in reversed(words):
+                    r_word = requests.get(f"https://www.themealdb.com/api/json/v1/1/search.php?s={urllib.parse.quote(word)}", timeout=3).json()
+                    if r_word and r_word.get('meals'):
+                        r = r_word
+                        break
+
             if r and r.get('meals') and r['meals']:
-                meal = r['meals'][0]
+                import random
+                # Try to find a meal that somewhat matches, or pick a random one from the results 
+                # (seeded by recipe name so it's consistent for the same specific recipe)
+                meals = r['meals']
+                random.seed(recipe_query)
+                meal = random.choice(meals)
+                random.seed() # reset
+
                 ingredients = []
                 for i in range(1, 21):
                     ing = meal.get(f'strIngredient{i}')
@@ -66,6 +85,23 @@ def get_recipe_details(recipe_query):
         else:
             base_ingredients.extend([f"250g main ingredient for {recipe_query}", "1 cup mixed vegetables", "1 cup rice, noodles, or potatoes", "1 yellow onion, sliced"])
 
+        # Add variation based on common adjectives
+        if "spicy" in q: base_ingredients.extend(["1 tbsp red chili flakes", "1 diced jalapeño"])
+        if "creamy" in q: base_ingredients.extend(["1/2 cup heavy cream or coconut cream", "1/4 cup parmesan or nutritional yeast"])
+        if "garlic" in q: base_ingredients.extend(["4 extra cloves garlic, minced", "2 tbsp butter or olive oil"])
+        if "healthy" in q or "salad" in q or "bowl" in q: base_ingredients.extend(["2 cups fresh spinach", "1 sliced avocado", "1 tbsp lemon juice"])
+        if "baked" in q or "cheese" in q: base_ingredients.extend(["1 cup shredded mozzarella", "1/2 cup breadcrumbs"])
+        if "one-pot" in q or "quick" in q: base_ingredients.extend(["2 cups vegetable broth", "1 cup cherry tomatoes"])
+        if "vegetarian" in q or "vegan" in q: base_ingredients.extend(["1 diced zucchini", "1 sliced bell pepper"])
+
+        # Add generic random variation using hash of query to ensure different meals have different ingredients lengths and styles
+        import hashlib
+        h = int(hashlib.md5(recipe_query.encode()).hexdigest(), 16)
+        extra_options = ["1 tsp smoked paprika", "1/2 cup chopped mushrooms", "1 tbsp soy sauce", "1/4 cup chopped parsley", "1/2 diced red onion", "1 lime, juiced"]
+        base_ingredients.append(extra_options[h % len(extra_options)])
+        if h % 2 == 0:
+            base_ingredients.append(extra_options[(h+1) % len(extra_options)])
+
         instructions = [
             f"Gather and prep all ingredients for your {recipe_query.title()}.",
             "Heat oil or butter in a large pan or pot over medium heat.",
@@ -82,14 +118,19 @@ def get_recipe_details(recipe_query):
         }
 
     if not api_key:
-        print("Warning: No GEMINI_API_KEY found in environment variables.")     
+        print("Warning: No GEMINI_API_KEY found in environment variables.")
         return fallback_details()
     
+    budget_instruction = ""
+    if budget_str:
+        budget_instruction = f"The user is on a STRICT budget of {budget_str}. You MUST modify the {recipe_query} to be as cheap as possible by using fewer, more affordable ingredients, while remaining delicious."
+
     prompt = f"""
     You are a culinary assistant. I will give you a recipe name or a description.
     You must return a STRICT JSON object representing the recipe details. The object MUST have two keys:
     1. 'ingredients': A JSON array of strings representing raw ingredients and quantities.
     2. 'instructions': A JSON array of strings representing the step-by-step cooking instructions.
+    {budget_instruction}
     Do NOT return any markdown formatting, bullet points, or conversation. Just the raw JSON object.
     Example output: {{"ingredients": ["500g tomatoes", "1 onion", "200ml pasta water"], "instructions": ["Chop onion.", "Fry onion.", "Add tomatoes and simmer.", "Serve hot."]}}
 
@@ -126,67 +167,117 @@ def get_recipe_details(recipe_query):
         print(f"Error connecting to Gemini API or parsing response: {e}. Falling back to mock data.")
         return fallback_details()
 
-def get_budget_meal_ideas(budget_str, preference="any", max_time="any", max_ingredients="any"):
+def get_budget_meal_ideas(query, budget_str="any", preference="any", max_time="any", max_ingredients="any"):
     """
-    Uses Gemini to suggest 6 cheap meal ideas that roughly fit the given budget and dietary preference.
-    Returns a strict JSON array of dicts: [{"name": "Meal Name", "time": "20 mins"}]
+    Uses Gemini to suggest meal ideas that roughly fit the given requirements.
+    Returns a strict JSON array of dicts: [{"name": "Meal Name", "time": "20 mins", "ingredients_range": "4-6"}]
     """
     api_key = os.environ.get("GEMINI_API_KEY")
     
     if not api_key:
-        all_options = {
-            "vegetarian": [
-                {"name": "Lentil Soup", "time": "30 mins", "ingredients_range": "4-6"}, 
-                {"name": "Cheese Quesadillas", "time": "10 mins", "ingredients_range": "2-4"}, 
-                {"name": "Veggie Stir Fry", "time": "15 mins", "ingredients_range": "6-9"}, 
-                {"name": "Potato Gnocchi", "time": "20 mins", "ingredients_range": "4-5"}, 
-                {"name": "Eggplant Parm", "time": "45 mins", "ingredients_range": "5-8"}, 
-                {"name": "Mushroom Risotto", "time": "40 mins", "ingredients_range": "6-8"},
-                {"name": "Zucchini Fritters", "time": "25 mins", "ingredients_range": "5-7"},
-                {"name": "Tomato Basil Soup", "time": "30 mins", "ingredients_range": "4-6"},
-                {"name": "Sweet Potato Noodles", "time": "20 mins", "ingredients_range": "3-5"}
-            ],
-            "vegan": [
-                {"name": "Chickpea Curry", "time": "25 mins", "ingredients_range": "6-9"}, 
-                {"name": "Black Bean Tacos", "time": "15 mins", "ingredients_range": "5-7"}, 
-                {"name": "Tomato Rice", "time": "20 mins", "ingredients_range": "3-5"}, 
-                {"name": "Tofu Scramble", "time": "12 mins", "ingredients_range": "4-6"}, 
-                {"name": "Lentil Pasta", "time": "15 mins", "ingredients_range": "2-4"}, 
-                {"name": "Vegan Chili", "time": "35 mins", "ingredients_range": "8-12"},
-                {"name": "Peanut Stew", "time": "30 mins", "ingredients_range": "6-8"},
-                {"name": "Avocado Salad", "time": "10 mins", "ingredients_range": "3-5"},
-                {"name": "Mushroom Tacos", "time": "20 mins", "ingredients_range": "4-6"}
-            ],
-            "any": [
-                {"name": "Tomato Pasta", "time": "15 mins", "ingredients_range": "3-5"}, 
-                {"name": "Fried Rice with Eggs", "time": "10 mins", "ingredients_range": "4-7"}, 
-                {"name": "Lentil Soup", "time": "30 mins", "ingredients_range": "4-6"}, 
-                {"name": "Potato Bake", "time": "50 mins", "ingredients_range": "3-5"}, 
-                {"name": "Oatmeal", "time": "5 mins", "ingredients_range": "2-4"}, 
-                {"name": "Bean Burritos", "time": "10 mins", "ingredients_range": "4-6"},
-                {"name": "Roast Chicken Thighs", "time": "45 mins", "ingredients_range": "3-5"},
-                {"name": "Pork Chops & Apples", "time": "30 mins", "ingredients_range": "4-6"},
-                {"name": "Sausage and Peppers", "time": "25 mins", "ingredients_range": "3-5"}
+        import random
+        # Fallback simulation of filters
+        base_list = []
+        if query and query.lower() not in ["budget meals", "cheap meals", "deals", ""]:
+            base_list = [
+                {"name": f"Classic {query.title()}", "time": "20 mins", "ingredients_range": "5-8"},
+                {"name": f"Spicy {query.title()}", "time": "25 mins", "ingredients_range": "6-9"},
+                {"name": f"Creamy {query.title()}", "time": "30 mins", "ingredients_range": "5-7"},
+                {"name": f"Vegetarian {query.title()}", "time": "20 mins", "ingredients_range": "4-8", "diet": "vegetarian"},
+                {"name": f"One-Pot {query.title()}", "time": "15 mins", "ingredients_range": "4-6"},
+                {"name": f"Garlic Butter {query.title()}", "time": "15 mins", "ingredients_range": "4-7"},
+                {"name": f"Healthy {query.title()} Bowl", "time": "25 mins", "ingredients_range": "6-10", "diet": "vegan"},
+                {"name": f"Baked {query.title()}", "time": "40 mins", "ingredients_range": "5-9"},
+                {"name": f"Quick {query.title()} Salad", "time": "10 mins", "ingredients_range": "3-6", "diet": "vegan"}
             ]
-        }
-        return all_options.get(preference, all_options["any"])
-        
+        else:
+            base_list = [
+                {"name": "Tomato Pasta", "time": "15 mins", "ingredients_range": "3-5", "diet": "vegetarian"}, 
+                {"name": "Fried Rice with Eggs", "time": "10 mins", "ingredients_range": "4-7", "diet": "vegetarian"}, 
+                {"name": "Lentil Soup", "time": "30 mins", "ingredients_range": "4-6", "diet": "vegan"},
+                {"name": "Potato Gnocchi", "time": "20 mins", "ingredients_range": "4-5", "diet": "vegetarian"},
+                {"name": "Chickpea Curry", "time": "25 mins", "ingredients_range": "6-9", "diet": "vegan"},
+                {"name": "Black Bean Tacos", "time": "15 mins", "ingredients_range": "5-7", "diet": "vegan"},
+                {"name": "Zucchini Fritters", "time": "25 mins", "ingredients_range": "5-7", "diet": "vegetarian"},
+                {"name": "Tomato Basil Soup", "time": "30 mins", "ingredients_range": "4-6", "diet": "vegan"},
+                {"name": "Sweet Potato Noodles", "time": "20 mins", "ingredients_range": "3-5", "diet": "vegan"}
+            ]
+            
+        filtered = []
+        for m in base_list:
+            # check diet
+            if preference != "any":
+                if preference == "vegan" and m.get("diet") != "vegan": continue
+                if preference == "vegetarian" and m.get("diet") not in ["vegan", "vegetarian"]: continue
+                if preference == "meat-based" and m.get("diet") in ["vegan", "vegetarian"]: continue
+            
+            # check time
+            if max_time != "any":
+                try:
+                    time_val = int(m['time'].split()[0])
+                    if time_val > int(max_time): continue
+                except: pass
+                
+            # check ingredients limit
+            if max_ingredients != "any":
+                try:
+                    max_val = int(m['ingredients_range'].split('-')[1])
+                    if max_val > int(max_ingredients): continue
+                except: pass
+            
+            # assign fake price for UI
+            budget_val = 15.0
+            if budget_str and budget_str != "any":
+                try: budget_val = float(''.join(c for c in budget_str if c.isdigit() or c=='.'))
+                except: pass
+            fake_price = round(random.uniform(3.0, budget_val), 2)
+            m['price_estimation'] = f"Est. {fake_price}€"
+            filtered.append(m)
+            
+        if not filtered:
+            # Instead of ignoring filters when no matches found, we dynamically create highly tailored suggestions
+            t = "15 mins" if max_time == "any" else f"{max_time} mins"
+            rng = "3-5" if max_ingredients == "any" else f"2-{max_ingredients}"
+            d = ""
+            if preference != "any" and preference != "meat-based":
+                d = preference
+                
+            budget_val = 15.0
+            if budget_str and budget_str != "any":
+                try: budget_val = float(''.join(c for c in budget_str if c.isdigit() or c=='.'))
+                except: pass
+            
+            import random
+            def get_price():
+                return f"Est. {round(random.uniform(3.0, budget_val), 2)}€"
+
+            return [
+                {"name": f"Rapid {preference.title() if preference != 'any' else 'Fresh'} {query.title() if query else 'Meal'}", "time": t, "ingredients_range": rng, "diet": d, "price_estimation": get_price()},
+                {"name": f"Minimalist {query.title() if query else 'Bowl'}", "time": t, "ingredients_range": rng, "diet": d, "price_estimation": get_price()},
+                {"name": f"Chef's Special {query.title() if query else 'Plate'}", "time": t, "ingredients_range": rng, "diet": d, "price_estimation": get_price()},
+            ]
+        return filtered
     pref_instruction = f"The user prefers {preference} meals." if preference != "any" else ""
     time_instruction = f"The maximum preparation time should be {max_time} minutes." if max_time != "any" else ""
     ingredients_instruction = f"The meal MUST use a maximum of {max_ingredients} ingredients." if max_ingredients != "any" else ""
     
+    query_instruction = f"The user wants ideas specifically related to: '{query}'." if query and query.lower() not in ["budget meals", "cheap meals", "deals", ""] else "The user wants general budget meal ideas."
+    budget_instruction = f"The user has a STRICT maximum budget of {budget_str}." if budget_str and budget_str != "any" else "Suggest generally affordable meals."
+
     prompt = f"""
-    You are a strict, ultra-frugal budget culinary assistant. The user has a STRICT maximum budget of {budget_str}.
+    You are a culinary assistant. {query_instruction}
+    {budget_instruction}
     {pref_instruction}
     {time_instruction}
     {ingredients_instruction}
 
-    You MUST provide exactly 9 distinct, radically cheap meal ideas where the TOTAL COMBINED COST of all ingredients is GUARANTEED to be UNDER {budget_str}.
+    You MUST provide exactly 9 distinct meal ideas. If a budget is specified, the TOTAL COMBINED COST of all ingredients MUST be GUARANTEED to be UNDER {budget_str}.
     
     Return a STRICT JSON array of objects. Each object MUST have THESE EXACT 3 KEYS:
     1. 'name': The name of the meal.
     2. 'time': Estimated time to cook (e.g. '20 mins').
-    3. 'ingredients_range': A realistic range of unique ingredients needed (e.g. '7-12' or '5-8' or '10-12').
+    3. 'ingredients_range': A realistic range of unique ingredients needed.
+    4. 'price_estimation': Give an estimated realistic price for this meal under the budget constraints (e.g. 'Est. 8.50€').
     
     CRITICAL REQUIREMENTS:
     - Generate a DIVERSE list of EXACTLY 9 items every time. Do not stop early.
@@ -224,42 +315,21 @@ def get_budget_meal_ideas(budget_str, preference="any", max_time="any", max_ingr
     except Exception as e:
         print(f"Error connecting to Gemini API for budget meals: {e}")
         
-        all_options = {
-            "vegetarian": [
-                {"name": "Lentil Soup", "time": "30 mins", "ingredients_range": "4-6"},
-                {"name": "Cheese Quesadillas", "time": "10 mins", "ingredients_range": "2-4"},
-                {"name": "Veggie Stir Fry", "time": "15 mins", "ingredients_range": "6-9"},
-                {"name": "Potato Gnocchi", "time": "20 mins", "ingredients_range": "4-5"},
-                {"name": "Eggplant Parm", "time": "45 mins", "ingredients_range": "5-8"},
-                {"name": "Mushroom Risotto", "time": "40 mins", "ingredients_range": "6-8"},
-                {"name": "Zucchini Fritters", "time": "25 mins", "ingredients_range": "5-7"},
-                {"name": "Tomato Basil Soup", "time": "30 mins", "ingredients_range": "4-6"},
-                {"name": "Sweet Potato Noodles", "time": "20 mins", "ingredients_range": "3-5"}
-            ],
-            "vegan": [
-                {"name": "Chickpea Curry", "time": "25 mins", "ingredients_range": "6-9"},
-                {"name": "Black Bean Tacos", "time": "15 mins", "ingredients_range": "5-7"},
-                {"name": "Tomato Rice", "time": "20 mins", "ingredients_range": "3-5"},
-                {"name": "Tofu Scramble", "time": "12 mins", "ingredients_range": "4-6"},
-                {"name": "Lentil Pasta", "time": "15 mins", "ingredients_range": "2-4"},
-                {"name": "Vegan Chili", "time": "35 mins", "ingredients_range": "8-12"},
-                {"name": "Peanut Stew", "time": "30 mins", "ingredients_range": "6-8"},
-                {"name": "Avocado Salad", "time": "10 mins", "ingredients_range": "3-5"},
-                {"name": "Mushroom Tacos", "time": "20 mins", "ingredients_range": "4-6"}
-            ],
-            "any": [
-                {"name": "Tomato Pasta", "time": "15 mins", "ingredients_range": "3-5"}, 
-                {"name": "Fried Rice with Eggs", "time": "10 mins", "ingredients_range": "4-7"}, 
-                {"name": "Lentil Soup", "time": "30 mins", "ingredients_range": "4-6"}, 
-                {"name": "Potato Bake", "time": "50 mins", "ingredients_range": "3-5"}, 
-                {"name": "Oatmeal", "time": "5 mins", "ingredients_range": "2-4"}, 
-                {"name": "Bean Burritos", "time": "10 mins", "ingredients_range": "4-6"},
-                {"name": "Roast Chicken Thighs", "time": "45 mins", "ingredients_range": "3-5"},
-                {"name": "Pork Chops & Apples", "time": "30 mins", "ingredients_range": "4-6"},
-                {"name": "Sausage and Peppers", "time": "25 mins", "ingredients_range": "3-5"}
+    if not api_key:
+        # If there's a specific query, try to mock some responses based on it
+        if query and query.lower() not in ["budget meals", "cheap meals", "deals", ""]:
+            return [
+                {"name": f"Classic {query.title()}", "time": "20 mins", "ingredients_range": "5-8"},
+                {"name": f"Spicy {query.title()}", "time": "25 mins", "ingredients_range": "6-9"},
+                {"name": f"Creamy {query.title()}", "time": "30 mins", "ingredients_range": "5-7"},
+                {"name": f"Vegetarian {query.title()}", "time": "20 mins", "ingredients_range": "4-8"},
+                {"name": f"One-Pot {query.title()}", "time": "15 mins", "ingredients_range": "4-6"},
+                {"name": f"Healthy {query.title()} Bowl", "time": "25 mins", "ingredients_range": "6-10"},
+                {"name": f"Garlic Butter {query.title()}", "time": "15 mins", "ingredients_range": "4-7"},
+                {"name": f"Baked {query.title()}", "time": "40 mins", "ingredients_range": "5-9"},
+                {"name": f"Quick {query.title()} Salad", "time": "10 mins", "ingredients_range": "3-6"}
             ]
-        }
-        return all_options.get(preference, all_options["any"])
+        return []
 
 def get_ingredient_alternatives(recipe_query, missing_ingredients):
     """

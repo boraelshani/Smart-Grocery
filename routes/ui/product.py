@@ -109,20 +109,45 @@ def compare_prices():
     page = int(request.args.get('page', 1))
     category_filter = (request.args.get('category') or '').strip()
     search_query = (request.args.get('search') or '').strip()
+    sort_filter = (request.args.get('sort') or 'default').strip()
 
     import re
-    query = {}
+    query = {'is_placeholder': {'$ne': True}}
+    and_clauses = []
+    
     if category_filter:
-        query['category'] = {'$regex': f"^{re.escape(category_filter)}$", '$options': 'i'}
+        and_clauses.append({
+            '$or': [
+                {'category': {'$regex': f"^{re.escape(category_filter)}$", '$options': 'i'}},
+                {'category_path': {'$elemMatch': {'$regex': f"^{re.escape(category_filter)}$", '$options': 'i'}}}
+            ]
+        })
+    
     if search_query:
         search_regex = {'$regex': re.escape(search_query), '$options': 'i'}
-        query['$or'] = [{'name': search_regex}, {'title': search_regex}, {'category': search_regex}]
+        and_clauses.append({
+            '$or': [{'name': search_regex}, {'title': search_regex}, {'category': search_regex}, {'brand': search_regex}]
+        })
+        
+    if and_clauses:
+        query['$and'] = and_clauses
+
+    sort_config = None
+    if sort_filter == 'price_asc':
+        sort_config = [('price', 1)]
+    elif sort_filter == 'price_desc':
+        sort_config = [('price', -1)]
+    elif sort_filter == 'name_asc':
+        sort_config = [('name', 1)]
+    elif sort_filter == 'name_desc':
+        sort_config = [('name', -1)]
 
     total_products = products_model.count_products(query)
     total_pages = (total_products + per_page - 1) // per_page if total_products else 1
     page = max(1, min(page, total_pages))
     
-    products = products_model.list_products(query=query, skip=(page - 1) * per_page, limit=per_page)
+    products = products_model.list_products(query=query, skip=(page - 1) * per_page, limit=per_page, sort=sort_config)
+
     
     # Favorites mark
     user_email = session.get('user')
@@ -136,7 +161,13 @@ def compare_prices():
     for p in products:
         p['is_favorited'] = str(p.get('id') or p.get('_id', '')) in fav_ids
 
-    category_options = [{"name": cat} for cat in ["Produce", "Pantry", "Dairy", "Meat", "Frozen", "Bakery", "Baby food", "Snacks", "Fast Food & To Go", "Household", "Beverages"]]
+    category_options = helpers.get_category_options()
+
+    
+    if category_filter:
+        # Add the selected subcategory to the chips dynamically so it shows as active/selected
+        if not any(category_filter.lower() == c['name'].lower() for c in category_options):
+            category_options.append({"name": category_filter.title()})
     
     return render_template('compare_prices.html',
                          products=helpers.sanitize_mongo_doc(products),
@@ -145,4 +176,5 @@ def compare_prices():
                          total_products=total_products,
                          category_filter=category_filter,
                          search_query=search_query,
+                         sort_filter=sort_filter,
                          category_options=category_options)

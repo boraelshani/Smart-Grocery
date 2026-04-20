@@ -82,12 +82,17 @@ def featured_deals_page():
     
     paginated_deals = deals[(page - 1) * per_page: page * per_page]
     
-    category_options = [{"name": cat} for cat in STANDARD_CATEGORIES]
-    
+    category_options = helpers.get_category_options()
+
+    if category_filter:
+        if not any(category_filter.lower() == c['name'].lower() for c in category_options):
+            category_options.append({"name": category_filter.title()})
+            
     return render_template('featured_deals.html', 
                           deals=helpers.sanitize_mongo_doc(paginated_deals), 
                           total_products=total_products,
                           total_pages=total_pages,
+                          page=page,
                           current_page=page,
                           category_filter=category_filter,
                           category_options=category_options,

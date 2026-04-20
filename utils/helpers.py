@@ -284,3 +284,49 @@ def get_user_email():
         # Pick the first available mock user if one exists
         email = "user1@example.com" if "user1@example.com" in m.users else next(iter(m.users.keys()), None)
     return email
+
+
+def get_category_options():
+    try:
+        from utils.db import mongo
+        all_cats = list(mongo.db.categories.find({}))
+        
+        # Build children map
+        children_map = {}
+        for c in all_cats:
+            pid = str(c.get("parentId")) if c.get("parentId") else "None"
+            children_map.setdefault(pid, []).append(c)
+
+        db_cats = children_map.get("None", [])
+        
+        category_options = []
+        for parent_cat in db_cats:
+            if not parent_cat.get("name_en"): continue
+            
+            pid_str = str(parent_cat["_id"])
+            subcats = children_map.get(pid_str, [])
+            
+            sub_options = []
+            for s in subcats:
+                if not s.get("name_en"): continue
+                
+                s_id_str = str(s["_id"])
+                leaves = children_map.get(s_id_str, [])
+                leaf_options = [{"name": l.get("name_en")} for l in leaves if l.get("name_en")]
+                
+                sub_options.append({
+                    "name": s.get("name_en"),
+                    "subcategories": leaf_options
+                })
+            
+            category_options.append({
+                "name": parent_cat.get("name_en"),
+                "image": parent_cat.get("imageUrl"),
+                "subcategories": sub_options
+            })
+            
+        return category_options
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return []

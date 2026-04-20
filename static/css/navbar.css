@@ -444,3 +444,248 @@ GOAL: Styles for the Navbar, including the dynamic "Glass" effect.
     grid-template-columns: 1fr;
   }
 }
+
+/* 
+═══════════════════════════════════════════════════════════════════════════
+MEGA MENU STYLES
+═══════════════════════════════════════════════════════════════════════════
+*/
+.mega-dropdown {
+    position: static !important;
+}
+
+.mega-menu-content {
+    position: absolute;
+    width: 100%;
+    left: 0;
+    right: 0;
+    top: 100%;
+    margin-top: 0;
+    padding: 0;
+    border: none;
+    border-top: 1px solid rgba(0,0,0,0.05);
+    border-radius: 0 0 32px 32px;
+    background: rgba(255,255,255,0.98) !important;
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    box-shadow: 0 40px 60px -15px rgba(0,0,0,0.1), 0 20px 25px -5px rgba(0,0,0,0.05);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(15px);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: block; /* We use opacity/visibility for animation */
+    pointer-events: none;
+}
+
+.mega-dropdown:hover .mega-menu-content {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.mega-menu-wrapper {
+    display: flex;
+    max-height: 500px;
+    min-height: 400px;
+}
+
+.mega-col-left {
+    width: 25%;
+    border-right: 1px solid #f1f5f9;
+    padding: 1.5rem;
+    background: #f8fafc;
+    border-bottom-left-radius: 32px;
+    overflow-y: auto;
+}
+
+.mega-col-mid {
+    width: 50%;
+    padding: 2rem;
+    overflow-y: auto;
+}
+
+.mega-col-right {
+    width: 25%;
+    background: #f8fafc;
+    border-left: 1px solid #f1f5f9;
+    padding: 2rem;
+    border-bottom-right-radius: 32px;
+}
+
+/* Scrollbar hiding for clean look */
+.mega-col-left::-webkit-scrollbar, .mega-col-mid::-webkit-scrollbar { width: 4px; }
+.mega-col-left::-webkit-scrollbar-thumb, .mega-col-mid::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+
+/* Categories List */
+.mega-cat-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.mega-cat-item {
+    padding: 12px 16px;
+    border-radius: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #475569;
+    font-weight: 700;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+}
+
+.mega-cat-icon {
+    font-size: 1.3rem;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    background: white;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    transition: all 0.2s ease;
+}
+
+.mega-cat-item:hover, .mega-cat-item.active {
+    background: white;
+    color: #7c3aed;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+}
+
+.mega-cat-item:hover .mega-cat-icon, .mega-cat-item.active .mega-cat-icon {
+    background: linear-gradient(135deg, #7c3aed, #6366f1);
+    color: white;
+}
+
+/* Subcategories Panel */
+.mega-subcat-panel {
+    display: none;
+    animation: fadeIn 0.3s ease;
+}
+
+.mega-subcat-panel.active {
+    display: block;
+}
+
+.subcat-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+.subcat-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 12px;
+    border-radius: 16px;
+    background: white;
+    border: 1px solid #f1f5f9;
+    text-decoration: none !important;
+    transition: all 0.3s ease;
+}
+
+.subcat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px -5px rgba(124, 58, 237, 0.15);
+    border-color: #e0e7ff;
+}
+
+.subcat-card img {
+    width: 48px;
+    height: 48px;
+    object-fit: cover;
+    border-radius: 12px;
+    background: #f8fafc;
+    padding: 2px;
+}
+
+.subcat-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.subcat-title {
+    color: #1e293b;
+    font-weight: 700;
+    font-size: 0.95rem;
+    margin-bottom: 2px;
+}
+
+.subcat-card:hover .subcat-title {
+    color: #7c3aed;
+}
+
+.subcat-desc {
+    color: #64748b;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+/* Brands Grid */
+.brands-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.brand-card {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    font-weight: 800;
+    color: #475569;
+    text-decoration: none !important;
+    transition: all 0.2s ease;
+    height: 60px;
+    font-size: 0.9rem;
+}
+
+.brand-card:hover {
+    border-color: #7c3aed;
+    color: #7c3aed;
+    background: #f5f3ff;
+    box-shadow: 0 4px 10px rgba(124,58,237,0.1);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateX(-10px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+/* Mega Menu Hover Bridge Issue Fix */
+.mega-menu-content-bridge {
+    position: absolute;
+    top: -24px;
+    left: 0;
+    right: 0;
+    height: 24px;
+    background: transparent !important;
+    z-index: 1; /* Ensures hover works across the gap */
+}
+
+.mega-dropdown:hover .mega-menu-content,
+.mega-menu-content:hover,
+.mega-menu-content-bridge:hover + .mega-menu-wrapper {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+/* Brands Scrollable Layout */
+.brands-wrapper::-webkit-scrollbar { width: 4px; }
+.brands-wrapper::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+

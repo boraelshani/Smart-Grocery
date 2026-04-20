@@ -95,6 +95,7 @@ if not os.environ.get('SSL_CERT_FILE'):
     os.environ['SSL_CERT_FILE'] = certifi.where()
 
 from utils.db import mongo, sanitize_uri
+from utils.menu_data import get_mega_menu
 
 # Short-lived in-memory cache for expensive navbar counters.
 _NAVBAR_CACHE_TTL_SEC = 20
@@ -246,6 +247,7 @@ def inject_navbar_data():
                     'unread_notifications_count': int(cached.get('unread_notifications_count', 0)),
                     'current_user_nav': cached.get('current_user_nav'),
                     'is_admin_nav': bool(cached.get('is_admin_nav', False)),
+                    'mega_menu': get_mega_menu()
                 }
 
             user = {}
@@ -310,6 +312,7 @@ def inject_navbar_data():
         'unread_notifications_count': unread_notifications_count,
         'current_user_nav': current_user_nav,
         'is_admin_nav': is_admin_nav,
+        'mega_menu': get_mega_menu()
     }
 
 
@@ -386,4 +389,4 @@ def debug_mongo():
 
 if __name__ == '__main__':
     # use_reloader=False prevents WinError 10038 on some Windows environments
-    app.run(debug=True, use_reloader=False, port=5000)
+    app.run(debug=True, use_reloader=False, port=5001)

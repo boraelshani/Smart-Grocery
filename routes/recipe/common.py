@@ -92,3 +92,82 @@ def api_delete_recipe(recipe_id):
         return jsonify({'success': success, 'error': err if not success else None})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
+
+@recipe_bp.route('/api/recipe/smart', methods=['POST'])
+
+def smart_search():
+    try:
+        data = request.json
+        if not data:
+            return jsonify({'success': False, 'error': 'No data provided'}), 400
+            
+        query = data.get('query', '')
+        budget_filter = data.get('budget', '')
+        preference = data.get('preference', 'any')
+        max_time = data.get('max_time', 'any')
+        max_ingredients = data.get('max_ingredients', 'any')
+        exact = data.get('exact', False)
+        
+        import re
+        
+        # If user put price inside the main search (e.g. "Spaghetti 15$" or "15$ chicken")
+        # Let's extract the budget part if budget_filter is empty.
+        if not budget_filter:
+            money_match = re.search(r'(\d+(\.\d+)?)\s*(€|\$|euro|dollar|euros|dollars)?\b', query.lower())
+            if money_match:
+                budget_filter = money_match.group(0).strip()
+                # Remove the money part from the query
+                query = query.replace(money_match.group(0), "").replace(money_match.group(0).upper(), "").replace(money_match.group(0).title(), "").strip()
+        
+        # Check if the query is *only* a budget now (meaning it was purely "15$" before)
+        if not query or query.lower() in ["budget meals", "cheap meals", "deals", "ideas"]:
+            if not budget_filter:
+                budget_filter = "15 euros"
+            query = ""
+
+
+        # IDEA MODE - Return 9 meal options to choose from
+        if not exact:
+            try:
+                ai_budget = f"{budget_filter} euros/dollars" if re.match(r'^\d+(\.\d+)?$', budget_filter) else (budget_filter if budget_filter else "any")
+                from utils.recipe_ai import get_budget_meal_ideas
+                meals = get_budget_meal_ideas(query, ai_budget, preference, max_time, max_ingredients)
+                return jsonify({
+                    'success': True,
+                    'type': 'budget',
+                    'meals': meals
+                })
+            except Exception as e:
+                return jsonify({'success': False, 'error': str(e)}), 500
+                
+        # EXACT MODE - Return real ingredients and instructions for a specific meal
+        from utils.recipe_ai import get_recipe_details
+        from utils.recipe_matcher import match_ingredients_to_products
+        
+        recipe_data = get_recipe_details(query, budget_str=budget_filter)
+        if not recipe_data or not recipe_data.get("ingredients"):
+            return jsonify({'success': False, 'error': f"Could not generate ingredients for '{query}'."}), 500
+        
+        raw_ingredients = recipe_data.get("ingredients", [])
+        instructions = recipe_data.get("instructions", [])
+        
+        matched_results = match_ingredients_to_products(raw_ingredients)
+        
+        for item in matched_results:
+            if 'matches' in item and item['matches']:
+                for m in item['matches']:
+                    if 'image' in m and 'image_url' not in m:
+                        m['image_url'] = m['image']
+                        
+        return jsonify({
+            'success': True,
+            'type': 'recipe',
+            'recipe': query,
+            'ingredients': matched_results,
+            'instructions': instructions
+        })
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500

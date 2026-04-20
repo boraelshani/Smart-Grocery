@@ -57,36 +57,27 @@
         </svg>
         Smart Grocery
       </a>
-      <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse"
-              data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" 
-              aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-      <div class="collapse navbar-collapse" id="navbarNav">
-        <ul class="navbar-nav ms-auto mb-1 mb-lg-0 align-items-center me-4 gap-1">
-          <li class="nav-item">
-            <a class="nav-link {% if request.endpoint == 'main.compare_prices' %}active{% endif %} rounded-pill px-3 py-2 text-nowrap" 
-               href="{{ url_for('main.compare_prices') }}"><i class="bi bi-search me-1"></i>Compare</a>
-          </li>
+      
+      <div class="d-none d-lg-flex position-relative flex-grow-1 me-auto ms-4 order-2 order-lg-2 tabs-search-bar" style="max-width: 650px;">
+           <form class="w-100 m-0" action="/compare-prices" method="get" id="globalNavSearchForm" onsubmit="return false;">
+             <div class="input-group bg-white rounded-pill overflow-hidden" style="height: 48px; border: 2px solid rgba(255,255,255,0.25); box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+               <span class="input-group-text bg-white border-0 ps-4 pe-2 text-primary" style="border-radius: 50px 0 0 50px;"><i class="bi bi-search fw-bold text-muted"></i></span>
+               <input type="text" class="form-control border-0 shadow-none bg-white text-dark fw-medium px-2" name="search" id="globalSearchInput" placeholder="Search brands, products, or stores..." autocomplete="off" style="font-size: 1rem; height: 100%;">
+               <!-- Hidden submit to capture enter key -->
+               <button type="submit" class="d-none"></button>
+               <button type="button" class="btn px-4 fw-bold m-1 rounded-pill shadow-sm" style="background-color: #8b5cf6; color: white; border: none;" onclick="submitGlobalSearch()" style="height: 36px; padding-top: 4px; padding-bottom: 4px;">Search</button>
+             </div>
+           </form>
+           <!-- RESULTS OVERLAY -->
+           <div id="globalSearchResults" class="position-absolute top-100 start-0 w-100 mt-2 bg-white rounded-4 shadow-lg border-0 d-none flex-column overflow-hidden" style="z-index: 1060; border: 1px solid rgba(0,0,0,0.05); max-height: 450px;">
+              <div id="searchResultsContent" class="overflow-y-auto w-100 search-scroll-container" style="max-height: 400px; padding: 0.5rem 0; overscroll-behavior-y: contain; -webkit-overflow-scrolling: touch;"></div>
+              <div id="searchResultsFooter" class="bg-light p-3 text-center border-top d-none">
+                 <button class="btn rounded-pill px-4 text-white fw-bold shadow-sm" style="background-color: #8b5cf6; border: none;" onclick="submitGlobalSearch()">View All Results <i class="bi bi-arrow-right ms-2"></i></button>
+              </div>
+           </div>
+      </div>
 
-          <li class="nav-item">
-            <a class="nav-link {% if request.endpoint == 'recipe.recipe_planner' %}active{% endif %} rounded-pill px-3 py-2 text-nowrap" 
-               href="{{ url_for('recipe.recipe_planner') }}"><i class="bi bi-magic me-1"></i>Recipe Planner</a>
-          </li>
-
-          <li class="nav-item">
-            <a class="nav-link {% if request.endpoint == 'main.featured_deals_page' %}active{% endif %} rounded-pill px-3 py-2 text-nowrap" 
-               href="{{ url_for('main.featured_deals_page') }}"><i class="bi bi-tags-fill me-1"></i>Deals</a>
-          </li>
-
-          {% if session.get('user') %}
-          <li class="nav-item">
-            <a class="nav-link {% if request.endpoint == 'main.shopping_list' %}active{% endif %} rounded-pill px-3 py-2 text-nowrap" 
-               href="{{ url_for('main.shopping_list') }}"><i class="bi bi-card-list me-1"></i>My List</a>
-          </li>
-          {% endif %}
-        </ul>
-        <ul class="navbar-nav align-items-center gap-3 d-none d-lg-flex">
+      <ul class="navbar-nav align-items-center gap-3 d-none d-lg-flex ms-auto side-icons-group order-3 order-lg-3 pe-2">
           <li class="nav-item">
             <a href="{{ url_for('main.barcode_scanner') }}" class="nav-bell-btn position-relative" aria-label="Scanner">
               <i class="bi bi-upc-scan fs-5"></i>
@@ -167,11 +158,7 @@
                     <div class="bg-light rounded p-2 text-warning d-flex align-items-center justify-content-center"><i class="bi bi-sliders2"></i></div> Preferences
                   </a>
                 </li>
-                <li>
-                  <a class="dropdown-item py-2 px-3 fw-medium d-flex align-items-center gap-3 transition-all {% if request.endpoint == 'main.stores_page' %}active{% endif %}" href="{{ url_for('main.stores_page') }}" onmouseover="this.style.backgroundColor='#f8f9fa'" onmouseout="this.style.backgroundColor='transparent'">
-                    <div class="bg-light rounded p-2 text-success d-flex align-items-center justify-content-center"><i class="bi bi-shop"></i></div> Browse Stores
-                  </a>
-                </li>
+                
                 {% if is_admin_nav %}
                 <li>
                   <a class="dropdown-item py-2 px-3 fw-medium d-flex align-items-center gap-3 transition-all {% if request.endpoint and request.endpoint.startswith('admin.') %}active{% endif %}" href="{{ url_for('admin.admin_dashboard') }}" onmouseover="this.style.backgroundColor='#f8f9fa'" onmouseout="this.style.backgroundColor='transparent'">
@@ -203,6 +190,173 @@
           </li>
           {% endif %}
         </ul>
+      <button class="navbar-toggler border-0 shadow-none order-4 order-lg-4" type="button" data-bs-toggle="collapse"
+              data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" 
+              aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse w-100 tabs-collapse w-100 order-5 order-lg-5 mt-2 mb-2 d-flex justify-content-center border-top border-md-0 border-light pt-2" id="navbarNav">
+        <ul class="navbar-nav mx-auto mb-1 mb-lg-0 align-items-center gap-2">
+                    <!-- MEGA MENU -->
+          <li class="nav-item mega-dropdown mr-2">
+            <a class="nav-link rounded-pill px-3 py-2 text-nowrap d-flex align-items-center" href="#" id="browseDropdown">
+              <i class="bi bi-grid-3x3-gap-fill me-2"></i>Browse
+            </a>
+            
+            <div class="mega-menu-content" style="position: absolute; left: 0; right: 0; width: 100vw; margin-left: calc(-50vw + 50%); border-radius: 0 0 1.5rem 1.5rem; background: white;">
+              <div class="mega-menu-content-bridge"></div>
+              
+              <!-- Tab Navigation Bar -->
+              <div class="border-bottom pt-3 pb-3 px-4 shadow-sm d-flex justify-content-center" style="background: linear-gradient(180deg, #f8fafc, #ffffff);">
+                 <nav>
+                   <div class="nav custom-pill-nav" id="browse-tabs" role="tablist">
+                     <button class="nav-link active fw-bold px-4" id="tab-categories-btn" data-bs-toggle="tab" data-bs-target="#tab-categories" type="button" role="tab"><i class="bi bi-grid-fill me-2"></i>Categories</button>
+                     <button class="nav-link fw-bold px-4" id="tab-brands-btn" data-bs-toggle="tab" data-bs-target="#tab-brands" type="button" role="tab"><i class="bi bi-tags-fill me-2"></i>Brands</button>
+                   </div>
+                 </nav>
+              </div>
+
+              <style>
+              /* Custom Segmented Control - Purple Theme */
+              .custom-pill-nav {
+                  background: #f3e8ff; /* Light purple background */
+                  border-radius: 50px;
+                  padding: 6px;
+                  display: inline-flex;
+              }
+              .custom-pill-nav .nav-link {
+                  color: #7e22ce; /* Purple text */
+                  border-radius: 50px;
+                  font-weight: 600;
+                  padding: 10px 32px;
+                  margin: 0 4px;
+                  transition: all 0.25s ease;
+                  border: none;
+                  background: transparent;
+                  font-size: 0.95rem;
+              }
+              .custom-pill-nav .nav-link:hover { background: #e9d5ff !important; color: #6b21a8 !important; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+              .custom-pill-nav .nav-link.active { background: #7c3aed !important; color: #ffffff !important; font-weight: 700; 
+                  box-shadow: 0 4px 15px rgba(124, 58, 237, 0.4);
+              }
+              
+              .subcat-hover-card { transition: all 0.3s ease; }
+              .subcat-hover-card:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(0,0,0,0.1) !important; }
+              .subcat-img-wrapper img { transition: transform 0.5s ease; }
+              .subcat-hover-card:hover .subcat-img-wrapper img { transform: scale(1.08); }
+              </style>
+              
+              <!-- Tab Contents -->
+              <div class="tab-content" id="browse-tabsContent">
+                 
+                 <!-- Categories Tab -->
+                 <div class="tab-pane fade show active" id="tab-categories" role="tabpanel" tabindex="0">
+                     <div class="mega-menu-wrapper">
+                        <!-- Left: Categories -->
+                        <div class="mega-col-left" id="mega-categories-list" style="width: 25%;">
+                          <ul class="mega-cat-list">
+                            {% for cat, info in mega_menu.categories.items() %}
+                            <li class="mega-cat-item {% if loop.first %}active{% endif %}" data-target="cat-{{ cat|replace(' ', '-')|lower|replace('&', 'and') }}" style="cursor: pointer;" onclick="window.location.href='{{ url_for('main.compare_prices', category=cat) }}'">
+                              <div class="mega-cat-icon p-0 border" style="overflow: hidden;">
+                                 <img src="{{ mega_menu.images.get(cat, mega_menu.fallback_image) }}" alt="{{ cat }}" style="width: 100%; height: 100%; object-fit: cover;">
+                              </div> 
+                              <span>{{ cat }}</span>
+                            </li>
+                            {% endfor %}
+                          </ul>
+                        </div>
+                        
+                        <!-- Mid: Subcategories (takes 75% now that deals/discover is gone) -->
+                        <div class="mega-col-mid bg-white p-4" style="width: 75%; overflow-y: auto;">
+                          {% for cat, info in mega_menu.categories.items() %}
+                          <div class="mega-subcat-panel {% if loop.first %}active{% endif %} h-100" id="cat-{{ cat|replace(' ', '-')|lower|replace('&', 'and') }}">
+                            <h5 class="fw-bold mb-4 pb-2 border-bottom d-flex align-items-center">
+                              <i class="bi {{ info.icon }} text-primary me-3 fs-4"></i>{{ cat }}
+                              <a href="{{ url_for('main.compare_prices', category=cat) }}" class="btn btn-sm text-decoration-none ms-auto fw-bold text-primary">View All <i class="bi bi-arrow-right"></i></a>
+                            </h5>
+                            <div class="row g-4">
+                              {% for l1, l2_list in info.subcats.items() %}
+                              <div class="col-12 col-sm-12 col-lg-4 mb-2">
+                                  <div class="card h-100 border border-light shadow-sm rounded-4 overflow-hidden subcat-hover-card bg-light d-flex flex-row">
+                                     <!-- Left: Image Box (smaller width/height) -->
+                                     <div class="subcat-img-wrapper position-relative" style="width: 40%; min-height: 110px; overflow: hidden;">
+                                        <img src="{{ mega_menu.images.get(l1, mega_menu.images.get(cat, mega_menu.fallback_image)) }}" alt="{{ l1 }}" class="w-100 h-100" style="object-fit: cover; opacity: 0.95;">
+                                        <div class="position-absolute bottom-0 start-0 w-100 p-2 d-flex align-items-end" style="background: linear-gradient(to top, rgba(0,0,0,0.85), rgba(0,0,0,0.1));">
+                                            <a href="{{ url_for('main.compare_prices', category=l1) }}" class="fw-bold text-white text-decoration-none lh-sm stretched-link" style="font-size: 0.9rem; text-shadow: 0 2px 4px rgba(0,0,0,0.6);">
+                                               {{ l1 }}
+                                            </a>
+                                        </div>
+                                     </div>
+                                     <!-- Right: Links Box -->
+                                     <div class="card-body p-2 bg-white d-flex align-content-start flex-wrap gap-1" style="width: 60%;">
+                                           {% for l2 in l2_list %}
+                                              <a href="{{ url_for('main.compare_prices', category=l2) }}" class="badge text-secondary bg-light text-decoration-none hover-primary fw-medium position-relative z-2" style="border: 1px solid #e2e8f0; font-size: 0.75rem; white-space: normal; text-align: left;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">
+                                                 {{ l2 }}
+                                              </a>
+                                           {% endfor %}
+                                           {% if not l2_list %}
+                                              <a href="{{ url_for('main.compare_prices', category=l1) }}" class="badge text-secondary bg-light text-decoration-none fw-medium position-relative z-2" style="border: 1px solid #e2e8f0; font-size: 0.75rem;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">Explore {{ l1 }}</a>
+                                           {% endif %}
+                                     </div>
+                                  </div>
+                              </div>
+                              {% endfor %}
+                              {% if not info.subcats %}
+                              <div class="col-12"><div class="text-muted small">Select "View All" to explore items in this category.</div></div>
+                              {% endif %}
+                            </div>
+                          </div>
+                          {% endfor %}
+                        </div>
+                     </div>
+                 </div>
+                 
+                 <!-- Brands Tab -->
+                 <div class="tab-pane fade" id="tab-brands" role="tabpanel" tabindex="0">
+                     <div class="mega-menu-wrapper bg-white py-4 px-5">
+                       <div class="w-100">
+                          <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom w-100">
+                            <h5 class="fw-bold m-0"><i class="bi bi-tags-fill text-primary me-2"></i>Top Brands</h5>
+                            <a href="{{ url_for('main.compare_prices') }}" class="btn btn-sm text-decoration-none fw-bold text-primary">Explore All Brands <i class="bi bi-arrow-right"></i></a>
+                          </div>
+                          <div class="brands-grid d-grid gap-3" style="grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); width: 100%;">
+                            {% for brand in mega_menu.brands %}
+                            <a href="{{ url_for('main.compare_prices', search=brand) }}" class="brand-card shadow-sm border border-light py-2 text-center text-truncate px-2" title="{{ brand }}">
+                              {{ brand }}
+                            </a>
+                            {% endfor %}
+                          </div>
+                       </div>
+                     </div>
+                 </div>
+
+              </div>
+            </div>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.endpoint == 'main.compare_prices' %}active{% endif %} rounded-pill px-3 py-2 text-nowrap" 
+               href="{{ url_for('main.compare_prices') }}"><i class="bi bi-search me-1"></i>Compare</a>
+          </li>
+
+          <li class="nav-item">
+            <a class="nav-link {% if request.endpoint == 'recipe.recipe_planner' %}active{% endif %} rounded-pill px-3 py-2 text-nowrap" 
+               href="{{ url_for('recipe.recipe_planner') }}"><i class="bi bi-magic me-1"></i>Recipe Planner</a>
+          </li>
+
+          <li class="nav-item">
+            <a class="nav-link {% if request.endpoint == 'main.featured_deals_page' %}active{% endif %} rounded-pill px-3 py-2 text-nowrap" 
+               href="{{ url_for('main.featured_deals_page') }}"><i class="bi bi-tags-fill me-1"></i>Deals</a>
+          </li>
+
+          {% if session.get('user') %}
+          <li class="nav-item">
+            <a class="nav-link {% if request.endpoint == 'main.shopping_list' %}active{% endif %} rounded-pill px-3 py-2 text-nowrap" 
+               href="{{ url_for('main.shopping_list') }}"><i class="bi bi-card-list me-1"></i>My List</a>
+          </li>
+          {% endif %}
+        </ul>
+        
 
         {% if session.get('user') %}
         <div class="navbar-mobile-account d-lg-none mt-3">
@@ -237,10 +391,7 @@
                 <i class="bi bi-sliders2"></i>
                 <span>Preferences</span>
               </a>
-              <a class="navbar-menu-link {% if request.endpoint == 'main.stores_page' %}active{% endif %}" href="{{ url_for('main.stores_page') }}">
-                <i class="bi bi-shop"></i>
-                <span>Stores</span>
-              </a>
+              
               <a class="navbar-menu-link" href="{{ url_for('main.notifications_page') }}">
                 <i class="bi bi-bell-fill"></i>
                 <span>Notifications</span>
@@ -333,5 +484,342 @@
 
   <!-- Page Specific JavaScript / Inline Scripts -->
   {% block scripts %}{% endblock %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+    // Rebind price report logic for main UI and dynamic elements
+    const reportModalEl = document.getElementById('priceReportModal');
+    if (reportModalEl) {
+        const reportModal = new bootstrap.Modal(reportModalEl);
+        
+        document.body.addEventListener('click', function(e) {
+            const btn = e.target.closest('.js-report-btn');
+            if (!btn) return;
+            
+            const productId = btn.getAttribute('data-product-id');
+            const productName = btn.getAttribute('data-product-name');
+            let stores = [];
+            try {
+                stores = JSON.parse(btn.getAttribute('data-product-stores') || '[]');
+            } catch (err) {}
+            
+            document.getElementById('report-product-name').textContent = productName;
+            document.getElementById('submit-report-btn').dataset.productId = productId;
+            
+            const storeSelect = document.getElementById('report-store-select');
+            storeSelect.innerHTML = '';
+            
+            if (stores && stores.length > 0) {
+                stores.forEach(st => {
+                    const opt = document.createElement('option');
+                    opt.value = st;
+                    opt.textContent = st;
+                    storeSelect.appendChild(opt);
+                });
+            } else {
+                const opt = document.createElement('option');
+                opt.value = 'Unknown';
+                opt.textContent = 'Unknown/Other';
+                storeSelect.appendChild(opt);
+            }
+            
+            document.getElementById('report-price-input').value = '';
+            document.getElementById('report-note-input').value = '';
+            document.getElementById('report-feedback').textContent = '';
+            document.getElementById('report-feedback').className = 'text-muted d-block mt-2';
+            
+            reportModal.show();
+        });
+
+        document.getElementById('submit-report-btn')?.addEventListener('click', async function() {
+            const btn = this;
+            const productId = btn.dataset.productId;
+            const store = document.getElementById('report-store-select').value;
+            const priceStr = document.getElementById('report-price-input').value;
+            const note = document.getElementById('report-note-input').value;
+            const feedback = document.getElementById('report-feedback');
+            
+            if (!priceStr || isNaN(parseFloat(priceStr))) {
+                feedback.textContent = 'Please enter a valid price.';
+                feedback.className = 'text-danger d-block mt-2';
+                return;
+            }
+            
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Submitting...';
+            btn.disabled = true;
+            
+            try {
+                const res = await fetch('/api/community-price-report', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        product_id: productId,
+                        store_name: store,
+                        observed_price: parseFloat(priceStr),
+                        note: note
+                    })
+                });
+                const data = await res.json();
+                
+                if (data.success) {
+                    feedback.textContent = 'Report submitted successfully. Thank you!';
+                    feedback.className = 'text-success d-block mt-2';
+                    setTimeout(() => reportModal.hide(), 1500);
+                } else {
+                    feedback.textContent = data.message || 'Error submitting report.';
+                    feedback.className = 'text-danger d-block mt-2';
+                }
+            } catch (err) {
+                feedback.textContent = 'Network error.';
+                feedback.className = 'text-danger d-block mt-2';
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        });
+    }
+
+});
+
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const catItems = document.querySelectorAll('.mega-cat-item');
+    const subcatPanels = document.querySelectorAll('.mega-subcat-panel');
+    
+    catItems.forEach(item => {
+        item.addEventListener('mouseenter', () => {
+            // Remove active from all
+            catItems.forEach(i => i.classList.remove('active'));
+            subcatPanels.forEach(p => p.classList.remove('active'));
+            
+            // Add active to current
+            item.classList.add('active');
+            const targetId = item.getAttribute('data-target');
+            if (targetId && document.getElementById(targetId)) {
+                document.getElementById(targetId).classList.add('active');
+            }
+        });
+    });
+});
+</script>
+
+
+  <!-- One-Row Scroll Listener injected securely WITHOUT changing HTML DOM structure -->
+  <style>
+    /* Ensure navbar is sticky inside its container */
+    nav.navbar-premium { transition: all 0.3s ease; display:flex; flex-wrap: wrap; }
+    
+    /* 
+      1. Default (Top): Search row visible fully 
+      2. Scrolled: We shrink the logo slightly and fold the secondary row inside
+    */
+    .navbar-scrolled {
+       padding-top: 0.2rem !important; padding-bottom: 0.2rem !important;
+       background: #ffffff !important;
+       color: #333 !important;
+    }
+    .navbar-scrolled .navbar-brand { font-size: 1.1rem; display: none !important; width: 0; padding: 0; margin: 0; overflow: hidden; }
+    .navbar-scrolled .navbar-nav .nav-link { color: #555 !important; }
+    .navbar-scrolled .navbar-nav .nav-link:hover { color: #8b5cf6 !important; }
+    .navbar-scrolled .navbar-toggler-icon { filter: invert(1); }
+  </style>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const primaryNav = document.querySelector(".navbar-premium");
+        if(primaryNav) {
+            window.addEventListener("scroll", function() {
+                if (window.scrollY > 40) {
+                    primaryNav.classList.add("navbar-scrolled");
+                    primaryNav.classList.remove("navbar-dark");
+                    primaryNav.classList.add("navbar-light");
+                } else {
+                    primaryNav.classList.remove("navbar-scrolled");
+                    primaryNav.classList.remove("navbar-light");
+                    primaryNav.classList.add("navbar-dark");
+                }
+            });
+        }
+    });
+  </script>
+
+  <!-- Dynamic One-Row Animation -->
+  <style>
+    /* Expand behavior */
+    nav.navbar-premium { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); display:flex; flex-wrap: wrap; }
+    
+    .navbar-scrolled {
+       padding-top: 0.4rem !important; padding-bottom: 0.4rem !important;
+       background: rgba(255,255,255,0.98) !important;
+       backdrop-filter: blur(12px);
+       color: #333 !important;
+       box-shadow: 0 4px 20px rgba(0,0,0,0.08) !important;
+    }
+    
+    .navbar-scrolled .navbar-brand { font-size: 1.1rem; display: none !important; width: 0; padding: 0; margin: 0; overflow: hidden; }
+    .navbar-scrolled .navbar-nav .nav-link { color: #555 !important; }
+    .navbar-scrolled .navbar-nav .nav-link:hover { color: #8b5cf6 !important; }
+    .navbar-scrolled .navbar-toggler-icon { filter: invert(1); }
+    
+    /* Make search & tabs collapse into one row on large screens */
+    @media (min-width: 992px) {
+        .navbar-scrolled .tabs-search-bar { 
+            max-width: 400px !important; 
+            margin-right: auto !important; 
+            flex-grow: 0 !important;
+            transition: max-width 0.4s ease;
+        }
+        
+        .navbar-scrolled .tabs-collapse {
+            order: 3 !important;
+            width: auto !important;
+            flex-grow: 0;
+            margin-top: 0 !important;
+            margin-bottom: 0 !important;
+            padding-top: 0 !important;
+            border-top: none !important;
+        }
+        
+        .navbar-scrolled .profile-toggle-copy { display: none !important; }
+        .navbar-scrolled .side-icons-group {
+            gap: 0.5rem !important;
+            order: 4 !important;
+            margin-left: auto !important; /* Push profile icons to extreme right */
+        }
+    }
+  </style>
+
+
+<!-- Global Search Logic -->
+<style>
+.search-result-item { transition: background-color 0.2s ease; border-bottom: 1px solid rgba(0,0,0,0.05); }
+.search-result-item:hover { background-color: #f8fafc; }
+.search-result-item:last-child { border-bottom: none !important; }
+.spinner-border-purple { color: #8b5cf6 !important; }
+</style>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const input = document.getElementById("globalSearchInput");
+    const resultsBox = document.getElementById("globalSearchResults");
+    const contentBox = document.getElementById("searchResultsContent");
+    const footerBox = document.getElementById("searchResultsFooter");
+    const form = document.getElementById("globalNavSearchForm");
+    let searchTimeout = null;
+
+    if (!input || !resultsBox || !contentBox || !form) return;
+
+    window.submitGlobalSearch = function() {
+        const q = input.value.trim();
+        if (q) {
+            window.location.href = `/compare-prices?search=${encodeURIComponent(q)}`;
+        }
+    };
+
+    form.onsubmit = function(e) {
+        e.preventDefault();
+        window.submitGlobalSearch();
+    };
+
+    input.addEventListener("input", function() {
+        clearTimeout(searchTimeout);
+        const q = input.value.trim();
+        
+        if (q.length < 2) {
+            resultsBox.classList.remove("d-flex");
+            resultsBox.classList.add("d-none");
+            return;
+        }
+
+        searchTimeout = setTimeout(async () => {
+            try {
+                resultsBox.classList.remove("d-none");
+                resultsBox.classList.add("d-flex");
+                footerBox.classList.add("d-none");
+                contentBox.innerHTML = `
+                    <div class="d-flex justify-content-center align-items-center py-5">
+                        <div class="spinner-border spinner-border-purple" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>`;
+
+                const res = await fetch(`/api/search-products?q=${encodeURIComponent(q)}`);
+                const data = await res.json();
+                
+                contentBox.innerHTML = "";
+                
+                if (!data.items || data.items.length === 0) {
+                    contentBox.innerHTML = `
+                        <div class="py-5 text-center text-muted">
+                            <i class="bi bi-search fs-1 d-block mb-3 opacity-25"></i>
+                            <div class="fw-medium fs-5 text-dark">No matches found for "${q}"</div>
+                            <small>Try checking your spelling or using fewer words.</small>
+                        </div>`;
+                    return;
+                }
+
+                data.items.slice(0, 6).forEach(item => {
+                    const c = item.cheapest || {};
+                    let priceVal = item.price || c.price || (item.stores && item.stores[0] && item.stores[0].price);
+                    const price = priceVal ? `€${Number(priceVal).toFixed(2)}` : "N/A";
+                    
+                    let store = "Multiple Stores";
+                    if (item.store) store = item.store;
+                    else if (c.store) store = c.store;
+                    else if (item.stores && item.stores[0]) store = item.stores[0].store || item.stores[0].name || store;
+
+                    const img = item.image || (item.images && item.images[0]) || "";
+                    
+                    let imgHtml;
+                    if (img && img.startsWith('http')) {
+                        imgHtml = `<img src="${img}" style="width: 52px; height: 52px; object-fit: contain; border-radius: 12px; border: 1px solid #e2e8f0; background: white;" class="me-3 shadow-sm flex-shrink-0">`;
+                    } else {
+                        imgHtml = `<div style="width: 52px; height: 52px; border-radius: 12px; background: #f8fafc; border: 1px solid #e2e8f0;" class="me-3 d-flex align-items-center justify-content-center text-muted shadow-sm flex-shrink-0"><i class="bi bi-basket2-fill fs-5"></i></div>`;
+                    }
+                    
+                    const name = item.name || item.title || item.product_name || "Unknown Product";
+                    const url = item.url || `/product/${item.id || item._id}`;
+                    
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.className = "d-flex align-items-center px-4 py-3 text-decoration-none search-result-item";
+                    a.innerHTML = `
+                        ${imgHtml}
+                        <div class="flex-grow-1 overflow-hidden pe-3" style="min-width:0;">
+                            <h6 class="mb-1 text-dark fw-bold text-truncate" style="font-size: 0.95rem; line-height:1.2;">${name}</h6>
+                            <span class="badge bg-light text-secondary border fw-medium px-2 py-1" style="font-size:0.75rem;"><i class="bi bi-shop me-1"></i>${store}</span>
+                        </div>
+                        <div class="fw-bold fs-6 flex-shrink-0 ms-auto text-end" style="color: #8b5cf6;">${price}</div>
+                    `;
+                    contentBox.appendChild(a);
+                });
+                
+                if (data.items.length > 6) {
+                    footerBox.classList.remove("d-none");
+                }
+            } catch (err) {
+                contentBox.innerHTML = `<div class="p-4 text-center text-danger"><i class="bi bi-exclamation-triangle fs-3 d-block mb-2"></i>Error loading results.</div>`;
+            }
+        }, 350);
+    });
+
+    document.addEventListener("click", function(e) {
+        if (!resultsBox.contains(e.target) && e.target !== input) {
+            resultsBox.classList.remove("d-flex");
+            resultsBox.classList.add("d-none");
+        }
+    });
+
+    input.addEventListener("focus", function() {
+        if (input.value.trim().length >= 2 && contentBox.innerHTML) {
+            resultsBox.classList.remove("d-none");
+            resultsBox.classList.add("d-flex");
+        }
+    });
+});
+</script>
 </body>
+
 </html>
