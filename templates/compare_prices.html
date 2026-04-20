@@ -93,7 +93,7 @@
       height: 180px;
       object-fit: contain;
       background: #ffffff !important;
-      padding: 35px;
+      padding: 45px;
     }
 
     /* Price tag positioned absolutely over the product image */
@@ -787,50 +787,45 @@
               <li class="breadcrumb-item"><a href="/"><i class="bi bi-house-door"></i> Home</a></li>
               <li class="breadcrumb-item"><a href="/compare-prices">Products</a></li>
 
-              {% if category_filter %}
-              {% set cats = category_options if category_options is defined else [] %}
-              {% set active_cat_name = "" %}
-              {% set active_subcats = [] %}
-              {% for cat_obj in cats %}
-                  {% set cname = cat_obj.name if cat_obj is mapping else cat_obj %}
-                  {% if cname|lower == category_filter|lower %}
-                      {% set active_cat_name = cname %}
-                      {% if cat_obj is mapping and cat_obj.subcategories %}
-                          {% set active_subcats = cat_obj.subcategories %}
-                      {% endif %}
-                  {% else %}
-                      {% if cat_obj is mapping and cat_obj.subcategories %}
-                          {% for sub in cat_obj.subcategories %}
-                              {% if sub.name|lower == category_filter|lower %}
-                                  {% set active_cat_name = sub.name %}
-                                  {% set active_subcats = sub.subcategories %}
-                              {% endif %}
-                          {% endfor %}
-                      {% endif %}
-                  {% endif %}
-              {% endfor %}
-              
-              <li class="breadcrumb-item active hover-popover-container" aria-current="page">
-                  <a href="javascript:void(0)" class="active">{{ active_cat_name or category_filter|title }} <i class="bi bi-chevron-down ms-1" style="font-size: 0.7rem;"></i></a>
-                  <div class="hover-popover-menu">
-                      {% if active_subcats %}
-                          {% for sub_obj in active_subcats %}
-                              {% set cname = sub_obj.name if sub_obj is mapping else sub_obj %}
-                              <a href="{{ url_for('main.compare_prices', category=cname|lower) }}">
-                                  {% if cname == active_cat_name %}<strong>{{ cname }}</strong>{% else %}{{ cname }}{% endif %}
-                              </a>
-                          {% endfor %}
-                      {% else %}
-                          <a href="#"><em>No subcategories</em></a>
-                      {% endif %}
-                  </div>
-              </li>
+                            {% if category_filter and breadcrumb_path %}
+                  {% for node in breadcrumb_path %}
+                      <li class="breadcrumb-item {% if loop.last %}active hover-popover-container{% endif %}" {% if loop.last %}aria-current="page"{% endif %}>
+                          {% if loop.last %}
+                              <a href="javascript:void(0)" class="active">{{ node.name }} <i class="bi bi-chevron-down ms-1" style="font-size: 0.7rem;"></i></a>
+                              <div class="hover-popover-menu">
+                                  {% if node.subcategories %}
+                                      {% for sub_obj in node.subcategories %}
+                                          <a href="{{ url_for('main.compare_prices', category=sub_obj.name|lower) }}">
+                                              {{ sub_obj.name }}
+                                          </a>
+                                      {% endfor %}
+                                  {% else %}
+                                      {% if not loop.first %}
+                                          {# Display siblings if no children #}
+                                          {% set parent_node = breadcrumb_path[loop.index0 - 1] %}
+                                          {% for sibling in parent_node.subcategories %}
+                                              <a href="{{ url_for('main.compare_prices', category=sibling.name|lower) }}">
+                                                  {% if sibling.name == node.name %}<strong>{{ sibling.name }}</strong>{% else %}{{ sibling.name }}{% endif %}
+                                              </a>
+                                          {% endfor %}
+                                      {% else %}
+                                          <a href="#"><em>No subcategories</em></a>
+                                      {% endif %}
+                                  {% endif %}
+                              </div>
+                          {% else %}
+                              <a href="{{ url_for('main.compare_prices', category=node.name|lower) }}">{{ node.name }}</a>
+                          {% endif %}
+                      </li>
+                  {% endfor %}
+              {% elif category_filter %}
+                  <li class="breadcrumb-item active" aria-current="page">{{ category_filter|title }}</li>
               {% endif %}
-          </ol>
+          </ol></ol>
       </nav>
 
       <!-- Visual Card Categories -->
-      <div class="d-flex w-100 overflow-x-auto align-items-center py-2 mb-4" style="-webkit-overflow-scrolling: touch; scrollbar-width: none; ms-overflow-style: none;">
+      <div class="d-flex w-100 overflow-x-auto align-items-center py-2 mb-4 position-relative" style="-webkit-overflow-scrolling: touch; scrollbar-width: none; ms-overflow-style: none;">
         <style>
             .visual-cat-container::-webkit-scrollbar { display: none; }
             .visual-cat-card {
@@ -856,7 +851,7 @@
                   background: transparent; border-radius: 8px; margin-bottom: 12px; z-index: 2; border: none;
               }
               .visual-cat-card.active .visual-cat-img-wrap { background: transparent; }
-              .visual-cat-img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
+              .visual-cat-img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; filter: brightness(1.05) contrast(1.05); }
               .visual-cat-title { font-size: 0.85rem; font-weight: 700; color: #475569; text-align: center; z-index: 2; max-width: 120px; word-wrap: break-word; line-height: 1.2; }
         </style>
         <div class="visual-cat-card {% if not category_filter %}active{% endif %}" onclick="document.getElementById('category-filter').value=''; document.getElementById('searchMenuBtn').click();">
@@ -864,7 +859,12 @@
             <div class="visual-cat-title">All Items</div>
         </div>
             
-            {% set cats = category_options if category_options is defined else [] %}
+                        <!-- Scroll visual hint indicator -->
+            <div class="position-absolute end-0 top-50 translate-middle-y d-md-none bg-white p-1 rounded-circle shadow-sm" style="z-index: 10; margin-right: -10px; opacity: 0.8; pointer-events: none;">
+                <i class="bi bi-chevron-right text-muted"></i>
+            </div>
+            
+            {% set cats = visual_categories if visual_categories is defined else category_options %}
             {% for cat_obj in cats %}
             {% set cat_name = cat_obj.name if cat_obj is mapping else cat_obj %}
             {% set slug = cat_name|lower %}
@@ -956,16 +956,13 @@
             <a href="{{ url_for('main.product_detail', product_id=p.get('id')) }}"
               class="product-link text-decoration-none text-dark d-block">
               <div class="position-relative">
+                <!-- Top Left Purple Price Badge -->
+                <span class="badge position-absolute" style="top: 10px; left: 10px; z-index: 10; background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); color: white; padding: 6px 10px; font-weight: 600; letter-spacing: 0.5px; border-radius: 6px; box-shadow: 0 4px 6px rgba(124, 58, 237, 0.2); text-shadow: 0 1px 2px rgba(0,0,0,0.2);">
+                    €<span class="js-compare-price">{{ (p.get('cheapest') and p.get('cheapest').get('price')) or p.get('price','N/A') }}</span>
+                </span>
                 <img
                   src="{{ prefer_processed(p.get('image') or (p.get('images') and p.get('images')[0]) or url_for('static', filename='placeholder.svg')) }}"
                   class="card-img-top product-image" alt="{{ p.get('name') or p.get('title','Product') }}">
-                
-                {# Price Badge: Shows cheapest available price #}
-                
-                  <span class="price-badge">
-                  <i class="bi bi-tag-fill"></i> €<span class="js-compare-price">{{ (p.get('cheapest') and p.get('cheapest').get('price')) or
-                  p.get('price','N/A') }}</span>
-                </span>
               </div>
             </a>
             

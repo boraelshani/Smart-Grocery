@@ -188,3 +188,30 @@ GOAL: Standardized button styles, gradients, and hover effects.
     border-color: #3b82f6;
     box-shadow: 0 0 0 0.25rem rgba(59, 130, 246, 0.1);
 }
+
+/* Favorite button styling refine */
+.btn-favorite {
+    background-color: #ffffff !important;
+    border: 1px solid #e2e8f0;
+    transition: all 0.2s ease-in-out;
+}
+
+.btn-favorite:hover {
+    background-color: #f1f5f9 !important; /* just a little gray */
+    border-color: #cbd5e1;
+}
+
+.btn-favorite:active, 
+.btn-favorite.active {
+    background-color: #ffffff !important; /* container is white */
+    border-color: #fee2e2;
+}
+
+.btn-favorite i {
+    transition: color 0.2s ease-in-out;
+}
+
+.btn-favorite:active i,
+.btn-favorite.active i {
+    color: #ef4444 !important; /* heart red */
+}

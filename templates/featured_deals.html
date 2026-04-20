@@ -93,7 +93,7 @@
       height: 180px;
       object-fit: contain;
       background: #ffffff !important;
-      padding: 35px;
+      padding: 45px;
     }
 
     /* Price tag positioned absolutely over the product image */
@@ -101,7 +101,7 @@
       position: absolute;
       top: 10px;
       right: 10px;
-      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); /* Bright pink/purple gradient for visibility */
+      background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); /* Professional violet */
       color: white;
       padding: 6px 10px;
       border-radius: 20px;
@@ -802,7 +802,7 @@
                   background: transparent; border-radius: 8px; margin-bottom: 12px; z-index: 2; border: none;
               }
               .visual-cat-card.active .visual-cat-img-wrap { background: transparent; }
-              .visual-cat-img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
+              .visual-cat-img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; filter: brightness(1.05) contrast(1.05); }
               .visual-cat-title { font-size: 0.85rem; font-weight: 700; color: #475569; text-align: center; z-index: 2; max-width: 120px; word-wrap: break-word; line-height: 1.2; }
         </style>
         <div class="visual-cat-card {% if not category_filter %}active{% endif %}" onclick="document.getElementById('category-filter').value=''; document.getElementById('searchMenuBtn').click();">
@@ -884,7 +884,7 @@
         Data Attributes: Prints the price/category deeply into HTML (invisible to user)
         so JavaScript can read them later for instant filtering.
         -->
-        <div class="col-md-6 col-lg-4 product-card" 
+        <div class="col-md-6 col-lg-3 product-card" 
           data-stores='{{ p.get("stores")|tojson }}'
           data-store="{{ (p.get('store') or p.get('source','') or '')|lower }}" 
           data-price="{{ p.get('price','') }}"
@@ -902,19 +902,39 @@
             <!-- IMAGE & BADGES AREA -->
             <div class="position-relative">
               {% set pid = p.get('_id') or p.get('id') %}
+              <!-- Top Left Badges Group -->
+              <div class="position-absolute d-flex flex-column gap-2" style="top: 10px; left: 10px; z-index: 10;">
+                  <!-- Top Left Badges Group -->
+              <div class="position-absolute d-flex flex-column gap-2" style="top: 10px; left: 10px; z-index: 10;">
+                  {% set discount_label = p.get('discount_label') or (p.get('discount_percent') ~ '% off' if p.get('discount_percent') is not none else '') %}
+                  {% if discount_label %}
+                  <span class="badge" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; padding: 6px 10px; font-weight: 600; letter-spacing: 0.5px; border-radius: 6px; box-shadow: 0 4px 6px rgba(220, 38, 38, 0.2); width: fit-content; text-shadow: 0 1px 2px rgba(0,0,0,0.2);">
+                    {{ discount_label }}
+                  </span>
+                  {% endif %}
+                  
+                  <span class="badge" style="background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); color: white; padding: 6px 10px; font-weight: 600; letter-spacing: 0.5px; border-radius: 6px; box-shadow: 0 4px 6px rgba(124, 58, 237, 0.2); width: fit-content; text-shadow: 0 1px 2px rgba(0,0,0,0.2);">
+                    €{{ '%.2f' % ((p.get('price') or 0)|float) }}
+                  </span>
+              </div>
+                  
+                  <span class="badge" style="background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); color: white; padding: 6px 10px; font-weight: 600; letter-spacing: 0.5px; border-radius: 6px; box-shadow: 0 4px 6px rgba(124, 58, 237, 0.2); width: fit-content;">
+                    <i class="bi bi-tag-fill d-none"></i> €{{ '%.2f' % ((p.get('price') or 0)|float) }}
+                  </span>
+              </div>
+              
               <!-- Product Image: Uses placeholder if missing -->
               <img src="{{ prefer_processed(p.get('image') or url_for('static', filename='placeholder.svg')) }}"
                 class="card-img-top product-image" alt="{{ p.get('title') or p.get('name','Product') }}">
               
-              <!-- Price Tag Overlay -->
-              <span class="price-badge">
-                <i class="bi bi-tag-fill"></i> {{ p.get('price','') }}
-              </span>
+
               
               <!-- Favorite Heart Button (Floating) -->
-              <button class="btn-favorite {{ 'active' if p.get('is_favorited') else '' }}" style="z-index: 10;"
+              <button class="btn-favorite btn rounded-circle shadow-sm {{ 'active' if p.get('is_favorited') else '' }}" 
+                style="position: absolute; top: 10px; right: 10px; z-index: 10; width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; padding: 0; color: #64748b; background-color: white; transition: all 0.2s;"
+                onmouseover="this.style.backgroundColor='#f8f9fa';" onmouseout="this.style.backgroundColor='white';"
                 onclick="toggleFavorite(event, '{{ pid }}', this)" title="Add to favorites">
-                <i class="bi {{ 'bi-heart-fill' if p.get('is_favorited') else 'bi-heart' }}"></i>
+                <i class="bi {{ 'bi-heart-fill text-danger' if p.get('is_favorited') else 'bi-heart text-secondary' }}" style="font-size: 1.1rem; line-height: 1; margin-top: 2px;"></i>
               </button>
             </div>
             
@@ -942,12 +962,8 @@
               <!-- Badges: Shows a badge (like "20% OFF") only if discount_label exists. -->
               <div class="d-flex justify-content-between align-items-start mb-3">
                 <div class="d-flex flex-column gap-1">
-                  <h5 class="card-title mb-0 fw-bold" style="font-size: 1rem;">{{ p.get('title') or p.get('name','') }}</h5>
-                  {% if discount_label %}
-                  <span class="badge align-self-start"
-                  style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; border: none;">{{
-                  discount_label }}</span>
-                  {% endif %}
+                  <h6 class="card-title mb-0 fw-bold text-dark" style="font-size: 0.9rem; line-height: 1.3; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">{{ p.get('title') or p.get('name','') }}</h6>
+
                 </div>
                 <button type="button" class="btn btn-sm text-secondary js-report-btn"
             style="padding: 4px 8px; border: none; background: transparent; font-size: 1.1rem; flex-shrink: 0;"
@@ -963,21 +979,19 @@
               <p class="text-muted small mb-2">{{ p.get('store') or p.get('source','') }}</p>
               
               <!-- PRICE DISPLAY LOGIC -->
-              <!-- Smart Display Logic: Checks 'is_buy_get_deal' to decide between showing "Buy 1 Get 1" vs "Was/Now" prices. -->
-              <div class="mb-3">
+              <div class="mb-3 d-flex flex-wrap align-items-center gap-2">
                 {% if is_buy_get_deal %}
-                <div class="fw-bold fs-5"
-                  style="background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
-                  €{{ '%.2f' % (p.get('price') or 0) }} each</div>
-                <div class="text-muted small">{{ offer }}</div>
-                {% else %}
-                {% if original_price %}
-                <div class="text-muted small text-decoration-line-through">Before: €{{ '%.2f' % (original_price|float) }}
+                <div class="fw-bold fs-5" style="color: #6d28d9; line-height: 1;">
+                  €{{ '%.2f' % (p.get('price') or 0) }} <span style="font-size: 0.8rem; font-weight: normal; color: #64748b;">each</span>
                 </div>
+                <div class="text-secondary small fw-medium" style="background: rgba(109, 40, 217, 0.1); padding: 2px 6px; border-radius: 4px;">{{ offer }}</div>
+                {% else %}
+                <div class="fw-bold fs-5" style="color: #6d28d9; line-height: 1;">
+                  €{{ '%.2f' % ((p.get('price') or 0)|float) }}
+                </div>
+                {% if original_price %}
+                <div class="text-muted small text-decoration-line-through mt-1">€{{ '%.2f' % (original_price|float) }}</div>
                 {% endif %}
-                <div class="fw-bold fs-5"
-                  style="background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
-                  Now: €{{ '%.2f' % ((p.get('price') or 0)|float) }}</div>
                 {% endif %}
               </div>
               

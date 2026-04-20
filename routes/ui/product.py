@@ -163,12 +163,48 @@ def compare_prices():
 
     category_options = helpers.get_category_options()
 
+    # Calculate breadcrumb path and visual categories based on the full tree
+    breadcrumb_path = []
+    visual_categories = category_options  # Default to roots
     
     if category_filter:
-        # Add the selected subcategory to the chips dynamically so it shows as active/selected
-        if not any(category_filter.lower() == c['name'].lower() for c in category_options):
-            category_options.append({"name": category_filter.title()})
-    
+        cf_lower = category_filter.lower()
+        found_in_tree = False
+        
+        for l1 in category_options:
+            if l1.get('name', '').lower() == cf_lower:
+                breadcrumb_path = [l1]
+                if l1.get('subcategories'):
+                    visual_categories = l1['subcategories']
+                else:
+                    visual_categories = category_options
+                found_in_tree = True
+                break
+                
+            for l2 in l1.get('subcategories', []):
+                if l2.get('name', '').lower() == cf_lower:
+                    breadcrumb_path = [l1, l2]
+                    if l2.get('subcategories'):
+                        visual_categories = l2['subcategories']
+                    else:
+                        visual_categories = l1['subcategories']
+                    found_in_tree = True
+                    break
+                    
+                for l3 in l2.get('subcategories', []):
+                    if l3.get('name', '').lower() == cf_lower:
+                        breadcrumb_path = [l1, l2, l3]
+                        # l3 usually has no subcategories in our depth-3 tree
+                        visual_categories = l2['subcategories']
+                        found_in_tree = True
+                        break
+                if found_in_tree: break
+            if found_in_tree: break
+            
+        # Add the selected subcategory to the chips dynamically so it shows as active/selected if not found
+        if not found_in_tree:
+            pass # Keep it simple, breadcrumb empty path
+
     return render_template('compare_prices.html',
                          products=helpers.sanitize_mongo_doc(products),
                          page=page,
@@ -177,4 +213,6 @@ def compare_prices():
                          category_filter=category_filter,
                          search_query=search_query,
                          sort_filter=sort_filter,
-                         category_options=category_options)
+                         category_options=category_options,
+                         breadcrumb_path=breadcrumb_path,
+                         visual_categories=visual_categories)

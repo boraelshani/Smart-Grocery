@@ -208,11 +208,11 @@
               <div class="mega-menu-content-bridge"></div>
               
               <!-- Tab Navigation Bar -->
-              <div class="border-bottom pt-3 pb-3 px-4 shadow-sm d-flex justify-content-center" style="background: linear-gradient(180deg, #f8fafc, #ffffff);">
+              <div class="pt-3 pb-3 px-4 d-flex justify-content-center">
                  <nav>
-                   <div class="nav custom-pill-nav" id="browse-tabs" role="tablist">
-                     <button class="nav-link active fw-bold px-4" id="tab-categories-btn" data-bs-toggle="tab" data-bs-target="#tab-categories" type="button" role="tab"><i class="bi bi-grid-fill me-2"></i>Categories</button>
-                     <button class="nav-link fw-bold px-4" id="tab-brands-btn" data-bs-toggle="tab" data-bs-target="#tab-brands" type="button" role="tab"><i class="bi bi-tags-fill me-2"></i>Brands</button>
+                   <div class="nav custom-pill-nav" id="browse-tabs" role="tablist" style="background: #7c3aed;">
+                     <button class="nav-link active fw-bold px-4" id="tab-categories-btn" data-bs-toggle="tab" data-bs-target="#tab-categories" type="button" role="tab" style="color: white;"><i class="bi bi-grid-fill me-2"></i>Categories</button>
+                     <button class="nav-link fw-bold px-4" id="tab-brands-btn" data-bs-toggle="tab" data-bs-target="#tab-brands" type="button" role="tab" style="color: white;"><i class="bi bi-tags-fill me-2"></i>Brands</button>
                    </div>
                  </nav>
               </div>
@@ -220,13 +220,11 @@
               <style>
               /* Custom Segmented Control - Purple Theme */
               .custom-pill-nav {
-                  background: #f3e8ff; /* Light purple background */
                   border-radius: 50px;
                   padding: 6px;
                   display: inline-flex;
               }
               .custom-pill-nav .nav-link {
-                  color: #7e22ce; /* Purple text */
                   border-radius: 50px;
                   font-weight: 600;
                   padding: 10px 32px;
@@ -236,15 +234,25 @@
                   background: transparent;
                   font-size: 0.95rem;
               }
-              .custom-pill-nav .nav-link:hover { background: #e9d5ff !important; color: #6b21a8 !important; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-              .custom-pill-nav .nav-link.active { background: #7c3aed !important; color: #ffffff !important; font-weight: 700; 
-                  box-shadow: 0 4px 15px rgba(124, 58, 237, 0.4);
+              .custom-pill-nav .nav-link:hover { background: rgba(255,255,255,0.2) !important; color: white !important; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+              .custom-pill-nav .nav-link.active { background: white !important; color: #7c3aed !important; font-weight: 700; 
+                  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
               }
               
               .subcat-hover-card { transition: all 0.3s ease; }
               .subcat-hover-card:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(0,0,0,0.1) !important; }
               .subcat-img-wrapper img { transition: transform 0.5s ease; }
               .subcat-hover-card:hover .subcat-img-wrapper img { transform: scale(1.08); }
+              
+              .sub-subcat-badge { transition: all 0.2s ease; }
+              .sub-subcat-badge:hover {
+                  background-color: #f3e8ff !important;
+                  border-color: #d8b4fe !important;
+                  color: #7c3aed !important;
+                  transform: translateY(-2px);
+                  box-shadow: 0 4px 6px -1px rgba(124, 58, 237, 0.1), 0 2px 4px -1px rgba(124, 58, 237, 0.06);
+                  text-decoration: none !important;
+              }
               </style>
               
               <!-- Tab Contents -->
@@ -291,7 +299,7 @@
                                      <!-- Right: Links Box -->
                                      <div class="card-body p-2 bg-white d-flex align-content-start flex-wrap gap-1" style="width: 60%;">
                                            {% for l2 in l2_list %}
-                                              <a href="{{ url_for('main.compare_prices', category=l2) }}" class="badge text-secondary bg-light text-decoration-none hover-primary fw-medium position-relative z-2" style="border: 1px solid #e2e8f0; font-size: 0.75rem; white-space: normal; text-align: left;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">
+                                              <a href="{{ url_for('main.compare_prices', category=l2) }}" class="sub-subcat-badge badge text-secondary bg-light text-decoration-none fw-medium position-relative z-2" style="border: 1px solid #e2e8f0; font-size: 0.75rem; white-space: normal; text-align: left;">
                                                  {{ l2 }}
                                               </a>
                                            {% endfor %}

@@ -222,13 +222,54 @@ def get_mega_menu():
     try:
         from utils.db import mongo
         
+
+        # Build category tree from database to perfectly match what's there
         categories = {}
-        for idx, (cat_name, cat_data) in enumerate(TAXONOMY_TREE.items()):
-            categories[cat_name] = {
-                'icon': cat_data['icon'],
-                'subcats': cat_data['subcats'],
-                'count': 100 - idx  # Maintain fixed sorting priority exactly as defined
-            }
+        
+        try:
+            # 1. Fetch all documents from MongoDB
+            all_cats = list(mongo.db.categories.find({}))
+            
+            # Helper to find children
+            def get_children(parent_id):
+                return [c for c in all_cats if c.get('parentId') == parent_id]
+                
+            # Grab Level 1 (Roots)
+            roots = get_children(None)
+            
+            for idx, root in enumerate(roots):
+                root_name = root.get('name_en') or root.get('name', 'Unknown')
+                root_icon = root.get('icon') or CAT_ICONS.get(root_name, 'bi-grid')
+                
+                subcats_dict = {}
+                # Level 2 loop
+                for l2 in get_children(root.get('_id')):
+                    l2_name = l2.get('name_en') or l2.get('name', 'Unknown')
+                    
+                    # Level 3 loop
+                    l3_list = []
+                    for l3 in get_children(l2.get('_id')):
+                        l3_name = l3.get('name_en') or l3.get('name', 'Unknown')
+                        l3_list.append(l3_name)
+                        
+                    subcats_dict[l2_name] = l3_list
+                    
+                categories[root_name] = {
+                    'icon': root_icon,
+                    'subcats': subcats_dict,
+                    'count': 100 - idx
+                }
+        except Exception as e:
+            print("Error building mega menu from DB:", e)
+            # fallback to hardcoded if DB fails
+            categories = {}
+            for idx, (cat_name, cat_data) in enumerate(TAXONOMY_TREE.items()):
+                categories[cat_name] = {
+                    'icon': cat_data['icon'],
+                    'subcats': cat_data['subcats'],
+                    'count': 100 - idx
+                }
+
 
         # 2. Brands aggregation -> just get all brands
         brands_pipe = [
