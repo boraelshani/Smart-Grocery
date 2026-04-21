@@ -480,14 +480,21 @@ def admin_save_product():
     den, dde = _localized_optional_pair(request.form.get("description_en"), request.form.get("description_de"))
     # Fallback to image_url if defaultImageUrl is empty
     img_url = (request.form.get("defaultImageUrl") or request.form.get("image_url") or "").strip()
-    payload = {"productId": pid, "name_en": en, "name_de": de, "brandId": (request.form.get("brandId") or "").strip() or None, "categoryId": cid or None, "categoryPath": path, "unitSize": (request.form.get("unitSize") or "").strip(), "barcode": (request.form.get("barcode") or "").strip(), "defaultImageUrl": img_url, "labels": [i.strip() for i in (request.form.get("labels") or "").split(",") if i.strip()], "description_en": den, "description_de": dde, "updatedAt": _now_utc()}
-    if not payload["name_en"]: flash("Name required", "error"); return _redirect_admin("admin.admin_dashboard")
-    db.products.update_one({"productId": pid}, {"$set": payload, "$setOnInsert": {"createdAt": _now_utc()}}, upsert=True)
     
     # Handle inline store offer addition
     new_store_ids = request.form.getlist("newStoreId[]")
     new_store_urls = request.form.getlist("newStoreUrl[]")
     new_store_prices = request.form.getlist("newStorePrice[]")
+
+    if not img_url and new_store_urls and new_store_urls[0].strip():
+        from scripts.ai_product_fetcher import fetch_product_from_url
+        auto_dt = fetch_product_from_url(new_store_urls[0].strip())
+        if auto_dt and auto_dt.get("success") and auto_dt.get("data"):
+            img_url = auto_dt["data"].get("image_url", img_url)
+
+    payload = {"productId": pid, "name_en": en, "name_de": de, "brandId": (request.form.get("brandId") or "").strip() or None, "categoryId": cid or None, "categoryPath": path, "unitSize": (request.form.get("unitSize") or "").strip(), "barcode": (request.form.get("barcode") or "").strip(), "defaultImageUrl": img_url, "labels": [i.strip() for i in (request.form.get("labels") or "").split(",") if i.strip()], "description_en": den, "description_de": dde, "updatedAt": _now_utc()}
+    if not payload["name_en"]: flash("Name required", "error"); return _redirect_admin("admin.admin_dashboard")
+    db.products.update_one({"productId": pid}, {"$set": payload, "$setOnInsert": {"createdAt": _now_utc()}}, upsert=True)
     
     for i in range(len(new_store_ids)):
         store_id = (new_store_ids[i] or "").strip()
@@ -551,6 +558,20 @@ def admin_delete_brand(bid):
     ok, res = _require_admin(); db = get_db()
     if db.products.find_one({"brandId": bid}): flash("In use", "error"); return redirect(url_for("admin.admin_brands_page"))
     db.brands.delete_one({"brandId": bid}); flash(f"Deleted {bid}", "success"); return redirect(url_for("admin.admin_brands_page"))
+
+@admin_bp.route("/api/store-products/delete/<spid>", methods=["POST"])
+def admin_delete_store_product(spid):
+    from flask import jsonify
+    ok, res = _require_admin()
+    if not ok: return jsonify({"success": False, "error": "Unauthorized"}), 401
+    db = get_db()
+    offer = db.store_products.find_one({"storeProductId": spid})
+    if not offer: return jsonify({"success": False, "error": "Not found"}), 404
+    db.store_products.delete_one({"storeProductId": spid})
+    db.price_history.delete_many({"storeProductId": spid})
+    _recompute_product_state(db, offer["productId"])
+    _recompute_lists_for_product(db, offer["productId"])
+    return jsonify({"success": True})
 
 @admin_bp.route("/scraper/run")
 def run_scraper_manual():
