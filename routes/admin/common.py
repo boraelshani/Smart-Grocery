@@ -483,6 +483,37 @@ def admin_save_product():
     payload = {"productId": pid, "name_en": en, "name_de": de, "brandId": (request.form.get("brandId") or "").strip() or None, "categoryId": cid or None, "categoryPath": path, "unitSize": (request.form.get("unitSize") or "").strip(), "barcode": (request.form.get("barcode") or "").strip(), "defaultImageUrl": img_url, "labels": [i.strip() for i in (request.form.get("labels") or "").split(",") if i.strip()], "description_en": den, "description_de": dde, "updatedAt": _now_utc()}
     if not payload["name_en"]: flash("Name required", "error"); return _redirect_admin("admin.admin_dashboard")
     db.products.update_one({"productId": pid}, {"$set": payload, "$setOnInsert": {"createdAt": _now_utc()}}, upsert=True)
+    
+    # Handle inline store offer addition
+    new_store_ids = request.form.getlist("newStoreId[]")
+    new_store_urls = request.form.getlist("newStoreUrl[]")
+    new_store_prices = request.form.getlist("newStorePrice[]")
+    
+    for i in range(len(new_store_ids)):
+        store_id = (new_store_ids[i] or "").strip()
+        if not store_id: continue
+        
+        url = (new_store_urls[i] or "").strip()
+        try:
+            base_price = float(new_store_prices[i] or 0.0)
+        except ValueError:
+            base_price = 0.0
+            
+        if url and base_price > 0:
+            spid = _id("sp")
+            store_payload = {
+                "storeProductId": spid, "productId": pid, "storeId": store_id,
+                "productPageUrl": url,
+                "basePrice": base_price,
+                "promoPrice": None,
+                "isAvailable": True, "lastPriceUpdate": _now_utc(), "updatedAt": _now_utc()
+            }
+            db.store_products.insert_one(store_payload)
+            db.price_history.insert_one({
+                "historyId": _id("hist"), "storeProductId": spid,
+                "oldPrice": None, "newPrice": base_price, "timestamp": _now_utc()
+            })
+
     _recompute_product_state(db, pid); flash("Product saved", "success"); return _redirect_admin("admin.admin_dashboard")
 
 @admin_bp.route("/store-products/save", methods=["POST"])

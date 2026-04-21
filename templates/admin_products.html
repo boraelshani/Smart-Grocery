@@ -305,10 +305,8 @@ document.addEventListener('click', function(e) {
                         {% endif %}
                     </td>
                     <td class="text-end pe-4">
-                        <button class="btn btn-sm btn-outline-info border shadow-sm rounded-pill fw-bold px-3 me-1" onclick='prepareMergeModal("{{p.productId}}", "{{p.name_en or p.name}}")' data-bs-toggle="modal" data-bs-target="#mergeModal" title="Merge duplicate products into this one">
-                            <i class="fas fa-link"></i> Link
-                        </button>
-                        <button class="btn btn-sm btn-light border shadow-sm rounded-pill text-primary fw-bold px-3 btn-edit-product" onclick='prepareProductModal("edit", {"productId":"{{p.productId}}", "name_en": "{{p.name_en}}", "name_de": "{{p.name_de}}", "qty_str": "{{p.qty_str}}", "brandId": "{{p.brandId}}", "categoryId": "{{p.categoryId}}", "image_url": "{{p.defaultImageUrl}}"})' data-bs-toggle="modal" data-bs-target="#productModal">
+                        {% set offers = data.product_offers.get(p.productId, []) %}
+                        <button class="btn btn-sm btn-light border shadow-sm rounded-pill text-primary fw-bold px-3 btn-edit-product" onclick='prepareProductModal("edit", {"productId":"{{p.productId}}", "name_en": "{{p.name_en}}", "name_de": "{{p.name_de}}", "qty_str": "{{p.qty_str}}", "brandId": "{{p.brandId}}", "categoryId": "{{p.categoryId}}", "image_url": "{{p.defaultImageUrl}}"}, this)' data-offers="{{ offers | tojson | forceescape }}" data-bs-toggle="modal" data-bs-target="#productModal">
                             <i class="fas fa-pen"></i> Edit
                         </button>
                     </td>
@@ -454,7 +452,7 @@ document.addEventListener('click', function(e) {
               <div class="col-md-6">
                  <label class="form-label small fw-bold text-muted text-uppercase mb-1">Category Mapping</label>
                  <select class="form-select form-control-lg bg-light border" name="categoryId" id="field_categorySelect">
-                    <option value="">(Uncategorized)</option>
+                    <option value="">✨ Auto-Categorize (Leave blank)</option>
                     {% for c in data.categories %}
                     <option value="{{ c.categoryId }}">{{ c.name_en or c.categoryId }}</option>
                     {% endfor %}
@@ -462,7 +460,7 @@ document.addEventListener('click', function(e) {
               </div>
            </div>
            
-           <div class="mb-2">
+           <div class="mb-4">
               <label class="form-label small fw-bold text-muted text-uppercase mb-1">Image URL</label>
               <div class="input-group input-group-lg bg-light border rounded">
                  <span class="input-group-text bg-transparent border-0"><i class="fas fa-image text-muted"></i></span>
@@ -470,6 +468,48 @@ document.addEventListener('click', function(e) {
               </div>
               <small class="text-muted mt-2 d-block"><i class="fas fa-info-circle me-1"></i>For legal safety, ensure you own this image or it is a generic category icon.</small>
            </div>
+           
+           <hr class="my-4">
+           <div id="existingOffersContainer" class="mb-4 d-none">
+              <h6 class="fw-bold text-dark mb-3"><i class="fas fa-store me-2 text-success"></i>Existing Store Offers</h6>
+              <div id="existingOffersList" class="d-flex flex-column gap-2 mb-3">
+                  <!-- JS Will populate existing offers here -->
+              </div>
+           </div>
+           
+           <div id="storeMappingSection">
+               <h6 class="fw-bold text-primary mb-3 d-flex align-items-center justify-content-between">
+                   <span><i class="fas fa-plus-circle me-2"></i>Add Store Mapping(s)</span>
+                   <button type="button" class="btn btn-sm btn-outline-primary rounded-pill fw-bold" onclick="addStoreMappingRow()"><i class="fas fa-plus me-1"></i>Add Another Store</button>
+               </h6>
+               <p class="small text-muted mb-3">You can add new store offers for this product while editing. Existing store offers are shown above.</p>
+               
+               <div id="storeMappingRows">
+                   <div class="row g-3 mb-3 store-mapping-row">
+                      <div class="col-md-3">
+                         <label class="form-label small fw-bold text-muted text-uppercase mb-1">Store</label>
+                         <select name="newStoreId[]" class="form-select border new-store-select">
+                            <option value="">-- Choose --</option>
+                            {% for s in data.stores %}
+                            <option value="{{ s.storeId }}">{{ s.name }}</option>
+                            {% endfor %}
+                         </select>
+                      </div>
+                      <div class="col-md-6">
+                         <label class="form-label small fw-bold text-muted text-uppercase mb-1">Store Product URL</label>
+                         <input type="url" name="newStoreUrl[]" class="form-control border new-store-url" placeholder="https://...">
+                      </div>
+                      <div class="col-md-3">
+                         <label class="form-label small fw-bold text-muted text-uppercase mb-1">Price</label>
+                         <div class="input-group">
+                            <span class="input-group-text bg-white border">€</span>
+                            <input type="number" step="0.01" name="newStorePrice[]" class="form-control border new-store-price" placeholder="0.00">
+                         </div>
+                      </div>
+                   </div>
+               </div>
+           </div>
+           
         </div>
         <div class="modal-footer border-top-0 px-4 pb-4 pt-0 justify-content-between">
            <button type="button" class="btn btn-light rounded-pill px-4 fw-bold shadow-sm" data-bs-dismiss="modal">Cancel</button>
@@ -494,9 +534,46 @@ function prepareStoreModal(productId) {
     document.getElementById('field_sp_avail').checked = true;
 }
 
-function prepareProductModal(mode, product) {
+function addStoreMappingRow() {
+    const container = document.getElementById('storeMappingRows');
+    const firstRow = container.querySelector('.store-mapping-row');
+    const newRow = firstRow.cloneNode(true);
+    
+    // Clear inputs in cloned row
+    newRow.querySelector('.new-store-select').value = '';
+    newRow.querySelector('.new-store-url').value = '';
+    newRow.querySelector('.new-store-price').value = '';
+    
+    // Add a remove button
+    const removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.className = 'btn btn-sm btn-outline-danger mt-2 position-absolute';
+    removeBtn.style.right = '10px';
+    removeBtn.style.top = '0';
+    removeBtn.innerHTML = '<i class="fas fa-times"></i>';
+    removeBtn.onclick = function() { newRow.remove(); };
+    
+    newRow.style.position = 'relative';
+    newRow.appendChild(removeBtn);
+    
+    container.appendChild(newRow);
+}
+
+function prepareProductModal(mode, product, btnElement) {
    const label = document.getElementById('productModalLabel').querySelector('span');
    const delBtn = document.getElementById('btn_delete_prod');
+   
+   // Reset inline store fields
+   const rows = document.querySelectorAll('.store-mapping-row');
+   for(let i=1; i<rows.length; i++) rows[i].remove(); // Remove all except first
+   document.querySelector('select[name="newStoreId[]"]').value = '';
+   document.querySelector('input[name="newStoreUrl[]"]').value = '';
+   document.querySelector('input[name="newStorePrice[]"]').value = '';
+   
+   const existingOffersContainer = document.getElementById('existingOffersContainer');
+   const existingOffersList = document.getElementById('existingOffersList');
+   existingOffersList.innerHTML = '';
+   existingOffersContainer.classList.add('d-none');
    
    if (mode === 'new' || !product) {
       label.innerText = "Create New Canonical Product";
@@ -520,6 +597,27 @@ function prepareProductModal(mode, product) {
       document.getElementById('field_image_url').value = product.image_url || '';
       delBtn.classList.remove('d-none');
       delBtn.setAttribute('formaction', `/admin/products/delete/${product.productId}`);
+      
+      // Load existing offers
+      if (btnElement && btnElement.hasAttribute('data-offers')) {
+          try {
+              const offers = JSON.parse(btnElement.getAttribute('data-offers'));
+              if (offers && offers.length > 0) {
+                  existingOffersContainer.classList.remove('d-none');
+                  offers.forEach(offer => {
+                      existingOffersList.innerHTML += `
+                          <div class="d-flex align-items-center justify-content-between p-2 bg-light border rounded">
+                              <div>
+                                 <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-1 me-2"><i class="fas fa-store me-1"></i>${offer.storeName}</span>
+                                 <strong class="text-dark">€${offer.basePrice.toFixed(2)}</strong>
+                              </div>
+                              <a href="${offer.productPageUrl}" target="_blank" class="btn btn-sm btn-light text-primary border py-0 px-2" title="Verify URL"><i class="fas fa-external-link-alt"></i></a>
+                          </div>
+                      `;
+                  });
+              }
+          } catch(e) { console.error("Error parsing offers", e); }
+      }
    }
 }
 </script>

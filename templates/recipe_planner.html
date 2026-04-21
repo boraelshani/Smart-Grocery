@@ -284,12 +284,12 @@
       <i class="bi bi-stars text-warning me-1"></i> AI Powered
     </span>
     <h1 class="hero-title">Recipe Planner</h1>
-    <p class="hero-subtitle mb-4">Enter a recipe, or enter a budget to get cheap meal ideas.</p>
+    <p class="hero-subtitle mb-4">Enter a recipe name, or leave it blank and use the filters to get AI-generated meal ideas.</p>
 
           <form id="smartForm" class="mx-auto" style="max-width: 750px; position: relative; z-index: 20;">
         <div class="search-box w-100 position-relative mb-3">
           <input type="text" id="smartInput"
-                 placeholder="e.g. Spaghetti Carbonara, or 15€ Budget..." required
+                 placeholder="e.g. Spaghetti Carbonara, or leave empty for ideas..." 
                  autocomplete="off">
           <button type="submit" id="smartBtn" class="bg-warning text-white border-0 fw-bold">
             <i class="bi bi-magic"></i> Ask AI
@@ -559,7 +559,8 @@ document.addEventListener('DOMContentLoaded', () => {
         smartForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const query = smartInput.value.trim();
-            if (!query) return;
+            // allow querying with no string if they just want ideas
+            // if (!query) return;
 
             const dietPref = document.getElementById('dietPreference').value;
             const timePref = document.getElementById('timePreference').value;
@@ -577,6 +578,7 @@ document.addEventListener('DOMContentLoaded', () => {
             loadingState.classList.remove('d-none');
             document.querySelector('#loadingState h3').textContent = "Analyzing your request...";
             document.querySelector('#loadingState p').textContent = "Consulting our culinary AI to serve you the best options.";
+            loadingState.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
             const isExact = document.getElementById('smartForm').dataset.exactRecipe === 'true';
             let targetQuery = query;
