@@ -757,18 +757,17 @@
           <h1 class="display-3 fw-bold text-white mb-3" style="line-height: 1.1; letter-spacing: -0.04em;">Shop Smarter<br><span style="color: #fce7f3;">Save Bigger</span></h1> <!-- Bold value proposition heading -->
           <p class="lead mb-5 opacity-90 text-white fw-light" style="max-width: 500px; margin: 0 auto 0 0 !important;text-align: inherit;">The ultimate destination to track prices, find exclusive coupons, and coordinate your grocery trips across all major retailers.</p> <!-- Contextual background for the app's purpose -->
           
-          <div class="search-box mx-auto mx-lg-0 mt-3" style="max-width: 100%;"> <!-- Adjusted Global Search Input -->
-            <i class="bi bi-search ms-3 text-muted fs-5"></i> <!-- Decorative magnifying glass -->
-            <div style="flex:1; position:relative; display:flex;">
-              <input type="text" placeholder="Search brands, products, or stores..." id="hero-search" autocomplete="off" class="border-0 shadow-none bg-transparent" style="outline: none; box-shadow: none;"> <!-- Interactive user query field -->
+          <a href="/shopping-list" id="rotating-widget-link" class="mx-auto mx-lg-0 mt-3 text-decoration-none" style="display: inline-flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.15); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.3); border-radius: 50px; padding: 12px 24px; color: white; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
+            <div class="d-flex align-items-center">
+              <div style="background: rgba(255,255,255,0.2); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                <i id="rotating-widget-icon" class="bi bi-card-list text-white fs-5" style="transition: all 0.4s ease;"></i>
+              </div>
+              <span id="rotating-widget-text" class="fw-bold ms-3" style="font-size: 1.15rem; transition: opacity 0.5s ease; color: white; letter-spacing: 0.5px;">Click to view your recent list</span>
             </div>
-            <button onclick="handleHeroSearch()" class="me-1 px-4 text-white shadow" style="background:#8b5cf6;"> <!-- Trigger for JavaScript search handler -->
-              Compare
-            </button>
-            <!-- The live results absolute container -->
-            <div class="search-results-dropdown text-start shadow-lg border-0" id="search-results">
+            <div class="ms-4 lh-1">
+              <i class="bi bi-chevron-right text-white opacity-75 fs-5"></i>
             </div>
-          </div>
+          </a>
 
           <div class="mt-4 pt-2 d-flex justify-content-center justify-content-lg-start gap-4 flex-wrap opacity-75"> <!-- Key feature value tags -->
             <div class="d-flex align-items-center text-white small fw-medium">
@@ -1406,120 +1405,50 @@
       console.log('After scroll, scrollLeft:', container.scrollLeft); // Verification
     }
 
-    // Hero search functionality /* Logic for mapping Hero search box to the global search page results */
-    window.handleHeroSearch = function() {
-      const searchInput = document.getElementById('hero-search'); // Reference input
-      const searchTerm = searchInput.value.trim(); // Sanitize entry
-      if (searchTerm) {
-        window.location.href = `{{ url_for('main.compare_prices') }}?search=${encodeURIComponent(searchTerm)}`; // Redirect to search route with params
+    // Rotating Widget Logic
+    const messages = [
+      { text: "Click to view your recent list", icon: "bi-card-list", color: "text-white", link: "/shopping-list" },
+      { text: "Products you liked", icon: "bi-heart-fill", color: "text-white", link: "/profile/favorites" },
+      { text: "Recent price drops", icon: "bi-graph-down-arrow", color: "text-white", link: "/featured-deals" }
+    ];
+    let widgetIndex = 0;
+    
+    document.addEventListener('DOMContentLoaded', () => {
+      const widgetText = document.getElementById('rotating-widget-text');
+      const widgetIcon = document.getElementById('rotating-widget-icon');
+      const widgetLink = document.getElementById('rotating-widget-link');
+      
+      if(widgetText && widgetIcon && widgetLink) {
+          // Add hover effect
+          widgetLink.addEventListener('mouseenter', () => {
+              widgetLink.style.background = 'rgba(255,255,255,0.25)';
+              widgetLink.style.transform = 'translateY(-2px)';
+              widgetLink.style.boxShadow = '0 15px 35px rgba(0,0,0,0.15)';
+          });
+          widgetLink.addEventListener('mouseleave', () => {
+              widgetLink.style.background = 'rgba(255,255,255,0.15)';
+              widgetLink.style.transform = 'translateY(0)';
+              widgetLink.style.boxShadow = '0 10px 25px rgba(0,0,0,0.1)';
+          });
+
+          setInterval(() => {
+            widgetText.style.opacity = 0;
+            widgetIcon.style.opacity = 0;
+            widgetIcon.style.transform = 'scale(0.8)';
+            setTimeout(() => {
+              widgetIndex = (widgetIndex + 1) % messages.length;
+              const msg = messages[widgetIndex];
+              widgetText.textContent = msg.text;
+              widgetLink.href = msg.link;
+              widgetIcon.className = "bi " + msg.icon + " fs-5 " + msg.color;
+              widgetText.style.opacity = 1;
+              widgetIcon.style.opacity = 1;
+              widgetIcon.style.transform = 'scale(1)';
+            }, 500); // Fade out duration
+          }, 5000); // Rotate every 5 seconds
       }
-    }
-
-    // Live search auto-complete functionality
-    document.addEventListener('DOMContentLoaded', function() {
-      const searchInput = document.getElementById('hero-search');
-      const resultsContainer = document.getElementById('search-results');
-      let debounceTimer = null;
-
-      // Handle Enter key cleanly to avoid redirecting multiple times
-      searchInput.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          window.handleHeroSearch();
-        }
-      });
-
-      searchInput.addEventListener('input', function(e) {
-        const query = e.target.value.trim();
-        
-        clearTimeout(debounceTimer);
-        
-        if (query.length < 2) {
-          resultsContainer.style.display = 'none';
-          resultsContainer.innerHTML = '';
-          return;
-        }
-
-        // Show loading state
-        resultsContainer.style.display = 'block';
-        resultsContainer.innerHTML = '<div class="search-loading"><div class="spinner-border spinner-border-sm" role="status"></div><span class="ms-2">Searching...</span></div>';
-
-        debounceTimer = setTimeout(() => {
-          fetch(`/api/search-products?q=${encodeURIComponent(query)}`)
-            .then(response => response.json())
-            .then(data => {
-              resultsContainer.innerHTML = '';
-              
-              if (!data.items || data.items.length === 0) {
-                resultsContainer.innerHTML = '<div class="search-empty-state">No products found. Try different keywords.</div>';
-                return;
-              }
-
-              // Take top 8 results to keep dropdown clean
-              const resultsDisplay = data.items.slice(0, 8);
-              
-              resultsDisplay.forEach(item => {
-                // Get display price from item logic (copied from product mapping handling)
-                let price = item.price;
-                if (!price && item.cheapest && item.cheapest.price) price = item.cheapest.price;
-                if (!price && item.stores && item.stores.length > 0 && item.stores[0].price) price = item.stores[0].price;
-                
-                const displayPrice = price ? `$${parseFloat(price).toFixed(2)}` : '';
-                
-                // Construct safe image url
-                const imageSrc = item.image || item.image_url || 'https://via.placeholder.com/60';
-                
-                // Build link target directly to product info
-                let targetUrl = item.url;
-                if (!targetUrl) {
-                    targetUrl = `/product/${item.id || item._id}`;
-                    if (item.id === undefined && item._id === undefined) {
-                        targetUrl = `{{ url_for('main.compare_prices') }}?search=${encodeURIComponent(item.name || query)}`;
-                    }
-                }
-
-                // Badges for deals/stores
-                let badgeHtml = '';
-                if (item.is_deal) badgeHtml = '<span class="badge bg-danger ms-2" style="font-size: 0.7em;">Deal</span>';
-                if (item.is_store) badgeHtml = '<span class="badge bg-primary ms-2" style="font-size: 0.7em;">Store</span>';
-
-                // Append item HTML
-                const itemDiv = document.createElement('a');
-                itemDiv.href = targetUrl;
-                itemDiv.className = 'search-result-item';
-                
-                itemDiv.innerHTML = `
-                  <img src="${imageSrc}" alt="Product" class="search-result-img" onerror="this.src='https://via.placeholder.com/60'">
-                  <div class="search-result-info">
-                    <div class="search-result-name">${item.name || item.product_name || 'Unknown Product'}${badgeHtml}</div>
-                    ${displayPrice ? `<div class="search-result-price">${displayPrice}</div>` : ''}
-                  </div>
-                `;
-                
-                resultsContainer.appendChild(itemDiv);
-              });
-              
-            })
-            .catch(error => {
-              console.error('Error fetching search results:', error);
-              resultsContainer.innerHTML = '<div class="search-empty-state text-danger">Error loading results. Please try again.</div>';
-            });
-        }, 300); // 300ms debounce
-      });
-
-      // Hide dropdown when clicking outside
-      document.addEventListener('click', function(e) {
-        if (!searchInput.contains(e.target) && !resultsContainer.contains(e.target)) {
-          resultsContainer.style.display = 'none';
-        }
-      });
-      // Show again if clicking back into valid search
-      searchInput.addEventListener('focus', function() {
-        if (searchInput.value.trim().length >= 2 && resultsContainer.innerHTML !== '') {
-          resultsContainer.style.display = 'block';
-        }
-      });
     });
+
   </script>
 <script>
 

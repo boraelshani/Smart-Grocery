@@ -1,4 +1,4 @@
-import re
+﻿import re
 import math
 from utils.db import mongo
 from utils.helpers import sanitize_mongo_doc
@@ -16,19 +16,14 @@ def clean_ingredient_term(ingredient):
         "g", "kg", "ml", "l", "oz", "lb", "cup", "cups", 
         "tbsp", "tsp", "tablespoon", "teaspoon", "clove", "cloves",
         "slice", "slices", "piece", "pieces", "can", "cans", "tin", "tins",
-        "dash", "pinch"
+        "dash", "pinch", "package", "pack", "box", "stick", "sticks", "bag", "handful"
     ]
     # Use word boundaries so we don't accidentally remove 'g' from 'garlic'
     units_pattern = r'\b(?:' + '|'.join(units) + r')\b'
     cleaned = re.sub(units_pattern, '', cleaned, flags=re.IGNORECASE)
-    
+
     # Clean up random leftover words like "of", "ripe", "fresh", "large", "small"
-    fillers = ["of", "ripe", "fresh", "large", "small", "medium", "chopped", "diced", "sliced"]
-    fillers_pattern = r'\b(?:' + '|'.join(fillers) + r')\b'
-    cleaned = re.sub(fillers_pattern, '', cleaned, flags=re.IGNORECASE)
-    
-    # Remove extra whitespace
-    cleaned = re.sub(r'\s+', ' ', cleaned).strip()
+    fillers = ["of", "ripe", "fresh", "large", "small", "medium", "chopped", "diced", "sliced", "melted", "softened", "crushed", "minced", "grated"]
     return cleaned
 
 def calculate_proportion_message(req_text, prod_unit, price):
@@ -103,16 +98,30 @@ def match_ingredients_to_products(ingredients):
                 "$addFields": {
                     "is_junk": {
                         "$cond": {
-                            "if": {"$in": ["$category", exclusion_cats]},       
+                            "if": {"$in": ["$category", exclusion_cats]},
                             "then": 1,
                             "else": 0
                         }
                     },
-                    "name_len": {"$strLenCP": {"$ifNull": ["$name", ""]}}
+                    "name_len": {"$strLenCP": {"$ifNull": ["$name", ""]}},
+                    "exact_match": {
+                        "$cond": {
+                            "if": {"$eq": [{"$toLower": "$name"}, search_term.lower()]},
+                            "then": 0,
+                            "else": 1
+                        }
+                    },
+                    "starts_with": {
+                        "$cond": {
+                            "if": {"$regexMatch": {"input": "$name", "regex": f"^{escaped_search}\\b", "options": "i"}},
+                            "then": 0,
+                            "else": 1
+                        }
+                    }
                 }
             },
-            # Sort: prioritized categories first (is_junk=0), then by shortest name length (closest exact match), then cheapest
-            {"$sort": {"is_junk": 1, "name_len": 1, "price": 1, "price_val": 1}},
+            # Sort: exact match, starts with, prioritized categories, then name length
+            {"$sort": {"exact_match": 1, "starts_with": 1, "is_junk": 1, "name_len": 1, "price": 1, "price_val": 1}},
             {"$limit": 10}
         ]
 
@@ -126,6 +135,7 @@ def match_ingredients_to_products(ingredients):
             "salt": ["butter", "chips", "crisps", "peanuts", "nuts", "pretzel", "crackers", "popcorn"],
             "rice": ["cake", "cakes", "cracker", "crisp", "pudding", "noodle"],
             "milk": ["chocolate", "condensed", "biscuit", "cookie"],
+            "cheese": ["mozzarella", "parmesan", "cheddar", "gouda", "brie", "swiss", "emmenthal", "ricotta", "feta", "blue", "goat", "cottage", "mascarpone", "provolone", "edam", "camembert", "pecorino", "havarti", "gruyere", "munster", "asiago", "fontina", "halloumi", "paneer", "manchego", "colby", "monterey"],
             "oil": ["chips", "crisps"],
             "water": ["melon"]
         }
@@ -166,10 +176,24 @@ def match_ingredients_to_products(ingredients):
                                     "else": 0
                                 }
                             },
-                            "name_len": {"$strLenCP": {"$ifNull": ["$name", ""]}}
+                            "name_len": {"$strLenCP": {"$ifNull": ["$name", ""]}},
+                            "exact_match": {
+                                "$cond": {
+                                    "if": {"$eq": [{"$toLower": "$name"}, last_word.lower()]},
+                                    "then": 0,
+                                    "else": 1
+                                }
+                            },
+                            "starts_with": {
+                                "$cond": {
+                                    "if": {"$regexMatch": {"input": "$name", "regex": f"^{escaped_last}\\b", "options": "i"}},
+                                    "then": 0,
+                                    "else": 1
+                                }
+                            }
                         }
                     },
-                    {"$sort": {"is_junk": 1, "name_len": 1, "price": 1, "price_val": 1}},      
+                    {"$sort": {"exact_match": 1, "starts_with": 1, "is_junk": 1, "name_len": 1, "price": 1, "price_val": 1}},
                     {"$limit": 10}
                 ]
                 raw_matches_fb = list(mongo.db.products.aggregate(pipeline_fallback))
@@ -214,3 +238,4 @@ if __name__ == "__main__":
             for m in r['matches']:
                 price = m.get('price_val') or m.get('price')
                 print(f"   [€{price}] {m.get('name')} (Store: {m.get('store', 'Unknown')})")
+
