@@ -128,7 +128,7 @@
         row.id = rowId;
         
         row.innerHTML = `
-            <div class="col-md-3">
+            <div class="col-md-3 col-sm-12">
                 <select name="store_id" class="form-select border shadow-none" required>
                     <option value="">Store...</option>
                     <option value="billa" ${selBilla}>Billa</option>
@@ -136,17 +136,17 @@
                     <option value="hofer" ${selHofer}>Hofer</option>
                 </select>
             </div>
-            <div class="col-md-5">
+            <div class="col-md-5 col-sm-12 mt-2 mt-md-0">
                 <input type="url" name="store_url" class="form-control border shadow-none" placeholder="Product URL..." value="${storeUrl}" required>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-3 col-sm-10 mt-2 mt-md-0">
                 <div class="input-group">
                     <span class="input-group-text bg-white">€</span>
                     <input type="number" step="0.01" name="price" class="form-control border shadow-none" placeholder="Live Price" value="${price}" required>
                 </div>
             </div>
-            <div class="col-md-1 text-end">
-                <button type="button" class="btn btn-outline-danger btn-sm rounded flex-fill w-100 fw-bold border-0" onclick="document.getElementById('${rowId}').remove()"><i class="fas fa-trash"></i></button>
+            <div class="col-md-1 col-sm-2 mt-2 mt-md-0 text-end">
+                <button type="button" class="btn btn-outline-danger btn-sm rounded shadow-sm w-100" onclick="document.getElementById('${rowId}').remove()"><i class="fas fa-trash"></i></button>
             </div>
         `;
         container.appendChild(row);
