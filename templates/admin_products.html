@@ -652,7 +652,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="modal-footer border-top-0 px-4 pb-4 pt-0 justify-content-between">
            <button type="button" class="btn btn-light rounded-pill px-4 fw-bold shadow-sm" data-bs-dismiss="modal">Cancel</button>
            <div class="d-flex gap-2">
-              <button type="submit" formaction="" class="btn btn-outline-danger rounded-pill px-4 fw-bold shadow-sm d-none" id="btn_delete_prod" onclick="return confirm('Delete this canonical product entirely? This breaks store mappings.')"><i class="fas fa-trash-alt me-1"></i> Delete</button>
+              <button type="submit" formaction="" class="btn btn-outline-danger rounded-pill px-4 fw-bold shadow-sm d-none" id="btn_delete_prod" onclick="return confirm('WARNING: Delete this canonical product entirely? This breaks store mappings and removes it from all lists.')"><i class="fas fa-trash-alt me-1"></i> Delete Entire Product</button>
               <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm"><i class="fas fa-save me-1"></i> Save Product</button>
            </div>
         </div>
@@ -797,7 +797,7 @@ function prepareProductModal(mode, product, btnElement) {
                               </div>
                               <div>
                                   <a href="${offer.productPageUrl}" target="_blank" class="btn btn-sm btn-light text-primary border px-2 me-1" title="Verify URL"><i class="fas fa-external-link-alt"></i></a>
-                                  <button type="button" class="btn btn-sm btn-outline-danger px-2" onclick="deleteStoreOffer('${offer.storeProductId}')" title="Delete Offer"><i class="fas fa-times"></i></button>
+                                  <button type="button" class="btn btn-sm btn-outline-danger px-3 fw-bold" onclick="deleteStoreOffer('${offer.storeProductId}')" title="Delete Offer"><i class="fas fa-trash-alt me-1"></i> Delete Offer</button>
                               </div>
                           </div>
                       `;
