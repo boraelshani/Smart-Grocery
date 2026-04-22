@@ -216,7 +216,7 @@ TAXONOMY_TREE = {
 def get_mega_menu():
     global _menu_cache
     import time
-    if _menu_cache['data'] and time.time() - _menu_cache['ts'] < 3600:
+    if _menu_cache['data'] and time.time() - _menu_cache['ts'] < 60:
         return _menu_cache['data']
         
     try:
@@ -231,11 +231,11 @@ def get_mega_menu():
             all_cats = list(mongo.db.categories.find({}))
             
             # Helper to find children
-            def get_children(parent_id):
-                return [c for c in all_cats if c.get('parentId') == parent_id]
+            def get_children(parent_id_str):
+                return [c for c in all_cats if str(c.get('parentId')) == parent_id_str or (parent_id_str == "None" and not c.get('parentId'))]
                 
             # Grab Level 1 (Roots)
-            roots = get_children(None)
+            roots = get_children("None")
             
             for idx, root in enumerate(roots):
                 root_name = root.get('name_en') or root.get('name', 'Unknown')
@@ -243,12 +243,12 @@ def get_mega_menu():
                 
                 subcats_dict = {}
                 # Level 2 loop
-                for l2 in get_children(root.get('_id')):
+                for l2 in get_children(str(root.get('_id'))):
                     l2_name = l2.get('name_en') or l2.get('name', 'Unknown')
                     
                     # Level 3 loop
                     l3_list = []
-                    for l3 in get_children(l2.get('_id')):
+                    for l3 in get_children(str(l2.get('_id'))):
                         l3_name = l3.get('name_en') or l3.get('name', 'Unknown')
                         l3_list.append(l3_name)
                         

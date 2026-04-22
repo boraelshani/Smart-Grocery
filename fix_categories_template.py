@@ -1,4 +1,4 @@
-{% extends "admin_layout.html" %}
+text = """{% extends "admin_layout.html" %}
 
 {% block admin_title %}Categories Structure{% endblock %}
 {% block admin_subtitle %}Manage taxonomy and global grocery catalog{% endblock %}
@@ -200,4 +200,7 @@ document.getElementById('field_cat_name_en').addEventListener('input', function(
     }
 });
 </script>
-{% endblock %}
+{% endblock %}"""
+
+with open("templates/admin_categories.html", "w") as f:
+    f.write(text)

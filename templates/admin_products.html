@@ -98,7 +98,76 @@ document.addEventListener('click', function(e) {
 });
 </script>
 
+
+
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    let fetchTimeout;
+
+    document.body.addEventListener('input', (e) => {
+        if (e.target && e.target.name === 'q' && e.target.closest('form#productSearchForm')) {
+            clearTimeout(fetchTimeout);
+            fetchTimeout = setTimeout(fetchProducts, 400);
+        }
+    });
+
+    document.body.addEventListener('change', (e) => {
+        if (e.target && e.target.name === 'brand' && e.target.closest('form#productSearchForm')) {
+            e.preventDefault();
+            fetchProducts();
+        }
+    });
+
+    document.body.addEventListener('submit', (e) => {
+        if (e.target && e.target.id === 'productSearchForm') {
+            e.preventDefault();
+            clearTimeout(fetchTimeout);
+            fetchProducts();
+        }
+    });
+
+    async function fetchProducts() {
+        const searchForm = document.getElementById('productSearchForm');
+        if (!searchForm) return;
+
+        const searchInput = searchForm.querySelector('input[name="q"]');
+        const brandSelect = searchForm.querySelector('select[name="brand"]');
+        const wrapper = document.getElementById('products-list-wrapper');
+        
+        if (!wrapper) return;
+
+        const url = new URL(searchForm.action, window.location.origin);
+        if (searchInput) url.searchParams.set('q', searchInput.value || '');
+        if (brandSelect && brandSelect.value) {
+            url.searchParams.set('brand', brandSelect.value);
+        }
+        
+        wrapper.style.opacity = '0.5';
+        try {
+            const resp = await fetch(url);
+            const html = await resp.text();
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const newWrapper = doc.getElementById('products-list-wrapper');
+
+            // Wait, does the form get replaced too? Let's replace the whole parent container if necessary, 
+            // but the form is OUTSIDE the wrapper right now in the HTML structure.
+            if (newWrapper) {
+                wrapper.innerHTML = newWrapper.innerHTML;
+                window.history.replaceState({}, '', url);
+            }
+        } catch(e) {
+            console.error('Search fetch error:', e);
+        }
+        wrapper.style.opacity = '1';
+    }
+});
+</script>
+
+
 {% endblock %}
+
 {% block admin_subtitle %}Manage canonical products, brands, and search
 <!-- Modal: Merge Product -->
 <div class="modal fade" id="mergeModal" tabindex="-1" aria-hidden="true">
@@ -197,15 +266,84 @@ document.addEventListener('click', function(e) {
 });
 </script>
 
+
+
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    let fetchTimeout;
+
+    document.body.addEventListener('input', (e) => {
+        if (e.target && e.target.name === 'q' && e.target.closest('form#productSearchForm')) {
+            clearTimeout(fetchTimeout);
+            fetchTimeout = setTimeout(fetchProducts, 400);
+        }
+    });
+
+    document.body.addEventListener('change', (e) => {
+        if (e.target && e.target.name === 'brand' && e.target.closest('form#productSearchForm')) {
+            e.preventDefault();
+            fetchProducts();
+        }
+    });
+
+    document.body.addEventListener('submit', (e) => {
+        if (e.target && e.target.id === 'productSearchForm') {
+            e.preventDefault();
+            clearTimeout(fetchTimeout);
+            fetchProducts();
+        }
+    });
+
+    async function fetchProducts() {
+        const searchForm = document.getElementById('productSearchForm');
+        if (!searchForm) return;
+
+        const searchInput = searchForm.querySelector('input[name="q"]');
+        const brandSelect = searchForm.querySelector('select[name="brand"]');
+        const wrapper = document.getElementById('products-list-wrapper');
+        
+        if (!wrapper) return;
+
+        const url = new URL(searchForm.action, window.location.origin);
+        if (searchInput) url.searchParams.set('q', searchInput.value || '');
+        if (brandSelect && brandSelect.value) {
+            url.searchParams.set('brand', brandSelect.value);
+        }
+        
+        wrapper.style.opacity = '0.5';
+        try {
+            const resp = await fetch(url);
+            const html = await resp.text();
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const newWrapper = doc.getElementById('products-list-wrapper');
+
+            // Wait, does the form get replaced too? Let's replace the whole parent container if necessary, 
+            // but the form is OUTSIDE the wrapper right now in the HTML structure.
+            if (newWrapper) {
+                wrapper.innerHTML = newWrapper.innerHTML;
+                window.history.replaceState({}, '', url);
+            }
+        } catch(e) {
+            console.error('Search fetch error:', e);
+        }
+        wrapper.style.opacity = '1';
+    }
+});
+</script>
+
+
 {% endblock %}
+
 
 {% block admin_content %}
 <div class="row mb-4 align-items-center">
     <div class="col-md-7">
-        <form method="get" action="{{ url_for('admin.admin_products_page') }}" class="d-flex bg-white rounded-pill shadow-sm overflow-hidden p-1 border">
+        <form id="productSearchForm" method="get" action="{{ url_for('admin.admin_products_page') }}" class="d-flex bg-white rounded-pill shadow-sm overflow-hidden p-1 border">
             <span class="ps-3 d-flex align-items-center text-muted"><i class="fas fa-search"></i></span>
-            <input type="text" class="form-control border-0 shadow-none" name="q" value="{{ data.q or '' }}" placeholder="Search canonical products..." style="box-shadow: none;">
-            <select class="form-select border-0 border-start bg-transparent text-muted" name="brand" style="width: auto; max-width: 180px; box-shadow: none;" onchange="this.form.submit()">
+            <input type="text" class="form-control border-0 shadow-none" name="q" value="{{ data.q or '' }}" placeholder="Search canonical products..." style="box-shadow: none;" >
+            <select class="form-select border-0 border-start bg-transparent text-muted" name="brand" style="width: auto; max-width: 180px; box-shadow: none;">
                <option value="">All Brands</option>
                {% for b in data.brands or [] %}
                <option value="{{ b.brandId }}" {% if request.args.get('brand') == b.brandId %}selected{% endif %}>{{ b.name_en or b.brandId }}</option>
@@ -233,7 +371,7 @@ document.addEventListener('click', function(e) {
     </div>
 </div>
 
-<div class="card shadow-sm border-0 rounded-4 overflow-hidden mb-4">
+<div id="products-list-wrapper" class="card shadow-sm border-0 rounded-4 overflow-hidden mb-4">
     <div class="table-responsive">
         <table class="table table-hover align-middle mb-0 bg-white">
             <thead class="bg-light">
@@ -815,4 +953,73 @@ document.addEventListener('click', function(e) {
 </script>
 
 
+
+
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    let fetchTimeout;
+
+    document.body.addEventListener('input', (e) => {
+        if (e.target && e.target.name === 'q' && e.target.closest('form#productSearchForm')) {
+            clearTimeout(fetchTimeout);
+            fetchTimeout = setTimeout(fetchProducts, 400);
+        }
+    });
+
+    document.body.addEventListener('change', (e) => {
+        if (e.target && e.target.name === 'brand' && e.target.closest('form#productSearchForm')) {
+            e.preventDefault();
+            fetchProducts();
+        }
+    });
+
+    document.body.addEventListener('submit', (e) => {
+        if (e.target && e.target.id === 'productSearchForm') {
+            e.preventDefault();
+            clearTimeout(fetchTimeout);
+            fetchProducts();
+        }
+    });
+
+    async function fetchProducts() {
+        const searchForm = document.getElementById('productSearchForm');
+        if (!searchForm) return;
+
+        const searchInput = searchForm.querySelector('input[name="q"]');
+        const brandSelect = searchForm.querySelector('select[name="brand"]');
+        const wrapper = document.getElementById('products-list-wrapper');
+        
+        if (!wrapper) return;
+
+        const url = new URL(searchForm.action, window.location.origin);
+        if (searchInput) url.searchParams.set('q', searchInput.value || '');
+        if (brandSelect && brandSelect.value) {
+            url.searchParams.set('brand', brandSelect.value);
+        }
+        
+        wrapper.style.opacity = '0.5';
+        try {
+            const resp = await fetch(url);
+            const html = await resp.text();
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const newWrapper = doc.getElementById('products-list-wrapper');
+
+            // Wait, does the form get replaced too? Let's replace the whole parent container if necessary, 
+            // but the form is OUTSIDE the wrapper right now in the HTML structure.
+            if (newWrapper) {
+                wrapper.innerHTML = newWrapper.innerHTML;
+                window.history.replaceState({}, '', url);
+            }
+        } catch(e) {
+            console.error('Search fetch error:', e);
+        }
+        wrapper.style.opacity = '1';
+    }
+});
+</script>
+
+
 {% endblock %}
+

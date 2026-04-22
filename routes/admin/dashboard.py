@@ -6,7 +6,7 @@ from core.utils import now_utc, generate_id, to_bool
 from services.product_service import ProductService
 
 def _dashboard_payload(db):
-    collections = ["stores", "brands", "categories", "products", "users", "feedback"]
+    collections = ["stores", "brands", "categories", "products", "users", "feedback", "community_price_reports"]
     counts = {name: db[name].count_documents({}) for name in collections}
     stats = {
         "total_products": counts.get("products", 0),
@@ -15,7 +15,16 @@ def _dashboard_payload(db):
         "pending_feedback": db.feedback.count_documents({"resolved": {"$ne": True}}),
     }
     recent_feedback = list(db.feedback.find().sort("timestamp", -1).limit(5))
-    return {"stats": stats, "recent_feedback": recent_feedback, "counts": counts}
+    
+    recent_reports = list(db.community_price_reports.find().sort("created_at", -1).limit(5))
+    for r in recent_reports:
+        # Convert ObjectId & datetime to strings for template rendering just in case.
+        if '_id' in r:
+            r['_id'] = str(r['_id'])
+        if 'created_at' in r:
+            r['created_at'] = r['created_at'].strftime('%Y-%m-%d %H:%M:%S') if hasattr(r['created_at'], 'strftime') else str(r['created_at'])
+
+    return {"stats": stats, "recent_feedback": recent_feedback, "recent_reports": recent_reports, "counts": counts}
 
 @admin_bp.route("/admin/", methods=["GET"])
 @admin_bp.route("/admin", methods=["GET"])

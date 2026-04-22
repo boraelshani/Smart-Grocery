@@ -312,10 +312,11 @@ def get_category_options():
                 
                 s_id_str = str(s["_id"])
                 leaves = children_map.get(s_id_str, [])
-                leaf_options = [{"name": l.get("name_en")} for l in leaves if l.get("name_en")]
+                leaf_options = [{"name": l.get("name_en"), "image": l.get("imageUrl")} for l in leaves if l.get("name_en")]
                 
                 sub_options.append({
                     "name": s.get("name_en"),
+                    "image": s.get("imageUrl"),
                     "subcategories": leaf_options
                 })
             
