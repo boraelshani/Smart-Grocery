@@ -962,9 +962,9 @@
                 {% for store in sorted_stores[:3] %}
                 {% set store_price = store.get('price')|float %}
                 <div class="d-flex justify-content-between align-items-center w-100">
-                  <span class="{% if store_price == cheapest_price %}text-success fw-bold{% else %}text-secondary fw-medium{% endif %} text-truncate" style="font-size: 0.85rem; max-width: 65%; font-family: system-ui, -apple-system, sans-serif;">
+                  <a {% if store.get('url') %}href="{{ store.get('url') }}" target="_blank"{% else %}href="javascript:void(0)"{% endif %} onclick="event.stopPropagation();" class="{% if store_price == cheapest_price %}text-success fw-bold{% else %}text-secondary fw-medium{% endif %} text-truncate store-link" style="font-size: 0.85rem; max-width: 65%; font-family: system-ui, -apple-system, sans-serif; text-decoration: none; transition: transform 0.2s ease, color 0.2s ease; display: inline-block;" onmouseover="this.style.transform='scale(1.1)'; this.style.transformOrigin='left center'; this.style.color='#6f42c1';" onmouseout="this.style.transform='scale(1)'; this.style.color='';">
                      {{ store.get('store') or store.get('name') }}
-                  </span>
+                  </a>
                   <div class="d-flex align-items-center">
                     <span class="fw-bold {% if store_price == cheapest_price %}text-success{% else %}text-dark{% endif %}" style="font-size: 0.9rem;">
                       €{{ "%.2f"|format(store.get('price')) }}
