@@ -241,11 +241,19 @@ def inject_navbar_data():
             now_ts = time.time()
             if cache_entry and cache_entry.get('expires_at', 0) > now_ts:
                 cached = cache_entry.get('value', {})
+                
+                try:
+                    from utils.menu_data import get_mega_menu
+                    mega_menu_data = get_mega_menu()
+                except Exception:
+                    mega_menu_data = {"categories": {}, "brands": [], "images": {}, "fallback_image": ""}
+                    
                 return {
                     'shopping_list_count': int(cached.get('shopping_list_count', 0)),
                     'unread_notifications_count': int(cached.get('unread_notifications_count', 0)),
                     'current_user_nav': cached.get('current_user_nav'),
                     'is_admin_nav': bool(cached.get('is_admin_nav', False)),
+                    'mega_menu': mega_menu_data,
                 }
 
             user = {}
@@ -305,11 +313,18 @@ def inject_navbar_data():
         # Fail silently to avoid breaking the entire page if notification count fails
         pass
         
+    try:
+        from utils.menu_data import get_mega_menu
+        mega_menu_data = get_mega_menu()
+    except Exception:
+        mega_menu_data = {"categories": {}, "brands": [], "images": {}, "fallback_image": ""}
+
     return {
         'shopping_list_count': shopping_list_count,
         'unread_notifications_count': unread_notifications_count,
         'current_user_nav': current_user_nav,
         'is_admin_nav': is_admin_nav,
+        'mega_menu': mega_menu_data,
     }
 
 

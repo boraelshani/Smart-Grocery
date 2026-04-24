@@ -108,11 +108,11 @@ def _build_category_tree(rows):
     for row in rows:
         cid = row.get("categoryId")
         if not cid: continue
-        node = {"categoryId": cid, "name_en": row.get("name_en") or "Unnamed", "name_de": row.get("name_de") or "", "slug": row.get("slug") or "", "parentId": row.get("parentId"), "children": []}
+        node = {"categoryId": cid, "name_en": row.get("name_en") or "Unnamed", "name_de": row.get("name_de") or "", "slug": row.get("slug") or "", "parentId": row.get("parentId"), "image_url": row.get("image_url"), "children": []}
         nodes[cid] = node; children_map.setdefault(node["parentId"], []).append(node)
     roots = []
     for cid, node in nodes.items():
-        pid = node.get("parentId")
+        pid = str(node.get("parentId")) if node.get("parentId") else None
         if pid and pid in nodes: nodes[pid]["children"].append(node)
         else: roots.append(node)
     def _sort(n):
