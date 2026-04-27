@@ -168,13 +168,20 @@ def fetch_product_from_url(url):
         full_text = text if 'text' in locals() else soup.get_text(separator=' ', strip=True)
         search_corpus = f"{title} {description} {full_text}"
         
+        # Extract offer details like 2+1, -50%, or 1+1 gratis
+        offer_details = ""
+        promo_price = ""
+        offer_match = re.search(r'\b(\d+\s*\+\s*\d+\s*(?:gratis|free)?|-?\d+%\s*(?:rabatt|discount)?|ab\s*\d+\s*(?:stück|stk|packungen))', search_corpus, re.IGNORECASE)
+        if offer_match:
+            offer_details = offer_match.group(1).strip()
+            
         # Try to find printed unit price first
         explicit_unit_match = re.search(r'(?:€|EUR)?\s*(\d{1,3}[.,]\d{2})\s*(?:€|EUR)?\s*/\s*(100\s?g|1\s?kg|100\s?ml|1\s?l|liter|kg)', search_corpus, re.IGNORECASE)
         if explicit_unit_match:
             up_val, up_unit = explicit_unit_match.groups()
             unit_price_str = f"€{up_val.replace(',', '.')}/{up_unit.replace(' ', '').lower()}"
 
-        # Find size
+        # Find true product size (ignoring low integers like 2 or 3 that might be from 2+1)
         size_match = re.search(r'\b(\d+(?:[.,]\d+)?)\s*(g|kg|ml|l|liter|lite|piece|stk|stück|gramm|milliliter)(?:\b|\s|$)', search_corpus, re.IGNORECASE)
         
         if size_match:
@@ -224,7 +231,9 @@ def fetch_product_from_url(url):
                 "categoryId": mapped_cat_id,
                 "category": mapped_cat_id, # Add this for UI fallback
                 "size": size_str,
-                "unit_price": unit_price_str
+                "unit_price": unit_price_str,
+                "promo_price": promo_price,
+                "offer_details": offer_details
             }
         }
     except Exception as e:

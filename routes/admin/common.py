@@ -384,13 +384,29 @@ def admin_save_ai_product():
             continue
             
         spid = _id("sp")
+        promo_prices = request.form.getlist("promo_price")
+        offer_details = request.form.getlist("offer_details")
+        
+        pr_val = None
+        od_val = None
+        if i < len(promo_prices):
+            try:
+                if promo_prices[i].strip():
+                    pr_val = float(promo_prices[i].strip())
+            except:
+                pass
+        
+        if i < len(offer_details):
+            od_val = offer_details[i].strip() or None
+
         db.store_products.update_one({"storeProductId": spid}, {"$set": {
             "storeProductId": spid,
             "productId": pid,
             "storeId": s_id,
             "productPageUrl": s_url,
             "basePrice": p_val,
-            "promoPrice": None,
+            "promoPrice": pr_val,
+            "offerDetails": od_val,
             "isAvailable": True,
             "lastPriceUpdate": _now_utc(),
             "updatedAt": _now_utc()
