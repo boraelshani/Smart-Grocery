@@ -177,7 +177,7 @@ async function fetchAIProduct() {
             document.getElementById("res_desc_en").value = data.description_en || "";
             document.getElementById("res_desc_de").value = data.description_de || "";
             document.getElementById("res_brand").value = data.brand || data.brandId || "";
-            document.getElementById("res_category").value = data.categoryId || data.category_path || "";
+            document.getElementById("res_category").value = data.categoryId || data.category || data.category_path || "";
             document.getElementById("res_image").value = data.image_url || "";
             document.getElementById("res_size").value = data.size || "";
             document.getElementById("res_unit_price").value = data.unit_price || "";

@@ -33,7 +33,7 @@ GOAL: Styles for the Navbar, including the dynamic "Glass" effect.
   width: 100%;
   z-index: 1000;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  position: absolute;
+  position: fixed;
   top: 0;
 }
 

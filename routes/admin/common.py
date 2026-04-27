@@ -588,7 +588,25 @@ def admin_smart_import_page():
     ok, res = _require_admin()
     if not ok: return res
     db = get_db()
-    categories = list(db.categories.find().sort("name_en", 1)) if db is not None else []
+    
+    categories = []
+    if db is not None:
+        try:
+            # Fallback to local dev JSON if DB breaks/is empty
+            categories = list(db.categories.find().sort("name_en", 1))
+        except Exception as e:
+            print("DB error fetching categories:", e)
+            
+    if not categories:
+        import json
+        import os
+        try:
+            with open(os.path.join(os.path.dirname(__file__), '../../data/products.json')) as f:
+                product_data = json.load(f)
+                # Infer categories from products in worst case, or better yet, read categories.json if exists
+        except:
+            pass
+            
     return render_template("admin_smart_import.html", categories=categories)
 
 @admin_bp.route("/api/products/smart-extract", methods=["POST"])

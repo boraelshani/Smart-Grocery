@@ -7,7 +7,9 @@ from core.utils import now_utc, prettify_slug
 @admin_bp.route("/products/smart-import", methods=["GET"])
 def admin_smart_import_page():
     require_admin()
-    return render_template("admin_smart_import.html")
+    db = get_db()
+    categories = list(db.categories.find().sort("name_en", 1)) if db is not None else []
+    return render_template("admin_smart_import.html", categories=categories)
 
 @admin_bp.route("/api/products/smart-extract", methods=["POST"])
 def admin_smart_extract():

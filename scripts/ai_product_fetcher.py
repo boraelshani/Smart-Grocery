@@ -222,9 +222,15 @@ def fetch_product_from_url(url):
                 "brandId": brand_id,
                 "category_path": category_path_raw,
                 "categoryId": mapped_cat_id,
+                "category": mapped_cat_id, # Add this for UI fallback
                 "size": size_str,
                 "unit_price": unit_price_str
             }
         }
     except Exception as e:
         return {"success": False, "error": f"Failed to parse page internally: {str(e)}"}
+
+if __name__ == "__main__":
+    import sys
+    if len(sys.argv) > 1:
+        print(json.dumps(fetch_product_from_url(sys.argv[1]), indent=2))
