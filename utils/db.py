@@ -15,6 +15,7 @@ from flask_pymongo import PyMongo
 from pymongo import MongoClient
 import os
 import certifi
+from urllib.parse import urlparse
 
 # ═══════════════════════════════════════════════════════════════════════════
 # MONGODB CONNECTOR
@@ -30,6 +31,24 @@ import certifi
 # 
 # Usage: mongo.db.<collection_name>.<operation>()
 mongo = PyMongo()
+
+
+def _is_local_mongo_uri(uri):
+    if not uri:
+        return True
+    try:
+        parsed = urlparse(uri)
+        host = (parsed.hostname or '').lower()
+        return host in {'localhost', '127.0.0.1', '::1'}
+    except Exception:
+        return False
+
+
+def _create_client(uri, use_tls):
+    kwargs = {'serverSelectionTimeoutMS': 5000}
+    if use_tls:
+        kwargs['tlsCAFile'] = certifi.where()
+    return MongoClient(uri, **kwargs)
 
 def sanitize_uri(uri):
     """
@@ -88,20 +107,25 @@ def get_db():
     
     database_name = os.environ.get('DATABASE_NAME')
     
-    # Create a new MongoClient instance
-    try:
-        # PRODUCTION: Use TLS/SSL (certifi provides the Certificate Authority bundle)
-        # Atlas requires TLS, so this is critical for cloud connectivity.
-        client = MongoClient(mongo_uri, tlsCAFile=certifi.where(), serverSelectionTimeoutMS=5000)
-    except Exception:
+    # Create a new MongoClient instance.
+    # Local MongoDB instances usually do not use TLS, while Atlas connections do.
+    if _is_local_mongo_uri(mongo_uri):
+        client_attempts = [False, True]
+    else:
+        client_attempts = [True, False]
+
+    client = None
+    last_error = None
+    for use_tls in client_attempts:
         try:
-            # DEVELOPMENT: Retry without TLS configuration
-            # This handles local MongoDB instances which often don't have SSL set up.
-            client = MongoClient(mongo_uri, serverSelectionTimeoutMS=5000)
+            client = _create_client(mongo_uri, use_tls)
+            break
         except Exception as e:
-            # If both fail, we can't talk to the database at all.
-            print(f"ERROR: Could not create standalone MongoDB client: {e}")
-            return None
+            last_error = e
+
+    if client is None:
+        print(f"ERROR: Could not create standalone MongoDB client: {last_error}")
+        return None
             
     # Select the specific database from the client
     if database_name:

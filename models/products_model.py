@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import re
 from collections import Counter, defaultdict
+from datetime import datetime
 from typing import List, Optional
 
 from bson import ObjectId
@@ -93,6 +94,98 @@ class ProductsModel:
         for row in rows:
             grouped[row.get("productId")].append(row)
         return grouped
+
+    def get_price_history(self, product_id: str, limit: int = 12) -> List[dict]:
+        db = self.db if self.db is not None else self._refresh_db()
+        if db is None or not product_id:
+            return []
+
+        if self._is_new_schema_enabled():
+            product = None
+            try:
+                product = db.products.find_one({"_id": ObjectId(product_id)})
+            except Exception:
+                pass
+            if not product:
+                product = db.products.find_one({"productId": str(product_id)})
+            if not product:
+                return []
+
+            pid = product.get("productId")
+            if not pid:
+                return []
+
+            store_products = list(
+                db.store_products.find(
+                    {"productId": pid},
+                    {"_id": 0, "storeProductId": 1, "storeId": 1, "basePrice": 1, "promoPrice": 1},
+                )
+            )
+            if not store_products:
+                return []
+
+            store_ids = {row.get("storeId") for row in store_products if row.get("storeId")}
+            store_names = self._store_name_map(store_ids)
+            store_product_map = {row.get("storeProductId"): row for row in store_products if row.get("storeProductId")}
+
+            history_rows = list(
+                db.price_history.find(
+                    {"storeProductId": {"$in": list(store_product_map.keys())}},
+                    {"_id": 0},
+                ).sort("timestamp", -1).limit(max(1, limit * 4))
+            )
+
+            history = []
+            for row in history_rows:
+                spid = row.get("storeProductId")
+                offer = store_product_map.get(spid, {})
+                store_meta = store_names.get(offer.get("storeId"), {})
+                price_value = row.get("newPrice")
+                if price_value is None:
+                    price_value = offer.get("promoPrice") if offer.get("promoPrice") is not None else offer.get("basePrice")
+
+                delta = None
+                delta_text = None
+                if row.get("oldPrice") is not None and row.get("newPrice") is not None:
+                    try:
+                        delta = float(row.get("newPrice")) - float(row.get("oldPrice"))
+                        if delta > 0:
+                            delta_text = f"+{delta:.2f}"
+                        elif delta < 0:
+                            delta_text = f"{delta:.2f}"
+                        else:
+                            delta_text = "0.00"
+                    except Exception:
+                        delta = None
+
+                timestamp = row.get("timestamp")
+                if isinstance(timestamp, datetime):
+                    date_text = timestamp.strftime("%Y-%m-%d %H:%M")
+                else:
+                    date_text = str(timestamp) if timestamp else None
+
+                history.append(
+                    {
+                        "storeProductId": spid,
+                        "storeId": offer.get("storeId"),
+                        "store": store_meta.get("name") or offer.get("storeId") or spid,
+                        "price": price_value,
+                        "oldPrice": row.get("oldPrice"),
+                        "newPrice": row.get("newPrice"),
+                        "timestamp": timestamp,
+                        "date_text": date_text,
+                        "delta": delta,
+                        "delta_text": delta_text,
+                        "source": row.get("source"),
+                        "reason": row.get("reason"),
+                    }
+                )
+                if len(history) >= limit:
+                    break
+
+            return history
+
+        return []
 
     def _hydrate_new_product(self, doc: dict, offers=None, store_map=None, category_map=None):
         offers = offers or []

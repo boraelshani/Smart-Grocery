@@ -94,6 +94,15 @@ def apply_schema(db) -> dict:
             ([ ("historyId", ASCENDING) ], {"name": "idx_price_history_id", "unique": True, "partialFilterExpression": {"historyId": partial_unique_str}}),
             ([ ("storeProductId", ASCENDING), ("timestamp", DESCENDING) ], {"name": "idx_price_history_spid_timestamp"}),
         ],
+        "promotions": [
+            ([ ("promotionId", ASCENDING) ], {"name": "idx_promotion_id", "unique": True, "partialFilterExpression": {"promotionId": partial_unique_str}}),
+            ([ ("promotionType", ASCENDING), ("status", ASCENDING) ], {"name": "idx_promotion_type_status"}),
+            ([ ("storeId", ASCENDING), ("promotionType", ASCENDING) ], {"name": "idx_promotion_store_type"}),
+            ([ ("productId", ASCENDING) ], {"name": "idx_promotion_productId"}),
+            ([ ("storeName", ASCENDING) ], {"name": "idx_promotion_storeName"}),
+            ([ ("productName", ASCENDING) ], {"name": "idx_promotion_productName"}),
+            ([ ("validUntil", DESCENDING) ], {"name": "idx_promotion_validUntil"}),
+        ],
         "users": [
             ([ ("userId", ASCENDING) ], {"name": "idx_user_userId", "unique": True, "partialFilterExpression": {"userId": partial_unique_str}}),
             ([ ("email", ASCENDING) ], {"name": "idx_user_email", "unique": True, "partialFilterExpression": {"email": partial_unique_str}}),
@@ -126,6 +135,10 @@ def apply_schema(db) -> dict:
         ],
         "schema_migrations": [
             ([ ("key", ASCENDING) ], {"name": "idx_schema_migrations_key", "unique": True, "partialFilterExpression": {"key": partial_unique_str}}),
+        ],
+        "backup_runs": [
+            ([ ("backupId", ASCENDING) ], {"name": "idx_backup_runs_id", "unique": True, "partialFilterExpression": {"backupId": partial_unique_str}}),
+            ([ ("createdAt", DESCENDING) ], {"name": "idx_backup_runs_createdAt"}),
         ],
     }
 

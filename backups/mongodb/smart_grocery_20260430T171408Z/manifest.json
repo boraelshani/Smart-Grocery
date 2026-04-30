@@ -1,0 +1,995 @@
+{
+  "database": "smart_grocery",
+  "createdAt": "2026-04-30T17:14:08.048265+00:00",
+  "collections": [
+    {
+      "name": "backup_runs",
+      "count": 0,
+      "indexes": {
+        "_id_": {
+          "v": 2,
+          "key": [
+            [
+              "_id",
+              1
+            ]
+          ]
+        },
+        "idx_backup_runs_id": {
+          "v": 2,
+          "key": [
+            [
+              "backupId",
+              1
+            ]
+          ],
+          "unique": true,
+          "partialFilterExpression": {
+            "backupId": {
+              "$type": "string"
+            }
+          }
+        },
+        "idx_backup_runs_createdAt": {
+          "v": 2,
+          "key": [
+            [
+              "createdAt",
+              -1
+            ]
+          ]
+        }
+      },
+      "file": "backup_runs.jsonl.gz"
+    },
+    {
+      "name": "brands",
+      "count": 84,
+      "indexes": {
+        "_id_": {
+          "v": 2,
+          "key": [
+            [
+              "_id",
+              1
+            ]
+          ]
+        },
+        "idx_brand_brandId": {
+          "v": 2,
+          "key": [
+            [
+              "brandId",
+              1
+            ]
+          ],
+          "unique": true,
+          "partialFilterExpression": {
+            "brandId": {
+              "$type": "string"
+            }
+          }
+        },
+        "idx_brand_name": {
+          "v": 2,
+          "key": [
+            [
+              "name",
+              1
+            ]
+          ]
+        }
+      },
+      "file": "brands.jsonl.gz"
+    },
+    {
+      "name": "categories",
+      "count": 445,
+      "indexes": {
+        "_id_": {
+          "v": 2,
+          "key": [
+            [
+              "_id",
+              1
+            ]
+          ]
+        },
+        "idx_category_categoryId": {
+          "v": 2,
+          "key": [
+            [
+              "categoryId",
+              1
+            ]
+          ],
+          "unique": true,
+          "partialFilterExpression": {
+            "categoryId": {
+              "$type": "string"
+            }
+          }
+        },
+        "idx_category_slug": {
+          "v": 2,
+          "key": [
+            [
+              "slug",
+              1
+            ]
+          ],
+          "unique": true,
+          "partialFilterExpression": {
+            "slug": {
+              "$type": "string"
+            }
+          }
+        },
+        "idx_category_parentId": {
+          "v": 2,
+          "key": [
+            [
+              "parentId",
+              1
+            ]
+          ]
+        },
+        "idx_category_path": {
+          "v": 2,
+          "key": [
+            [
+              "path",
+              1
+            ]
+          ]
+        }
+      },
+      "file": "categories.jsonl.gz"
+    },
+    {
+      "name": "community_price_reports",
+      "count": 3,
+      "indexes": {
+        "_id_": {
+          "v": 2,
+          "key": [
+            [
+              "_id",
+              1
+            ]
+          ]
+        }
+      },
+      "file": "community_price_reports.jsonl.gz"
+    },
+    {
+      "name": "favorites",
+      "count": 25,
+      "indexes": {
+        "_id_": {
+          "v": 2,
+          "key": [
+            [
+              "_id",
+              1
+            ]
+          ]
+        }
+      },
+      "file": "favorites.jsonl.gz"
+    },
+    {
+      "name": "featured_deals",
+      "count": 53,
+      "indexes": {
+        "_id_": {
+          "v": 2,
+          "key": [
+            [
+              "_id",
+              1
+            ]
+          ]
+        }
+      },
+      "file": "featured_deals.jsonl.gz"
+    },
+    {
+      "name": "feedback",
+      "count": 0,
+      "indexes": {
+        "_id_": {
+          "v": 2,
+          "key": [
+            [
+              "_id",
+              1
+            ]
+          ]
+        },
+        "idx_feedback_id": {
+          "v": 2,
+          "key": [
+            [
+              "feedbackId",
+              1
+            ]
+          ],
+          "unique": true,
+          "partialFilterExpression": {
+            "feedbackId": {
+              "$type": "string"
+            }
+          }
+        },
+        "idx_feedback_type": {
+          "v": 2,
+          "key": [
+            [
+              "type",
+              1
+            ]
+          ]
+        },
+        "idx_feedback_status": {
+          "v": 2,
+          "key": [
+            [
+              "status",
+              1
+            ]
+          ]
+        },
+        "idx_feedback_type_status": {
+          "v": 2,
+          "key": [
+            [
+              "type",
+              1
+            ],
+            [
+              "status",
+              1
+            ]
+          ]
+        },
+        "idx_feedback_createdAt": {
+          "v": 2,
+          "key": [
+            [
+              "createdAt",
+              -1
+            ]
+          ]
+        }
+      },
+      "file": "feedback.jsonl.gz"
+    },
+    {
+      "name": "lists",
+      "count": 10,
+      "indexes": {
+        "_id_": {
+          "v": 2,
+          "key": [
+            [
+              "_id",
+              1
+            ]
+          ]
+        },
+        "idx_list_listId": {
+          "v": 2,
+          "key": [
+            [
+              "listId",
+              1
+            ]
+          ],
+          "unique": true,
+          "partialFilterExpression": {
+            "listId": {
+              "$type": "string"
+            }
+          }
+        },
+        "idx_list_userId": {
+          "v": 2,
+          "key": [
+            [
+              "userId",
+              1
+            ]
+          ]
+        },
+        "idx_list_shareCode": {
+          "v": 2,
+          "key": [
+            [
+              "shareCode",
+              1
+            ]
+          ],
+          "sparse": true
+        },
+        "idx_list_items_productId": {
+          "v": 2,
+          "key": [
+            [
+              "items.productId",
+              1
+            ]
+          ]
+        },
+        "userId_1_updatedAt_-1": {
+          "v": 2,
+          "key": [
+            [
+              "userId",
+              1
+            ],
+            [
+              "updatedAt",
+              -1
+            ]
+          ]
+        },
+        "userId_1_items.is_new_1": {
+          "v": 2,
+          "key": [
+            [
+              "userId",
+              1
+            ],
+            [
+              "items.is_new",
+              1
+            ]
+          ]
+        }
+      },
+      "file": "lists.jsonl.gz"
+    },
+    {
+      "name": "matched_products",
+      "count": 54,
+      "indexes": {
+        "_id_": {
+          "v": 2,
+          "key": [
+            [
+              "_id",
+              1
+            ]
+          ]
+        }
+      },
+      "file": "matched_products.jsonl.gz"
+    },
+    {
+      "name": "multibuy_offers",
+      "count": 9,
+      "indexes": {
+        "_id_": {
+          "v": 2,
+          "key": [
+            [
+              "_id",
+              1
+            ]
+          ]
+        }
+      },
+      "file": "multibuy_offers.jsonl.gz"
+    },
+    {
+      "name": "notifications",
+      "count": 0,
+      "indexes": {
+        "_id_": {
+          "v": 2,
+          "key": [
+            [
+              "_id",
+              1
+            ]
+          ]
+        },
+        "user_email_1_read_1_created_at_-1": {
+          "v": 2,
+          "key": [
+            [
+              "user_email",
+              1
+            ],
+            [
+              "read",
+              1
+            ],
+            [
+              "created_at",
+              -1
+            ]
+          ]
+        }
+      },
+      "file": "notifications.jsonl.gz"
+    },
+    {
+      "name": "price_history",
+      "count": 23,
+      "indexes": {
+        "_id_": {
+          "v": 2,
+          "key": [
+            [
+              "_id",
+              1
+            ]
+          ]
+        },
+        "idx_price_history_id": {
+          "v": 2,
+          "key": [
+            [
+              "historyId",
+              1
+            ]
+          ],
+          "unique": true,
+          "partialFilterExpression": {
+            "historyId": {
+              "$type": "string"
+            }
+          }
+        },
+        "idx_price_history_spid_timestamp": {
+          "v": 2,
+          "key": [
+            [
+              "storeProductId",
+              1
+            ],
+            [
+              "timestamp",
+              -1
+            ]
+          ]
+        }
+      },
+      "file": "price_history.jsonl.gz"
+    },
+    {
+      "name": "product_metrics",
+      "count": 0,
+      "indexes": {
+        "_id_": {
+          "v": 2,
+          "key": [
+            [
+              "_id",
+              1
+            ]
+          ]
+        },
+        "idx_product_metrics_productId": {
+          "v": 2,
+          "key": [
+            [
+              "productId",
+              1
+            ]
+          ],
+          "unique": true,
+          "partialFilterExpression": {
+            "productId": {
+              "$type": "string"
+            }
+          }
+        },
+        "idx_product_metrics_popularity": {
+          "v": 2,
+          "key": [
+            [
+              "popularityScore",
+              -1
+            ]
+          ]
+        },
+        "idx_product_metrics_trend": {
+          "v": 2,
+          "key": [
+            [
+              "trendScore",
+              -1
+            ]
+          ]
+        }
+      },
+      "file": "product_metrics.jsonl.gz"
+    },
+    {
+      "name": "products",
+      "count": 244,
+      "indexes": {
+        "_id_": {
+          "v": 2,
+          "key": [
+            [
+              "_id",
+              1
+            ]
+          ]
+        },
+        "idx_product_productId": {
+          "v": 2,
+          "key": [
+            [
+              "productId",
+              1
+            ]
+          ],
+          "unique": true,
+          "partialFilterExpression": {
+            "productId": {
+              "$type": "string"
+            }
+          }
+        },
+        "idx_product_barcode": {
+          "v": 2,
+          "key": [
+            [
+              "barcode",
+              1
+            ]
+          ],
+          "sparse": true
+        },
+        "idx_product_categoryId": {
+          "v": 2,
+          "key": [
+            [
+              "categoryId",
+              1
+            ]
+          ]
+        },
+        "idx_product_labels": {
+          "v": 2,
+          "key": [
+            [
+              "labels",
+              1
+            ]
+          ]
+        },
+        "idx_product_brandId": {
+          "v": 2,
+          "key": [
+            [
+              "brandId",
+              1
+            ]
+          ]
+        },
+        "idx_product_createdAt": {
+          "v": 2,
+          "key": [
+            [
+              "createdAt",
+              -1
+            ]
+          ]
+        }
+      },
+      "file": "products.jsonl.gz"
+    },
+    {
+      "name": "promotions",
+      "count": 0,
+      "indexes": {
+        "_id_": {
+          "v": 2,
+          "key": [
+            [
+              "_id",
+              1
+            ]
+          ]
+        },
+        "idx_promotion_id": {
+          "v": 2,
+          "key": [
+            [
+              "promotionId",
+              1
+            ]
+          ],
+          "unique": true,
+          "partialFilterExpression": {
+            "promotionId": {
+              "$type": "string"
+            }
+          }
+        },
+        "idx_promotion_type_status": {
+          "v": 2,
+          "key": [
+            [
+              "promotionType",
+              1
+            ],
+            [
+              "status",
+              1
+            ]
+          ]
+        },
+        "idx_promotion_store_type": {
+          "v": 2,
+          "key": [
+            [
+              "storeId",
+              1
+            ],
+            [
+              "promotionType",
+              1
+            ]
+          ]
+        },
+        "idx_promotion_productId": {
+          "v": 2,
+          "key": [
+            [
+              "productId",
+              1
+            ]
+          ]
+        }
+      },
+      "file": "promotions.jsonl.gz"
+    },
+    {
+      "name": "public_lists",
+      "count": 2,
+      "indexes": {
+        "_id_": {
+          "v": 2,
+          "key": [
+            [
+              "_id",
+              1
+            ]
+          ]
+        },
+        "idx_public_list_id": {
+          "v": 2,
+          "key": [
+            [
+              "id",
+              1
+            ]
+          ],
+          "unique": true,
+          "partialFilterExpression": {
+            "id": {
+              "$type": "string"
+            }
+          }
+        },
+        "idx_public_list_type_popularity": {
+          "v": 2,
+          "key": [
+            [
+              "type",
+              1
+            ],
+            [
+              "popularityScore",
+              -1
+            ]
+          ]
+        }
+      },
+      "file": "public_lists.jsonl.gz"
+    },
+    {
+      "name": "quantity_discounts",
+      "count": 13,
+      "indexes": {
+        "_id_": {
+          "v": 2,
+          "key": [
+            [
+              "_id",
+              1
+            ]
+          ]
+        }
+      },
+      "file": "quantity_discounts.jsonl.gz"
+    },
+    {
+      "name": "saved_recipes",
+      "count": 6,
+      "indexes": {
+        "_id_": {
+          "v": 2,
+          "key": [
+            [
+              "_id",
+              1
+            ]
+          ]
+        }
+      },
+      "file": "saved_recipes.jsonl.gz"
+    },
+    {
+      "name": "schema_migrations",
+      "count": 3,
+      "indexes": {
+        "_id_": {
+          "v": 2,
+          "key": [
+            [
+              "_id",
+              1
+            ]
+          ]
+        },
+        "idx_schema_migrations_key": {
+          "v": 2,
+          "key": [
+            [
+              "key",
+              1
+            ]
+          ],
+          "unique": true,
+          "partialFilterExpression": {
+            "key": {
+              "$type": "string"
+            }
+          }
+        }
+      },
+      "file": "schema_migrations.jsonl.gz"
+    },
+    {
+      "name": "scraper_rules",
+      "count": 0,
+      "indexes": {
+        "_id_": {
+          "v": 2,
+          "key": [
+            [
+              "_id",
+              1
+            ]
+          ]
+        },
+        "idx_scraper_rule_storeId": {
+          "v": 2,
+          "key": [
+            [
+              "storeId",
+              1
+            ]
+          ],
+          "unique": true,
+          "partialFilterExpression": {
+            "storeId": {
+              "$type": "string"
+            }
+          }
+        },
+        "idx_scraper_rule_updatedAt": {
+          "v": 2,
+          "key": [
+            [
+              "updatedAt",
+              -1
+            ]
+          ]
+        }
+      },
+      "file": "scraper_rules.jsonl.gz"
+    },
+    {
+      "name": "store_products",
+      "count": 285,
+      "indexes": {
+        "_id_": {
+          "v": 2,
+          "key": [
+            [
+              "_id",
+              1
+            ]
+          ]
+        },
+        "idx_store_product_id": {
+          "v": 2,
+          "key": [
+            [
+              "storeProductId",
+              1
+            ]
+          ],
+          "unique": true,
+          "partialFilterExpression": {
+            "storeProductId": {
+              "$type": "string"
+            }
+          }
+        },
+        "idx_store_product_productId": {
+          "v": 2,
+          "key": [
+            [
+              "productId",
+              1
+            ]
+          ]
+        },
+        "idx_store_product_storeId": {
+          "v": 2,
+          "key": [
+            [
+              "storeId",
+              1
+            ]
+          ]
+        },
+        "idx_store_product_product_store": {
+          "v": 2,
+          "key": [
+            [
+              "productId",
+              1
+            ],
+            [
+              "storeId",
+              1
+            ]
+          ],
+          "unique": true,
+          "partialFilterExpression": {
+            "productId": {
+              "$type": "string"
+            },
+            "storeId": {
+              "$type": "string"
+            }
+          }
+        },
+        "idx_store_product_availability_update": {
+          "v": 2,
+          "key": [
+            [
+              "isAvailable",
+              1
+            ],
+            [
+              "lastPriceUpdate",
+              -1
+            ]
+          ]
+        },
+        "idx_store_product_prices": {
+          "v": 2,
+          "key": [
+            [
+              "promoPrice",
+              1
+            ],
+            [
+              "basePrice",
+              1
+            ]
+          ]
+        }
+      },
+      "file": "store_products.jsonl.gz"
+    },
+    {
+      "name": "stores",
+      "count": 4,
+      "indexes": {
+        "_id_": {
+          "v": 2,
+          "key": [
+            [
+              "_id",
+              1
+            ]
+          ]
+        },
+        "idx_store_storeId": {
+          "v": 2,
+          "key": [
+            [
+              "storeId",
+              1
+            ]
+          ],
+          "unique": true,
+          "partialFilterExpression": {
+            "storeId": {
+              "$type": "string"
+            }
+          }
+        },
+        "idx_store_name": {
+          "v": 2,
+          "key": [
+            [
+              "name",
+              1
+            ]
+          ]
+        }
+      },
+      "file": "stores.jsonl.gz"
+    },
+    {
+      "name": "users",
+      "count": 27,
+      "indexes": {
+        "_id_": {
+          "v": 2,
+          "key": [
+            [
+              "_id",
+              1
+            ]
+          ]
+        },
+        "email_1": {
+          "v": 2,
+          "key": [
+            [
+              "email",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        "idx_user_userId": {
+          "v": 2,
+          "key": [
+            [
+              "userId",
+              1
+            ]
+          ],
+          "unique": true,
+          "partialFilterExpression": {
+            "userId": {
+              "$type": "string"
+            }
+          }
+        },
+        "idx_user_email": {
+          "v": 2,
+          "key": [
+            [
+              "email",
+              1
+            ]
+          ],
+          "unique": true,
+          "partialFilterExpression": {
+            "email": {
+              "$type": "string"
+            }
+          }
+        }
+      },
+      "file": "users.jsonl.gz"
+    }
+  ]
+}

@@ -448,6 +448,47 @@
       color: white; /* Maintain white label */
       filter: brightness(1.1); /* Subtle color brightening effect */
     }
+
+    .price-history-card {
+      background: linear-gradient(180deg, #ffffff 0%, #f8f7ff 100%);
+      border: 1px solid #ece7ff;
+      border-radius: 18px;
+      padding: 1.5rem;
+      box-shadow: 0 8px 30px rgba(124, 58, 237, 0.08);
+    }
+
+    .price-history-item {
+      border-left: 3px solid #7c3aed;
+      padding: 0.9rem 0 0.9rem 1rem;
+      position: relative;
+    }
+
+    .price-history-item::before {
+      content: '';
+      position: absolute;
+      left: -7px;
+      top: 1.25rem;
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      background: #7c3aed;
+      box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.12);
+    }
+
+    .price-history-price {
+      font-weight: 800;
+      color: #2d3748;
+    }
+
+    .price-history-delta-up {
+      color: #dc2626;
+      font-weight: 700;
+    }
+
+    .price-history-delta-down {
+      color: #16a34a;
+      font-weight: 700;
+    }
   </style>
 {% endblock %}
 
@@ -568,6 +609,36 @@
           </div>
 
           <!-- Store Selection --> <!-- Interactive grid where users choose a specific retailer -->
+          {% if price_history and price_history|length > 0 %}
+          <div class="mb-3 mt-4">
+            <div class="section-title">
+              <i class="bi bi-graph-up-arrow"></i>
+              Price History
+            </div>
+            <div class="price-history-card">
+              {% for row in price_history %}
+              <div class="price-history-item {% if not loop.last %}mb-2{% endif %}">
+                <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+                  <div>
+                    <div class="fw-bold text-dark">{{ row.store }}</div>
+                    <small class="text-muted">{{ row.date_text or 'Recent update' }}</small>
+                  </div>
+                  <div class="text-end">
+                    <div class="price-history-price">€{{ "%.2f"|format(row.price|float) if row.price is not none else 'N/A' }}</div>
+                    {% if row.delta_text %}
+                    <small class="{% if row.delta is not none and row.delta < 0 %}price-history-delta-down{% else %}price-history-delta-up{% endif %}">
+                      {% if row.delta is not none and row.delta < 0 %}<i class="bi bi-arrow-down"></i>{% elif row.delta is not none and row.delta > 0 %}<i class="bi bi-arrow-up"></i>{% endif %}
+                      {{ row.delta_text }}
+                    </small>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+
           {% if product.stores and product.stores|length > 0 %} <!-- Display only if multiple price points exist -->
           <div class="mb-3"> <!-- Spacing from surrounding cards -->
             <div class="section-title"> <!-- Module Header -->

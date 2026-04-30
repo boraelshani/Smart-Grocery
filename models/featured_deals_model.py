@@ -38,7 +38,31 @@ class FeaturedDealsModel:
         # Fetches the shared database connection from utils.db
         from utils.db import get_db
         self.db = get_db()
+        self.collection = self._collection()
         self._client = None # Placeholder for potential direct client if needed
+
+    def _collection(self):
+        if self.db is not None:
+            try:
+                if 'promotions' in self.db.list_collection_names():
+                    return self.db.promotions
+            except Exception:
+                pass
+        return self.db.featured_deals
+
+    @staticmethod
+    def _normalize_deal(doc: dict) -> dict:
+        if not isinstance(doc, dict):
+            return doc
+        out = dict(doc)
+        if '_id' in out:
+            out['id'] = str(out['_id'])
+        out['store'] = out.get('store') or out.get('storeName')
+        out['source'] = out.get('source') or out.get('sourceCollection')
+        out['title'] = out.get('title') or out.get('name')
+        out['name'] = out.get('name') or out['title']
+        out['price'] = out.get('price') or out.get('priceText')
+        return out
 
 
     # ═══════════════════════════════════════════════════════════════════════════
@@ -51,37 +75,32 @@ class FeaturedDealsModel:
         Handles both ObjectId strings and potential legacy/manual string IDs.
         """
         from bson import ObjectId
+        collection = self._collection()
         
         # 1. Try ObjectId Lookup
         try:
             # First attempt: Look up by standard MongoDB ObjectId
             # This is the most common case for real records
-            doc = self.db.featured_deals.find_one({'_id': ObjectId(deal_id)})
+            doc = collection.find_one({'_id': ObjectId(deal_id)})
             
             # If found, format it and return
             if doc:
-                if '_id' in doc:
-                    doc['id'] = str(doc['_id'])
-                return doc
+                return self._normalize_deal(doc)
         except Exception:
             # If deal_id is not a valid ObjectId format, ignore and proceed to fallback
             pass
 
         # 2. Fallback 1: Manual ID String
         # Look for 'id' string field (sometimes used in seeded JSON data)
-        doc = self.db.featured_deals.find_one({'id': deal_id})
+        doc = collection.find_one({'id': deal_id})
         if doc:
-            if '_id' in doc:
-                doc['id'] = str(doc['_id'])
-            return doc
+            return self._normalize_deal(doc)
 
         # 3. Fallback 2: Title Match
         # Look for 'title' match (rare, but useful for slug-based URLs)
-        doc = self.db.featured_deals.find_one({'title': deal_id})
+        doc = collection.find_one({'title': deal_id})
         if doc:
-            if '_id' in doc:
-                doc['id'] = str(doc['_id'])
-            return doc
+            return self._normalize_deal(doc)
             
         # Return None if nothing matched
         return None
@@ -97,13 +116,10 @@ class FeaturedDealsModel:
         Used for the main 'Featured Deals' page.
         """
         # 1. Fetch all documents from 'featured_deals' collection
-        docs = list(self.db.featured_deals.find({}))
+        docs = list(self._collection().find({'promotionType': 'featured_deal'}) if 'promotions' in self.db.list_collection_names() else self.db.featured_deals.find({}))
         
         # 2. Normalize Data
-        for d in docs:
-            if '_id' in d:
-                d['id'] = str(d['_id'])  # Convert MongoDB ID to string
-        return docs
+        return [self._normalize_deal(d) for d in docs]
 
     def get_deals_count(self) -> int:
         """
@@ -111,6 +127,8 @@ class FeaturedDealsModel:
         Used for the 'Total Savings Available' counter on the dashboard.
         """
         # Count all documents in the collection
+        if 'promotions' in self.db.list_collection_names():
+            return self.db.promotions.count_documents({'promotionType': 'featured_deal'})
         return self.db.featured_deals.count_documents({})
 
     def get_latest_deals(self, limit: int = 10) -> List[dict]:
@@ -121,16 +139,16 @@ class FeaturedDealsModel:
         # 1. Sort by '_id' Descending (-1)
         # In MongoDB, implicit timestamp is built into the ObjectId, 
         # so sorting by _id gives us chronological order.
-        cursor = self.db.featured_deals.find({}).sort('_id', -1).limit(limit)
+        if 'promotions' in self.db.list_collection_names():
+            cursor = self.db.promotions.find({'promotionType': 'featured_deal'}).sort('_id', -1).limit(limit)
+        else:
+            cursor = self.db.featured_deals.find({}).sort('_id', -1).limit(limit)
         
         # 2. Convert cursor to list
         docs = list(cursor)
         
         # 3. Normalize IDs
-        for d in docs:
-            if '_id' in d:
-                d['id'] = str(d['_id'])
-        return docs
+        return [self._normalize_deal(d) for d in docs]
 
 
     # ═══════════════════════════════════════════════════════════════════════════
@@ -144,10 +162,23 @@ class FeaturedDealsModel:
         regex = {'$regex': re.escape(store_name), '$options': 'i'}
         
         # Count documents where 'store' matches OR 'source' matches
-        return self.db.featured_deals.count_documents({
+        collection = self._collection()
+        if 'promotions' in self.db.list_collection_names():
+            return collection.count_documents({
+                'promotionType': 'featured_deal',
+                '$or': [
+                    {'store': regex},
+                    {'storeName': regex},
+                    {'source': regex},
+                    {'sourceCollection': regex}
+                ]
+            })
+        return collection.count_documents({
             '$or': [
                 {'store': regex},
-                {'source': regex}
+                {'storeName': regex},
+                {'source': regex},
+                {'sourceCollection': regex}
             ]
         })
 
@@ -158,18 +189,29 @@ class FeaturedDealsModel:
         regex = {'$regex': re.escape(store_name), '$options': 'i'}
         
         # Find all matching documents
-        docs = list(self.db.featured_deals.find({
-            '$or': [
-                {'store': regex},
-                {'source': regex}
-            ]
-        }))
+        collection = self._collection()
+        if 'promotions' in self.db.list_collection_names():
+            docs = list(collection.find({
+                'promotionType': 'featured_deal',
+                '$or': [
+                    {'store': regex},
+                    {'storeName': regex},
+                    {'source': regex},
+                    {'sourceCollection': regex}
+                ]
+            }))
+        else:
+            docs = list(collection.find({
+                '$or': [
+                    {'store': regex},
+                    {'storeName': regex},
+                    {'source': regex},
+                    {'sourceCollection': regex}
+                ]
+            }))
         
         # Normalize IDs
-        for d in docs:
-            if '_id' in d:
-                d['id'] = str(d['_id'])
-        return docs
+        return [self._normalize_deal(d) for d in docs]
 
 
 # Initialize the singleton instance

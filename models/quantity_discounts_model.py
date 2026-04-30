@@ -43,6 +43,39 @@ class QuantityDiscountsModel:
         from utils.db import get_db
         return get_db()
 
+    def _collection(self):
+        db = self.db
+        if db is not None:
+            try:
+                if 'promotions' in db.list_collection_names():
+                    return db.promotions
+            except Exception:
+                pass
+        return db.quantity_discounts
+
+    @staticmethod
+    def _normalize_discount(doc: dict) -> dict:
+        if not isinstance(doc, dict):
+            return doc
+        out = dict(doc)
+        if '_id' in out:
+            out['id'] = str(out['_id'])
+        out['promotionType'] = out.get('promotionType') or 'quantity_discount'
+        out['active'] = bool(out.get('active', out.get('status') == 'active'))
+        out['title'] = out.get('title') or out.get('product_name') or out.get('productName') or out.get('name')
+        out['product_name'] = out.get('product_name') or out['title']
+        out['store'] = out.get('store') or out.get('storeName')
+        out['product_id'] = out.get('product_id') or out.get('productId')
+        out['base_price'] = out.get('base_price') or out.get('basePrice') or out.get('price') or out.get('priceText')
+        out['discount_tiers'] = out.get('discount_tiers') or out.get('discountTiers') or out.get('tiers') or []
+        out['discount_label'] = out.get('discount_label')
+        if not out.get('discount_label') and out.get('discount_tiers'):
+            first = out['discount_tiers'][0]
+            pct = first.get('discount_percent', 0)
+            qty = first.get('min_qty', 2)
+            out['discount_label'] = f"{pct}% off (Buy {qty}+)"
+        return out
+
 
     # ═══════════════════════════════════════════════════════════════════════════
     # CATEGORY: READ OPERATIONS
@@ -55,13 +88,16 @@ class QuantityDiscountsModel:
 
         try:
             # Fetch active discounts
-            docs = list(self.db.quantity_discounts.find({'active': True}))
+            collection = self._collection()
+            if 'promotions' in self.db.list_collection_names():
+                query = {'promotionType': 'quantity_discount', 'status': 'active'}
+            else:
+                query = {'active': True}
+            docs = [self._normalize_discount(d) for d in collection.find(query)]
             
             # Normalize and Decorate
             for d in docs:
                 # 1. ID Normalization
-                if '_id' in d:
-                    d['id'] = str(d['_id'])
                 
                 # 2. Name Normalization (Templates expect 'name' or 'title')
                 if 'product_name' in d and 'name' not in d:
@@ -82,6 +118,13 @@ class QuantityDiscountsModel:
                     
                     # Set discount_percent for sort logic
                     d['discount_percent'] = pct
+                elif d.get('discountTiers'):
+                    best_tier = d['discountTiers'][0]
+                    pct = best_tier.get('discount_percent', 0)
+                    qty = best_tier.get('min_qty', 2)
+                    d['discount_tiers'] = d['discountTiers']
+                    d['discount_label'] = f"{pct}% off (Buy {qty}+)"
+                    d['discount_percent'] = pct
                     
             return docs
         except Exception as e:
@@ -91,21 +134,19 @@ class QuantityDiscountsModel:
     def get_latest_discounts(self, limit: int = 3) -> List[dict]:
         """Get the most recently added active discounts."""
         if self.db is None: return []
-        cursor = self.db.quantity_discounts.find({'active': True}).sort('_id', -1).limit(limit)
-        docs = list(cursor)
-        for d in docs:
-            if '_id' in d:
-                d['id'] = str(d['_id'])
-        return docs
+        collection = self._collection()
+        if 'promotions' in self.db.list_collection_names():
+            cursor = collection.find({'promotionType': 'quantity_discount', 'status': 'active'}).sort('_id', -1).limit(limit)
+        else:
+            cursor = collection.find({'active': True}).sort('_id', -1).limit(limit)
+        return [self._normalize_discount(d) for d in cursor]
 
     def get_discount_by_id(self, discount_id: str) -> Optional[dict]:
         """Get specific discount rule by ID."""
         try:
             if self.db is None: return None
-            doc = self.db.quantity_discounts.find_one({'_id': ObjectId(discount_id)})
-            if doc and '_id' in doc:
-                doc['id'] = str(doc['_id'])
-            return doc
+            doc = self._collection().find_one({'_id': ObjectId(discount_id)})
+            return self._normalize_discount(doc) if doc else None
         except Exception:
             return None
 
@@ -113,10 +154,9 @@ class QuantityDiscountsModel:
         """Get discount rule associated with a specific product."""
         try:
             if self.db is None: return None
-            doc = self.db.quantity_discounts.find_one({'product_id': ObjectId(product_id)})
-            if doc and '_id' in doc:
-                doc['id'] = str(doc['_id'])
-            return doc
+            query = {'$or': [{'product_id': ObjectId(product_id)}, {'productId': str(product_id)}]}
+            doc = self._collection().find_one(query)
+            return self._normalize_discount(doc) if doc else None
         except Exception:
             return None
 
@@ -138,19 +178,19 @@ class QuantityDiscountsModel:
         # Create Map: product_id (str) -> discount doc
         discount_map = {}
         for d in discounts:
-             pid = str(d.get('product_id', ''))
-             if pid:
-                 discount_map[pid] = d
+            pid = str(d.get('product_id') or d.get('productId') or '')
+            if pid:
+                discount_map[pid] = d
 
         # Iterate products and attach tiers if found in map
         for p in products:
-             pid = str(p.get('id') or p.get('_id', ''))
-             if pid in discount_map:
-                 d = discount_map[pid]
-                 p['discount_tiers'] = d.get('tiers', [])
-                 # Also attach special offer type if present
-                 if d.get('offer_type'):
-                     p['special_offer_type'] = d.get('offer_type')
+            pid = str(p.get('id') or p.get('_id', ''))
+            if pid in discount_map:
+                d = discount_map[pid]
+                p['discount_tiers'] = d.get('discount_tiers') or d.get('tiers', [])
+                # Also attach special offer type if present
+                if d.get('offer_type') or d.get('promotionType'):
+                    p['special_offer_type'] = d.get('offer_type') or d.get('promotionType')
 
 
     # ═══════════════════════════════════════════════════════════════════════════

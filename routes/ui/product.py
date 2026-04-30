@@ -61,6 +61,7 @@ def attach_deals_to_product(product_doc):
 def product_detail(product_id):
     """Detailed product comparison page."""
     product = products_model.get_product_by_id(product_id)
+    price_history = products_model.get_price_history(product_id, limit=8)
     is_deal_direct = False
     
     if not product:
@@ -99,7 +100,8 @@ def product_detail(product_id):
                          product=payload, 
                          best_price_value=best_price_value,
                          best_price_stores=best_price_stores,
-                         is_favorited=is_favorited)
+                         is_favorited=is_favorited,
+                         price_history=price_history)
 
 @main_bp.route('/compare')
 @main_bp.route('/compare-prices')
