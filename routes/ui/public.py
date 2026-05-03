@@ -48,6 +48,7 @@ def home():
     featured_deals = []
     popular_products = []
     store_products = []
+    categories = []
     total_deals_count = 0
     total_product_count = 0
     chosen_store_name = None
@@ -59,6 +60,29 @@ def home():
     try:
         stores = stores_model.list_stores()
         products = products_model.list_products(limit=80)
+        
+        # Fetch categories from database
+        from utils.db import get_db
+        db = get_db()
+        if db is not None:
+            try:
+                categories_cursor = db.categories.find(
+                    {},
+                    {"_id": 0, "categoryId": 1, "name_en": 1, "imageUrl": 1}
+                ).limit(12)
+                categories = list(categories_cursor)
+                # Filter out categories without images and format them
+                categories = [
+                    {
+                        'id': cat.get('categoryId'),
+                        'name': cat.get('name_en', 'Category'),
+                        'image': cat.get('imageUrl', '')
+                    }
+                    for cat in categories if cat.get('imageUrl')
+                ]
+            except Exception as e:
+                print(f'WARNING: Failed to load categories: {e}')
+                categories = []
         
         total_deals_count = (featured_deals_model.get_deals_count() + 
                            multibuy_offers_model.get_offers_count() + 
@@ -117,12 +141,43 @@ def home():
     for d in featured_deals:
         d['is_favorited'] = str(d.get('id') or d.get('_id', '')) in fav_ids
 
-    # Popular
+    # Popular - Get actual popular products from database
     try:
-        popular_products = products_model.get_popular_products(limit=12)
-        for p in popular_products:
-            p['is_favorited'] = str(p.get('id') or p.get('_id', '')) in fav_ids
-    except:
+        from utils.db import get_db
+        db = get_db()
+        if db is not None:
+            # Aggregate to find most popular products based on view count or other metrics
+            popular_pipeline = [
+                {"$match": {"image": {"$exists": True, "$ne": ""}}},  # Only products with images
+                {"$addFields": {
+                    "popularity_score": {
+                        "$add": [
+                            {"$ifNull": ["$view_count", 0]},
+                            {"$multiply": [{"$ifNull": ["$purchase_count", 0]}, 2]},  # Weight purchases more
+                            {"$multiply": [{"$ifNull": ["$favorite_count", 0]}, 1.5]}  # Weight favorites
+                        ]
+                    }
+                }},
+                {"$sort": {"popularity_score": -1}},
+                {"$limit": 12}
+            ]
+            popular_cursor = db.products.aggregate(popular_pipeline)
+            popular_products = list(popular_cursor)
+            
+            # If no products with metrics, fall back to random selection
+            if not popular_products:
+                popular_products = list(db.products.find(
+                    {"image": {"$exists": True, "$ne": ""}},
+                    limit=12
+                ).sort("_id", -1))
+            
+            # Mark favorites
+            for p in popular_products:
+                p['is_favorited'] = str(p.get('id') or p.get('_id', '')) in fav_ids
+        else:
+            popular_products = products[:12]
+    except Exception as e:
+        print(f'ERROR fetching popular products: {e}')
         popular_products = products[:12]
 
     # Store stats & Featured store
@@ -185,6 +240,7 @@ def home():
         'featured_deals': featured_deals[:10],
         'popular_products': popular_products,
         'store_products': store_products,
+        'categories': categories,
         'total_deals_count': total_deals_count,
         'total_product_count': total_product_count,
         'chosen_store_name': chosen_store_name,
