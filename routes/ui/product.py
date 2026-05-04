@@ -121,7 +121,7 @@ def compare_prices():
         and_clauses.append({
             '$or': [
                 {'category': {'$regex': f"^{re.escape(category_filter)}$", '$options': 'i'}},
-                {'category_path': {'$elemMatch': {'$regex': f"^{re.escape(category_filter)}$", '$options': 'i'}}}
+                {'category_path': {'$regex': f"^{re.escape(category_filter)}$", '$options': 'i'}}
             ]
         })
     

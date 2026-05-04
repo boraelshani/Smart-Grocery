@@ -42,7 +42,12 @@ def compare_list():
     category_filter = (request.args.get('category') or '').strip()
     search_query = (request.args.get('search') or '').strip()
     query = {}
-    if category_filter: query['category'] = {'$regex': f"^{category_filter}$", '$options': 'i'}
+    if category_filter:
+        import re
+        query['$or'] = [
+            {'category': {'$regex': f"^{re.escape(category_filter)}$", '$options': 'i'}},
+            {'category_path': {'$regex': f"^{re.escape(category_filter)}$", '$options': 'i'}}
+        ]
     product_query = dict(query)
     if search_query:
         import requests
