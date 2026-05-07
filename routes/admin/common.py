@@ -185,7 +185,8 @@ def _redirect_admin(default, **kwargs):
 def admin_dashboard():
     ok, res = _require_admin()
     if not ok: return res
-    db = get_db()
+    from models.postgres_models import db, Product, Category, Store, Brand, Offer, User, ShoppingList, ListItem, FeaturedDeal
+    pass
     if db is None: return render_template("admin_dashboard.html", error="DB offline", data={})
     return render_template("admin_dashboard.html", data=_dashboard_payload(db), user_email=res)
 
@@ -193,13 +194,14 @@ def admin_dashboard():
 def admin_products_page():
     ok, res = _require_admin()
     if not ok: return res
-    db = get_db()
+    from models.postgres_models import db, Product, Category, Store, Brand, Offer, User, ShoppingList, ListItem, FeaturedDeal
+    pass
     if db is None: return render_template("admin_products.html", error="DB offline", data={})
     qt = (request.args.get("q") or "").strip(); bf = (request.args.get("brand") or "").strip()
     page = _parse_positive_int(request.args.get("page"), 1); per = 25; q = {}
     if qt: q["$or"] = [{"productId": {"$regex": qt, "$options": "i"}}, {"name_en": {"$regex": qt, "$options": "i"}}, {"name_de": {"$regex": qt, "$options": "i"}}, {"barcode": {"$regex": qt, "$options": "i"}}]
     if bf: q["brandId"] = bf
-    total = db.products.count_documents(q); tp = max((total + per - 1) // per, 1); page = min(page, tp)
+    total = Product.query.count(); tp = max((total + per - 1) // per, 1); page = min(page, tp)
     products = list(db.products.find(q, {"_id": 0}).sort([("updatedAt", -1), ("createdAt", -1), ("name_en", 1)]).skip((page-1)*per).limit(per))
     categories = list(db.categories.find({}, {"_id": 0, "categoryId": 1, "name_en": 1}).sort("name_en", 1))
     brands = list(db.brands.find({}, {"_id": 0, "brandId": 1, "name": 1, "name_en": 1}).sort("name", 1))
@@ -226,7 +228,8 @@ def admin_products_page():
 def admin_categories_page():
     ok, res = _require_admin()
     if not ok: return res
-    db = get_db()
+    from models.postgres_models import db, Product, Category, Store, Brand, Offer, User, ShoppingList, ListItem, FeaturedDeal
+    pass
     if db is None: return render_template("admin_categories.html", error="DB offline", data={})
     qt = (request.args.get("q") or "").strip()
     all_cats = list(db.categories.find({}, {"_id": 0}).sort([("name_en", 1)]))
@@ -250,7 +253,8 @@ def admin_categories_page():
 def admin_brands_page():
     ok, res = _require_admin()
     if not ok: return res
-    db = get_db()
+    from models.postgres_models import db, Product, Category, Store, Brand, Offer, User, ShoppingList, ListItem, FeaturedDeal
+    pass
     if db is None: return render_template("admin_brands.html", error="DB offline", data={})
     qt = (request.args.get("q") or "").strip(); q = {}
     if qt: q = {"$or": [{"brandId": {"$regex": qt, "$options": "i"}}, {"name": {"$regex": qt, "$options": "i"}}]}
@@ -265,7 +269,8 @@ def admin_brands_page():
 def admin_lists_page():
     ok, res = _require_admin()
     if not ok: return res
-    db = get_db()
+    from models.postgres_models import db, Product, Category, Store, Brand, Offer, User, ShoppingList, ListItem, FeaturedDeal
+    pass
     if db is None: return render_template("admin_lists.html", error="DB offline", data={})
     lists = list(db.lists.find({}, {"_id": 0}).sort("updatedAt", -1).limit(80))
     pub_lists = list(db.public_lists.find({}, {"_id": 0}).sort("createdAt", -1).limit(80))
@@ -285,7 +290,8 @@ def admin_lists_page():
 def admin_feedback_page():
     ok, res = _require_admin()
     if not ok: return res
-    db = get_db()
+    from models.postgres_models import db, Product, Category, Store, Brand, Offer, User, ShoppingList, ListItem, FeaturedDeal
+    pass
     if db is None: return render_template("admin_feedback.html", error="DB offline", data={})
     sf = (request.args.get("status") or "all").strip().lower(); q = {}
     if sf != "all": q["status"] = sf
@@ -297,13 +303,15 @@ def admin_feedback_page():
 def admin_overview_api():
     ok, res = _require_admin()
     if not ok: return res
-    db = get_db()
+    from models.postgres_models import db, Product, Category, Store, Brand, Offer, User, ShoppingList, ListItem, FeaturedDeal
+    pass
     if db is None: return jsonify({"status": "error"}), 500
     return jsonify({"status": "ok", "data": _dashboard_payload(db)})
 
 @admin_bp.route("/stores/save", methods=["POST"])
 def admin_save_store():
-    ok, res = _require_admin(); db = get_db()
+    ok, res = _require_admin(); from models.postgres_models import db, Product, Category, Store, Brand, Offer, User, ShoppingList, ListItem, FeaturedDeal
+    pass
     sid = (request.form.get("storeId") or "").strip() or _id("store")
     payload = {"storeId": sid, "name": (request.form.get("name") or "").strip(), "logoUrl": (request.form.get("logoUrl") or "").strip(), "website": (request.form.get("website") or "").strip(), "country": (request.form.get("country") or "AT").strip(), "apiAvailable": _to_bool(request.form.get("apiAvailable")), "scrapingRequired": _to_bool(request.form.get("scrapingRequired"), True), "updatedAt": _now_utc()}
     if not payload["name"]: flash("Name required", "error"); return _redirect_admin("admin.admin_dashboard")
@@ -312,7 +320,8 @@ def admin_save_store():
 
 @admin_bp.route("/brands/save", methods=["POST"])
 def admin_save_brand():
-    ok, res = _require_admin(); db = get_db()
+    ok, res = _require_admin(); from models.postgres_models import db, Product, Category, Store, Brand, Offer, User, ShoppingList, ListItem, FeaturedDeal
+    pass
     en, de = _localized_pair(request.form.get("name_en") or request.form.get("name"), request.form.get("name_de"))
     bid = (request.form.get("brandId") or "").strip() or _id("brand")
     payload = {"brandId": bid, "name": en, "name_en": en, "name_de": de, "image_url": (request.form.get("image_url") or "").strip(), "website": (request.form.get("website") or "").strip(), "updatedAt": _now_utc()}
@@ -322,7 +331,8 @@ def admin_save_brand():
 
 @admin_bp.route("/categories/save", methods=["POST"])
 def admin_save_category():
-    ok, res = _require_admin(); db = get_db()
+    ok, res = _require_admin(); from models.postgres_models import db, Product, Category, Store, Brand, Offer, User, ShoppingList, ListItem, FeaturedDeal
+    pass
     cid = (request.form.get("categoryId") or "").strip() or _id("cat")
     en, de = _localized_pair(request.form.get("name_en"), request.form.get("name_de"))
     payload = {"categoryId": cid, "name_en": en, "name_de": de, "slug": (request.form.get("slug") or "").strip(), "image_url": (request.form.get("image_url") or "").strip(), "parentId": (request.form.get("parentId") or "").strip() or None, "updatedAt": _now_utc()}
@@ -336,7 +346,8 @@ def admin_save_category():
 
 @admin_bp.route("/products/save-ai", methods=["POST"])
 def admin_save_ai_product():
-    ok, res = _require_admin(); db = get_db()
+    ok, res = _require_admin(); from models.postgres_models import db, Product, Category, Store, Brand, Offer, User, ShoppingList, ListItem, FeaturedDeal
+    pass
     if not ok: return res
     if db is None: return res
     pid = _id("prod")
@@ -427,7 +438,8 @@ def admin_save_ai_product():
 
 @admin_bp.route("/api/products/search", methods=["GET"])
 def admin_api_products_search():
-    ok, res = _require_admin(); db = get_db()
+    ok, res = _require_admin(); from models.postgres_models import db, Product, Category, Store, Brand, Offer, User, ShoppingList, ListItem, FeaturedDeal
+    pass
     if not ok or db is None: return jsonify([])
     q = (request.args.get("q") or "").strip()
     if not q: return jsonify([])
@@ -441,7 +453,8 @@ def admin_api_products_search():
 
 @admin_bp.route("/products/merge", methods=["POST"])
 def admin_merge_products():
-    ok, res = _require_admin(); db = get_db()
+    ok, res = _require_admin(); from models.postgres_models import db, Product, Category, Store, Brand, Offer, User, ShoppingList, ListItem, FeaturedDeal
+    pass
     if not ok or db is None: return _redirect_admin("admin.admin_dashboard")
     
     target_id = (request.form.get("targetProductId") or "").strip()
@@ -483,7 +496,8 @@ def admin_merge_products():
 
 @admin_bp.route("/products/save", methods=["POST"])
 def admin_save_product():
-    ok, res = _require_admin(); db = get_db()
+    ok, res = _require_admin(); from models.postgres_models import db, Product, Category, Store, Brand, Offer, User, ShoppingList, ListItem, FeaturedDeal
+    pass
     pid = (request.form.get("productId") or "").strip() or _id("prod")
     cid = (request.form.get("categoryId") or "").strip()
     path, _ = _build_category_path(db, cid)
@@ -541,7 +555,8 @@ def admin_save_product():
 
 @admin_bp.route("/store-products/save", methods=["POST"])
 def admin_save_store_product():
-    ok, res = _require_admin(); db = get_db()
+    ok, res = _require_admin(); from models.postgres_models import db, Product, Category, Store, Brand, Offer, User, ShoppingList, ListItem, FeaturedDeal
+    pass
     spid = (request.form.get("storeProductId") or "").strip() or _id("sp"); pid = (request.form.get("productId") or "").strip()
     def _tf(n):
         try: return float(request.form.get(n))
@@ -558,20 +573,23 @@ def admin_save_store_product():
 
 @admin_bp.route("/products/delete/<pid>", methods=["POST"])
 def admin_delete_product(pid):
-    ok, res = _require_admin(); db = get_db()
+    ok, res = _require_admin(); from models.postgres_models import db, Product, Category, Store, Brand, Offer, User, ShoppingList, ListItem, FeaturedDeal
+    pass
     db.products.delete_one({"productId": pid}); db.store_products.delete_many({"productId": pid})
     db.lists.update_many({"items.productId": pid}, {"$pull": {"items": {"productId": pid}}})
     flash(f"Deleted {pid}", "success"); return redirect(url_for("admin.admin_products_page"))
 
 @admin_bp.route("/categories/delete/<cid>", methods=["POST"])
 def admin_delete_category(cid):
-    ok, res = _require_admin(); db = get_db()
+    ok, res = _require_admin(); from models.postgres_models import db, Product, Category, Store, Brand, Offer, User, ShoppingList, ListItem, FeaturedDeal
+    pass
     if db.categories.find_one({"parentId": cid}) or db.products.find_one({"categoryId": cid}): flash("In use", "error"); return redirect(url_for("admin.admin_categories_page"))
     db.categories.delete_one({"categoryId": cid}); flash(f"Deleted {cid}", "success"); return redirect(url_for("admin.admin_categories_page"))
 
 @admin_bp.route("/brands/delete/<bid>", methods=["POST"])
 def admin_delete_brand(bid):
-    ok, res = _require_admin(); db = get_db()
+    ok, res = _require_admin(); from models.postgres_models import db, Product, Category, Store, Brand, Offer, User, ShoppingList, ListItem, FeaturedDeal
+    pass
     if db.products.find_one({"brandId": bid}): flash("In use", "error"); return redirect(url_for("admin.admin_brands_page"))
     db.brands.delete_one({"brandId": bid}); flash(f"Deleted {bid}", "success"); return redirect(url_for("admin.admin_brands_page"))
 
@@ -580,7 +598,8 @@ def admin_delete_store_product(spid):
     from flask import jsonify
     ok, res = _require_admin()
     if not ok: return jsonify({"success": False, "error": "Unauthorized"}), 401
-    db = get_db()
+    from models.postgres_models import db, Product, Category, Store, Brand, Offer, User, ShoppingList, ListItem, FeaturedDeal
+    pass
     offer = db.store_products.find_one({"storeProductId": spid})
     if not offer: return jsonify({"success": False, "error": "Not found"}), 404
     db.store_products.delete_one({"storeProductId": spid})
@@ -603,7 +622,8 @@ def clear_cache():
 def admin_smart_import_page():
     ok, res = _require_admin()
     if not ok: return res
-    db = get_db()
+    from models.postgres_models import db, Product, Category, Store, Brand, Offer, User, ShoppingList, ListItem, FeaturedDeal
+    pass
     
     categories = []
     if db is not None:
@@ -654,7 +674,8 @@ def admin_smart_extract():
 
 @admin_bp.route("/scans", methods=["GET"])
 def pending_scans():
-    db = get_db()
+    from models.postgres_models import db, Product, Category, Store, Brand, Offer, User, ShoppingList, ListItem, FeaturedDeal
+    pass
     if db is None:
         return "No DB", 500
     pending = list(db.pending_products.find({"status": "pending"}).sort("created_at", -1))
@@ -662,7 +683,8 @@ def pending_scans():
 
 @admin_bp.route("/api/scans/<barcode>/approve", methods=["POST"])
 def approve_scan(barcode):
-    db = get_db()
+    from models.postgres_models import db, Product, Category, Store, Brand, Offer, User, ShoppingList, ListItem, FeaturedDeal
+    pass
     if db is None: return jsonify({"success": False})
     
     data = request.get_json() or {}
@@ -697,7 +719,8 @@ def approve_scan(barcode):
 
 @admin_bp.route("/api/scans/<barcode>/reject", methods=["POST"])
 def reject_scan(barcode):
-    db = get_db()
+    from models.postgres_models import db, Product, Category, Store, Brand, Offer, User, ShoppingList, ListItem, FeaturedDeal
+    pass
     if db is None: return jsonify({"success": False})
     db.pending_products.update_one({"barcode": barcode}, {"$set": {"status": "rejected"}})
     return jsonify({"success": True})
@@ -719,7 +742,8 @@ def bulk_delete_products():
         if not isinstance(ids, list):
             return jsonify({'error': 'IDs must be a list'}), 400
             
-        db = get_db()
+        from models.postgres_models import db, Product, Category, Store, Brand, Offer, User, ShoppingList, ListItem, FeaturedDeal
+    pass
         object_ids = []
         for id_str in ids:
             try:

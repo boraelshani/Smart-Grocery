@@ -152,13 +152,14 @@ class User(db.Model):
     name = db.Column(db.Text)
     avatar = db.Column(db.Text)
     language = db.Column(db.Text, default='en')
+    is_admin = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=_now)
     updated_at = db.Column(db.DateTime, default=_now)
 
     def to_dict(self):
         return {'id': str(self.id), 'userId': self.user_id or str(self.id),
                 'email': self.email, 'name': self.name, 'avatar': self.avatar,
-                'password': self.password_hash, 'is_admin': False,
+                'password': self.password_hash, 'is_admin': bool(self.is_admin),
                 'preferred_stores': [], 'preferred_categories': [],
                 'active_list_id': None, 'seen_deals': [],
                 'read_dynamic_notifications': [], 'total_cost': 0.0}
