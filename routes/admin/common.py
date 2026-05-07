@@ -9,6 +9,11 @@ import uuid
 import requests
 from datetime import datetime, timezone, timedelta
 
+try:
+    from deep_translator import GoogleTranslator
+except Exception:  # pragma: no cover - optional dependency in some environments
+    GoogleTranslator = None
+
 # Helper constants and utilities
 _TRANSLATION_CACHE = {}
 
@@ -59,6 +64,15 @@ def _translate_text(text, source_lang="en", target_lang="de"):
         else:
             _TRANSLATION_CACHE[key] = val
     except: _TRANSLATION_CACHE[key] = val
+
+    if _TRANSLATION_CACHE.get(key) == val and GoogleTranslator is not None:
+        try:
+            translated = (GoogleTranslator(source=source_lang, target=target_lang).translate(val) or "").strip()
+            if translated:
+                _TRANSLATION_CACHE[key] = translated
+        except Exception:
+            pass
+
     return _TRANSLATION_CACHE.get(key, val)
 
 def _localized_pair(name_en, name_de):
@@ -353,6 +367,7 @@ def admin_save_ai_product():
         "productId": pid, 
         "name_en": en, 
         "name_de": de, 
+        "name": en,
         "brandId": (request.form.get("brandId") or "").strip() or None, 
         "categoryId": cid or None, 
         "categoryPath": path, 
@@ -508,7 +523,7 @@ def admin_save_product():
         if auto_dt and auto_dt.get("success") and auto_dt.get("data"):
             img_url = auto_dt["data"].get("image_url", img_url)
 
-    payload = {"productId": pid, "name_en": en, "name_de": de, "brandId": (request.form.get("brandId") or "").strip() or None, "categoryId": cid or None, "categoryPath": path, "unitSize": (request.form.get("unitSize") or "").strip(), "barcode": (request.form.get("barcode") or "").strip(), "defaultImageUrl": img_url, "labels": [i.strip() for i in (request.form.get("labels") or "").split(",") if i.strip()], "description_en": den, "description_de": dde, "updatedAt": _now_utc()}
+    payload = {"productId": pid, "name_en": en, "name_de": de, "name": en, "brandId": (request.form.get("brandId") or "").strip() or None, "categoryId": cid or None, "categoryPath": path, "unitSize": (request.form.get("unitSize") or "").strip(), "barcode": (request.form.get("barcode") or "").strip(), "defaultImageUrl": img_url, "labels": [i.strip() for i in (request.form.get("labels") or "").split(",") if i.strip()], "description_en": den, "description_de": dde, "updatedAt": _now_utc()}
     if not payload["name_en"]: flash("Name required", "error"); return _redirect_admin("admin.admin_dashboard")
     db.products.update_one({"productId": pid}, {"$set": payload, "$setOnInsert": {"createdAt": _now_utc()}}, upsert=True)
     
@@ -676,10 +691,12 @@ def approve_scan(barcode):
     # insert into products directly
     import uuid
     pid = str(uuid.uuid4())
+    name_en = _translate_text(name, "de", "en") or name
     db.products.insert_one({
         "id": pid,
-        "name": name,
-        "name_en": name,
+        "name": name_en,
+        "name_en": name_en,
+        "name_de": name,
         "barcode": barcode,
         "category": category,
         "categoryId": category.lower(),

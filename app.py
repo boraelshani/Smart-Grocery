@@ -94,7 +94,8 @@ else:
 if not os.environ.get('SSL_CERT_FILE'):
     os.environ['SSL_CERT_FILE'] = certifi.where()
 
-from utils.db import mongo, sanitize_uri
+# No longer importing mongo
+# from utils.db import mongo, sanitize_uri
 
 # Short-lived in-memory cache for expensive navbar counters.
 _NAVBAR_CACHE_TTL_SEC = 20
@@ -128,87 +129,29 @@ app.config['ENABLE_LIST_MARK_SEEN_ON_RENDER'] = os.environ.get('ENABLE_LIST_MARK
 # Format: mongodb+srv://<username>:<password>@cluster.mongodb.net/database
 raw_uri = os.environ.get('MONGO_URI', 'mongodb://localhost:27017/smart_grocery')
 
-# Sanitize the URI using a helper function.
-# This fixes common user errors, like leaving '<password>' placeholders or extra whitespace.
-app.config['MONGO_URI'] = sanitize_uri(raw_uri)
+# Fetch the PostgreSQL URI from environment variables with a fallback (though Neon should always be defined in .env)
+raw_uri = os.environ.get('SQLALCHEMY_DATABASE_URI')
+if not raw_uri:
+    print("WARNING: SQLALCHEMY_DATABASE_URI is not set in the environment.")
+    raw_uri = "sqlite:///:memory:"
 
+app.config['SQLALCHEMY_DATABASE_URI'] = raw_uri
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# Set default database name if the URI doesn't explicitly specify one.
-# We parse the URI string; if no database name is found after the slashes/at-sign, we add 'smart_grocery'.
-if '/' not in raw_uri.split('@')[-1].rstrip('/'):
-    app.config.setdefault('MONGO_DBNAME', 'smart_grocery')
-
-# Initialize PyMongo with the Flask app.
-# We wrap this in a try-except block to handle connection failures gracefully.
-# This allows the app to start in "Offline/Fallback Mode" if the database is unreachable.
 try:
-    # Set a timeout for the initial connection attempt (5000ms = 5 seconds).
-    # This prevents the app from hanging indefinitely if the network is down.
-    app.config['MONGO_CONNECTTIMEOUTMS'] = 5000 
+    from models.postgres_models import db
+    db.init_app(app)
     
-    # Set a timeout for selecting a server (finding a master node in a replica set).
-    app.config['MONGO_SERVERSELECTIONTIMEOUTMS'] = 5000
-    
-    # Bind the PyMongo instance to our Flask app.
-    mongo.init_app(app)
-    
-    # Verify the connection immediately within the application context.
     with app.app_context():
-        # Check if the 'db' attribute was successfully attached to the mongo object.
-        if mongo.db is not None:
-            # Execute the 'ping' command. This is a lightweight command to check connectivity.
-            # If this raises an exception, we know we can't talk to the database.
-            mongo.db.command('ping')
-            print("INFO: MongoDB connection verified.")
+        # Verify the connection immediately
+        db.engine.connect()
+        print("INFO: PostgreSQL connection verified.")
 except Exception as e:
-    # If any error occurs during setup or ping, print it and warn about fallback mode.
-    # The app will continue running, but will likely use local JSON files instead of the database.
-    print(f'WARNING: MongoDB initialization or connection failed: {e}')
-    print('INFO: Running in fallback mode with local JSON data.')
+    print(f'WARNING: PostgreSQL initialization or connection failed: {e}')
+    print('INFO: Running in fallback mode.')
 
-# Now import the blueprints (after PyMongo attempted initialization)
+# Now import the blueprints
 from routes import main_bp, auth_bp, admin_bp, api_bp, compare_engine_bp, recipe_bp
-
-# Log connection info
-try:
-    # getattr(mongo, 'db', None) checks if the database connection was successful.
-    if getattr(mongo, 'db', None) is not None:
-        db_name = app.config.get('MONGO_DBNAME') or getattr(mongo.db, 'name', None)
-        print(f'INFO: Connected to MongoDB database: {db_name}')
-except Exception as e:
-    print(f'INFO: MongoDB connection check failed: {e}')
-
-# Ensure users.email has a unique index to prevent duplicate accounts when using MongoDB
-try:
-    if getattr(mongo, 'db', None) is not None:
-        mongo.db.users.create_index('email', unique=True)
-        mongo.db.notifications.create_index([
-            ('user_email', 1),
-            ('read', 1),
-            ('created_at', -1),
-        ])
-        mongo.db.lists.create_index([
-            ('userId', 1),
-            ('updatedAt', -1),
-        ])
-        mongo.db.lists.create_index([
-            ('userId', 1),
-            ('items.is_new', 1),
-        ])
-except Exception:
-    pass
-
-# Seed mock users if database is empty - helpful for first-time setup
-try:
-    if getattr(mongo, 'db', None) is not None and mongo.db.users.count_documents({}) == 0:
-        from models import models as mock_models
-        # Iterate through our mock data and insert it into the real DB
-        if isinstance(getattr(mock_models, 'users', None), dict):
-            users_to_insert = [{**u, 'email': email} for email, u in mock_models.users.items()]
-            if users_to_insert:
-                mongo.db.users.insert_many(users_to_insert)
-except Exception:
-    pass
 
 # Register blueprints - these organize routes into logical groups (Main, Auth, Admin)
 app.register_blueprint(main_bp)
@@ -219,15 +162,9 @@ app.register_blueprint(compare_engine_bp, url_prefix='/api/compare')
 app.register_blueprint(recipe_bp)
 
 
+
 @app.context_processor
 def inject_navbar_data():
-    """
-    Expose dynamic navbar data to all templates automatically.
-    
-    Returns:
-        dict: containing 'shopping_list_count' and 'unread_notifications_count'
-              available in every Jinja2 template.
-    """
     shopping_list_count = 0
     unread_notifications_count = 0
     current_user_nav = None
@@ -235,19 +172,16 @@ def inject_navbar_data():
     try:
         email = session.get('user')
         if email:
-            # Fast path: use very short cache to avoid repeating heavy DB reads
-            # on rapid refreshes and frequent AJAX-triggered page renders.
             cache_entry = _navbar_cache.get(email)
             now_ts = time.time()
             if cache_entry and cache_entry.get('expires_at', 0) > now_ts:
                 cached = cache_entry.get('value', {})
-                
                 try:
                     from utils.menu_data import get_mega_menu
                     mega_menu_data = get_mega_menu()
                 except Exception:
                     mega_menu_data = {"categories": {}, "brands": [], "images": {}, "fallback_image": ""}
-                    
+                
                 return {
                     'shopping_list_count': int(cached.get('shopping_list_count', 0)),
                     'unread_notifications_count': int(cached.get('unread_notifications_count', 0)),
@@ -256,62 +190,38 @@ def inject_navbar_data():
                     'mega_menu': mega_menu_data,
                 }
 
-            user = {}
-            if getattr(mongo, 'db', None) is not None:
-                user = mongo.db.users.find_one(
-                    {'email': email},
-                    {
-                        '_id': 0,
-                        'email': 1,
-                        'userId': 1,
-                        'name': 1,
-                        'avatar': 1,
-                        'is_admin': 1,
+            from models.postgres_models import db, User, ShoppingList
+            user = User.query.filter_by(email=email).first()
+
+            if user:
+                display_name = (user.name or email.split('@')[0]).strip()
+                initials = ''.join(part[:1] for part in display_name.split()[:2]).upper() or display_name[:1].upper()
+                current_user_nav = {
+                    'email': user.email,
+                    'name': user.name or '',
+                    'display_name': display_name,
+                    'avatar': user.avatar or '',
+                    'initials': initials,
+                }
+                admin_emails = {e.strip().lower() for e in str(app.config.get('ADMIN_EMAILS', '')).split(',') if e.strip()}
+                is_admin_nav = (email.lower() in admin_emails)
+
+                # TODO: add notification model if added later
+                
+                # Fetch lists count
+                shopping_list_count = len(user.shopping_lists)
+
+                _navbar_cache[email] = {
+                    'expires_at': now_ts + _NAVBAR_CACHE_TTL_SEC,
+                    'value': {
+                        'shopping_list_count': shopping_list_count,
+                        'unread_notifications_count': unread_notifications_count,
+                        'current_user_nav': current_user_nav,
+                        'is_admin_nav': is_admin_nav,
                     },
-                ) or {}
-
-            display_name = (user.get('name') or email.split('@')[0]).strip()
-            initials = ''.join(part[:1] for part in display_name.split()[:2]).upper() or display_name[:1].upper()
-            current_user_nav = {
-                'email': email,
-                'name': user.get('name') or '',
-                'display_name': display_name,
-                'avatar': user.get('avatar') or '',
-                'initials': initials,
-            }
-
-            admin_emails = {e.strip().lower() for e in str(app.config.get('ADMIN_EMAILS', '')).split(',') if e.strip()}
-            is_admin_nav = bool(user.get('is_admin')) or (email.lower() in admin_emails)
-
-            if getattr(mongo, 'db', None) is not None:
-                from datetime import datetime, timedelta
-                unread_notifications_count = mongo.db.notifications.count_documents({
-                    'user_email': email,
-                    'read': False,
-                    'created_at': {'$gte': datetime.utcnow() - timedelta(days=7)},
-                })
-
-                owner_key = str(user.get('userId') or email)
-                agg = list(mongo.db.lists.aggregate([
-                    {'$match': {'userId': owner_key}},
-                    {'$unwind': '$items'},
-                    {'$match': {'items.is_new': True}},
-                    {'$count': 'count'},
-                ]))
-                shopping_list_count = int((agg[0] if agg else {}).get('count', 0))
-
-            _navbar_cache[email] = {
-                'expires_at': now_ts + _NAVBAR_CACHE_TTL_SEC,
-                'value': {
-                    'shopping_list_count': shopping_list_count,
-                    'unread_notifications_count': unread_notifications_count,
-                    'current_user_nav': current_user_nav,
-                    'is_admin_nav': is_admin_nav,
-                },
-            }
-    except Exception:
-        # Fail silently to avoid breaking the entire page if notification count fails
-        pass
+                }
+    except Exception as e:
+        print(f"Navbar injection error: {e}")
         
     try:
         from utils.menu_data import get_mega_menu
@@ -326,6 +236,7 @@ def inject_navbar_data():
         'is_admin_nav': is_admin_nav,
         'mega_menu': mega_menu_data,
     }
+
 
 
 # Template helper: return image URL as-is (processed image functionality removed)
@@ -350,21 +261,16 @@ def internal_error(error):
 
 
 # Health check endpoint to verify MongoDB connectivity (Equivalent to a Heartbeat)
+
 @app.route('/health')
 def health():
     try:
-        # Prefer the Flask-PyMongo instance if available
-        if getattr(mongo, 'db', None) is not None:
-            mongo.db.command('ping')
-        else:
-            # Fallback: try a direct pymongo connection using the configured URI
-            from pymongo import MongoClient
-            uri = app.config.get('MONGO_URI')
-            client = MongoClient(uri, serverSelectionTimeoutMS=5000)
-            client.admin.command('ping')
-        return jsonify({'status': 'ok', 'mongo': 'connected'}), 200
+        from models.postgres_models import db
+        db.engine.execute('SELECT 1')
+        return jsonify({'status': 'ok', 'postgres': 'connected'}), 200
     except Exception as e:
-        return jsonify({'status': 'error', 'mongo': 'disconnected', 'detail': str(e)}), 500
+        return jsonify({'status': 'error', 'postgres': 'disconnected', 'detail': str(e)}), 500
+
 
 
 @app.route('/debug-mongo')

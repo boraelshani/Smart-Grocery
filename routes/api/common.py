@@ -102,7 +102,7 @@ def toggle_favorite():
     p = products_model.get_product_by_id(pid) or featured_deals_model.get_deal_by_id(pid)
     if not p: return jsonify({'error': 'not_found'}), 404
     c = get_cheapest_from_product(p)
-    success = favorites_model.add_favorite(email, pid, {'name': p.get('name') or p.get('title'), 'image': p.get('image'), 'best_price': c.get('price'), 'store': c.get('store')})
+    success = favorites_model.add_favorite(email, pid, {'name': p.get('displayName') or p.get('name_en') or p.get('name') or p.get('title'), 'image': p.get('image'), 'best_price': c.get('price'), 'store': c.get('store')})
     return jsonify({'success': bool(success), 'is_favorite': True})
 
 @api_bp.route('/community-price-report', methods=['POST'])

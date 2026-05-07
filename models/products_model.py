@@ -15,8 +15,16 @@ from typing import List, Optional
 
 from bson import ObjectId
 
+try:
+    from deep_translator import GoogleTranslator
+except Exception:  # pragma: no cover - optional dependency in some environments
+    GoogleTranslator = None
+
 
 class ProductsModel:
+    _name_translator = None
+    _name_translation_cache = {}
+
     def __init__(self):
         from utils.db import get_db
 
@@ -44,6 +52,58 @@ class ProductsModel:
         if not isinstance(offer, dict):
             return None
         return offer.get("promoPrice") if offer.get("promoPrice") is not None else offer.get("basePrice")
+
+    @classmethod
+    def _translate_name_to_english(cls, value: str) -> str:
+        text = (value or "").strip()
+        if not text:
+            return text
+
+        cache_key = text.lower()
+        cached = cls._name_translation_cache.get(cache_key)
+        if cached:
+            return cached
+
+        if GoogleTranslator is None:
+            cls._name_translation_cache[cache_key] = text
+            return text
+
+        try:
+            if cls._name_translator is None:
+                cls._name_translator = GoogleTranslator(source="de", target="en")
+            translated = (cls._name_translator.translate(text) or "").strip()
+            if translated:
+                cls._name_translation_cache[cache_key] = translated
+                return translated
+        except Exception:
+            pass
+
+        cls._name_translation_cache[cache_key] = text
+        return text
+
+    def _normalize_product_doc(self, doc: dict) -> dict:
+        if not isinstance(doc, dict):
+            return doc
+
+        normalized = dict(doc)
+        legacy_name = (normalized.get("name") or normalized.get("title") or "").strip()
+        name_de = (normalized.get("name_de") or legacy_name).strip()
+        name_en = (normalized.get("name_en") or "").strip()
+
+        if not name_en and name_de:
+            name_en = self._translate_name_to_english(name_de)
+
+        if not name_de and name_en:
+            name_de = name_en
+
+        primary_name = name_en or name_de or legacy_name
+        normalized["name_en"] = name_en or primary_name
+        normalized["name_de"] = name_de or primary_name
+        normalized["name"] = primary_name
+        if legacy_name and not normalized.get("title"):
+            normalized["title"] = legacy_name
+        normalized.setdefault("displayName", primary_name)
+        return normalized
 
     def _category_name_map(self, category_ids):
         if not category_ids:
@@ -188,6 +248,7 @@ class ProductsModel:
         return []
 
     def _hydrate_new_product(self, doc: dict, offers=None, store_map=None, category_map=None):
+        doc = self._normalize_product_doc(doc)
         offers = offers or []
         store_map = store_map or {}
         category_map = category_map or {}
@@ -224,6 +285,7 @@ class ProductsModel:
             **doc,
             "id": str(doc.get("_id")) if doc.get("_id") is not None else str(doc.get("productId") or ""),
             "name": doc.get("name_en") or doc.get("name_de") or doc.get("name"),
+            "displayName": doc.get("name_en") or doc.get("name_de") or doc.get("name"),
             "category": category_map.get(doc.get("categoryId")) or doc.get("categoryId") or doc.get("category"),
             "image": doc.get("defaultImageUrl") or doc.get("image"),
             "price": cheapest if cheapest is not None else doc.get("price"),
@@ -253,6 +315,7 @@ class ProductsModel:
             out["$or"] = [
                 {"name_en": {"$regex": query["name"]["$regex"], "$options": query["name"].get("$options", "i")}},
                 {"name_de": {"$regex": query["name"]["$regex"], "$options": query["name"].get("$options", "i")}},
+                {"name": {"$regex": query["name"]["$regex"], "$options": query["name"].get("$options", "i")}},
             ]
             
         if "$or" in query:
@@ -261,9 +324,11 @@ class ProductsModel:
                 if "name" in cond:
                     new_or.append({"name_en": cond["name"]})
                     new_or.append({"name_de": cond["name"]})
+                    new_or.append({"name": cond["name"]})
                 elif "title" in cond:
                     new_or.append({"name_en": cond["title"]})
                     new_or.append({"name_de": cond["title"]})
+                    new_or.append({"name": cond["title"]})
                 elif "barcode" in cond:
                     new_or.append({"barcode": cond["barcode"]})
                 elif "gtin" in cond or "ean" in cond or "upc" in cond:
@@ -324,6 +389,10 @@ class ProductsModel:
         for d in docs:
             if "_id" in d:
                 d["id"] = str(d["_id"])
+            normalized = self._normalize_product_doc(d)
+            for key in ("name", "name_en", "name_de", "displayName", "title"):
+                if normalized.get(key) is not None:
+                    d[key] = normalized.get(key)
         return docs
 
     def get_latest_products(self, limit: int = 10) -> List[dict]:
@@ -396,6 +465,7 @@ class ProductsModel:
                 mapped["name_en"] = mapped.get("name")
             if mapped.get("name") and not mapped.get("name_de"):
                 mapped["name_de"] = mapped.get("name")
+            mapped["name"] = mapped.get("name_en") or mapped.get("name_de") or mapped.get("name")
             if mapped.get("category") and not mapped.get("categoryId"):
                 cat = self.db.categories.find_one({"name_en": {"$regex": re.escape(str(mapped.get("category"))), "$options": "i"}})
                 if cat:
@@ -425,7 +495,7 @@ class ProductsModel:
     def search_by_name(self, query: str, limit: int = 50) -> List[dict]:
         if self._is_new_schema_enabled():
             rgx = {"$regex": re.escape(query), "$options": "i"}
-            docs = list(self.db.products.find({"$or": [{"name_en": rgx}, {"name_de": rgx}]}).limit(limit))
+            docs = list(self.db.products.find({"$or": [{"name_en": rgx}, {"name_de": rgx}, {"name": rgx}]}).limit(limit))
             product_ids = [d.get("productId") for d in docs if d.get("productId")]
             offers_map = self._offers_by_product_id(product_ids)
 
@@ -449,10 +519,10 @@ class ProductsModel:
     def get_product_by_name(self, name: str) -> Optional[dict]:
         if self._is_new_schema_enabled():
             rgx_exact = {"$regex": "^" + re.escape(name) + "$", "$options": "i"}
-            doc = self.db.products.find_one({"$or": [{"name_en": rgx_exact}, {"name_de": rgx_exact}]})
+            doc = self.db.products.find_one({"$or": [{"name_en": rgx_exact}, {"name_de": rgx_exact}, {"name": rgx_exact}]})
             if not doc:
                 rgx = {"$regex": re.escape(name), "$options": "i"}
-                doc = self.db.products.find_one({"$or": [{"name_en": rgx}, {"name_de": rgx}]})
+                doc = self.db.products.find_one({"$or": [{"name_en": rgx}, {"name_de": rgx}, {"name": rgx}]})
             if not doc:
                 return None
             return self.search_by_name(doc.get("name_en") or doc.get("name_de"), limit=1)[0]
