@@ -5,7 +5,6 @@ from models.products_model import products_model
 from models.multibuy_offers_model import multibuy_offers_model
 from models.quantity_discounts_model import quantity_discounts_model
 from utils import helpers
-from bson.decimal128 import Decimal128
 from models.users_model import get_user_lists, get_user_by_email, update_user
 from models.favorites_model import favorites_model
 

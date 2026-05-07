@@ -29,7 +29,7 @@ def load_featured_deals_fallback():
 
 @main_bp.route('/')
 def home():
-    """Main dashboard route migrated from legacy ui_routes.py."""
+    """Main dashboard route."""
     user_email = session.get('user')
     if not user_email:
         return render_template('entry.html')
@@ -61,28 +61,21 @@ def home():
         stores = stores_model.list_stores()
         products = products_model.list_products(limit=80)
         
-        # Fetch categories from database
-        from utils.db import get_db
-        db = get_db()
-        if db is not None:
-            try:
-                categories_cursor = db.categories.find(
-                    {},
-                    {"_id": 0, "categoryId": 1, "name_en": 1, "imageUrl": 1}
-                ).limit(12)
-                categories = list(categories_cursor)
-                # Filter out categories without images and format them
-                categories = [
-                    {
-                        'id': cat.get('categoryId'),
-                        'name': cat.get('name_en', 'Category'),
-                        'image': cat.get('imageUrl', '')
-                    }
-                    for cat in categories if cat.get('imageUrl')
-                ]
-            except Exception as e:
-                print(f'WARNING: Failed to load categories: {e}')
-                categories = []
+        # Fetch categories from PostgreSQL
+        try:
+            from models.postgres_models import Category
+            cat_rows = Category.query.filter(Category.image_url.isnot(None)).limit(12).all()
+            categories = [
+                {
+                    'id': cat.category_id,
+                    'name': cat.name_en or 'Category',
+                    'image': cat.image_url or ''
+                }
+                for cat in cat_rows if cat.image_url
+            ]
+        except Exception as e:
+            print(f'WARNING: Failed to load categories: {e}')
+            categories = []
         
         total_deals_count = (featured_deals_model.get_deals_count() + 
                            multibuy_offers_model.get_offers_count() + 
@@ -141,41 +134,21 @@ def home():
     for d in featured_deals:
         d['is_favorited'] = str(d.get('id') or d.get('_id', '')) in fav_ids
 
-    # Popular - Get actual popular products from database
+    # Popular - Get products from database
     try:
-        from utils.db import get_db
-        db = get_db()
-        if db is not None:
-            # Aggregate to find most popular products based on view count or other metrics
-            popular_pipeline = [
-                {"$match": {"image": {"$exists": True, "$ne": ""}}},  # Only products with images
-                {"$addFields": {
-                    "popularity_score": {
-                        "$add": [
-                            {"$ifNull": ["$view_count", 0]},
-                            {"$multiply": [{"$ifNull": ["$purchase_count", 0]}, 2]},  # Weight purchases more
-                            {"$multiply": [{"$ifNull": ["$favorite_count", 0]}, 1.5]}  # Weight favorites
-                        ]
-                    }
-                }},
-                {"$sort": {"popularity_score": -1}},
-                {"$limit": 12}
-            ]
-            popular_cursor = db.products.aggregate(popular_pipeline)
-            popular_products = list(popular_cursor)
-            
-            # If no products with metrics, fall back to random selection
-            if not popular_products:
-                popular_products = list(db.products.find(
-                    {"image": {"$exists": True, "$ne": ""}},
-                    limit=12
-                ).sort("_id", -1))
-            
-            # Mark favorites
-            for p in popular_products:
-                p['is_favorited'] = str(p.get('id') or p.get('_id', '')) in fav_ids
-        else:
+        from models.postgres_models import Product
+        pop_rows = Product.query.filter(
+            Product.default_image_url.isnot(None),
+            Product.default_image_url != '',
+        ).order_by(Product.updated_at.desc()).limit(12).all()
+        popular_products = [products_model._hydrate_product(p) for p in pop_rows]
+
+        if not popular_products:
             popular_products = products[:12]
+
+        # Mark favorites
+        for p in popular_products:
+            p['is_favorited'] = str(p.get('id') or p.get('_id', '')) in fav_ids
     except Exception as e:
         print(f'ERROR fetching popular products: {e}')
         popular_products = products[:12]

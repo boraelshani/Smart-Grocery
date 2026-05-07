@@ -1,5 +1,11 @@
+"""
+═══════════════════════════════════════════════════════════════════════════
+MEGA MENU DATA — PostgreSQL / SQLAlchemy
+═══════════════════════════════════════════════════════════════════════════
+Builds the hierarchical mega-menu data for the navigation bar.
+"""
+
 import time
-from utils.db import mongo
 
 _menu_cache = {'data': None, 'ts': 0}
 
@@ -14,8 +20,6 @@ DEFAULT_CAT_IMAGES = {
     'Snacks': 'https://images.unsplash.com/photo-1599490659213-e2b9527bd087?q=80&w=300&auto=format&fit=crop',
     'Beverages': 'https://images.unsplash.com/photo-1556881180-2a74c4361b2d?q=80&w=300&auto=format&fit=crop',
     'Household': 'https://images.unsplash.com/photo-1585802115132-ee19bd5273cb?q=80&w=300&auto=format&fit=crop',
-    
-    # Precise Subcategory L1 Splashes
     'Fruits': 'https://images.unsplash.com/photo-1610832958506-aa56368176cf?q=80&w=400&auto=format&fit=crop',
     'Vegetables': 'https://images.unsplash.com/photo-1566385101042-1a0aa0c1268c?q=80&w=400&auto=format&fit=crop',
     'Poultry': 'https://images.unsplash.com/photo-1587595431973-160d0d94add1?q=80&w=400&auto=format&fit=crop',
@@ -26,8 +30,6 @@ DEFAULT_CAT_IMAGES = {
     'Yogurt': 'https://images.unsplash.com/photo-1563729784400-da1bc57c91cf?q=80&w=400&auto=format&fit=crop',
     'Breakfast': 'https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?q=80&w=400&auto=format&fit=crop',
     'Fruit': 'https://images.unsplash.com/photo-1610832958506-aa56368176cf?q=80&w=400&auto=format&fit=crop',
-
-    # Extensive Mapping for deep SubCategories to ensure every block has a stunning contextual image
     'Apples': 'https://images.unsplash.com/photo-1560806887-1e4cd0b6fac6?q=80&w=400&auto=format&fit=crop',
     'Bananas': 'https://images.unsplash.com/photo-1571501679680-de32f1e7aad4?q=80&w=400&auto=format&fit=crop',
     'Berries': 'https://images.unsplash.com/photo-1563805042-7684c8a9e9cf?q=80&w=400&auto=format&fit=crop',
@@ -50,7 +52,6 @@ DEFAULT_CAT_IMAGES = {
     'Chicken': 'https://images.unsplash.com/photo-1604503468506-a8da13d82791?q=80&w=400&auto=format&fit=crop',
     'Ground Beef': 'https://images.unsplash.com/photo-1588168333986-5078d3ae3976?q=80&w=400&auto=format&fit=crop',
     'Bacon': 'https://images.unsplash.com/photo-1528607929212-2636ec44253e?q=80&w=400&auto=format&fit=crop',
-
 }
 DEFAULT_SUBCAT_IMAGE = 'https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=200&auto=format&fit=crop'
 
@@ -94,166 +95,49 @@ TAXONOMY_TREE = {
             "Cream & Milk Alternatives": ["Heavy Cream", "Half & Half", "Sour Cream", "Whipped Cream", "Non-dairy Creamer"]
         }
     },
-    "Pantry Staples": {
-        "icon": "bi-basket-fill",
-        "subcats": {
-            "Baking": ["Flour", "Sugar", "Brown Sugar", "Baking Soda", "Baking Powder", "Yeast", "Cocoa Powder"],
-            "Oils & Vinegars": ["Olive Oil", "Vegetable Oil", "Coconut Oil", "Balsamic Vinegar", "White Vinegar", "Apple Cider Vinegar"],
-            "Spices & Seasonings": ["Salt", "Black Pepper", "Garlic Powder", "Onion Powder", "Paprika", "Cinnamon", "Oregano", "Mixed Spices"],
-            "Sauces & Condiments": ["Ketchup", "Mustard", "Mayonnaise", "Hot Sauce", "Soy Sauce", "BBQ Sauce", "Salad Dressing", "Pasta Sauce"],
-            "Canned Goods": ["Canned Vegetables", "Canned Fruits", "Canned Beans", "Canned Tomatoes", "Canned Soup", "Canned Broth"],
-            "Pasta, Rice & Grains": ["Dry Pasta", "Rice", "Quinoa", "Oats", "Couscous", "Lentils", "Dried Beans"],
-            "Cooking & Baking Mixes": ["Pancake Mix", "Cake Mix", "Bread Mix", "Gravy Mix", "Seasoning Packets"]
-        }
-    },
-    "Beverages": {
-        "icon": "bi-cup-straw",
-        "subcats": {
-            "Water": ["Bottled Water", "Sparkling Water", "Flavored Water", "Gallon Water"],
-            "Soft Drinks & Soda": ["Cola", "Lemon-lime", "Root Beer", "Ginger Ale", "Diet Soda"],
-            "Juice": ["Orange Juice", "Apple Juice", "Cranberry Juice", "Grape Juice", "Vegetable Juice", "Juice Blends"],
-            "Coffee": ["Ground Coffee", "Whole Bean Coffee", "Instant Coffee", "Decaf", "Coffee Pods"],
-            "Tea": ["Black Tea", "Green Tea", "Herbal Tea", "Iced Tea", "Tea Bags", "Loose Leaf"],
-            "Sports & Energy Drinks": ["Gatorade", "Powerade", "Red Bull", "Monster", "Energy Shots", "Electrolyte Water"],
-            "Milk Alternatives": ["Almond Milk", "Oat Milk", "Soy Milk", "Coconut Milk"]
-        }
-    },
-    "Snacks & Sweets": {
-        "icon": "bi-cookie",
-        "subcats": {
-            "Chips & Crisps": ["Potato Chips", "Tortilla Chips", "Veggie Chips", "Pita Chips", "Popcorn"],
-            "Cookies & Biscuits": ["Chocolate Chip", "Sandwich Cookies", "Butter Cookies", "Biscotti", "Graham Crackers"],
-            "Candy & Chocolate": ["Chocolate Bars", "Gummy Candy", "Hard Candy", "Mints", "Licorice", "Seasonal Candy"],
-            "Crackers & Rice Cakes": ["Saltines", "Ritz-style", "Whole Grain Crackers", "Rice Cakes", "Cheese Crackers"],
-            "Nuts & Trail Mix": ["Peanuts", "Almond", "Cashews", "Walnuts", "Mixed Nuts", "Trail Mix", "Dried Fruit"],
-            "Granola & Snack Bars": ["Granola Bars", "Protein Bars", "Cereal Bars", "Fruit Bars", "Rice Krispie Treats"],
-            "Baked Goods": ["Muffins", "Doughnuts", "Brownies", "Pastries", "Pound Cake", "Loaf Cakes"]
-        }
-    },
-    "Frozen Foods": {
-        "icon": "bi-snow",
-        "subcats": {
-            "Frozen Vegetables": ["Mixed Vegetables", "Broccoli", "Spinach", "Peas & Carrots", "Stir-fry Blends"],
-            "Frozen Fruits": ["Berries", "Mango", "Peaches", "Mixed Fruit", "Smoothie Packs"],
-            "Frozen Meals": ["TV Dinners", "Frozen Pizza", "Frozen Burritos", "Frozen Bowls"],
-            "Frozen Meat & Seafood": ["Frozen Chicken", "Frozen Fish Fillets", "Frozen Shrimp", "Frozen Burgers"],
-            "Frozen Snacks": ["Frozen French Fries", "Onion Rings", "Mozzarella Sticks", "Pizza Rolls", "Frozen Appetizers"],
-            "Ice Cream & Desserts": ["Ice Cream", "Sorbet", "Frozen Yogurt", "Ice Cream Sandwiches", "Popsicles", "Frozen Pie"]
-        }
-    },
-    "Bakery & Bread": {
-        "icon": "bi-cupcake",
-        "subcats": {
-            "Fresh Bread": ["White Bread", "Wheat Bread", "Sourdough", "Rye Bread", "Multigrain"],
-            "Buns & Rolls": ["Hamburger Buns", "Hot Dog Buns", "Dinner Rolls", "Sub Rolls", "Croissants"],
-            "Bagels & English Muffins": ["Plain Bagels", "Everything Bagels", "Cinnamon Raisin", "English Muffins"],
-            "Tortillas & Wraps": ["Flour Tortillas", "Corn Tortillas", "Whole Wheat Wraps", "Lettuce Wraps"],
-            "Pastries & Donuts": ["Fresh Donuts", "Muffins", "Croissants", "Danishes", "Cinnamon Rolls"],
-            "In-store Bakery": ["Cakes", "Pies", "Cookies", "Cupcakes", "Brownies"]
-        }
-    },
-    "Household & Cleaning": {
-        "icon": "bi-house-heart",
-        "subcats": {
-            "Laundry": ["Laundry Detergent", "Fabric Softener", "Stain Removers", "Dryer Sheets"],
-            "Cleaning Supplies": ["All-purpose Cleaner", "Glass Cleaner", "Bathroom Cleaner", "Disinfectant Spray"],
-            "Dish Soap & Dishwasher": ["Dish Soap", "Dishwasher Detergent", "Rinse Aid", "Dishwasher Pods"],
-            "Trash Bags & Storage": ["Trash Bags", "Zipper Bags", "Food Storage Containers", "Aluminum Foil", "Plastic Wrap"],
-            "Paper Products": ["Paper Towels", "Toilet Paper", "Napkins", "Paper Plates", "Paper Cups"],
-            "Air Fresheners": ["Sprays", "Plug-ins", "Candles", "Gel Beads", "Car Air Fresheners"]
-        }
-    },
-    "Personal Care & Health": {
-        "icon": "bi-heart-pulse",
-        "subcats": {
-            "Bath & Body": ["Body Wash", "Bar Soap", "Hand Soap", "Lotion", "Shampoo", "Conditioner"],
-            "Oral Care": ["Toothpaste", "Toothbrushes", "Mouthwash", "Dental Floss", "Whitening Strips"],
-            "Shaving & Grooming": ["Razors", "Razor Blades", "Shaving Cream", "Aftershave", "Trimmers"],
-            "Feminine Care": ["Pads", "Tampons", "Liners", "Menstrual Cups", "Wipes"],
-            "First Aid": ["Bandages", "Antiseptic", "Pain Relievers", "Cold Medicine", "Thermometers"],
-            "Vitamins & Supplements": ["Multivitamins", "Vitamin C", "Vitamin D", "Protein Powder", "Probiotics"]
-        }
-    },
-    "Baby & Kids": {
-        "icon": "bi-cart",
-        "subcats": {
-            "Baby Food": ["Jarred Purees", "Pouch Purees", "Baby Cereal", "Teething Crackers", "Baby Snacks"],
-            "Baby Formula": ["Powder Formula", "Liquid Concentrate", "Ready-to-Feed", "Toddler Formula"],
-            "Diapers & Wipes": ["Diapers", "Pull-ups", "Baby Wipes", "Diaper Cream"],
-            "Baby Drinks": ["Juice for Babies", "Water for Babies", "Electrolyte Solution"]
-        }
-    },
-    "Pet Supplies": {
-        "icon": "bi-github",
-        "subcats": {
-            "Dog Food": ["Dry Dog Food", "Wet Dog Food", "Dog Treats", "Dog Toppers"],
-            "Cat Food": ["Dry Cat Food", "Wet Cat Food", "Cat Treats", "Cat Toppers"],
-            "Pet Supplies": ["Cat Litter", "Pet Beds", "Pet Bowls", "Leashes", "Toys", "Poop Bags"]
-        }
-    },
-    "International & Specialty": {
-        "icon": "bi-globe",
-        "subcats": {
-            "Asian": ["Soy Sauce", "Rice Noodles", "Panko", "Curry Paste", "Coconut Milk", "Sriracha"],
-            "Mexican": ["Tortillas", "Salsa", "Taco Seasoning", "Refried Beans", "Queso Fresco", "Hot Sauce"],
-            "Italian": ["Pasta", "Pasta Sauce", "Olive Oil", "Balsamic Vinegar", "Parmesan", "Sun-dried Tomatoes"],
-            "Indian": ["Basmati Rice", "Garam Masala", "Turmeric", "Cumin", "Curry Powder", "Ghee", "Naan"],
-            "Mediterranean": ["Hummus", "Tahini", "Pita Bread", "Feta Cheese", "Olives", "Tzatziki"],
-            "Organic & Natural": ["Organic produce", "Organic meat", "Gluten-free", "Keto-friendly", "Vegan"]
-        }
-    },
-    "Alcohol": {
-        "icon": "bi-cup-glass",
-        "subcats": {
-            "Beer": ["Lager", "IPA", "Stout", "Ale", "Non-alcoholic Beer", "Craft Beer"],
-            "Wine": ["Red Wine", "White Wine", "Rosé", "Sparkling Wine", "Boxed Wine"],
-            "Spirits": ["Vodka", "Whiskey", "Rum", "Gin", "Tequila", "Liqueurs", "Mixers"],
-            "Hard Seltzer & Cider": ["Hard Seltzer", "Hard Cider", "Malt Beverages"]
-        }
-    }
 }
+
 
 def get_mega_menu():
     global _menu_cache
-    import time
     if _menu_cache['data'] and time.time() - _menu_cache['ts'] < 60:
         return _menu_cache['data']
-        
-    try:
-        from utils.db import mongo
-        
 
-        # Build category tree from database to perfectly match what's there
+    try:
+        from models.postgres_models import Category, Product
+
+        # Build category tree from database
         categories = {}
-        
+
         try:
-            # 1. Fetch all documents from MongoDB
-            all_cats = list(mongo.db.categories.find({}))
-            
-            # Helper to find children
-            def get_children(parent_id_str):
-                return [c for c in all_cats if str(c.get('parentId')) == parent_id_str or (parent_id_str == "None" and not c.get('parentId'))]
-                
-            # Grab Level 1 (Roots)
-            roots = get_children("None")
-            
+            all_cats = Category.query.order_by(Category.name_en).all()
+
+            # Build children map using integer IDs
+            children_map = {}
+            for c in all_cats:
+                pid = c.parent_id  # integer or None
+                children_map.setdefault(pid, []).append(c)
+
+            # Grab Level 1 (Roots — parent_id is None)
+            roots = children_map.get(None, [])
+
             for idx, root in enumerate(roots):
-                root_name = root.get('name_en') or root.get('name', 'Unknown')
-                root_icon = root.get('icon') or CAT_ICONS.get(root_name, 'bi-grid')
-                
+                root_name = root.name_en or root.name_de or 'Unknown'
+                root_icon = root.icon or CAT_ICONS.get(root_name, 'bi-grid')
+
                 subcats_dict = {}
                 # Level 2 loop
-                for l2 in get_children(str(root.get('_id'))):
-                    l2_name = l2.get('name_en') or l2.get('name', 'Unknown')
-                    
+                for l2 in children_map.get(root.id, []):
+                    l2_name = l2.name_en or l2.name_de or 'Unknown'
+
                     # Level 3 loop
                     l3_list = []
-                    for l3 in get_children(str(l2.get('_id'))):
-                        l3_name = l3.get('name_en') or l3.get('name', 'Unknown')
+                    for l3 in children_map.get(l2.id, []):
+                        l3_name = l3.name_en or l3.name_de or 'Unknown'
                         l3_list.append(l3_name)
-                        
+
                     subcats_dict[l2_name] = l3_list
-                    
+
                 categories[root_name] = {
                     'icon': root_icon,
                     'subcats': subcats_dict,
@@ -261,7 +145,7 @@ def get_mega_menu():
                 }
         except Exception as e:
             print("Error building mega menu from DB:", e)
-            # fallback to hardcoded if DB fails
+            # Fallback to hardcoded if DB fails
             categories = {}
             for idx, (cat_name, cat_data) in enumerate(TAXONOMY_TREE.items()):
                 categories[cat_name] = {
@@ -270,28 +154,24 @@ def get_mega_menu():
                     'count': 100 - idx
                 }
 
-
-        # 2. Brands aggregation -> just get all brands
-        brands_pipe = [
-            {"$match": {"brand": {"$ne": None, "$ne": ""}}},
-            {"$group": {"_id": "$brand", "count": {"$sum": 1}}},
-            {"$sort": {"count": -1}}
-        ]
+        # Brands aggregation
+        brands = []
         try:
-            brands_raw = list(mongo.db.products.aggregate(brands_pipe))
-            brands = [b['_id'] for b in brands_raw if b['_id']]
-        except:
+            from models.postgres_models import Brand
+            brand_rows = Brand.query.order_by(Brand.name).limit(200).all()
+            brands = [b.name or b.name_en for b in brand_rows if b.name or b.name_en]
+        except Exception:
             brands = []
 
-        # 3. Dynamically fetch images from mongo.db.categories
-        images = dict(DEFAULT_CAT_IMAGES)  # Start with fallback defaults
+        # Build images map
+        images = dict(DEFAULT_CAT_IMAGES)
         try:
-            category_docs = mongo.db.categories.find({})
-            for doc in category_docs:
-                if doc.get('name_en') and doc.get('imageUrl'):
-                    images[doc['name_en']] = doc['imageUrl']
-        except:
-            pass  # Keep defaults if fetch fails
+            all_cat_rows = Category.query.all()
+            for cat in all_cat_rows:
+                if cat.name_en and cat.image_url:
+                    images[cat.name_en] = cat.image_url
+        except Exception:
+            pass
 
         data = {
             "categories": categories,

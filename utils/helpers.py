@@ -5,15 +5,18 @@ HELPER FUNCTIONS MODULE
 Shared utilities used by routes and models for:
 - Price formatting
 - Product searching
-- MongoDB document sanitization (serialization)
+- Document sanitization (serialization)
 - JWT token generation
 ═══════════════════════════════════════════════════════════════════════════
 """
 import os
-import jwt
+try:
+    import jwt
+except ImportError:
+    jwt = None
+    print("WARNING: PyJWT not available. JWT auth will be disabled.")
 from flask import session, request, current_app
 from datetime import datetime, timedelta
-from bson import ObjectId, Decimal128
 from models import models as m
 
 # 
@@ -38,7 +41,7 @@ def format_price(price):
     # CONVERT: Price string to float
     if isinstance(price, str):
         # Remove common currency symbols and whitespace
-        return float(price.replace("$", "").replace("£", "").strip())
+        return float(price.replace("$", "").replace("£", "").replace("€", "").strip())
     # If it's already a number (int/float), just return it as-is
     return price
 
@@ -98,8 +101,6 @@ def calculate_total_cost(shopping_list, products):
 
         # 2. Find Product Price
         # Look through the entire product catalog to find a match
-        # (Note: In production, this loop-inside-loop is inefficient O(N*M). 
-        # Better to query DB directly for prices).
         for product in products:
             if product.get("name", "").lower() == str(key).lower():
                 # Find the cheapest price for this specific product
@@ -128,21 +129,14 @@ def search_products(query, products):
 
 def sanitize_mongo_doc(doc):
     """
-    Recursively convert MongoDB-specific data types into standard JSON-friendly types.
+    Recursively convert special data types into standard JSON-friendly types.
     
-    Why this is needed:
-    MongoDB drivers return data using special BSON types:
-    - `ObjectId("...")`: Not valid JSON.
-    - `Decimal128("10.99")`: Not valid JSON.
-    Flask's `jsonify` serializer will crash if fed these types directly.
-    
-    Supported Conversions:
-    - ObjectId -> str
-    - Decimal128 -> float
-    - Recursive traversal of nested lists and dicts.
+    With PostgreSQL + SQLAlchemy, most data is already JSON-safe.
+    This function now primarily handles datetime serialization and
+    ensures consistent id/string conversion.
     
     Args:
-        doc (dict, list, or val): The MongoDB document or field.
+        doc (dict, list, or val): The document or field.
         
     Returns:
         The sanitized structure, safe to send to the frontend.
@@ -159,29 +153,20 @@ def sanitize_mongo_doc(doc):
         new_doc = {}
         for k, v in doc.items():
             if k == "_id":
-                # Special handling: Convert Primary Key to string
-                # We also add a pure 'id' field for convenience
+                # Ensure _id is always a string
                 id_str = str(v)
                 new_doc["id"] = id_str
                 new_doc["_id"] = id_str
-            elif isinstance(v, Decimal128):
-                # Extract the Python decimal, then convert to float
-                new_doc[k] = float(v.to_decimal())
             else:
                 # Recurse for nested fields
                 new_doc[k] = sanitize_mongo_doc(v)
         return new_doc
         
-    # 3. Handle Primitive BSON Types (Leaf Nodes)
-    if isinstance(doc, ObjectId):
-        return str(doc)
-    if isinstance(doc, Decimal128):
-        # Convert to string first to avoid precision issues, then float
-        return float(str(doc))
+    # 3. Handle datetime objects
     if isinstance(doc, datetime):
         return doc.isoformat()
         
-    # 4. Return standard types (str, int, bool) as-is
+    # 4. Return standard types (str, int, bool, float) as-is
     return doc
 
 # 
@@ -216,6 +201,8 @@ def generate_jwt(email: str) -> str:
         "exp": datetime.utcnow() + timedelta(hours=6)
     }
     # Encode with HS256 algorithm
+    if jwt is None:
+        return ''
     return jwt.encode(payload, jwt_secret(), algorithm="HS256")
 
 
@@ -225,13 +212,12 @@ def decode_jwt(token: str):
     Returns the payload dictionary if signature is valid and token not expired.
     Returns None if invalid.
     """
+    if jwt is None:
+        return None
     try:
         return jwt.decode(token, jwt_secret(), algorithms=["HS256"])
-    except jwt.ExpiredSignatureError:
-        # Silent failure for expired tokens - handled by session fallback
-        return None
     except Exception as e:
-        print(f"[JWT] decode failed: {e}")
+        # Silent failure for expired/invalid tokens - handled by session fallback
         return None
 
 def get_token_from_request():
@@ -287,45 +273,50 @@ def get_user_email():
 
 
 def get_category_options():
+    """Build hierarchical category options for UI dropdowns/filters."""
     try:
-        from utils.db import mongo
-        all_cats = list(mongo.db.categories.find({}))
-        
-        # Build children map
+        from models.postgres_models import Category
+
+        all_cats = Category.query.order_by(Category.name_en).all()
+
+        # Build children map using integer IDs
         children_map = {}
         for c in all_cats:
-            pid = str(c.get("parentId")) if c.get("parentId") else "None"
+            pid = c.parent_id  # integer or None
             children_map.setdefault(pid, []).append(c)
 
-        db_cats = children_map.get("None", [])
-        
+        db_cats = children_map.get(None, [])
+
         category_options = []
         for parent_cat in db_cats:
-            if not parent_cat.get("name_en"): continue
-            
-            pid_str = str(parent_cat["_id"])
-            subcats = children_map.get(pid_str, [])
-            
+            if not (parent_cat.name_en or parent_cat.name_de):
+                continue
+
+            subcats = children_map.get(parent_cat.id, [])
+
             sub_options = []
             for s in subcats:
-                if not s.get("name_en"): continue
-                
-                s_id_str = str(s["_id"])
-                leaves = children_map.get(s_id_str, [])
-                leaf_options = [{"name": l.get("name_en"), "image": l.get("imageUrl")} for l in leaves if l.get("name_en")]
-                
+                if not (s.name_en or s.name_de):
+                    continue
+
+                leaves = children_map.get(s.id, [])
+                leaf_options = [
+                    {"name": l.name_en or l.name_de, "image": l.image_url}
+                    for l in leaves if (l.name_en or l.name_de)
+                ]
+
                 sub_options.append({
-                    "name": s.get("name_en"),
-                    "image": s.get("imageUrl"),
+                    "name": s.name_en or s.name_de,
+                    "image": s.image_url,
                     "subcategories": leaf_options
                 })
-            
+
             category_options.append({
-                "name": parent_cat.get("name_en"),
-                "image": parent_cat.get("imageUrl"),
+                "name": parent_cat.name_en or parent_cat.name_de,
+                "image": parent_cat.image_url,
                 "subcategories": sub_options
             })
-            
+
         return category_options
     except Exception as e:
         import traceback

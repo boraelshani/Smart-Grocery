@@ -34,14 +34,18 @@ def attach_deals_to_product(product_doc):
     if not name: return
     
     try:
-        from models.featured_deals_model import featured_deals_model
-        # Simple exact name or regex match for deals
-        deal = featured_deals_model.collection.find_one({"$or": [{"title": name}, {"name": name}]})
-        if not deal:
-            # try case-insensitive regex
-            deal = featured_deals_model.collection.find_one({"$or": [{"title": {"$regex": f"^{re.escape(name)}$", "$options": "i"}}, {"name": {"$regex": f"^{re.escape(name)}$", "$options": "i"}}]})
+        import re as re_mod
+        from sqlalchemy import or_, func
+        from models.postgres_models import FeaturedDeal
+        deal_row = FeaturedDeal.query.filter(
+            or_(
+                func.lower(FeaturedDeal.title) == name.lower(),
+                func.lower(FeaturedDeal.name) == name.lower(),
+            )
+        ).first()
         
-        if deal:
+        if deal_row:
+            deal = deal_row.to_dict()
             deal_store = (deal.get('store') or deal.get('source') or '').lower()
             for s in store_list:
                 s_name = (s.get('store') or s.get('name') or '').lower()
