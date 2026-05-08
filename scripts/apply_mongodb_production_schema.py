@@ -76,6 +76,8 @@ def apply_schema(db) -> dict:
         ],
         "products": [
             ([ ("productId", ASCENDING) ], {"name": "idx_product_productId", "unique": True, "partialFilterExpression": {"productId": partial_unique_str}}),
+            ([ ("name_en", ASCENDING) ], {"name": "idx_product_name_en"}),
+            ([ ("name_de", ASCENDING) ], {"name": "idx_product_name_de"}),
             ([ ("barcode", ASCENDING) ], {"name": "idx_product_barcode", "sparse": True}),
             ([ ("categoryId", ASCENDING) ], {"name": "idx_product_categoryId"}),
             ([ ("labels", ASCENDING) ], {"name": "idx_product_labels"}),

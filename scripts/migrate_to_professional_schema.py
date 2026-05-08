@@ -20,6 +20,11 @@ PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
+try:
+    from deep_translator import GoogleTranslator
+except Exception:  # pragma: no cover - optional dependency in some environments
+    GoogleTranslator = None
+
 from scripts.apply_mongodb_production_schema import apply_schema
 from scripts.backup_mongodb import create_backup
 from utils.db import get_db
@@ -46,6 +51,46 @@ def parse_price(value):
         return float(raw)
     except Exception:
         return None
+
+
+def _translate_product_names_to_english(names: list[str]) -> dict[str, str]:
+    unique_names = []
+    seen = set()
+    for name in names:
+        text = (name or "").strip()
+        if not text:
+            continue
+        key = text.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        unique_names.append(text)
+
+    if not unique_names:
+        return {}
+
+    if GoogleTranslator is None:
+        return {name.lower(): name for name in unique_names}
+
+    translator = GoogleTranslator(source="de", target="en")
+    translated_map: dict[str, str] = {}
+    chunk_size = 100
+
+    for start in range(0, len(unique_names), chunk_size):
+        chunk = unique_names[start:start + chunk_size]
+        try:
+            if hasattr(translator, "translate_batch"):
+                translated = translator.translate_batch(chunk)
+            else:
+                translated = [translator.translate(name) for name in chunk]
+        except Exception:
+            translated = chunk
+
+        for source_name, target_name in zip(chunk, translated):
+            cleaned = (target_name or "").strip() or source_name
+            translated_map[source_name.lower()] = cleaned
+
+    return translated_map
 
 
 def ensure_store(db, store_name: str, store_doc: dict | None = None) -> str | None:
@@ -161,11 +206,18 @@ def normalize_products(db, store_id_by_name: dict[str, str]) -> dict[str, str]:
     brand_id = ensure_brand(db, "Generic")
     category_id = ensure_category(db, "Uncategorized")
 
-    for row in list(db.products.find({})):
-        name = (row.get("name_en") or row.get("name_de") or row.get("name") or "Unnamed Product").strip()
+    legacy_rows = list(db.products.find({}))
+    english_names = _translate_product_names_to_english(
+        [row.get("name_en") or row.get("name_de") or row.get("name") or "Unnamed Product" for row in legacy_rows]
+    )
+
+    for row in legacy_rows:
+        original_name = (row.get("name_de") or row.get("name") or row.get("title") or "Unnamed Product").strip()
+        name = (row.get("name_en") or english_names.get(original_name.lower()) or english_names.get((row.get("name") or "").lower()) or original_name).strip()
         row_id = str(row.get("_id"))
         product_id = row.get("productId") or f"prod_{slugify(name)}_{row_id}"
         product_id_by_name[name.lower().strip()] = product_id
+        product_id_by_name[original_name.lower().strip()] = product_id
 
         embedded_stores = row.get("stores") if isinstance(row.get("stores"), list) else []
         cheapest_price = None
@@ -216,8 +268,8 @@ def normalize_products(db, store_id_by_name: dict[str, str]) -> dict[str, str]:
                 "$set": {
                     "productId": product_id,
                     "name_en": name,
-                    "name_de": row.get("name_de") or name,
-                    "name": row.get("name") or name,
+                    "name_de": original_name,
+                    "name": name,
                     "brandId": row.get("brandId") or brand_id,
                     "categoryId": row.get("categoryId") or category_id,
                     "categoryPath": row.get("categoryPath") or [category_id],
