@@ -88,8 +88,7 @@ else:
     print('INFO: No .env file found in project root')
 
 
-# Short-lived in-memory cache for expensive navbar counters.
-_NAVBAR_CACHE_TTL_SEC = 20
+_NAVBAR_CACHE_TTL_SEC = 300
 _navbar_cache = {}
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -179,6 +178,8 @@ def inject_navbar_data():
             user = User.query.filter_by(email=email).first()
             user_dict = user.to_dict() if user else {}
 
+            user_pk = user.id if user else None
+
             display_name = (user_dict.get('name') or email.split('@')[0]).strip()
             initials = ''.join(part[:1] for part in display_name.split()[:2]).upper() or display_name[:1].upper()
             current_user_nav = {
@@ -201,12 +202,14 @@ def inject_navbar_data():
             ).count()
 
             # Count items marked as new across all of the user's lists
-            shopping_list_count = sa_db.session.query(sa_db.func.count(ListItem.id)).join(
-                ShoppingList, ShoppingList.list_id == ListItem.list_id
-            ).filter(
-                ShoppingList.user_id == email,
-                ListItem.is_new == True,
-            ).scalar() or 0
+            shopping_list_count = 0
+            if user_pk:
+                shopping_list_count = sa_db.session.query(sa_db.func.count(ListItem.id)).join(
+                    ShoppingList, ShoppingList.list_id == ListItem.list_id
+                ).filter(
+                    ShoppingList.user_id == user_pk,
+                    ListItem.is_new == True,
+                ).scalar() or 0
 
             _navbar_cache[email] = {
                 'expires_at': now_ts + _NAVBAR_CACHE_TTL_SEC,

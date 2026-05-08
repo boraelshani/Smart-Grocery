@@ -1126,22 +1126,11 @@
                       </div>
                     </label>
                     {% endfor %} <!-- Exit the loop after rendering all retrieved store locations -->
-                  {% else %} <!-- Fallback logic if the stores list is empty or unavailable -->
-                    {% for store_name in ['Billa', 'Spar', 'Hofer', 'Lidl', 'Penny', 'Unimarkt'] %} <!-- Iterating through a hardcoded list of major retailers -->
-                    <label class="store-tile {{ 'selected' if store_name in user_data.get('preferred_stores', []) else '' }}"> <!-- Repeated tile layout for fallback retailers -->
-                      <input type="checkbox" name="stores" value="{{ store_name }}" 
-                             {{ 'checked' if store_name in user_data.get('preferred_stores', []) else '' }} 
-                             hidden onchange="toggleStore(this)"> <!-- Checkbox for selection state management -->
-                      <div class="store-check"><i class="bi bi-check"></i></div> <!-- Visual overlay showing a checkmark when active -->
-                      <div class="store-inner"> <!-- Interior content layout for each store card -->
-                        <div class="store-logo-box text-uppercase"> <!-- Box intended for retailer branding -->
-                          <span class="fw-bold text-primary">{{ store_name[:2] }}</span> <!-- Display first two letters as a synthetic logo -->
-                        </div>
-                        <span class="fw-bold">{{ store_name }}</span> <!-- Full brand name of the retailer -->
-                      </div>
-                    </label>
-                    {% endfor %} <!-- Conclude the iterative fallback retailers loop -->
-                  {% endif %} <!-- Finalize the conditional block for stores -->
+                  {% else %}
+                    <p class="text-center text-muted w-100 py-4">
+                      <i class="bi bi-shop me-2"></i>No stores found in database.
+                    </p>
+                  {% endif %}
                 </form> <!-- Close the retailer preference form -->
             </div>
         </div>

@@ -100,3 +100,57 @@ input[type=number] {
 .text-decoration-line-through { text-decoration: line-through; }
 
 .rotate-180 { transform: rotate(180deg) !important; } .transition-transform { transition: transform 0.3s ease; }
+
+/* ── Skeleton / Loading Placeholders ───────────────────────────────── */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, #e9d5ff 25%, #f3e8ff 50%, #e9d5ff 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: 6px;
+  display: block;
+}
+.skeleton-sm { height: 12px; width: 60%; }
+.skeleton-md { height: 20px; width: 80%; }
+.skeleton-lg { height: 36px; width: 40%; }
+.skeleton-img { height: 180px; width: 100%; border-radius: 12px; }
+.skeleton-card { border-radius: 12px; overflow: hidden; }
+.skeleton-text { height: 14px; margin-bottom: 8px; }
+
+/* ── Page Loading Overlay ─────────────────────────────────────────── */
+#page-loader {
+  position: fixed;
+  inset: 0;
+  background: #f8f7ff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  transition: opacity 0.4s ease;
+}
+#page-loader.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+.spinner-dots {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+.spinner-dots span {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #7c3aed;
+  animation: bounce 1.2s ease-in-out infinite;
+}
+.spinner-dots span:nth-child(2) { animation-delay: 0.2s; }
+.spinner-dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes bounce {
+  0%, 80%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-12px); }
+}

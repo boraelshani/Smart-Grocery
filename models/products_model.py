@@ -9,7 +9,7 @@ from models.postgres_models import db, Product, Offer, Store, Category, PriceHis
 
 class ProductsModel:
 
-    def list_products(self, query=None, skip=0, limit=80, sort=None):
+    def list_products(self, query=None, skip=0, limit=20, sort=None):
         q = Product.query
         if isinstance(query, dict):
             and_clauses = query.get('$and', [])
@@ -41,7 +41,7 @@ class ProductsModel:
         else:
             q = q.order_by(desc(Product.updated_at))
         rows = q.offset(skip).limit(limit).all()
-        return [self._hydrate_product(p) for p in rows]
+        return self._hydrate_products_bulk(rows)
 
     def count_products(self, query=None):
         q = Product.query
@@ -118,39 +118,60 @@ class ProductsModel:
             for h in history
         ]
 
+    def _hydrate_products_bulk(self, rows: list) -> list:
+        if not rows:
+            return []
+        product_ids = [r.id for r in rows]
+        product_map = {r.id: r for r in rows}
+        offers = Offer.query.filter(
+            Offer.product_id.in_(product_ids),
+            Offer.is_available == True
+        ).all()
+        offer_store_ids = list(set(o.store_id for o in offers))
+        store_name_map = {}
+        if offer_store_ids:
+            stores = Store.query.filter(Store.store_id.in_(offer_store_ids)).all()
+            store_name_map = {s.store_id: s.name for s in stores}
+        cat_ids = list(set(r.category_id for r in rows if r.category_id))
+        cat_map = {}
+        if cat_ids:
+            cats = Category.query.filter(Category.id.in_(cat_ids)).all()
+            cat_map = {c.id: c for c in cats}
+        product_offers = {}
+        for o in offers:
+            product_offers.setdefault(o.product_id, []).append(o)
+        results = []
+        for row in rows:
+            doc = row.to_dict()
+            row_offers = product_offers.get(row.id, [])
+            stores_list = []
+            cheapest_price = None
+            cheapest_store = None
+            for o in row_offers:
+                price = o.effective_price()
+                store_name = store_name_map.get(o.store_id, o.store_id)
+                stores_list.append({'store': store_name, 'name': store_name, 'price': price,
+                                    'url': o.product_url, 'image': row.default_image_url,
+                                    'storeProductId': str(o.id)})
+                if price is not None and (cheapest_price is None or price < cheapest_price):
+                    cheapest_price = price
+                    cheapest_store = store_name
+            doc['stores'] = stores_list
+            doc['price'] = cheapest_price
+            doc['store'] = cheapest_store
+            if cheapest_price is not None and cheapest_store:
+                doc['cheapest'] = {'price': cheapest_price, 'store': cheapest_store}
+            if row.category_id and row.category_id in cat_map:
+                cat = cat_map[row.category_id]
+                doc['category'] = cat.name_en or cat.name_de
+            results.append(doc)
+        return results
+
     def _hydrate_product(self, row: Product) -> dict:
         if row is None:
             return {}
-        doc = row.to_dict()
-        offers = Offer.query.filter_by(product_id=row.id, is_available=True).all()
-        store_ids = list(set(o.store_id for o in offers))
-        store_name_map = {}
-        if store_ids:
-            stores = Store.query.filter(Store.store_id.in_(store_ids)).all()
-            store_name_map = {s.store_id: s.name for s in stores}
-        stores_list = []
-        cheapest_price = None
-        cheapest_store = None
-        for o in offers:
-            price = o.effective_price()
-            store_name = store_name_map.get(o.store_id, o.store_id)
-            entry = {'store': store_name, 'name': store_name, 'price': price,
-                     'url': o.product_url, 'image': row.default_image_url,
-                     'storeProductId': str(o.id)}
-            stores_list.append(entry)
-            if price is not None and (cheapest_price is None or price < cheapest_price):
-                cheapest_price = price
-                cheapest_store = store_name
-        doc['stores'] = stores_list
-        doc['price'] = cheapest_price
-        doc['store'] = cheapest_store
-        if cheapest_price is not None and cheapest_store:
-            doc['cheapest'] = {'price': cheapest_price, 'store': cheapest_store}
-        if row.category_id:
-            cat = db.session.get(Category, row.category_id)
-            if cat:
-                doc['category'] = cat.name_en or cat.name_de
-        return doc
+        docs = self._hydrate_products_bulk([row])
+        return docs[0] if docs else {}
 
 
 products_model = ProductsModel()
