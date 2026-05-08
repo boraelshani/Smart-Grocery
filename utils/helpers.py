@@ -288,41 +288,52 @@ def get_user_email():
 
 def get_category_options():
     try:
-        from utils.db import mongo
-        all_cats = list(mongo.db.categories.find({}))
+        import psycopg2
+        import os
+        from dotenv import load_dotenv
+        load_dotenv()
         
-        # Build children map
+        conn = psycopg2.connect(os.getenv('DATABASE_URL'))
+        cur = conn.cursor()
+        
+        cur.execute('SELECT id, name_en, image_url, parent_id FROM categories ORDER BY name_en')
+        all_rows = cur.fetchall()
+        conn.close()
+        
         children_map = {}
-        for c in all_cats:
-            pid = str(c.get("parentId")) if c.get("parentId") else "None"
-            children_map.setdefault(pid, []).append(c)
+        for row in all_rows:
+            cid, name_en, image_url, parent_id = row
+            pid = parent_id if parent_id else "None"
+            children_map.setdefault(pid, []).append(row)
 
         db_cats = children_map.get("None", [])
         
         category_options = []
         for parent_cat in db_cats:
-            if not parent_cat.get("name_en"): continue
+            pid, pname, pimage, pparent = parent_cat
+            if not pname:
+                continue
             
-            pid_str = str(parent_cat["_id"])
-            subcats = children_map.get(pid_str, [])
+            subcats = children_map.get(pid, [])
             
             sub_options = []
             for s in subcats:
-                if not s.get("name_en"): continue
+                sid, sname, simage, sparent = s
+                if not sname:
+                    continue
                 
-                s_id_str = str(s["_id"])
-                leaves = children_map.get(s_id_str, [])
-                leaf_options = [{"name": l.get("name_en"), "image": l.get("imageUrl")} for l in leaves if l.get("name_en")]
+                leaves = children_map.get(sid, [])
+                leaf_options = [{"name": l[1], "image": l[2]} for l in leaves if l[1]]
                 
                 sub_options.append({
-                    "name": s.get("name_en"),
-                    "image": s.get("imageUrl"),
+                    "name": sname,
+                    "image": simage,
                     "subcategories": leaf_options
                 })
             
             category_options.append({
-                "name": parent_cat.get("name_en"),
-                "image": parent_cat.get("imageUrl"),
+                "name": pname,
+                "image": pimage,
                 "subcategories": sub_options
             })
             
