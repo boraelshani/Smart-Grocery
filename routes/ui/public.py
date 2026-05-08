@@ -29,7 +29,7 @@ def load_featured_deals_fallback():
 
 @main_bp.route('/')
 def home():
-    """Main dashboard route migrated from legacy ui_routes.py."""
+    """Main dashboard route."""
     user_email = session.get('user')
     if not user_email:
         return render_template('entry.html')
@@ -48,6 +48,7 @@ def home():
     featured_deals = []
     popular_products = []
     store_products = []
+    categories = []
     total_deals_count = 0
     total_product_count = 0
     chosen_store_name = None
@@ -59,6 +60,22 @@ def home():
     try:
         stores = stores_model.list_stores()
         products = products_model.list_products(limit=80)
+        
+        # Fetch categories from PostgreSQL
+        try:
+            from models.postgres_models import Category
+            cat_rows = Category.query.filter(Category.image_url.isnot(None)).limit(12).all()
+            categories = [
+                {
+                    'id': cat.category_id,
+                    'name': cat.name_en or 'Category',
+                    'image': cat.image_url or ''
+                }
+                for cat in cat_rows if cat.image_url
+            ]
+        except Exception as e:
+            print(f'WARNING: Failed to load categories: {e}')
+            categories = []
         
         total_deals_count = (featured_deals_model.get_deals_count() + 
                            multibuy_offers_model.get_offers_count() + 
@@ -117,12 +134,23 @@ def home():
     for d in featured_deals:
         d['is_favorited'] = str(d.get('id') or d.get('_id', '')) in fav_ids
 
-    # Popular
+    # Popular - Get products from database
     try:
-        popular_products = products_model.get_popular_products(limit=12)
+        from models.postgres_models import Product
+        pop_rows = Product.query.filter(
+            Product.default_image_url.isnot(None),
+            Product.default_image_url != '',
+        ).order_by(Product.updated_at.desc()).limit(12).all()
+        popular_products = [products_model._hydrate_product(p) for p in pop_rows]
+
+        if not popular_products:
+            popular_products = products[:12]
+
+        # Mark favorites
         for p in popular_products:
             p['is_favorited'] = str(p.get('id') or p.get('_id', '')) in fav_ids
-    except:
+    except Exception as e:
+        print(f'ERROR fetching popular products: {e}')
         popular_products = products[:12]
 
     # Store stats & Featured store
@@ -185,6 +213,7 @@ def home():
         'featured_deals': featured_deals[:10],
         'popular_products': popular_products,
         'store_products': store_products,
+        'categories': categories,
         'total_deals_count': total_deals_count,
         'total_product_count': total_product_count,
         'chosen_store_name': chosen_store_name,

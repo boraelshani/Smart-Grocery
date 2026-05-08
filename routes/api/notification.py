@@ -6,7 +6,6 @@ from models.quantity_discounts_model import quantity_discounts_model
 from models.notifications_model import notifications_model, get_user_notifications, mark_as_read
 from models.users_model import get_user_by_email, users_model
 from datetime import datetime, timezone, timedelta
-from utils.db import get_db
 
 @main_bp.route('/notifications')
 def notifications_page():
@@ -21,8 +20,12 @@ def notifications_page():
 
     def get_naive_date(d):
         if d is None: return datetime.min
-        if d.tzinfo is not None: return d.replace(tzinfo=None)
-        return d
+        if isinstance(d, str):
+            try: return datetime.fromisoformat(d.replace('Z', '+00:00')).replace(tzinfo=None)
+            except: return datetime.min
+        if isinstance(d, datetime) and d.tzinfo is not None: return d.replace(tzinfo=None)
+        if isinstance(d, datetime): return d
+        return datetime.min
 
     try:
         latest_deals_drop = featured_deals_model.get_latest_deals(limit=10)
@@ -34,7 +37,7 @@ def notifications_page():
                 'id': f"suggestion_fd_{d_id}", 'type': 'price_drop',
                 'title': f"Price Drop: {d.get('title') or d.get('product_name') or d.get('name')}",
                 'message': d.get('description') or "Check out this amazing offer available now!",
-                'created_at': get_naive_date(d.get('_id').generation_time), 'read': False, 'deal_id': d_id,
+                'created_at': get_naive_date(d.get('created_at')), 'read': False, 'deal_id': d_id,
                 'product_name': d.get('title') or d.get('product_name') or d.get('name'),
                 'product_image': d.get('image') or d.get('image_url'), 'store_name': d.get('store'),
                 'price': d.get('price') or d.get('new_price'), 'old_price': d.get('original_price') or d.get('old_price'),
@@ -48,13 +51,13 @@ def notifications_page():
             m_id = str(m_offer.get('id') or m_offer.get('_id'))
             offer_text = m_offer.get('title')
             if offer_text == "Special Offer" or not offer_text or m_offer.get('buy_quantity'):
-                buy = m_offer.get('buy_quantity') or m_offer.get('min_quantity'); get = m_offer.get('free_quantity')
-                if buy and get: offer_text = f"Buy {buy} Get {get} Free"
+                buy = m_offer.get('buy_quantity') or m_offer.get('min_quantity'); get_q = m_offer.get('free_quantity')
+                if buy and get_q: offer_text = f"Buy {buy} Get {get_q} Free"
                 elif buy: offer_text = f"Buy {buy}+ Deal"
             n = {
                 'id': f"suggestion_multi_{m_id}", 'type': 'deal_alert', 'title': f"Multibuy Offer",
                 'message': "Buy more, save more with this special offer!",
-                'created_at': get_naive_date(m_offer.get('_id').generation_time), 'read': False, 'deal_id': m_id,
+                'created_at': get_naive_date(m_offer.get('created_at')), 'read': False, 'deal_id': m_id,
                 'product_name': m_offer.get('title') or m_offer.get('product_name'),
                 'product_image': m_offer.get('image'), 'store_name': m_offer.get('store'),
                 'price': m_offer.get('price'), 'old_price': m_offer.get('original_price'),
@@ -75,7 +78,7 @@ def notifications_page():
             n = {
                 'id': f"suggestion_qty_{q_id}", 'type': 'deal_alert', 'title': "Quantity Discount",
                 'message': "Stock up and save with volume discounts!",
-                'created_at': get_naive_date(q_disc.get('_id').generation_time), 'read': False, 'deal_id': q_id,
+                'created_at': get_naive_date(q_disc.get('created_at')), 'read': False, 'deal_id': q_id,
                 'product_name': q_disc.get('product_name'), 'product_image': q_disc.get('image'),
                 'store_name': q_disc.get('store'), 'price': q_disc.get('base_price') or q_disc.get('price'),
                 'offer_name': offer_text, 'action_url': '#'
@@ -151,11 +154,11 @@ def mark_all_notifications_read():
         try:
             dynamic_ids = []
             fds = featured_deals_model.get_latest_deals(limit=10)
-            dynamic_ids.extend([f"suggestion_fd_{str(d.get('_id'))}" for d in fds])
+            dynamic_ids.extend([f"suggestion_fd_{str(d.get('id'))}" for d in fds])
             mbs = multibuy_offers_model.get_latest_offers(limit=5)
-            dynamic_ids.extend([f"suggestion_multi_{str(m.get('_id'))}" for m in mbs])
+            dynamic_ids.extend([f"suggestion_multi_{str(mo.get('id'))}" for mo in mbs])
             qds = quantity_discounts_model.get_latest_discounts(limit=3)
-            dynamic_ids.extend([f"suggestion_qty_{str(q.get('_id'))}" for q in qds])
+            dynamic_ids.extend([f"suggestion_qty_{str(q.get('id'))}" for q in qds])
             if dynamic_ids:
                 users_model.mark_dynamic_notifications_read(user_email, dynamic_ids)
         except: pass

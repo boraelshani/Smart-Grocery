@@ -283,7 +283,7 @@ def get_list_items_api(list_id):
                 img_val = ''
             product = find_product_by_name(name)
             if not img_val and product:
-                img_val = product.get('image') or (product.get('images') and product.get('images')[0]) or ''
+                img_val = product.get('image') or ''
             if not img_val: img_val = placeholder_url
             if isinstance(entry, dict):
                 enriched = dict(entry)
@@ -323,15 +323,15 @@ def share_list_api():
                 })
             return jsonify({'success': success})
         else:
+            from models.postgres_models import ShoppingList, db as sa_db
             from models.users_model import get_user_by_email
-            from utils.db import get_db
-            db = get_db()
             user = get_user_by_email(user_email) or {}
-            owner_id = str(user.get('userId') or user_email)
-            row = db.lists.find_one({'listId': list_id, 'userId': owner_id}, {'_id': 0, 'shareCode': 1})
-            if not row: return jsonify({'success': False, 'error': 'List not found'}), 404
-            share_code = row.get('shareCode') or uuid.uuid4().hex[:10]
-            db.lists.update_one({'listId': list_id, 'userId': owner_id}, {'$set': {'shared': True, 'shareCode': share_code}})
+            lst = ShoppingList.query.filter_by(list_id=list_id, user_id=user_email).first()
+            if not lst: return jsonify({'success': False, 'error': 'List not found'}), 404
+            share_code = lst.share_code or uuid.uuid4().hex[:10]
+            lst.shared = True
+            lst.share_code = share_code
+            sa_db.session.commit()
             return jsonify({'success': True, 'share_code': share_code})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -352,14 +352,14 @@ def unshare_list_api():
 @main_bp.route('/api/list/by-share/<share_code>', methods=['GET'])
 def get_shared_list_api(share_code):
     try:
-        from utils.db import get_db
-        db = get_db()
-        row = db.lists.find_one({'shareCode': share_code, 'shared': True}, {'_id': 0})
-        if not row: return jsonify({'success': False, 'error': 'List not found'}), 404
+        from models.postgres_models import ShoppingList
+        lst = ShoppingList.query.filter_by(share_code=share_code, shared=True).first()
+        if not lst: return jsonify({'success': False, 'error': 'List not found'}), 404
+        lst_dict = lst.to_dict()
         return jsonify({'success': True, 'list': helpers.sanitize_mongo_doc({
-            'id': row.get('listId'), 'name': row.get('name'), 'items': row.get('items', []),
-            'totalPrice': row.get('totalPrice', 0), 'shared': row.get('shared', False),
-            'shareCode': row.get('shareCode'), 'updated_at': row.get('updatedAt'),
+            'id': lst_dict.get('listId'), 'name': lst_dict.get('name'), 'items': lst_dict.get('items', []),
+            'totalPrice': lst_dict.get('totalPrice', 0), 'shared': lst_dict.get('shared', False),
+            'shareCode': lst_dict.get('shareCode'), 'updated_at': lst_dict.get('updated_at'),
         })})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500

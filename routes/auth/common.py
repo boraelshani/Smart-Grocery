@@ -2,14 +2,12 @@ from flask import render_template, request, redirect, url_for, session, jsonify,
 from . import auth_bp
 import os
 import re
-from bson import Decimal128
 from models.users_model import users_model, update_user_profile
 from models.products_model import products_model
 from models.featured_deals_model import featured_deals_model
 from models.multibuy_offers_model import multibuy_offers_model
 from models.notifications_model import notifications_model
 from utils import helpers
-from utils.db import get_db
 from comparison.cheapest_finder import get_cheapest_from_product
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
@@ -25,8 +23,15 @@ def login():
             for n in notifs:
                 if n.get('type') == 'list_share' and not n.get('is_toasted'):
                     flash(n.get('message', 'A new list was shared!'), 'info')
-                    db = get_db()
-                    if db is not None: db.notifications.update_one({'_id': n['_id']}, {'$set': {'is_toasted': True}})
+                    # Mark as toasted
+                    try:
+                        from models.postgres_models import Notification, db as sa_db
+                        notif_row = Notification.query.filter_by(id=int(n['id'])).first()
+                        if notif_row:
+                            notif_row.is_toasted = True
+                            sa_db.session.commit()
+                    except Exception:
+                        pass
             resp = redirect(url_for('main.home'))
             resp.set_cookie('auth_token', token, httponly=True, samesite='Lax', secure=bool(os.environ.get('COOKIE_SECURE')))
             return resp
@@ -64,13 +69,12 @@ def add_shopping_item():
             pid = item.get('id') or item.get('product_id')
             prod = products_model.get_product_by_id(str(pid)) if pid else products_model.get_product_by_name(item.get('name'))
             if prod:
-                if not item.get('image'): item['image'] = prod.get('image') or (prod.get('images') and prod.get('images')[0])
+                if not item.get('image'): item['image'] = prod.get('image')
                 cheapest = get_cheapest_from_product(prod); pval = cheapest.get('price') if isinstance(cheapest, dict) else prod.get('price')
                 if pval is not None:
                     try: up = float(re.sub(r"[^0-9.]", "", str(pval))) if not isinstance(pval, (int, float)) else float(pval)
                     except: up = 0.0
-                    try: item['price'] = Decimal128(f"{up:.2f}")
-                    except: item['price'] = up
+                    item['price'] = up
                 item['id'] = str(prod.get('id') or prod.get('_id'))
     except: pass
     from models.users_model import get_user_lists, add_item_to_list, create_shopping_list, set_active_list

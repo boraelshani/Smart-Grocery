@@ -14,7 +14,6 @@ import random
 import re
 import uuid
 from datetime import datetime, timezone, timedelta
-from utils.db import get_db
 from comparison.cheapest_finder import get_cheapest_from_product
 
 STANDARD_CATEGORIES = ["Produce", "Pantry", "Dairy", "Meat", "Frozen", "Bakery", "Baby food", "Snacks", "Fast Food & To Go", "Household", "Beverages"]
@@ -31,18 +30,17 @@ def api_search_products():
     if not q: return jsonify({'items': []})
     results = []
     try:
-        if m.HAS_DB:
-            prods = products_model.search_by_name(q, limit=50)
-            try:
-                qd = quantity_discounts_model.list_active_discounts()
-                for d in qd:
-                    if q.lower() in (d.get('name') or d.get('product_name') or '').lower(): prods.append(d)
-            except: pass
-            for d in prods:
-                c = get_cheapest_from_product(d)
-                if d.get('price') or (isinstance(c, dict) and c.get('price')) or (d.get('stores') and d['stores'][0].get('price')):
-                    p_doc = dict(d); p_doc['url'] = f"/product/{p_doc.get('_id') or p_doc.get('id')}"
-                    results.append(helpers.sanitize_mongo_doc(p_doc))
+        prods = products_model.search_by_name(q, limit=50)
+        try:
+            qd = quantity_discounts_model.list_active_discounts()
+            for d in qd:
+                if q.lower() in (d.get('name') or d.get('product_name') or '').lower(): prods.append(d)
+        except: pass
+        for d in prods:
+            c = get_cheapest_from_product(d)
+            if d.get('price') or (isinstance(c, dict) and c.get('price')) or (d.get('stores') and d['stores'][0].get('price')):
+                p_doc = dict(d); p_doc['url'] = f"/product/{p_doc.get('_id') or p_doc.get('id')}"
+                results.append(helpers.sanitize_mongo_doc(p_doc))
     except: pass
     return jsonify({'items': results})
 
@@ -64,9 +62,9 @@ def api_get_stores():
         stores = stores_model.list_stores()[:500]
         out = []
         for s in stores:
-            img = s.get('image') or (s.get('images')[0] if s.get('images') else None)
-            loc = s.get('location') or ', '.join(filter(None, [s.get('address'), s.get('city')]))
-            out.append({'id': str(s.get('_id') or s.get('id')), 'name': s.get('name'), 'location': loc, 'image': img, 'url': s.get('url') or s.get('website'), 'hours': s.get('hours') or s.get('opening_hours'), 'deals': len(s.get('active_deals', [])) if isinstance(s.get('active_deals'), list) else 0})
+            img = s.get('image') or s.get('logoUrl')
+            loc = s.get('location') or ''
+            out.append({'id': str(s.get('storeId') or s.get('id')), 'name': s.get('name'), 'location': loc, 'image': img, 'url': s.get('url') or s.get('website'), 'hours': s.get('hours'), 'deals': 0})
         return jsonify({'stores': out})
     except Exception as e: return jsonify({'error': str(e)}), 500
 
@@ -102,16 +100,22 @@ def toggle_favorite():
     p = products_model.get_product_by_id(pid) or featured_deals_model.get_deal_by_id(pid)
     if not p: return jsonify({'error': 'not_found'}), 404
     c = get_cheapest_from_product(p)
-    success = favorites_model.add_favorite(email, pid, {'name': p.get('name') or p.get('title'), 'image': p.get('image'), 'best_price': c.get('price'), 'store': c.get('store')})
+    success = favorites_model.add_favorite(email, pid, {'name': p.get('displayName') or p.get('name_en') or p.get('name') or p.get('title'), 'image': p.get('image'), 'best_price': c.get('price'), 'store': c.get('store')})
     return jsonify({'success': bool(success), 'is_favorite': True})
 
 @api_bp.route('/community-price-report', methods=['POST'])
 def api_community_price_report_create():
     try:
+        from models.postgres_models import db as sa_db, CommunityPriceReport
         p = request.get_json() or {}
-        doc = {'product_id': p.get('product_id'), 'store_name': p.get('store_name'), 'observed_price': p.get('observed_price'), 'created_at': datetime.now(timezone.utc)}
-        res = get_db().community_price_reports.insert_one(doc)
-        return jsonify({'success': True, 'id': str(res.inserted_id)})
+        report = CommunityPriceReport(
+            product_id=p.get('product_id'),
+            store_name=p.get('store_name'),
+            observed_price=float(p.get('observed_price', 0)) if p.get('observed_price') else None,
+        )
+        sa_db.session.add(report)
+        sa_db.session.commit()
+        return jsonify({'success': True, 'id': str(report.id)})
     except Exception as e: return jsonify({'error': str(e)}), 500
 
 @api_bp.route('/products/submit-pending', methods=['POST'])
@@ -125,23 +129,22 @@ def submit_pending_product():
         if not barcode:
             return jsonify({'success': False, 'error': 'Missing barcode'}), 400
             
-        db = get_db()
-        if db is None:
-            return jsonify({'success': False, 'error': 'Database unavailable'}), 500
-            
+        from models.postgres_models import db as sa_db, PendingProduct
+        
         # Check if it already exists to avoid dupes
-        existing = db.pending_products.find_one({"barcode": barcode})
+        existing = PendingProduct.query.filter_by(barcode=barcode).first()
         if existing:
             return jsonify({'success': True, 'message': 'Already pending'})
             
-        db.pending_products.insert_one({
-            "barcode": barcode,
-            "name": name,
-            "image": image,
-            "status": "pending",
-            "submitted_by": session.get('user') or 'anonymous',
-            "created_at": datetime.now(timezone.utc)
-        })
+        pp = PendingProduct(
+            barcode=barcode,
+            name=name,
+            image=image,
+            status='pending',
+            submitted_by=session.get('user') or 'anonymous',
+        )
+        sa_db.session.add(pp)
+        sa_db.session.commit()
         return jsonify({'success': True})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500

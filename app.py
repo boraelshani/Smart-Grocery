@@ -6,7 +6,7 @@
 ║                                                                          ║
 ║  Key Features:                                                           ║
 ║  - Flask Web Server                                                      ║
-║  - MongoDB Integration (Production) with Fallback (Local)                ║
+║  - PostgreSQL via SQLAlchemy (Neon)                                       ║
 ║  - User Authentication                                                   ║
 ║  - Blueprints for Code Organization                                      ║
 ╚══════════════════════════════════════════════════════════════════════════╝
@@ -69,7 +69,6 @@ def ensure_venv():
 ensure_venv()
 
 from flask import Flask, jsonify, session, request
-import certifi
 from dotenv import load_dotenv, find_dotenv
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -88,13 +87,6 @@ else:
     # Inform the user if no configuration file was found (defaults will be used later).
     print('INFO: No .env file found in project root')
 
-# Ensure SSL_CERT_FILE is set for pymongo TLS if not already.
-# MongoDB Atlas (cloud version) requires secure connections using SSL/TLS.
-# certifi.where() provides the path to a bundle of trusted CA certificates.
-if not os.environ.get('SSL_CERT_FILE'):
-    os.environ['SSL_CERT_FILE'] = certifi.where()
-
-from utils.db import mongo, sanitize_uri
 
 # Short-lived in-memory cache for expensive navbar counters.
 _NAVBAR_CACHE_TTL_SEC = 20
@@ -122,93 +114,18 @@ app.config['ENABLE_LIST_PROMO_ENRICHMENT'] = os.environ.get('ENABLE_LIST_PROMO_E
 app.config['ENABLE_LIST_MARK_SEEN_ON_RENDER'] = os.environ.get('ENABLE_LIST_MARK_SEEN_ON_RENDER', 'false').lower() == 'true'
 
 # ═══════════════════════════════════════════════════════════════════════════
-# 3. MONGODB CONFIGURATION
+# 3. POSTGRESQL CONFIGURATION (via SQLAlchemy)
 # ═══════════════════════════════════════════════════════════════════════════
-# Retrieve the MongoDB connection string (URI) from environment variables.
-# Format: mongodb+srv://<username>:<password>@cluster.mongodb.net/database
-raw_uri = os.environ.get('MONGO_URI', 'mongodb://localhost:27017/smart_grocery')
+from utils.db import init_db
 
-# Sanitize the URI using a helper function.
-# This fixes common user errors, like leaving '<password>' placeholders or extra whitespace.
-app.config['MONGO_URI'] = sanitize_uri(raw_uri)
-
-
-# Set default database name if the URI doesn't explicitly specify one.
-# We parse the URI string; if no database name is found after the slashes/at-sign, we add 'smart_grocery'.
-if '/' not in raw_uri.split('@')[-1].rstrip('/'):
-    app.config.setdefault('MONGO_DBNAME', 'smart_grocery')
-
-# Initialize PyMongo with the Flask app.
-# We wrap this in a try-except block to handle connection failures gracefully.
-# This allows the app to start in "Offline/Fallback Mode" if the database is unreachable.
 try:
-    # Set a timeout for the initial connection attempt (5000ms = 5 seconds).
-    # This prevents the app from hanging indefinitely if the network is down.
-    app.config['MONGO_CONNECTTIMEOUTMS'] = 5000 
-    
-    # Set a timeout for selecting a server (finding a master node in a replica set).
-    app.config['MONGO_SERVERSELECTIONTIMEOUTMS'] = 5000
-    
-    # Bind the PyMongo instance to our Flask app.
-    mongo.init_app(app)
-    
-    # Verify the connection immediately within the application context.
-    with app.app_context():
-        # Check if the 'db' attribute was successfully attached to the mongo object.
-        if mongo.db is not None:
-            # Execute the 'ping' command. This is a lightweight command to check connectivity.
-            # If this raises an exception, we know we can't talk to the database.
-            mongo.db.command('ping')
-            print("INFO: MongoDB connection verified.")
+    init_db(app)
 except Exception as e:
-    # If any error occurs during setup or ping, print it and warn about fallback mode.
-    # The app will continue running, but will likely use local JSON files instead of the database.
-    print(f'WARNING: MongoDB initialization or connection failed: {e}')
-    print('INFO: Running in fallback mode with local JSON data.')
+    print(f'WARNING: PostgreSQL initialization failed: {e}')
+    print('INFO: Running in fallback mode.')
 
-# Now import the blueprints (after PyMongo attempted initialization)
+# Now import the blueprints (after DB initialization)
 from routes import main_bp, auth_bp, admin_bp, api_bp, compare_engine_bp, recipe_bp
-
-# Log connection info
-try:
-    # getattr(mongo, 'db', None) checks if the database connection was successful.
-    if getattr(mongo, 'db', None) is not None:
-        db_name = app.config.get('MONGO_DBNAME') or getattr(mongo.db, 'name', None)
-        print(f'INFO: Connected to MongoDB database: {db_name}')
-except Exception as e:
-    print(f'INFO: MongoDB connection check failed: {e}')
-
-# Ensure users.email has a unique index to prevent duplicate accounts when using MongoDB
-try:
-    if getattr(mongo, 'db', None) is not None:
-        mongo.db.users.create_index('email', unique=True)
-        mongo.db.notifications.create_index([
-            ('user_email', 1),
-            ('read', 1),
-            ('created_at', -1),
-        ])
-        mongo.db.lists.create_index([
-            ('userId', 1),
-            ('updatedAt', -1),
-        ])
-        mongo.db.lists.create_index([
-            ('userId', 1),
-            ('items.is_new', 1),
-        ])
-except Exception:
-    pass
-
-# Seed mock users if database is empty - helpful for first-time setup
-try:
-    if getattr(mongo, 'db', None) is not None and mongo.db.users.count_documents({}) == 0:
-        from models import models as mock_models
-        # Iterate through our mock data and insert it into the real DB
-        if isinstance(getattr(mock_models, 'users', None), dict):
-            users_to_insert = [{**u, 'email': email} for email, u in mock_models.users.items()]
-            if users_to_insert:
-                mongo.db.users.insert_many(users_to_insert)
-except Exception:
-    pass
 
 # Register blueprints - these organize routes into logical groups (Main, Auth, Admin)
 app.register_blueprint(main_bp)
@@ -256,49 +173,40 @@ def inject_navbar_data():
                     'mega_menu': mega_menu_data,
                 }
 
-            user = {}
-            if getattr(mongo, 'db', None) is not None:
-                user = mongo.db.users.find_one(
-                    {'email': email},
-                    {
-                        '_id': 0,
-                        'email': 1,
-                        'userId': 1,
-                        'name': 1,
-                        'avatar': 1,
-                        'is_admin': 1,
-                    },
-                ) or {}
+            # Query user info from PostgreSQL
+            from models.postgres_models import User, Notification, ShoppingList, ListItem, db as sa_db
 
-            display_name = (user.get('name') or email.split('@')[0]).strip()
+            user = User.query.filter_by(email=email).first()
+            user_dict = user.to_dict() if user else {}
+
+            display_name = (user_dict.get('name') or email.split('@')[0]).strip()
             initials = ''.join(part[:1] for part in display_name.split()[:2]).upper() or display_name[:1].upper()
             current_user_nav = {
                 'email': email,
-                'name': user.get('name') or '',
+                'name': user_dict.get('name') or '',
                 'display_name': display_name,
-                'avatar': user.get('avatar') or '',
+                'avatar': user_dict.get('avatar') or '',
                 'initials': initials,
             }
 
             admin_emails = {e.strip().lower() for e in str(app.config.get('ADMIN_EMAILS', '')).split(',') if e.strip()}
-            is_admin_nav = bool(user.get('is_admin')) or (email.lower() in admin_emails)
+            is_admin_nav = bool(user_dict.get('is_admin')) or (email.lower() in admin_emails)
 
-            if getattr(mongo, 'db', None) is not None:
-                from datetime import datetime, timedelta
-                unread_notifications_count = mongo.db.notifications.count_documents({
-                    'user_email': email,
-                    'read': False,
-                    'created_at': {'$gte': datetime.utcnow() - timedelta(days=7)},
-                })
+            from datetime import datetime, timedelta
+            cutoff = datetime.utcnow() - timedelta(days=7)
+            unread_notifications_count = Notification.query.filter(
+                Notification.user_email == email,
+                Notification.read == False,
+                Notification.created_at >= cutoff,
+            ).count()
 
-                owner_key = str(user.get('userId') or email)
-                agg = list(mongo.db.lists.aggregate([
-                    {'$match': {'userId': owner_key}},
-                    {'$unwind': '$items'},
-                    {'$match': {'items.is_new': True}},
-                    {'$count': 'count'},
-                ]))
-                shopping_list_count = int((agg[0] if agg else {}).get('count', 0))
+            # Count items marked as new across all of the user's lists
+            shopping_list_count = sa_db.session.query(sa_db.func.count(ListItem.id)).join(
+                ShoppingList, ShoppingList.list_id == ListItem.list_id
+            ).filter(
+                ShoppingList.user_id == email,
+                ListItem.is_new == True,
+            ).scalar() or 0
 
             _navbar_cache[email] = {
                 'expires_at': now_ts + _NAVBAR_CACHE_TTL_SEC,
@@ -349,56 +257,37 @@ def internal_error(error):
     return render_template('500.html'), 500
 
 
-# Health check endpoint to verify MongoDB connectivity (Equivalent to a Heartbeat)
+# Health check endpoint to verify PostgreSQL connectivity
 @app.route('/health')
 def health():
     try:
-        # Prefer the Flask-PyMongo instance if available
-        if getattr(mongo, 'db', None) is not None:
-            mongo.db.command('ping')
-        else:
-            # Fallback: try a direct pymongo connection using the configured URI
-            from pymongo import MongoClient
-            uri = app.config.get('MONGO_URI')
-            client = MongoClient(uri, serverSelectionTimeoutMS=5000)
-            client.admin.command('ping')
-        return jsonify({'status': 'ok', 'mongo': 'connected'}), 200
+        from models.postgres_models import db as sa_db
+        sa_db.session.execute(sa_db.text('SELECT 1'))
+        return jsonify({'status': 'ok', 'db': 'connected'}), 200
     except Exception as e:
-        return jsonify({'status': 'error', 'mongo': 'disconnected', 'detail': str(e)}), 500
+        return jsonify({'status': 'error', 'db': 'disconnected', 'detail': str(e)}), 500
 
 
-@app.route('/debug-mongo')
-def debug_mongo():
+@app.route('/debug-db')
+def debug_db():
     """
-    Debug route to inspect MongoDB connection details.
+    Debug route to inspect PostgreSQL connection details.
     Useful for troubleshooting connection issues in different environments.
     """
-    # Return config and client info so we can tell which host/DB the app connected to
-    info = {'app_config_mongo_uri': app.config.get('MONGO_URI'), 'app_config_dbname': app.config.get('MONGO_DBNAME')}
+    info = {'database_url': (os.environ.get('DATABASE_URL') or '')[:50] + '...'}
     try:
-        if getattr(mongo, 'db', None) is not None:
-            info['mongo_db_name'] = getattr(mongo.db, 'name', None)
-            try:
-                # try to reach the server and show the client addresses
-                client = getattr(mongo, 'cx', None) or getattr(mongo, 'client', None) or getattr(mongo, '_client', None)
-                if client is None:
-                    try:
-                        client = mongo.db.client
-                    except Exception:
-                        client = None
-                if client is not None:
-                    try:
-                        # list hosts/servers
-                        info['client_info'] = str(getattr(client, 'address', getattr(client, 'hosts', getattr(client, 'nodes', None))))
-                    except Exception as ex:
-                        info['client_info_error'] = str(ex)
-            except Exception:
-                pass
+        from models.postgres_models import db as sa_db
+        result = sa_db.session.execute(sa_db.text('SELECT current_database(), current_user'))
+        row = result.fetchone()
+        info['database_name'] = row[0] if row else None
+        info['database_user'] = row[1] if row else None
+        info['status'] = 'connected'
     except Exception as e:
         info['error'] = str(e)
+        info['status'] = 'disconnected'
     return jsonify(info)
 
 
 if __name__ == '__main__':
     # use_reloader=False prevents WinError 10038 on some Windows environments
-    app.run(debug=True, use_reloader=False, port=5000)
+    app.run(debug=True, use_reloader=False, port=5001)

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Create or update a website admin user."""
+"""Create or update a website admin user in PostgreSQL."""
 
 import os
 import sys
@@ -12,8 +12,7 @@ if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
 from app import app
-from utils.db import get_db
-
+from models.postgres_models import db as sa_db, User
 
 ADMIN_EMAIL = "admin@smartgrocery.local"
 ADMIN_PASSWORD = "Admin123!Smart"
@@ -22,42 +21,40 @@ ADMIN_NAME = "Website Admin"
 
 def main():
     with app.app_context():
-        db = get_db()
-        if db is None:
-            raise SystemExit("Database unavailable")
-
-        now = datetime.now(timezone.utc)
         hashed_password = bcrypt.hashpw(
             ADMIN_PASSWORD.encode("utf-8"), bcrypt.gensalt()
         ).decode("utf-8")
 
-        db.users.update_one(
-            {"email": ADMIN_EMAIL},
-            {
-                "$set": {
-                    "email": ADMIN_EMAIL,
-                    "name": ADMIN_NAME,
-                    "password": hashed_password,
-                    "is_admin": True,
-                    "shopping_list": [],
-                    "total_cost": 0.0,
-                    "seen_deals": [],
-                    "updatedAt": now,
-                },
-                "$setOnInsert": {
-                    "createdAt": now,
-                },
-            },
-            upsert=True,
-        )
+        user = User.query.filter_by(email=ADMIN_EMAIL).first()
+        if user:
+            user.password_hash = hashed_password
+            user.is_admin = True
+            user.name = ADMIN_NAME
+            user.updated_at = datetime.now(timezone.utc)
+            print(f"Updated existing admin user: {ADMIN_EMAIL}")
+        else:
+            user = User(
+                user_id=f"admin_{int(datetime.now(timezone.utc).timestamp())}",
+                email=ADMIN_EMAIL,
+                password_hash=hashed_password,
+                name=ADMIN_NAME,
+                is_admin=True,
+                language="en",
+                created_at=datetime.now(timezone.utc),
+                updated_at=datetime.now(timezone.utc),
+            )
+            sa_db.session.add(user)
+            print(f"Created new admin user: {ADMIN_EMAIL}")
 
-        created = db.users.find_one(
-            {"email": ADMIN_EMAIL},
-            {"_id": 0, "email": 1, "name": 1, "is_admin": 1},
-        )
+        sa_db.session.commit()
 
-    print("admin_user", created)
-    print("plain_password", ADMIN_PASSWORD)
+        created = User.query.filter_by(email=ADMIN_EMAIL).first()
+        print("admin_user", {
+            "email": created.email,
+            "name": created.name,
+            "is_admin": created.is_admin,
+        })
+        print("plain_password", ADMIN_PASSWORD)
 
 
 if __name__ == "__main__":
