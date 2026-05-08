@@ -66,29 +66,8 @@ def compare_list():
 
         from utils.db import mongo
         try:
-            # Fallback wrapper for actual Semantic Atlas Search / Vector Search
-            atlas_results = list(mongo.db.products.aggregate([
-                {
-                    '': {
-                        'index': 'default',
-                        'text': {
-                            'query': search_query,
-                            'path': ['name', 'description', 'category'],
-                            'fuzzy': {'maxEdits': 1}
-                        }
-                    }
-                },
-                {'': query},
-                {'': per_page}
-            ]))
-            if len(atlas_results) > 0:
-                raw_products = atlas_results
-                total_products = len(raw_products)
-                total_pages = 1
-                page = 1
-                skip_amount = 0
-            else:
-                raise Exception('Fallback to regex')
+            # Atlas search not available with PostgreSQL - fallback to regex search
+            raise Exception('Fallback to regex')
         except Exception:
             total_products = products_model.count_products(product_query)
             total_pages = (total_products + per_page - 1) // per_page if total_products else 1

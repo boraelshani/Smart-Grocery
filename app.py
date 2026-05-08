@@ -6,7 +6,7 @@
 ║                                                                          ║
 ║  Key Features:                                                           ║
 ║  - Flask Web Server                                                      ║
-║  - MongoDB Integration (Production) with Fallback (Local)                ║
+║  - PostgreSQL via SQLAlchemy (Neon)                                       ║
 ║  - User Authentication                                                   ║
 ║  - Blueprints for Code Organization                                      ║
 ╚══════════════════════════════════════════════════════════════════════════╝
@@ -69,7 +69,6 @@ def ensure_venv():
 ensure_venv()
 
 from flask import Flask, jsonify, session, request
-import certifi
 from dotenv import load_dotenv, find_dotenv
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -88,14 +87,6 @@ else:
     # Inform the user if no configuration file was found (defaults will be used later).
     print('INFO: No .env file found in project root')
 
-# Ensure SSL_CERT_FILE is set for pymongo TLS if not already.
-# MongoDB Atlas (cloud version) requires secure connections using SSL/TLS.
-# certifi.where() provides the path to a bundle of trusted CA certificates.
-if not os.environ.get('SSL_CERT_FILE'):
-    os.environ['SSL_CERT_FILE'] = certifi.where()
-
-# No longer importing mongo
-# from utils.db import mongo, sanitize_uri
 
 # Short-lived in-memory cache for expensive navbar counters.
 _NAVBAR_CACHE_TTL_SEC = 20
@@ -123,34 +114,17 @@ app.config['ENABLE_LIST_PROMO_ENRICHMENT'] = os.environ.get('ENABLE_LIST_PROMO_E
 app.config['ENABLE_LIST_MARK_SEEN_ON_RENDER'] = os.environ.get('ENABLE_LIST_MARK_SEEN_ON_RENDER', 'false').lower() == 'true'
 
 # ═══════════════════════════════════════════════════════════════════════════
-# 3. MONGODB CONFIGURATION
+# 3. POSTGRESQL CONFIGURATION (via SQLAlchemy)
 # ═══════════════════════════════════════════════════════════════════════════
-# Retrieve the MongoDB connection string (URI) from environment variables.
-# Format: mongodb+srv://<username>:<password>@cluster.mongodb.net/database
-raw_uri = os.environ.get('MONGO_URI', 'mongodb://localhost:27017/smart_grocery')
-
-# Fetch the PostgreSQL URI from environment variables with a fallback (though Neon should always be defined in .env)
-raw_uri = os.environ.get('SQLALCHEMY_DATABASE_URI')
-if not raw_uri:
-    print("WARNING: SQLALCHEMY_DATABASE_URI is not set in the environment.")
-    raw_uri = "sqlite:///:memory:"
-
-app.config['SQLALCHEMY_DATABASE_URI'] = raw_uri
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+from utils.db import init_db
 
 try:
-    from models.postgres_models import db
-    db.init_app(app)
-    
-    with app.app_context():
-        # Verify the connection immediately
-        db.engine.connect()
-        print("INFO: PostgreSQL connection verified.")
+    init_db(app)
 except Exception as e:
-    print(f'WARNING: PostgreSQL initialization or connection failed: {e}')
+    print(f'WARNING: PostgreSQL initialization failed: {e}')
     print('INFO: Running in fallback mode.')
 
-# Now import the blueprints
+# Now import the blueprints (after DB initialization)
 from routes import main_bp, auth_bp, admin_bp, api_bp, compare_engine_bp, recipe_bp
 
 # Register blueprints - these organize routes into logical groups (Main, Auth, Admin)
@@ -162,9 +136,15 @@ app.register_blueprint(compare_engine_bp, url_prefix='/api/compare')
 app.register_blueprint(recipe_bp)
 
 
-
 @app.context_processor
 def inject_navbar_data():
+    """
+    Expose dynamic navbar data to all templates automatically.
+    
+    Returns:
+        dict: containing 'shopping_list_count' and 'unread_notifications_count'
+              available in every Jinja2 template.
+    """
     shopping_list_count = 0
     unread_notifications_count = 0
     current_user_nav = None
@@ -172,16 +152,19 @@ def inject_navbar_data():
     try:
         email = session.get('user')
         if email:
+            # Fast path: use very short cache to avoid repeating heavy DB reads
+            # on rapid refreshes and frequent AJAX-triggered page renders.
             cache_entry = _navbar_cache.get(email)
             now_ts = time.time()
             if cache_entry and cache_entry.get('expires_at', 0) > now_ts:
                 cached = cache_entry.get('value', {})
+                
                 try:
                     from utils.menu_data import get_mega_menu
                     mega_menu_data = get_mega_menu()
                 except Exception:
                     mega_menu_data = {"categories": {}, "brands": [], "images": {}, "fallback_image": ""}
-                
+                    
                 return {
                     'shopping_list_count': int(cached.get('shopping_list_count', 0)),
                     'unread_notifications_count': int(cached.get('unread_notifications_count', 0)),
@@ -190,38 +173,53 @@ def inject_navbar_data():
                     'mega_menu': mega_menu_data,
                 }
 
-            from models.postgres_models import db, User, ShoppingList
+            # Query user info from PostgreSQL
+            from models.postgres_models import User, Notification, ShoppingList, ListItem, db as sa_db
+
             user = User.query.filter_by(email=email).first()
+            user_dict = user.to_dict() if user else {}
 
-            if user:
-                display_name = (user.name or email.split('@')[0]).strip()
-                initials = ''.join(part[:1] for part in display_name.split()[:2]).upper() or display_name[:1].upper()
-                current_user_nav = {
-                    'email': user.email,
-                    'name': user.name or '',
-                    'display_name': display_name,
-                    'avatar': user.avatar or '',
-                    'initials': initials,
-                }
-                admin_emails = {e.strip().lower() for e in str(app.config.get('ADMIN_EMAILS', '')).split(',') if e.strip()}
-                is_admin_nav = (email.lower() in admin_emails)
+            display_name = (user_dict.get('name') or email.split('@')[0]).strip()
+            initials = ''.join(part[:1] for part in display_name.split()[:2]).upper() or display_name[:1].upper()
+            current_user_nav = {
+                'email': email,
+                'name': user_dict.get('name') or '',
+                'display_name': display_name,
+                'avatar': user_dict.get('avatar') or '',
+                'initials': initials,
+            }
 
-                # TODO: add notification model if added later
-                
-                # Fetch lists count
-                shopping_list_count = len(user.shopping_lists)
+            admin_emails = {e.strip().lower() for e in str(app.config.get('ADMIN_EMAILS', '')).split(',') if e.strip()}
+            is_admin_nav = bool(user_dict.get('is_admin')) or (email.lower() in admin_emails)
 
-                _navbar_cache[email] = {
-                    'expires_at': now_ts + _NAVBAR_CACHE_TTL_SEC,
-                    'value': {
-                        'shopping_list_count': shopping_list_count,
-                        'unread_notifications_count': unread_notifications_count,
-                        'current_user_nav': current_user_nav,
-                        'is_admin_nav': is_admin_nav,
-                    },
-                }
-    except Exception as e:
-        print(f"Navbar injection error: {e}")
+            from datetime import datetime, timedelta
+            cutoff = datetime.utcnow() - timedelta(days=7)
+            unread_notifications_count = Notification.query.filter(
+                Notification.user_email == email,
+                Notification.read == False,
+                Notification.created_at >= cutoff,
+            ).count()
+
+            # Count items marked as new across all of the user's lists
+            shopping_list_count = sa_db.session.query(sa_db.func.count(ListItem.id)).join(
+                ShoppingList, ShoppingList.list_id == ListItem.list_id
+            ).filter(
+                ShoppingList.user_id == email,
+                ListItem.is_new == True,
+            ).scalar() or 0
+
+            _navbar_cache[email] = {
+                'expires_at': now_ts + _NAVBAR_CACHE_TTL_SEC,
+                'value': {
+                    'shopping_list_count': shopping_list_count,
+                    'unread_notifications_count': unread_notifications_count,
+                    'current_user_nav': current_user_nav,
+                    'is_admin_nav': is_admin_nav,
+                },
+            }
+    except Exception:
+        # Fail silently to avoid breaking the entire page if notification count fails
+        pass
         
     try:
         from utils.menu_data import get_mega_menu
@@ -236,7 +234,6 @@ def inject_navbar_data():
         'is_admin_nav': is_admin_nav,
         'mega_menu': mega_menu_data,
     }
-
 
 
 # Template helper: return image URL as-is (processed image functionality removed)
@@ -260,48 +257,34 @@ def internal_error(error):
     return render_template('500.html'), 500
 
 
-# Health check endpoint to verify MongoDB connectivity (Equivalent to a Heartbeat)
-
+# Health check endpoint to verify PostgreSQL connectivity
 @app.route('/health')
 def health():
     try:
-        from models.postgres_models import db
-        db.engine.execute('SELECT 1')
-        return jsonify({'status': 'ok', 'postgres': 'connected'}), 200
+        from models.postgres_models import db as sa_db
+        sa_db.session.execute(sa_db.text('SELECT 1'))
+        return jsonify({'status': 'ok', 'db': 'connected'}), 200
     except Exception as e:
-        return jsonify({'status': 'error', 'postgres': 'disconnected', 'detail': str(e)}), 500
+        return jsonify({'status': 'error', 'db': 'disconnected', 'detail': str(e)}), 500
 
 
-
-@app.route('/debug-mongo')
-def debug_mongo():
+@app.route('/debug-db')
+def debug_db():
     """
-    Debug route to inspect MongoDB connection details.
+    Debug route to inspect PostgreSQL connection details.
     Useful for troubleshooting connection issues in different environments.
     """
-    # Return config and client info so we can tell which host/DB the app connected to
-    info = {'app_config_mongo_uri': app.config.get('MONGO_URI'), 'app_config_dbname': app.config.get('MONGO_DBNAME')}
+    info = {'database_url': (os.environ.get('DATABASE_URL') or '')[:50] + '...'}
     try:
-        if getattr(mongo, 'db', None) is not None:
-            info['mongo_db_name'] = getattr(mongo.db, 'name', None)
-            try:
-                # try to reach the server and show the client addresses
-                client = getattr(mongo, 'cx', None) or getattr(mongo, 'client', None) or getattr(mongo, '_client', None)
-                if client is None:
-                    try:
-                        client = mongo.db.client
-                    except Exception:
-                        client = None
-                if client is not None:
-                    try:
-                        # list hosts/servers
-                        info['client_info'] = str(getattr(client, 'address', getattr(client, 'hosts', getattr(client, 'nodes', None))))
-                    except Exception as ex:
-                        info['client_info_error'] = str(ex)
-            except Exception:
-                pass
+        from models.postgres_models import db as sa_db
+        result = sa_db.session.execute(sa_db.text('SELECT current_database(), current_user'))
+        row = result.fetchone()
+        info['database_name'] = row[0] if row else None
+        info['database_user'] = row[1] if row else None
+        info['status'] = 'connected'
     except Exception as e:
         info['error'] = str(e)
+        info['status'] = 'disconnected'
     return jsonify(info)
 
 

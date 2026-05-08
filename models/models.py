@@ -2,14 +2,14 @@
 ═══════════════════════════════════════════════════════════════════════════
 FALLBACK DATA MODELS & HELPER FUNCTIONS
 ═══════════════════════════════════════════════════════════════════════════
-In-memory data storage for development/testing when MongoDB is unavailable.
-Also provides helper functions that work with both MongoDB and fallback data.
+In-memory data storage for development/testing when PostgreSQL is unavailable.
+Also provides helper functions that work with both DB and fallback data.
 """
 
 # ═══════════════════════════════════════════════════════════════════════════
 # FALLBACK DATA STRUCTURES (In-Memory Storage)
 # ═══════════════════════════════════════════════════════════════════════════
-# These are used when MongoDB connection is unavailable or during development
+# These are used when DB connection is unavailable or during development
 
 stores = []  # List of store documents
 products = []  # List of product documents
@@ -17,15 +17,13 @@ users = {}  # Dictionary mapping email -> user document
 featured_deals = []  # List of featured deal documents
 
 # ═══════════════════════════════════════════════════════════════════════════
-# DATABASE CONNECTION SETUP
+# DATABASE CONNECTION CHECK
 # ═══════════════════════════════════════════════════════════════════════════
-# Try to import MongoDB instance, fallback to in-memory mode if unavailable
-
 try:
-    from utils.db import mongo
+    from models.postgres_models import db as sa_db
     HAS_DB = True
 except Exception:
-    mongo = None
+    sa_db = None
     HAS_DB = False
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -33,13 +31,22 @@ except Exception:
 # ═══════════════════════════════════════════════════════════════════════════
 
 def get_db_info():
-    """Retrieve database info and collection counts"""
-    if HAS_DB and mongo is not None and getattr(mongo, 'db', None) is not None:
-        db = mongo.db
-        cols = db.list_collection_names()
-        counts = {c: db[c].count_documents({}) for c in cols}
-        return {'db_name': getattr(db, 'name', 'unknown'), 'collections': counts}
-    
+    """Retrieve database info and table counts."""
+    if HAS_DB and sa_db is not None:
+        try:
+            from models.postgres_models import Product, Store, User, FeaturedDeal
+            return {
+                'db_name': 'postgresql',
+                'collections': {
+                    'products': Product.query.count(),
+                    'stores': Store.query.count(),
+                    'featured_deals': FeaturedDeal.query.count(),
+                    'users': User.query.count(),
+                },
+            }
+        except Exception:
+            pass
+
     # Fallback info
     return {
         'db_name': 'in-memory-fallback',
@@ -56,25 +63,18 @@ def get_user_by_email(email):
     """
     Retrieve user account by email address.
     
-    Dual-mode: Uses MongoDB when available, falls back to in-memory dict.
-    
-    Args:
-        email: User email address
-    
-    Returns:
-        User document dictionary or None
+    Dual-mode: Uses PostgreSQL when available, falls back to in-memory dict.
     """
     if not email:
         return None
-    if HAS_DB and mongo is not None and getattr(mongo, 'db', None) is not None:
-        doc = mongo.db.users.find_one({'email': email})
-        if not doc:
-            return None
-        # Convert ObjectId to string for templates/logic
-        doc = dict(doc)
-        if '_id' in doc:
-            doc['id'] = str(doc['_id'])
-        return doc
+    if HAS_DB:
+        try:
+            from models.postgres_models import User
+            user = User.query.filter_by(email=email).first()
+            if user:
+                return user.to_dict()
+        except Exception:
+            pass
     # Fallback: use in-memory dictionary
     return users.get(email)
 
@@ -83,17 +83,15 @@ def create_user(user_doc):
     """
     Create a new user account.
     
-    Dual-mode: Inserts into MongoDB when available, otherwise stores in-memory.
-    
-    Args:
-        user_doc: Dictionary with user data (email, name, password_hash, etc.)
-    
-    Returns:
-        User ID (string) - ObjectId from MongoDB or email from fallback storage
+    Dual-mode: Inserts into PostgreSQL when available, otherwise stores in-memory.
     """
-    if HAS_DB and mongo is not None and getattr(mongo, 'db', None) is not None:
-        res = mongo.db.users.insert_one(user_doc)
-        return str(res.inserted_id)
+    if HAS_DB:
+        try:
+            from models.users_model import users_model
+            uid = users_model.create_user(user_doc)
+            return uid
+        except Exception:
+            pass
     # Fallback: add to in-memory dictionary
     users[user_doc['email']] = user_doc
     return user_doc['email']
@@ -102,20 +100,12 @@ def create_user(user_doc):
 def add_deal_to_user_shopping_list(email, deal):
     """
     Add a deal/product to the user's shopping list.
-    
-    Args:
-        email: User email address
-        deal: Deal dictionary or product name string
-    
-    Returns:
-        Boolean indicating success of the operation
     """
     if not email or not deal:
         return False
     # Prepare a simple representation to store in the shopping_list
     item = None
     if isinstance(deal, dict):
-        # Keep useful fields from the deal object
         item = {
             'name': deal.get('title') or deal.get('name'),
             'price': deal.get('price'),
@@ -125,17 +115,21 @@ def add_deal_to_user_shopping_list(email, deal):
     else:
         item = str(deal)
 
-    if HAS_DB and mongo is not None and getattr(mongo, 'db', None) is not None:
+    if HAS_DB:
         try:
-            res = mongo.db.users.update_one({'email': email}, {'$push': {'shopping_list': item}}, upsert=True)
-            return (getattr(res, 'modified_count', 0) > 0) or (getattr(res, 'upserted_id', None) is not None)
+            from models.users_model import get_user_lists, add_item_to_list, create_shopping_list, set_active_list
+            lists_data = get_user_lists(email)
+            active_id = lists_data.get('active_list_id')
+            if not active_id:
+                active_id = create_shopping_list(email, 'My List')
+                set_active_list(email, active_id)
+            return add_item_to_list(email, active_id, item)
         except Exception:
             return False
 
     # fallback: in-memory users dict
     u = users.get(email)
     if not u:
-        # create a minimal user doc in-memory
         users[email] = {'email': email, 'password': '', 'name': email, 'shopping_list': [], 'total_cost': 0.0}
         u = users[email]
     try:
@@ -146,28 +140,25 @@ def add_deal_to_user_shopping_list(email, deal):
 
 
 def claim_featured_deal_by_id(deal_id_or_title, email=None):
-    """Mark a featured deal as claimed. If DB available, increment a 'claims' counter and optionally add claimant email.
-    deal_id_or_title may be an ObjectId string or a title string. Returns True on success (or False)."""
+    """Mark a featured deal as claimed."""
     if not deal_id_or_title:
         return False
     # DB path
-    if HAS_DB and mongo is not None and getattr(mongo, 'db', None) is not None:
+    if HAS_DB:
         try:
-            # try by _id first
-            from bson import ObjectId
-            query = {}
+            from models.postgres_models import FeaturedDeal
+            deal = None
             try:
-                query = {'_id': ObjectId(str(deal_id_or_title))}
-            except Exception:
-                query = {'title': str(deal_id_or_title)}
-
-            update = {'$inc': {'claims': 1}}
-            if email:
-                update['$push'] = {'claimed_by': email}
-            res = mongo.db.featured_deals.update_one(query, update, upsert=False)
-            return getattr(res, 'modified_count', 0) > 0
+                deal = FeaturedDeal.query.get(int(deal_id_or_title))
+            except (ValueError, TypeError):
+                deal = FeaturedDeal.query.filter_by(title=str(deal_id_or_title)).first()
+            if deal:
+                deal.claims = (deal.claims or 0) + 1
+                sa_db.session.commit()
+                return True
         except Exception:
-            return False
+            pass
+        return False
 
     # fallback: update in-memory featured_deals list by matching title
     for d in featured_deals:
@@ -177,4 +168,3 @@ def claim_featured_deal_by_id(deal_id_or_title, email=None):
                 d.setdefault('claimed_by', []).append(email)
             return True
     return False
-

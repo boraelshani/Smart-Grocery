@@ -1,12 +1,16 @@
 #!/usr/bin/env python3
-"""Grant admin privileges to a user by email in MongoDB users collection."""
+"""Grant admin privileges to a user by email in PostgreSQL."""
 
 import os
 import sys
+from datetime import datetime, timezone
 
-import certifi
-from dotenv import load_dotenv
-from pymongo import MongoClient
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
+
+from app import app
+from models.postgres_models import db as sa_db, User
 
 
 def main():
@@ -15,20 +19,18 @@ def main():
         raise SystemExit(1)
 
     email = sys.argv[1].strip().lower()
-    load_dotenv()
 
-    uri = os.environ.get("MONGO_URI") or os.environ.get("MONGODB_URI") or "mongodb://localhost:27017/smart_grocery"
-    db_name = os.environ.get("DATABASE_NAME") or "smart_grocery"
+    with app.app_context():
+        user = User.query.filter_by(email=email).first()
+        if not user:
+            print(f"No user found with email: {email}")
+            raise SystemExit(2)
 
-    client = MongoClient(uri, tlsCAFile=certifi.where(), serverSelectionTimeoutMS=8000)
-    db = client[db_name]
+        user.is_admin = True
+        user.updated_at = datetime.now(timezone.utc)
+        sa_db.session.commit()
 
-    result = db.users.update_one({"email": email}, {"$set": {"is_admin": True}}, upsert=False)
-    if result.matched_count == 0:
-        print(f"No user found with email: {email}")
-        raise SystemExit(2)
-
-    print(f"Admin granted for: {email}")
+        print(f"Admin granted for: {email}")
 
 
 if __name__ == "__main__":

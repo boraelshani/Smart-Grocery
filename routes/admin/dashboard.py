@@ -3,26 +3,26 @@ from . import admin_bp
 from core.auth import require_admin
 from utils.db import get_db
 from core.utils import now_utc, generate_id, to_bool
-from services.product_service import ProductService
+from models.postgres_models import db, Store, Brand, Category, Product, User, Feedback, CommunityPriceReport
 
-def _dashboard_payload(db):
-    collections = ["stores", "brands", "categories", "products", "users", "feedback", "community_price_reports"]
-    counts = {name: db[name].count_documents({}) for name in collections}
-    stats = {
-        "total_products": counts.get("products", 0),
-        "total_stores": counts.get("stores", 0),
-        "total_users": counts.get("users", 0),
-        "pending_feedback": db.feedback.count_documents({"resolved": {"$ne": True}}),
+def _dashboard_payload():
+    counts = {
+        "stores": Store.query.count(),
+        "brands": Brand.query.count(),
+        "categories": Category.query.count(),
+        "products": Product.query.count(),
+        "users": User.query.count(),
+        "feedback": Feedback.query.count(),
+        "community_price_reports": CommunityPriceReport.query.count()
     }
-    recent_feedback = list(db.feedback.find().sort("timestamp", -1).limit(5))
-    
-    recent_reports = list(db.community_price_reports.find().sort("created_at", -1).limit(5))
-    for r in recent_reports:
-        # Convert ObjectId & datetime to strings for template rendering just in case.
-        if '_id' in r:
-            r['_id'] = str(r['_id'])
-        if 'created_at' in r:
-            r['created_at'] = r['created_at'].strftime('%Y-%m-%d %H:%M:%S') if hasattr(r['created_at'], 'strftime') else str(r['created_at'])
+    stats = {
+        "total_products": counts["products"],
+        "total_stores": counts["stores"],
+        "total_users": counts["users"],
+        "pending_feedback": Feedback.query.filter_by(status="pending").count(),
+    }
+    recent_feedback = [f.to_dict() for f in Feedback.query.order_by(Feedback.created_at.desc()).limit(5).all()]
+    recent_reports = [r.to_dict() for r in CommunityPriceReport.query.order_by(CommunityPriceReport.created_at.desc()).limit(5).all()]
 
     return {"stats": stats, "recent_feedback": recent_feedback, "recent_reports": recent_reports, "counts": counts}
 
@@ -31,8 +31,8 @@ def _dashboard_payload(db):
 def admin_dashboard():
     allowed, result = require_admin()
     if not allowed: return result
-    db = get_db()
-    if db is None:
-        return render_template("admin_dashboard.html", error="Database unavailable", data={})
-    data = _dashboard_payload(db)
-    return render_template("admin_dashboard.html", data=data, user_email=result)
+    try:
+        data = _dashboard_payload()
+        return render_template("admin_dashboard.html", data=data, user_email=result)
+    except Exception as e:
+        return render_template("admin_dashboard.html", error=f"Database error: {str(e)}", data={})
