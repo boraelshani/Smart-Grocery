@@ -743,7 +743,6 @@ def bulk_delete_products():
             return jsonify({'error': 'IDs must be a list'}), 400
             
         from models.postgres_models import db, Product, Category, Store, Brand, Offer, User, ShoppingList, ListItem, FeaturedDeal
-    pass
         object_ids = []
         for id_str in ids:
             try:
