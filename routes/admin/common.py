@@ -2,7 +2,7 @@ from flask import render_template, request, session, redirect, url_for, jsonify,
 from . import admin_bp
 from models.users_model import get_user_by_email
 from utils.category_mapper import CategoryMapper
-from utils.db import get_db
+from utils.mongo_mock import MockDb
 import json
 import re
 import uuid
@@ -731,7 +731,7 @@ def reject_scan(barcode):
 def bulk_delete_products():
     from flask import request, jsonify
     from bson import ObjectId
-    from utils.db import get_db
+    from utils.mongo_mock import MockDb
     
     try:
         data = request.get_json()
