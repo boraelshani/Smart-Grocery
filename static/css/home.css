@@ -1,0 +1,1692 @@
+/*
+╔══════════════════════════════════════════════════════════════════════════════╗
+║  SMART GROCERY — HOME PAGE STYLESHEET                                        ║
+║  All home-page-specific styles. Requires global.css, cards.css,              ║
+║  Bootstrap 5, and Bootstrap Icons to be loaded first.                        ║
+║                                                                              ║
+║  Design tokens (from global.css):                                            ║
+║    --premium-purple : #7c3aed                                                ║
+║    --premium-indigo : #6366f1                                                ║
+║    --premium-violet : #8b5cf6                                                ║
+║    --premium-dark   : #1e1b4b                                                ║
+║                                                                              ║
+║  SECTIONS                                                                    ║
+║   1. Trust Bar                                                               ║
+║   2. Bento Hero Wrapper                                                      ║
+║   3. Bento Grid                                                              ║
+║   4. Stats Section                                                           ║
+║   5. How It Works                                                            ║
+║   6. General Section Styles                                                  ║
+║   7. Scroll Container & Arrows                                               ║
+║   8. Category Cards (home override)                                          ║
+║   9. Product Cards (home grid override)                                      ║
+║  10. Newsletter Section                                                      ║
+║  11. Footer                                                                  ║
+║  12. Entrance Animations                                                     ║
+║  13. Responsive Breakpoints                                                  ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+*/
+
+/* ============================================================================
+   1. TRUST BAR
+   A thin top strip that communicates social proof / key value props.
+   ============================================================================ */
+
+.trust-bar {
+    margin-top: 68px; /* push below the fixed navbar (~68px tall) */
+    padding: 7px 0;
+    font-size: 0.8rem;
+    color: #6d28d9;
+    background: linear-gradient(90deg, #ede9fe, #f5f3ff, #ede9fe);
+    border-bottom: 1px solid rgba(139, 92, 246, 0.15);
+}
+
+.trust-bar-inner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1.75rem;
+    flex-wrap: wrap;
+}
+
+.trust-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+}
+
+.trust-item i {
+    color: #7c3aed;
+    font-size: 0.85rem;
+}
+
+.trust-divider {
+    color: #c4b5fd;
+}
+
+/* ============================================================================
+   2. BENTO HERO WRAPPER
+   Full-bleed purple hero area with floating orbs and glassmorphism elements.
+   ============================================================================ */
+
+/* ── Wrapper ── */
+.bento-hero-wrapper {
+    background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+    padding-top: 140px; /* pushes content below the fixed navbar (~68px) + breathing room */
+    padding-bottom: 4rem;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Subtle radial overlay for depth */
+.bento-hero-wrapper::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(
+            ellipse 80% 60% at 70% 40%,
+            rgba(99, 102, 241, 0.18) 0%,
+            transparent 70%
+        ),
+        radial-gradient(
+            ellipse 50% 50% at 20% 80%,
+            rgba(217, 70, 239, 0.1) 0%,
+            transparent 65%
+        );
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* ── Floating orbs ── */
+@keyframes orbFloat {
+    0% {
+        transform: translate(0, 0) scale(1);
+    }
+    100% {
+        transform: translate(20px, -30px) scale(1.08);
+    }
+}
+
+.bento-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(60px);
+    pointer-events: none;
+    animation: orbFloat 12s ease-in-out infinite alternate;
+}
+
+.bento-orb-1 {
+    width: 350px;
+    height: 350px;
+    background: rgba(139, 92, 246, 0.15);
+    top: -80px;
+    right: 5%;
+}
+
+.bento-orb-2 {
+    width: 250px;
+    height: 250px;
+    background: rgba(99, 102, 241, 0.12);
+    bottom: 0;
+    left: 10%;
+    animation-delay: -4s;
+}
+
+.bento-orb-3 {
+    width: 180px;
+    height: 180px;
+    background: rgba(217, 70, 239, 0.1);
+    top: 40%;
+    left: 40%;
+    animation-delay: -8s;
+}
+
+/* ── Hero text ── */
+.bento-headline {
+    font-size: 3.6rem;
+    font-weight: 900;
+    letter-spacing: -0.04em;
+    line-height: 1.1;
+    color: #ffffff;
+    position: relative;
+    z-index: 1;
+}
+
+.bento-headline .grad-text {
+    background: linear-gradient(90deg, #fbbf24, #f59e0b);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.bento-subline {
+    font-size: 1.15rem;
+    color: rgba(255, 255, 255, 0.9);
+    max-width: 480px;
+    line-height: 1.6;
+    margin-bottom: 2rem;
+    position: relative;
+    z-index: 1;
+}
+
+.bento-cta-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 2rem;
+    position: relative;
+    z-index: 1;
+}
+
+/* ── CTA buttons ── */
+.bento-btn-primary {
+    background: #ffffff;
+    color: #7c3aed;
+    border: none;
+    padding: 14px 32px;
+    border-radius: 50px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.18);
+    transition:
+        transform 0.25s ease,
+        box-shadow 0.25s ease,
+        color 0.2s ease;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.bento-btn-primary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.28);
+    color: #6d28d9;
+    text-decoration: none;
+}
+
+.bento-btn-secondary {
+    background: rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    padding: 14px 32px;
+    border-radius: 50px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    transition:
+        background 0.25s ease,
+        transform 0.25s ease;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.bento-btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: translateY(-2px);
+    color: #ffffff;
+    text-decoration: none;
+}
+
+/* ── Hero search bar ── */
+.hero-search-bar {
+    background: rgba(255, 255, 255, 0.12);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    border: 1.5px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50px;
+    padding: 6px 8px 6px 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    max-width: 420px;
+    transition:
+        border-color 0.2s ease,
+        background 0.2s ease,
+        box-shadow 0.2s ease;
+    position: relative;
+    z-index: 1;
+}
+
+.hero-search-bar:focus-within {
+    border-color: rgba(255, 255, 255, 0.7);
+    background: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.12);
+}
+
+.hero-search-bar input {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #ffffff;
+    font-size: 0.95rem;
+    flex: 1;
+    min-width: 0;
+}
+
+.hero-search-bar input::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.hero-search-btn {
+    background: #ffffff;
+    color: #7c3aed;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 40px;
+    font-weight: 700;
+    font-size: 0.88rem;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition:
+        background 0.2s ease,
+        transform 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.hero-search-btn:hover {
+    background: #f5f3ff;
+    transform: scale(1.02);
+}
+
+/* ============================================================================
+   3. BENTO GRID
+   Three-column asymmetric card grid beneath the hero copy.
+   ============================================================================ */
+
+.bento-grid {
+    display: grid;
+    grid-template-columns: 1.6fr 1fr 1fr;
+    gap: 16px;
+    position: relative;
+    z-index: 1;
+}
+
+/* ── Base bento card ── */
+.bento-card {
+    border-radius: 24px;
+    overflow: hidden;
+    position: relative;
+    transition:
+        transform 0.35s ease,
+        box-shadow 0.35s ease;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.bento-card:hover {
+    transform: translateY(-6px);
+    text-decoration: none;
+}
+
+/* ── Arrow badge (top-right of each card) ── */
+.bento-card-arrow {
+    position: absolute;
+    top: 1.25rem;
+    right: 1.25rem;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    transition:
+        background 0.2s ease,
+        transform 0.2s ease;
+    z-index: 3;
+}
+
+.bento-card:hover .bento-card-arrow {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translate(2px, -2px);
+}
+
+/* ── Compare card (large, spans 2 rows) ── */
+.bento-card-compare {
+    grid-column: 1;
+    grid-row: 1 / 3;
+    background: linear-gradient(160deg, #1e1b4b 0%, #312e81 60%, #2d1b69 100%);
+    box-shadow: 0 12px 40px rgba(30, 27, 75, 0.35);
+    min-height: 480px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 2rem;
+}
+
+.bento-card-compare:hover {
+    box-shadow: 0 20px 56px rgba(30, 27, 75, 0.5);
+}
+
+.compare-image {
+    position: absolute;
+    top: 1.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    max-width: 320px;
+    transition: transform 0.35s ease;
+    z-index: 1;
+}
+
+.bento-card-compare:hover .compare-image {
+    transform: translateX(-50%) scale(1.05);
+}
+
+/* ── Recipe card ── */
+.bento-card-recipe {
+    grid-column: 2;
+    grid-row: 1;
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    box-shadow: 0 8px 28px rgba(5, 150, 105, 0.3);
+    min-height: 200px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+
+/* ── Lists card ── */
+.bento-card-lists {
+    grid-column: 3;
+    grid-row: 1;
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+    box-shadow: 0 8px 28px rgba(249, 115, 22, 0.3);
+    min-height: 200px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+
+/* ── Shared lists card (wide bottom) ── */
+.bento-card-shared {
+    grid-column: 2 / 4;
+    grid-row: 2;
+    background: linear-gradient(135deg, #7c3aed 0%, #6366f1 100%);
+    box-shadow: 0 8px 28px rgba(124, 58, 237, 0.3);
+    min-height: 200px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+
+/* ── Chip label inside bento cards ── */
+.bento-chip {
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.2);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    color: #ffffff;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    padding: 5px 12px;
+    border-radius: 20px;
+    margin-bottom: 0.75rem;
+    width: fit-content;
+}
+
+/* ── Card text ── */
+.bento-card-title {
+    font-size: 1.5rem;
+    font-weight: 900;
+    color: #ffffff;
+    line-height: 1.2;
+    position: relative;
+    z-index: 2;
+}
+
+.bento-card-compare .bento-card-title {
+    font-size: 2rem;
+}
+
+.bento-card-desc {
+    font-size: 0.88rem;
+    color: rgba(255, 255, 255, 0.75);
+    margin-top: 0.35rem;
+    position: relative;
+    z-index: 2;
+}
+
+/* ── Bento card decorations ── */
+
+/* Recipe floating emoji block */
+@keyframes recipeFloat {
+    0%,
+    100% {
+        transform: translateY(0) rotate(-3deg);
+    }
+    50% {
+        transform: translateY(-8px) rotate(3deg);
+    }
+}
+
+.recipe-visual {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    width: 80px;
+    height: 80px;
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.8rem;
+    animation: recipeFloat 4s ease-in-out infinite;
+    z-index: 2;
+}
+
+/* Ingredient dots (left side of recipe card) */
+.recipe-ingredients {
+    position: absolute;
+    top: 0.8rem;
+    left: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    z-index: 2;
+}
+
+@keyframes riBounce {
+    0%,
+    100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.15);
+    }
+}
+
+.ri-dot {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    animation: riBounce 3s ease-in-out infinite;
+}
+
+.ri-dot:nth-child(2) {
+    animation-delay: 0.5s;
+}
+.ri-dot:nth-child(3) {
+    animation-delay: 1s;
+}
+
+/* Lists card visual items */
+.lists-visual {
+    position: absolute;
+    top: 0.8rem;
+    right: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    z-index: 2;
+}
+
+.lv-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    padding: 5px 10px;
+    font-size: 0.72rem;
+    color: rgba(255, 255, 255, 0.85);
+    font-weight: 600;
+}
+
+.lv-check {
+    width: 14px;
+    height: 14px;
+    border-radius: 4px;
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    flex-shrink: 0;
+}
+
+.lv-check.done {
+    background: #fbbf24;
+    border-color: #fbbf24;
+}
+
+/* Shared card avatars */
+.shared-visual {
+    position: absolute;
+    top: 1rem;
+    right: 1.5rem;
+    display: flex;
+    align-items: center;
+    z-index: 2;
+}
+
+.sv-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    font-weight: 800;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    margin-left: -10px;
+}
+
+.sv-avatar:first-child {
+    margin-left: 0;
+}
+.sv-a1 {
+    background: #3b82f6;
+}
+.sv-a2 {
+    background: #f43f5e;
+}
+.sv-a3 {
+    background: #f59e0b;
+}
+.sv-a4 {
+    background: #10b981;
+}
+
+/* Live pulse dot */
+@keyframes livePulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.6);
+    }
+    50% {
+        box-shadow: 0 0 0 6px rgba(52, 211, 153, 0.2);
+    }
+    100% {
+        box-shadow: 0 0 0 10px rgba(52, 211, 153, 0);
+    }
+}
+
+.sv-live-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #34d399;
+    margin-left: 8px;
+    animation: livePulse 2s ease-in-out infinite;
+}
+
+/* Synced item pills (bottom-right of shared card) */
+.sv-sync-items {
+    position: absolute;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    display: flex;
+    gap: 6px;
+    z-index: 2;
+}
+
+.sv-item-pill {
+    background: rgba(255, 255, 255, 0.15);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    padding: 4px 10px;
+    font-size: 0.7rem;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: rgba(255, 255, 255, 0.85);
+}
+
+/* ============================================================================
+   4. STATS SECTION
+   Key metrics displayed in a horizontal card row.
+   ============================================================================ */
+
+.stats-section {
+    padding: 3rem 0;
+    background: #ffffff;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.stat-card {
+    background: #fafafa;
+    border: 1px solid #f1f5f9;
+    border-radius: 20px;
+    padding: 2rem 1.5rem;
+    text-align: center;
+    transition:
+        transform 0.3s ease,
+        box-shadow 0.3s ease,
+        border-color 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Top gradient accent bar — visible only on hover */
+.stat-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #7c3aed, #6366f1);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 12px 36px rgba(124, 58, 237, 0.1);
+    border-color: #ddd6fe;
+}
+
+.stat-card:hover::before {
+    opacity: 1;
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, #f5f3ff, #ede9fe);
+    color: #7c3aed;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+    margin: 0 auto 1rem;
+    transition:
+        background 0.3s ease,
+        color 0.3s ease,
+        transform 0.3s ease;
+}
+
+.stat-card:hover .stat-icon {
+    background: linear-gradient(135deg, #7c3aed, #6366f1);
+    color: #ffffff;
+    transform: scale(1.08) rotate(-4deg);
+}
+
+.stat-number {
+    font-size: 2.4rem;
+    font-weight: 900;
+    color: #1e1b4b;
+    letter-spacing: -0.05em;
+    line-height: 1;
+    margin-bottom: 0.35rem;
+}
+
+.stat-label {
+    font-size: 0.82rem;
+    color: #64748b;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 0;
+}
+
+/* ============================================================================
+   5. HOW IT WORKS
+   Step-by-step explainer with connected icon circles.
+   ============================================================================ */
+
+.how-section {
+    padding: 5.5rem 0;
+    background: linear-gradient(180deg, #f8f7ff 0%, #ffffff 100%);
+}
+
+.how-badge {
+    display: inline-flex;
+    align-items: center;
+    background: #ede9fe;
+    color: #7c3aed;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-size: 0.78rem;
+    padding: 6px 16px;
+    border-radius: 50px;
+    margin-bottom: 1rem;
+}
+
+.how-title {
+    font-size: 2.8rem;
+    font-weight: 900;
+    color: #1e1b4b;
+    letter-spacing: -0.04em;
+    line-height: 1.15;
+}
+
+.how-subtitle {
+    font-size: 1.1rem;
+    color: #64748b;
+    max-width: 520px;
+    margin: 0.75rem auto 0;
+    line-height: 1.6;
+}
+
+/* Steps row with connecting line */
+.how-steps-row {
+    display: flex;
+    align-items: flex-start;
+    position: relative;
+    margin-top: 3.5rem;
+}
+
+/* Horizontal gradient connector line */
+.how-steps-row::before {
+    content: "";
+    position: absolute;
+    top: 45px; /* vertically centred with the 90px icon circles */
+    left: 16.67%;
+    width: 66.67%;
+    height: 2px;
+    background: linear-gradient(90deg, #ddd6fe, #7c3aed 50%, #ddd6fe);
+    z-index: 0;
+}
+
+.how-step {
+    flex: 1;
+    text-align: center;
+    position: relative;
+    padding: 0 1.5rem;
+    z-index: 1;
+}
+
+/* Icon wrap */
+.how-step-icon-wrap {
+    width: 90px;
+    height: 90px;
+    margin: 0 auto 1.5rem;
+    position: relative;
+}
+
+.how-step-icon-bg {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    color: #ffffff;
+    position: relative;
+    z-index: 1;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    transition:
+        transform 0.3s ease,
+        box-shadow 0.3s ease;
+}
+
+.how-step:hover .how-step-icon-bg {
+    transform: translateY(-5px) scale(1.05);
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.2);
+}
+
+/* Step number badge */
+.how-step-number {
+    position: absolute;
+    bottom: -5px;
+    right: -5px;
+    width: 28px;
+    height: 28px;
+    background: #ffffff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 900;
+    color: #1e1b4b;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    border: 2px solid #f1f5f9;
+    z-index: 2;
+}
+
+.how-step-title {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: #1e1b4b;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.5rem;
+}
+
+.how-step-desc {
+    font-size: 0.92rem;
+    color: #64748b;
+    line-height: 1.6;
+    max-width: 200px;
+    margin: 0 auto;
+}
+
+/* ============================================================================
+   6. GENERAL SECTION STYLES
+   Reusable wrappers used throughout the home page.
+   ============================================================================ */
+
+.home-section {
+    padding: 3.5rem 0;
+}
+
+.home-section-alt {
+    padding: 3.5rem 0;
+    background: #f8f7ff;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 2rem;
+    gap: 1rem;
+}
+
+.section-title {
+    font-size: 2rem;
+    font-weight: 900;
+    color: #1e1b4b;
+    letter-spacing: -0.04em;
+    margin-bottom: 0.35rem;
+    line-height: 1.1;
+}
+
+.section-subtitle {
+    font-size: 0.98rem;
+    color: #64748b;
+    font-weight: 500;
+    margin-bottom: 0;
+}
+
+.view-all-btn {
+    background: #f1f5f9;
+    color: #1e1b4b;
+    padding: 10px 22px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    border: 1px solid #e2e8f0;
+    transition:
+        background 0.2s ease,
+        color 0.2s ease,
+        transform 0.2s ease,
+        border-color 0.2s ease;
+    white-space: nowrap;
+    flex-shrink: 0;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.view-all-btn:hover {
+    background: #7c3aed;
+    color: #ffffff;
+    border-color: #7c3aed;
+    transform: translateX(3px);
+    text-decoration: none;
+}
+
+/* ============================================================================
+   7. SCROLL CONTAINER & ARROWS
+   Horizontal scroll area with navigation arrow overlays.
+   ============================================================================ */
+
+.scroll-container {
+    position: relative;
+    margin: 0 -15px;
+    padding: 10px 15px;
+}
+
+.scroll-wrapper {
+    display: flex;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    gap: 20px;
+    padding: 10px 5px 20px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.scroll-wrapper::-webkit-scrollbar {
+    display: none;
+}
+
+/* Arrow buttons */
+.scroll-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    transition:
+        background 0.2s ease,
+        color 0.2s ease,
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+    color: #7c3aed;
+}
+
+.scroll-arrow:hover {
+    background: #7c3aed;
+    color: #ffffff;
+    transform: translateY(-50%) scale(1.08);
+    box-shadow: 0 6px 20px rgba(124, 58, 237, 0.25);
+}
+
+.scroll-arrow.left {
+    left: -8px;
+}
+.scroll-arrow.right {
+    right: -8px;
+}
+
+/* ============================================================================
+   8. CATEGORY CARDS (home page overrides)
+   Taller, more polished cards with gradient hover overlay.
+   ============================================================================ */
+
+.category-card {
+    min-width: 185px;
+    height: 210px;
+    background: #ffffff;
+    border: 1.5px solid #f1f5f9;
+    border-radius: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    transition:
+        transform 0.3s ease,
+        box-shadow 0.3s ease,
+        border-color 0.3s ease;
+    padding: 1rem;
+    position: relative;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+/* Gradient overlay on hover */
+.category-card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        135deg,
+        rgba(124, 58, 237, 0.06),
+        rgba(99, 102, 241, 0.08)
+    );
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    border-radius: inherit;
+}
+
+.category-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 32px rgba(124, 58, 237, 0.12);
+    border-color: #c4b5fd;
+    text-decoration: none;
+}
+
+.category-card:hover::after {
+    opacity: 1;
+}
+
+.category-image-wrapper {
+    width: 120px;
+    height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 0.75rem;
+    border-radius: 16px;
+    background: transparent;
+    padding: 8px;
+    transition: transform 0.3s ease;
+    position: relative;
+    z-index: 1;
+}
+
+.category-card:hover .category-image-wrapper {
+    transform: scale(1.08);
+}
+
+.category-image-wrapper img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    mix-blend-mode: multiply; /* makes white PNG backgrounds transparent */
+}
+
+.category-name {
+    font-weight: 700;
+    color: #1e1b4b;
+    font-size: 0.88rem;
+    text-align: center;
+    line-height: 1.3;
+    position: relative;
+    z-index: 1;
+    transition: color 0.2s ease;
+}
+
+.category-card:hover .category-name {
+    color: #7c3aed;
+}
+
+.category-fallback-icon {
+    position: relative;
+    z-index: 1;
+}
+
+/* ============================================================================
+   9. PRODUCT CARDS — HOME GRID OVERRIDE
+   Removes the fixed min/max-width set in cards.css so cards fill Bootstrap
+   col-lg-3 cells correctly in the grid layout.
+   ============================================================================ */
+
+.product-card-horizontal {
+    /* Override cards.css fixed widths for grid usage */
+    min-width: unset !important;
+    max-width: unset !important;
+
+    background: #ffffff;
+    border-radius: 20px;
+    border: 1.5px solid #f1f5f9;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition:
+        transform 0.35s ease,
+        box-shadow 0.35s ease,
+        border-color 0.35s ease;
+    position: relative;
+    height: 100%;
+}
+
+.product-card-horizontal:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 16px 40px rgba(124, 58, 237, 0.12);
+    border-color: #ddd6fe;
+}
+
+/* Image area */
+.card-image-wrapper {
+    width: 100%;
+    height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 30px;
+    background: #fafafa;
+    position: relative;
+}
+
+.card-image-wrapper img {
+    max-height: 100%;
+    max-width: 100%;
+    object-fit: contain;
+    transition: transform 0.4s ease;
+}
+
+.product-card-horizontal:hover .card-image-wrapper img {
+    transform: scale(1.08);
+}
+
+/* Card body */
+.product-card-body {
+    padding: 1.25rem 1.5rem 1.5rem;
+    background: #ffffff;
+    border-top: 1px solid #f8f8f8;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.product-name {
+    font-size: 1rem;
+    font-weight: 800;
+    color: #1e1b4b;
+    margin-bottom: 0.6rem;
+    line-height: 1.35;
+}
+
+.product-price {
+    font-size: 1.4rem;
+    font-weight: 900;
+    color: #7c3aed;
+    letter-spacing: -0.04em;
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    margin-bottom: 0.25rem;
+}
+
+.product-price small {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #94a3b8;
+}
+
+.product-store {
+    font-size: 0.82rem;
+    color: #94a3b8;
+    font-weight: 600;
+}
+
+/* Discount badge (top-left) */
+.discount-badge {
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: #ffffff;
+    padding: 4px 12px;
+    border-radius: 10px;
+    font-size: 0.72rem;
+    font-weight: 800;
+    z-index: 6;
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.35);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+/* Favourite heart button (top-right) */
+.btn-favorite {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 1.5px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #cbd5e1;
+    z-index: 5;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    cursor: pointer;
+    transition:
+        background 0.2s ease,
+        color 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.btn-favorite:hover,
+.btn-favorite.active {
+    background: #fff1f2;
+    color: #f43f5e;
+    border-color: #fecdd3;
+    transform: scale(1.12);
+}
+
+/* Save badge */
+.save-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: #dcfce7;
+    color: #059669;
+    padding: 3px 10px;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+/* Text clamp (also in global.css — kept here for component locality) */
+.product-description-clamp {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-height: 2.8em;
+}
+
+/* Action buttons */
+.btn-premium-purple {
+    background: linear-gradient(135deg, #7c3aed, #6366f1);
+    color: #ffffff;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 0.88rem;
+    box-shadow: 0 4px 14px rgba(124, 58, 237, 0.2);
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease,
+        color 0.2s ease;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.btn-premium-purple:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 22px rgba(124, 58, 237, 0.35);
+    color: #ffffff;
+    text-decoration: none;
+}
+
+.btn-premium-add {
+    background: linear-gradient(135deg, #059669, #047857);
+    color: #ffffff;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 0.88rem;
+    box-shadow: 0 4px 14px rgba(5, 150, 105, 0.25);
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.btn-premium-add:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 22px rgba(5, 150, 105, 0.38);
+    color: #ffffff;
+    text-decoration: none;
+}
+
+.btn-premium-view {
+    background: #f8f8f8;
+    color: #1e1b4b;
+    border: 1px solid #e2e8f0;
+    padding: 9px 18px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    transition:
+        background 0.2s ease,
+        color 0.2s ease,
+        border-color 0.2s ease;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.btn-premium-view:hover {
+    background: #7c3aed;
+    color: #ffffff;
+    border-color: #7c3aed;
+    text-decoration: none;
+}
+
+/* ============================================================================
+   10. NEWSLETTER SECTION
+   Full-width purple card with glass form input.
+   ============================================================================ */
+
+.newsletter-section {
+    padding: 5rem 0;
+    background: #f8f7ff;
+}
+
+.newsletter-inner {
+    background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 50%, #5b21b6 100%);
+    border-radius: 32px;
+    padding: 4rem;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Decorative circle — top right */
+.newsletter-inner::before {
+    content: "";
+    position: absolute;
+    top: -80px;
+    right: -80px;
+    width: 280px;
+    height: 280px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.06);
+    pointer-events: none;
+}
+
+/* Decorative circle — bottom left */
+.newsletter-inner::after {
+    content: "";
+    position: absolute;
+    bottom: -100px;
+    left: -60px;
+    width: 320px;
+    height: 320px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.04);
+    pointer-events: none;
+}
+
+.newsletter-form {
+    max-width: 500px;
+    margin: 0 auto;
+    background: rgba(255, 255, 255, 0.12);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    padding: 8px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    position: relative;
+    z-index: 1;
+}
+
+.newsletter-form input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    padding: 12px 18px;
+    color: #ffffff;
+    font-size: 0.95rem;
+    font-weight: 500;
+    min-width: 0;
+}
+
+.newsletter-form input::placeholder {
+    color: rgba(255, 255, 255, 0.65);
+}
+
+.newsletter-form button {
+    background: #ffffff;
+    color: #7c3aed;
+    border: none;
+    padding: 12px 28px;
+    border-radius: 14px;
+    font-weight: 800;
+    font-size: 0.9rem;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition:
+        background 0.2s ease,
+        transform 0.2s ease;
+}
+
+.newsletter-form button:hover {
+    background: #f5f3ff;
+    transform: scale(1.03);
+}
+
+.newsletter-benefit {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.88rem;
+    font-weight: 600;
+    position: relative;
+    z-index: 1;
+}
+
+/* ============================================================================
+   11. FOOTER
+   Dark footer with brand info, navigation links, and social icons.
+   ============================================================================ */
+
+.home-footer {
+    background: #0f0e1a;
+    color: #94a3b8;
+    padding: 4rem 0 2rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.footer-brand-name {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: #ffffff;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.5rem;
+}
+
+.footer-brand-desc {
+    font-size: 0.88rem;
+    color: #64748b;
+    line-height: 1.6;
+    max-width: 260px;
+}
+
+.footer-heading {
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #94a3b8;
+    margin-bottom: 1.25rem;
+}
+
+.footer-link {
+    display: block;
+    color: #64748b;
+    font-size: 0.9rem;
+    font-weight: 500;
+    text-decoration: none;
+    margin-bottom: 0.6rem;
+    transition: color 0.2s ease;
+}
+
+.footer-link:hover {
+    color: #a78bfa;
+    text-decoration: none;
+}
+
+.footer-social-btn {
+    width: 38px;
+    height: 38px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #64748b;
+    font-size: 1rem;
+    text-decoration: none;
+    transition:
+        background 0.2s ease,
+        color 0.2s ease,
+        transform 0.2s ease,
+        border-color 0.2s ease;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.footer-social-btn:hover {
+    background: #7c3aed;
+    color: #ffffff;
+    border-color: transparent;
+    transform: translateY(-2px);
+    text-decoration: none;
+}
+
+.footer-divider {
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    margin: 2.5rem 0 1.5rem;
+}
+
+.footer-copyright {
+    font-size: 0.82rem;
+    color: #475569;
+    margin-bottom: 0;
+}
+
+/* ============================================================================
+   12. ENTRANCE ANIMATIONS
+   Intersection-Observer–driven fade-up reveal.
+   Add .animate-fade-up to any element; JS adds .is-visible when in viewport.
+   ============================================================================ */
+
+.animate-fade-up {
+    opacity: 0;
+    transform: translateY(25px);
+    transition:
+        opacity 0.55s ease,
+        transform 0.55s ease;
+}
+
+.animate-fade-up.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.animate-fade-up-delay-1 {
+    transition-delay: 0.1s;
+}
+.animate-fade-up-delay-2 {
+    transition-delay: 0.2s;
+}
+.animate-fade-up-delay-3 {
+    transition-delay: 0.3s;
+}
+.animate-fade-up-delay-4 {
+    transition-delay: 0.4s;
+}
+
+/* ============================================================================
+   13. RESPONSIVE BREAKPOINTS
+   ============================================================================ */
+
+/* ── Tablet landscape (≤ 991px) ── */
+@media (max-width: 991px) {
+    .bento-grid {
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: auto auto auto;
+    }
+
+    .bento-card-compare {
+        grid-column: 1 / 3;
+        grid-row: 1;
+        min-height: 300px;
+    }
+
+    .bento-card-recipe {
+        grid-column: 1;
+        grid-row: 2;
+    }
+
+    .bento-card-lists {
+        grid-column: 2;
+        grid-row: 2;
+    }
+
+    .bento-card-shared {
+        grid-column: 1 / 3;
+        grid-row: 3;
+    }
+
+    .bento-headline {
+        font-size: 2.6rem;
+    }
+
+    /* Hide the connecting line on mobile to avoid misalignment */
+    .how-steps-row::before {
+        display: none;
+    }
+
+    .how-step {
+        flex: 0 0 50%;
+        margin-bottom: 2rem;
+    }
+
+    .newsletter-inner {
+        padding: 2.5rem 1.5rem;
+    }
+
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
+/* ── Tablet portrait (≤ 767px) ── */
+@media (max-width: 767px) {
+    .bento-headline {
+        font-size: 2.2rem;
+    }
+
+    .how-title {
+        font-size: 2rem;
+    }
+
+    .section-title {
+        font-size: 1.6rem;
+    }
+
+    .how-step {
+        flex: 0 0 100%;
+    }
+}
+
+/* ── Mobile (≤ 575px) ── */
+@media (max-width: 575px) {
+    .bento-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .bento-card-compare,
+    .bento-card-recipe,
+    .bento-card-lists,
+    .bento-card-shared {
+        grid-column: 1;
+        grid-row: auto;
+    }
+
+    .bento-headline {
+        font-size: 2rem;
+    }
+
+    /* Collapse trust dividers to keep the bar tidy */
+    .trust-divider {
+        display: none;
+    }
+
+    .newsletter-inner {
+        padding: 2rem 1.25rem;
+    }
+
+    .newsletter-form {
+        flex-direction: column;
+        border-radius: 16px;
+    }
+
+    .newsletter-form button {
+        width: 100%;
+        justify-content: center;
+    }
+}
