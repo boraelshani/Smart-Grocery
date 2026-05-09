@@ -1311,7 +1311,8 @@
             {% for category in categories %}
             <a href="{{ url_for('main.compare_prices') }}?category={{ category.id }}" class="category-card">
               <div class="category-image-wrapper">
-                <img src="{{ category.image }}" alt="{{ category.name }}" loading="lazy" onerror="this.style.display='none'; this.parentElement.innerHTML='<i class=\\'bi bi-grid-fill\\' style=\\'font-size:2.5rem;color:var(--premium-purple)\\"></i>'">
+                <img src="{{ category.image }}" alt="{{ category.name }}" loading="lazy" onerror="this.style.opacity='0'; this.nextElementSibling.style.display='flex';" style="position: absolute; width: 100%; height: 100%;">
+                <div class="category-fallback-icon" style="display: none; align-items: center; justify-content: center; width: 100%; height: 100%;"><i class="bi bi-grid-fill" style="font-size: 2.5rem; color: var(--premium-purple);"></i></div>
               </div>
               <div class="category-name">{{ category.name }}</div>
             </a>

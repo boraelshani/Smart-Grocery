@@ -127,10 +127,12 @@ class ProductsModel:
             Offer.product_id.in_(product_ids),
             Offer.is_available == True
         ).all()
-        offer_store_ids = list(set(o.store_id for o in offers))
+        offer_store_ids = list(set(o.store_id for o in offers if o.store_id))
+        product_store_ids = list(set(r.store_id for r in rows if r.store_id))
+        all_store_ids = list(set(offer_store_ids + product_store_ids))
         store_name_map = {}
-        if offer_store_ids:
-            stores = Store.query.filter(Store.store_id.in_(offer_store_ids)).all()
+        if all_store_ids:
+            stores = Store.query.filter(Store.store_id.in_(all_store_ids)).all()
             store_name_map = {s.store_id: s.name for s in stores}
         cat_ids = list(set(r.category_id for r in rows if r.category_id))
         cat_map = {}
@@ -156,6 +158,11 @@ class ProductsModel:
                 if price is not None and (cheapest_price is None or price < cheapest_price):
                     cheapest_price = price
                     cheapest_store = store_name
+            if not stores_list and row.store_id:
+                store_name = store_name_map.get(row.store_id, row.store_id)
+                stores_list.append({'store': store_name, 'name': store_name, 'price': None,
+                                    'url': None, 'image': row.default_image_url, 'storeProductId': None})
+                cheapest_store = store_name
             doc['stores'] = stores_list
             doc['price'] = cheapest_price
             doc['store'] = cheapest_store

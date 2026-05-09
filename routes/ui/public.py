@@ -61,10 +61,11 @@ def home():
         stores = stores_model.list_stores()
         products = products_model.list_products(limit=20)
         
-        # Fetch categories from PostgreSQL
+        # Fetch root categories from PostgreSQL (parent_id is NULL)
         try:
             from models.postgres_models import Category
             cat_rows = Category.query.filter(
+                Category.parent_id.is_(None),
                 Category.image_url.isnot(None),
                 Category.image_url != ''
             ).limit(12).all()
