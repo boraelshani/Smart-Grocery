@@ -4,6 +4,7 @@ from .. import main_bp
 from models.products_model import products_model
 from models.multibuy_offers_model import multibuy_offers_model
 from models.quantity_discounts_model import quantity_discounts_model
+from models.stores_model import stores_model
 from utils import helpers
 from models.users_model import get_user_lists, get_user_by_email, update_user
 from models.favorites_model import favorites_model
@@ -47,7 +48,9 @@ def profile():
     if not user_email: return redirect(url_for('auth.login'))
     
     user_data = get_user_by_email(user_email)
-    return render_template('profile.html', user_data=helpers.sanitize_mongo_doc(user_data))
+    stores = stores_model.list_stores()
+    category_options = helpers.get_category_options()
+    return render_template('profile.html', user_data=helpers.sanitize_mongo_doc(user_data), stores=stores, category_options=category_options)
 
 @main_bp.route('/profile/favorites')
 def profile_favorites():

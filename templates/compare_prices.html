@@ -789,32 +789,24 @@
 
                             {% if category_filter and breadcrumb_path %}
                   {% for node in breadcrumb_path %}
-                      <li class="breadcrumb-item {% if loop.last %}active hover-popover-container{% endif %}" {% if loop.last %}aria-current="page"{% endif %}>
-                          {% if loop.last %}
-                              <a href="javascript:void(0)" class="active">{{ node.name }} <i class="bi bi-chevron-down ms-1" style="font-size: 0.7rem;"></i></a>
+                      {% set cat_info = mega_menu.categories.get(node.name, {}) %}
+                      {% set has_children = cat_info.subcats|length > 0 if cat_info.subcats else false %}
+                      <li class="breadcrumb-item {% if loop.last %}active{% endif %} {% if has_children %}hover-popover-container{% endif %}" {% if loop.last %}aria-current="page"{% endif %}>
+                          {% if has_children %}
+                              <a href="javascript:void(0)" class="{% if loop.last %}active{% endif %}">{{ node.name }} <i class="bi bi-chevron-down ms-1" style="font-size: 0.7rem;"></i></a>
                               <div class="hover-popover-menu">
-                                  {% if node.subcategories %}
-                                      {% for sub_obj in node.subcategories %}
-                                          <a href="{{ url_for('main.compare_prices', category=sub_obj.name|lower) }}">
-                                              {{ sub_obj.name }}
-                                          </a>
-                                      {% endfor %}
-                                  {% else %}
-                                      {% if not loop.first %}
-                                          {# Display siblings if no children #}
-                                          {% set parent_node = breadcrumb_path[loop.index0 - 1] %}
-                                          {% for sibling in parent_node.subcategories %}
-                                              <a href="{{ url_for('main.compare_prices', category=sibling.name|lower) }}">
-                                                  {% if sibling.name == node.name %}<strong>{{ sibling.name }}</strong>{% else %}{{ sibling.name }}{% endif %}
-                                              </a>
-                                          {% endfor %}
-                                      {% else %}
-                                          <a href="#"><em>No subcategories</em></a>
-                                      {% endif %}
-                                  {% endif %}
+                                  {% for subcat_name in cat_info.subcats.keys() %}
+                                      <a href="{{ url_for('main.compare_prices', category=subcat_name|lower) }}">
+                                          {{ subcat_name }}
+                                      </a>
+                                  {% endfor %}
                               </div>
                           {% else %}
-                              <a href="{{ url_for('main.compare_prices', category=node.name|lower) }}">{{ node.name }}</a>
+                              {% if loop.last %}
+                                  <a href="javascript:void(0)" class="active">{{ node.name }}</a>
+                              {% else %}
+                                  <a href="{{ url_for('main.compare_prices', category=node.name|lower) }}">{{ node.name }}</a>
+                              {% endif %}
                           {% endif %}
                       </li>
                   {% endfor %}

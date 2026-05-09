@@ -13,7 +13,7 @@ from models.quantity_discounts_model import quantity_discounts_model
 from models.favorites_model import favorites_model
 from utils import helpers
 
-_PAGE_CACHE_TTL_SEC = 20
+_PAGE_CACHE_TTL_SEC = 120
 _page_cache = {}
 
 def load_featured_deals_fallback():
@@ -59,15 +59,19 @@ def home():
     # Load shared data
     try:
         stores = stores_model.list_stores()
-        products = products_model.list_products(limit=80)
+        products = products_model.list_products(limit=20)
         
-        # Fetch categories from PostgreSQL
+        # Fetch root categories from PostgreSQL (parent_id is NULL)
         try:
             from models.postgres_models import Category
-            cat_rows = Category.query.filter(Category.image_url.isnot(None)).limit(12).all()
+            cat_rows = Category.query.filter(
+                Category.parent_id.is_(None),
+                Category.image_url.isnot(None),
+                Category.image_url != ''
+            ).limit(12).all()
             categories = [
                 {
-                    'id': cat.category_id,
+                    'id': cat.slug,
                     'name': cat.name_en or 'Category',
                     'image': cat.image_url or ''
                 }

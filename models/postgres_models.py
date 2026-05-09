@@ -55,6 +55,7 @@ class Product(db.Model):
     name_de = db.Column(db.Text)
     brand = db.Column(db.Text)
     category_id = db.Column(db.Integer, db.ForeignKey('categories.id'), nullable=True)
+    store_id = db.Column(db.Text)
     unit_normalized = db.Column(db.Text)
     size_normalized = db.Column(db.Numeric)
     default_image_url = db.Column(db.Text)
@@ -70,6 +71,7 @@ class Product(db.Model):
                 'name': self.name_de, 'name_en': self.name_de, 'name_de': self.name_de,
                 'brand': self.brand, 'brandId': self.brand,
                 'categoryId': str(self.category_id) if self.category_id else None,
+                'store': self.store_id, 'storeId': self.store_id,
                 'unitSize': self.unit_normalized, 'barcode': self.barcode,
                 'defaultImageUrl': self.default_image_url, 'image': self.default_image_url,
                 'createdAt': self.created_at, 'updatedAt': self.updated_at}

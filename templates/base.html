@@ -27,6 +27,16 @@
 </head>
 <body class="{% block body_class %}bg-light{% endblock %}">
 
+  <!-- Page Loading Overlay -->
+  <div id="page-loader">
+    <div style="text-align:center">
+      <div style="font-size:2.5rem;font-weight:900;color:#7c3aed;letter-spacing:-0.04em;">Smart Grocery</div>
+      <div class="spinner-dots">
+        <span></span><span></span><span></span>
+      </div>
+    </div>
+  </div>
+
   {% set account_name = current_user_nav.display_name if current_user_nav else (session.get('user', '').split('@')[0] if session.get('user') else 'Account') %}
   {% set account_email = current_user_nav.email if current_user_nav else session.get('user', '') %}
   {% set account_avatar = current_user_nav.avatar if current_user_nav else '' %}
@@ -263,28 +273,35 @@
                      <div class="mega-menu-wrapper">
                         <!-- Left: Categories -->
                         <div class="mega-col-left" id="mega-categories-list" style="width: 25%;">
-                          <style>
+                           <style>
                               /* Override left category lists locally to fit more items */
                               .mega-cat-item {
                                   padding: 8px 12px !important;
                                   font-size: 0.85rem !important; /* Smaller text */
                                   display: flex;
                                   align-items: center;
+                                  transition: background 0.2s ease;
+                              }
+                              .mega-cat-item:hover {
+                                  background: #f8f5ff;
                               }
                               .mega-cat-icon {
-                                  width: 32px;
-                                  height: 32px;
+                                  width: 48px;
+                                  height: 48px;
                                   margin-right: 12px;
                                   flex-shrink: 0;
                                   display: flex;
                                   align-items: center;
                                   justify-content: center;
+                                  border-radius: 8px;
+                                  overflow: hidden;
                               }
                               .mega-cat-icon img {
                                   width: 100%;
                                   height: 100%;
-                                  object-fit: contain;
-                                  border-radius: 6px;
+                                  object-fit: cover;
+                                  border-radius: 8px;
+                                  mix-blend-mode: multiply;
                               }
                           </style>
                           <ul class="mega-cat-list">
@@ -307,30 +324,33 @@
                               <i class="bi {{ info.icon }} text-primary me-3 fs-4"></i>{{ cat }}
                               <a href="{{ url_for('main.compare_prices', category=cat) }}" class="btn btn-sm text-decoration-none ms-auto fw-bold text-primary">View All <i class="bi bi-arrow-right"></i></a>
                             </h5>
-                            <div class="row g-4">
+                            <div class="row g-3">
                               {% for l1, l2_list in info.subcats.items() %}
-                              <div class="col-12 col-sm-12 col-lg-4 mb-2">
-                                  <div class="card h-100 border border-light shadow-sm rounded-4 overflow-hidden subcat-hover-card bg-light d-flex flex-row">
-                                     <!-- Left: Image Box (smaller width/height) -->
-                                     <div class="subcat-img-wrapper position-relative" style="width: 40%; min-height: 110px; overflow: hidden;">
-                                        <img src="{{ mega_menu.images.get(l1, mega_menu.images.get(cat, mega_menu.fallback_image)) }}" alt="{{ l1 }}" class="w-100 h-100" style="object-fit: cover; opacity: 0.95;">
-                                        <div class="position-absolute bottom-0 start-0 w-100 p-2 d-flex align-items-end" style="background: linear-gradient(to top, rgba(0,0,0,0.85), rgba(0,0,0,0.1));">
-                                            <a href="{{ url_for('main.compare_prices', category=l1) }}" class="fw-bold text-white text-decoration-none lh-sm stretched-link" style="font-size: 0.9rem; text-shadow: 0 2px 4px rgba(0,0,0,0.6);">
-                                               {{ l1 }}
-                                            </a>
-                                        </div>
-                                     </div>
-                                     <!-- Right: Links Box -->
-                                     <div class="card-body p-2 bg-white d-flex align-content-start flex-wrap gap-1" style="width: 60%;">
-                                           {% for l2 in l2_list %}
-                                              <a href="{{ url_for('main.compare_prices', category=l2) }}" class="sub-subcat-badge badge text-secondary bg-light text-decoration-none fw-medium position-relative z-2" style="border: 1px solid #e2e8f0; font-size: 0.75rem; white-space: normal; text-align: left;">
-                                                 {{ l2 }}
-                                              </a>
-                                           {% endfor %}
-                                           {% if not l2_list %}
-                                              <a href="{{ url_for('main.compare_prices', category=l1) }}" class="badge text-secondary bg-light text-decoration-none fw-medium position-relative z-2" style="border: 1px solid #e2e8f0; font-size: 0.75rem;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">Explore {{ l1 }}</a>
-                                           {% endif %}
-                                     </div>
+                              <div class="col-6 col-sm-6 col-lg-4 mb-2">
+                                  <div class="subcat-card h-100 border border-light shadow-sm rounded-3 overflow-hidden subcat-hover-card d-flex flex-column">
+                                     <!-- Image Box -->
+                                      <div class="subcat-img-wrapper position-relative" style="height: 100px; overflow: hidden; background: #f8f5ff;">
+                                         <img src="{{ mega_menu.images.get(l1, mega_menu.images.get(cat, mega_menu.fallback_image)) }}" alt="{{ l1 }}" class="w-100 h-100" style="object-fit: cover; mix-blend-mode: multiply;">
+                                      </div>
+                                     <!-- Text Box -->
+                                      <div class="p-2 d-flex flex-column" style="background: #fafafa;">
+                                         <a href="{{ url_for('main.compare_prices', category=l1) }}" class="fw-bold text-decoration-none text-dark mb-1" style="font-size: 0.85rem;">
+                                            {{ l1 }}
+                                         </a>
+                                         <div class="d-flex flex-wrap gap-1">
+                                            {% for l2 in l2_list[:4] %}
+                                               <a href="{{ url_for('main.compare_prices', category=l2) }}" class="sub-subcat-badge badge text-secondary bg-light text-decoration-none fw-normal" style="border: 1px solid #e2e8f0; font-size: 0.7rem; white-space: normal; text-align: left;">
+                                                  {{ l2 }}
+                                               </a>
+                                            {% endfor %}
+                                            {% if l2_list|length > 4 %}
+                                               <span class="badge bg-light text-secondary" style="font-size: 0.7rem;">+{{ l2_list|length - 4 }}</span>
+                                            {% endif %}
+                                         </div>
+                                         {% if not l2_list %}
+                                            <a href="{{ url_for('main.compare_prices', category=l1) }}" class="badge text-secondary bg-light text-decoration-none" style="border: 1px solid #e2e8f0; font-size: 0.75rem; width: fit-content;">Explore</a>
+                                         {% endif %}
+                                      </div>
                                   </div>
                               </div>
                               {% endfor %}
@@ -891,6 +911,16 @@ document.addEventListener("DOMContentLoaded", function() {
             resultsBox.classList.add("d-flex");
         }
     });
+});
+</script>
+<script>
+// Hide page loader once DOM is ready
+window.addEventListener('load', function() {
+  var loader = document.getElementById('page-loader');
+  if (loader) {
+    loader.classList.add('hidden');
+    setTimeout(function() { loader.style.display = 'none'; }, 500);
+  }
 });
 </script>
 </body>
