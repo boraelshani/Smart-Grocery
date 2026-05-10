@@ -10,6 +10,17 @@ def _now():
     return datetime.now(timezone.utc)
 
 # ── STORES ──────────────────────────────────────────────────
+
+class ScraperRun(db.Model):
+    __tablename__ = 'scraper_runs'
+    __table_args__ = {'extend_existing': True}
+    id = db.Column(db.Integer, primary_key=True)
+    status = db.Column(db.Text)
+    products_processed = db.Column(db.Integer, default=0)
+    offers_updated = db.Column(db.Integer, default=0)
+    errors = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime(timezone=True), default=_now)
+
 class Store(db.Model):
     __tablename__ = 'stores'
     __table_args__ = {'extend_existing': True}

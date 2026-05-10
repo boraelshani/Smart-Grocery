@@ -3,28 +3,38 @@ from . import admin_bp
 from core.auth import require_admin
 from utils.db import get_db
 from core.utils import now_utc, generate_id, to_bool
-from models.postgres_models import db, Store, Brand, Category, Product, User, Feedback, CommunityPriceReport
+from models.postgres_models import db, Store, Brand, Category, Product, User, Feedback, CommunityPriceReport, Offer, ScraperRun
+from datetime import datetime, timedelta, timezone
 
 def _dashboard_payload():
-    counts = {
-        "stores": Store.query.count(),
-        "brands": Brand.query.count(),
-        "categories": Category.query.count(),
-        "products": Product.query.count(),
-        "users": User.query.count(),
-        "feedback": Feedback.query.count(),
-        "community_price_reports": CommunityPriceReport.query.count()
-    }
+    now = datetime.now(timezone.utc)
+    three_days_ago = now - timedelta(days=3)
+    
+    total_products = Product.query.count()
+    active_offers = Offer.query.filter_by(is_available=True).count()
+    total_stores = Store.query.count()
+    total_users = User.query.count()
+    
+    stale_offers = Offer.query.filter(Offer.last_seen < three_days_ago).count()
+    unmatched_products = 0 
+    
+    recent_runs = [r for r in ScraperRun.query.order_by(ScraperRun.created_at.desc()).limit(5).all()]
+    
     stats = {
-        "total_products": counts["products"],
-        "total_stores": counts["stores"],
-        "total_users": counts["users"],
-        "pending_feedback": Feedback.query.filter_by(status="pending").count(),
+        "total_products": total_products,
+        "active_offers": active_offers,
+        "total_stores": total_stores,
+        "total_users": total_users,
+        "stale_offers": stale_offers,
+        "unmatched_products": unmatched_products
     }
-    recent_feedback = [f.to_dict() for f in Feedback.query.order_by(Feedback.created_at.desc()).limit(5).all()]
-    recent_reports = [r.to_dict() for r in CommunityPriceReport.query.order_by(CommunityPriceReport.created_at.desc()).limit(5).all()]
+    
+    chart_data = {
+        "labels": [(now - timedelta(days=i)).strftime('%a') for i in range(6, -1, -1)],
+        "data": [0,0,0,0,0,0,0] 
+    }
 
-    return {"stats": stats, "recent_feedback": recent_feedback, "recent_reports": recent_reports, "counts": counts}
+    return {"stats": stats, "recent_runs": recent_runs, "chart_data": chart_data}
 
 @admin_bp.route("/admin/", methods=["GET"])
 @admin_bp.route("/admin", methods=["GET"])
