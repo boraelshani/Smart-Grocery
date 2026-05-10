@@ -1,282 +1,542 @@
-{% extends "admin_layout.html" %}
+{% extends "admin_layout.html" %} {% block title %}AI Smart Import — Smart
+Grocery Admin{% endblock %} {% block admin_breadcrumb %}
+<span class="mx-1 text-slate-300">/</span>
+<span class="text-slate-600 font-medium">AI Smart Import</span>
+{% endblock %} {% block admin_title %}AI Smart Import{% endblock %} {% block
+admin_subtitle %}Extract product data from store URLs using AI{% endblock %} {%
+block admin_content %} {#
+═══════════════════════════════════════════════════════════════════════════
+TWO-COLUMN LAYOUT (left 2/3 = import workflow | right 1/3 = guide card)
+═══════════════════════════════════════════════════════════════════════════ #}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    {# ─── LEFT: Import workflow (spans 2 of 3 cols on desktop) ───────────────
+    #}
+    <div class="lg:col-span-2 flex flex-col gap-5">
+        {# ── STEP 1: URL input
+        ────────────────────────────────────────────────── #}
+        <div class="admin-card p-5">
+            {# Step label #}
+            <div class="flex items-center gap-2.5 mb-4">
+                <span
+                    class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-indigo-600 text-white text-xs font-bold flex-shrink-0"
+                    >1</span
+                >
+                <h2
+                    class="text-sm font-bold text-slate-700 uppercase tracking-wide"
+                >
+                    Paste a Store Product URL
+                </h2>
+            </div>
 
-{% block admin_title %}AI Smart Import{% endblock %}
-{% block admin_subtitle %}Extract data from any public store URL securely{% endblock %}
+            <div class="flex gap-2">
+                <input
+                    type="url"
+                    id="store_url"
+                    class="adm-input flex-1"
+                    placeholder="https://www.billa.at/produkte/... or spar.at / hofer.at"
+                    autocomplete="off"
+                    onkeydown="
+                        if (event.key === 'Enter') {
+                            fetchAIProduct();
+                        }
+                    "
+                />
+                <button
+                    id="extract-btn"
+                    onclick="fetchAIProduct()"
+                    class="btn-primary flex-shrink-0 min-w-[130px] justify-center"
+                >
+                    {# Default label #}
+                    <span id="extract-label" class="flex items-center gap-1.5">
+                        <i class="bi bi-robot"></i>Extract with AI
+                    </span>
+                    {# Spinner — hidden by default #}
+                    <span
+                        id="extract-spinner"
+                        class="hidden flex items-center gap-1.5"
+                    >
+                        <svg
+                            class="animate-spin h-4 w-4"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                        >
+                            <circle
+                                class="opacity-25"
+                                cx="12"
+                                cy="12"
+                                r="10"
+                                stroke="currentColor"
+                                stroke-width="4"
+                            ></circle>
+                            <path
+                                class="opacity-75"
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8v8H4z"
+                            ></path>
+                        </svg>
+                        Extracting…
+                    </span>
+                </button>
+            </div>
 
-{% block admin_content %}
-<div class="row g-4">
-    <div class="col-lg-12">
-        <div class="card shadow-sm border-0 h-100 rounded-4">
-            <div class="card-body p-4">
-                <form id="ai-import-form">
-                    <div class="mb-3">
-                        <label class="form-label text-secondary fw-semibold">Paste Store Link (e.g. Billa, Spar)</label>
-                        <div class="input-group">
-                            <input type="url" class="form-control form-control-lg bg-light" id="store_url" required placeholder="https://..." style="border: 2px solid #e2e8f0;">
-                            <button type="button" class="btn btn-primary px-4 fw-bold shadow-sm" onclick="fetchAIProduct()" id="extractBtn">
-                                <i class="fas fa-robot me-2"></i> Extract
-                            </button>
+            {# Error banner — hidden by default #}
+            <div
+                id="extract-error"
+                class="hidden mt-3 flex items-start gap-2.5 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700"
+            >
+                <i
+                    class="bi bi-exclamation-triangle-fill mt-0.5 flex-shrink-0"
+                ></i>
+                <span id="extract-error-text"></span>
+            </div>
+        </div>
+
+        {# ── STEP 2: Review & Edit (hidden until AI returns data)
+        ─────────────── #}
+        <div id="result-section" class="hidden admin-card p-5">
+            {# Step label #}
+            <div class="flex items-center gap-2.5 mb-5">
+                <span
+                    class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-indigo-600 text-white text-xs font-bold flex-shrink-0"
+                    >2</span
+                >
+                <h2
+                    class="text-sm font-bold text-slate-700 uppercase tracking-wide"
+                >
+                    Review &amp; Edit Extracted Data
+                </h2>
+                <span class="ml-auto badge badge-green"
+                    ><i class="bi bi-stars"></i>AI populated</span
+                >
+            </div>
+
+            <form
+                id="save-product-form"
+                method="POST"
+                action="{{ url_for('admin.admin_save_ai_product') }}"
+            >
+                {# Hidden: original store URL is included in submission #}
+                <input type="hidden" name="source_url" id="res_store_url" />
+
+                {# Row 1: Names #}
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label
+                            class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5"
+                        >
+                            Name (English) <span class="text-red-500">*</span>
+                        </label>
+                        <input
+                            type="text"
+                            name="name_en"
+                            id="res_name_en"
+                            class="adm-input"
+                            placeholder="Organic Oat Milk"
+                            required
+                        />
+                    </div>
+                    <div>
+                        <label
+                            class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5"
+                        >
+                            Name (German)
+                        </label>
+                        <input
+                            type="text"
+                            name="name_de"
+                            id="res_name_de"
+                            class="adm-input"
+                            placeholder="Bio Hafermilch"
+                        />
+                    </div>
+                </div>
+
+                {# Row 2: Category + Image URL #}
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label
+                            class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5"
+                        >
+                            Category <span class="text-red-500">*</span>
+                        </label>
+                        <select
+                            name="categoryId"
+                            id="res_category"
+                            class="adm-input"
+                            required
+                        >
+                            <option value="">— Select a category —</option>
+                            {% for cat in categories %}
+                            <option value="{{ cat.categoryId }}">
+                                {{ cat.name_en }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label
+                            class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5"
+                        >
+                            Store
+                        </label>
+                        <select
+                            name="store_id"
+                            id="res_store_id"
+                            class="adm-input"
+                        >
+                            <option value="">— Detected automatically —</option>
+                            <option value="billa">Billa</option>
+                            <option value="spar">Spar</option>
+                            <option value="hofer">Hofer</option>
+                            <option value="lidl">Lidl</option>
+                            <option value="merkur">Merkur</option>
+                        </select>
+                    </div>
+                </div>
+
+                {# Row 3: Image URL with live preview #}
+                <div class="mb-4">
+                    <label
+                        class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5"
+                    >
+                        Product Image URL
+                    </label>
+                    <div class="flex items-center gap-3">
+                        <img
+                            id="res_image_preview"
+                            src=""
+                            alt="Preview"
+                            class="hidden w-12 h-12 rounded-lg border border-slate-200 object-contain bg-white flex-shrink-0"
+                        />
+                        <input
+                            type="url"
+                            name="image_url"
+                            id="res_image_url"
+                            class="adm-input flex-1"
+                            placeholder="https://..."
+                            oninput="updateImgPreview(this.value)"
+                        />
+                    </div>
+                </div>
+
+                {# Row 4: Price + Store URL #}
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                    <div>
+                        <label
+                            class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5"
+                        >
+                            Price (€)
+                        </label>
+                        <div class="relative">
+                            <span
+                                class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-semibold"
+                                >€</span
+                            >
+                            <input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                name="price"
+                                id="res_price"
+                                class="adm-input pl-7"
+                                placeholder="0.00"
+                            />
                         </div>
                     </div>
-                </form>
+                    <div>
+                        <label
+                            class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5"
+                        >
+                            Original Product URL
+                        </label>
+                        <input
+                            type="url"
+                            name="store_url"
+                            id="res_store_url_display"
+                            class="adm-input"
+                            placeholder="https://..."
+                        />
+                    </div>
+                </div>
+
+                {# Divider #}
+                <hr class="border-slate-100 mb-5" />
+
+                {# Submit #}
+                <div class="flex items-center justify-end gap-3">
+                    <button
+                        type="button"
+                        class="btn-secondary"
+                        onclick="
+                            document
+                                .getElementById('result-section')
+                                .classList.add('hidden');
+                            document.getElementById('store_url').value = '';
+                        "
+                    >
+                        <i class="bi bi-arrow-left"></i>Start over
+                    </button>
+                    <button type="submit" class="btn-primary">
+                        <i class="bi bi-floppy"></i>Save Product
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    {# /left col #} {# ─── RIGHT: Guide card (1/3 col, sticky on desktop)
+    ────────────────────── #}
+    <div class="lg:col-span-1">
+        <div class="admin-card p-5 lg:sticky lg:top-24">
+            {# Title #}
+            <div class="flex items-center gap-2 mb-4">
+                <div
+                    class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center flex-shrink-0"
+                >
+                    <i class="bi bi-info-circle text-base"></i>
+                </div>
+                <h3 class="text-sm font-bold text-slate-700">How to Use</h3>
+            </div>
+
+            {# Steps list #}
+            <ol class="space-y-3 mb-5">
+                <li class="flex items-start gap-2.5 text-sm text-slate-600">
+                    <span
+                        class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-slate-100 text-slate-500 text-xs font-bold flex-shrink-0 mt-0.5"
+                        >1</span
+                    >
+                    Copy a product URL from a supported store below.
+                </li>
+                <li class="flex items-start gap-2.5 text-sm text-slate-600">
+                    <span
+                        class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-slate-100 text-slate-500 text-xs font-bold flex-shrink-0 mt-0.5"
+                        >2</span
+                    >
+                    Paste it in the URL box and click
+                    <strong>Extract with AI</strong>.
+                </li>
+                <li class="flex items-start gap-2.5 text-sm text-slate-600">
+                    <span
+                        class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-slate-100 text-slate-500 text-xs font-bold flex-shrink-0 mt-0.5"
+                        >3</span
+                    >
+                    Review the extracted data, adjust any fields, then click
+                    <strong>Save Product</strong>.
+                </li>
+            </ol>
+
+            {# Supported stores #}
+            <div class="mb-4">
+                <p
+                    class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2"
+                >
+                    Supported Stores
+                </p>
+                <div class="flex flex-col gap-1.5">
+                    <a
+                        href="https://www.billa.at"
+                        target="_blank"
+                        class="flex items-center gap-2 text-sm text-slate-600 hover:text-indigo-600 no-underline group"
+                    >
+                        <span
+                            class="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0"
+                        ></span>
+                        billa.at
+                        <i
+                            class="bi bi-arrow-up-right-square text-xs opacity-0 group-hover:opacity-100 transition-opacity ml-auto"
+                        ></i>
+                    </a>
+                    <a
+                        href="https://www.spar.at"
+                        target="_blank"
+                        class="flex items-center gap-2 text-sm text-slate-600 hover:text-indigo-600 no-underline group"
+                    >
+                        <span
+                            class="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0"
+                        ></span>
+                        spar.at
+                        <i
+                            class="bi bi-arrow-up-right-square text-xs opacity-0 group-hover:opacity-100 transition-opacity ml-auto"
+                        ></i>
+                    </a>
+                    <a
+                        href="https://www.hofer.at"
+                        target="_blank"
+                        class="flex items-center gap-2 text-sm text-slate-600 hover:text-indigo-600 no-underline group"
+                    >
+                        <span
+                            class="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0"
+                        ></span>
+                        hofer.at
+                        <i
+                            class="bi bi-arrow-up-right-square text-xs opacity-0 group-hover:opacity-100 transition-opacity ml-auto"
+                        ></i>
+                    </a>
+                    <a
+                        href="https://www.lidl.at"
+                        target="_blank"
+                        class="flex items-center gap-2 text-sm text-slate-600 hover:text-indigo-600 no-underline group"
+                    >
+                        <span
+                            class="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0"
+                        ></span>
+                        lidl.at
+                        <span class="text-xs text-slate-400 ml-auto"
+                            >(partial)</span
+                        >
+                    </a>
+                </div>
+            </div>
+
+            {# Divider #}
+            <hr class="border-slate-100 mb-4" />
+
+            {# Quality note #}
+            <div
+                class="flex items-start gap-2.5 rounded-lg bg-amber-50 border border-amber-100 p-3"
+            >
+                <i
+                    class="bi bi-exclamation-circle-fill text-amber-500 text-sm flex-shrink-0 mt-0.5"
+                ></i>
+                <p class="text-xs text-amber-800 leading-relaxed">
+                    AI extraction quality depends on the store's page structure.
+                    Always review extracted data before saving. Fields marked
+                    <span class="text-red-500 font-bold">*</span> are required.
+                </p>
             </div>
         </div>
     </div>
-
-    <div class="col-lg-12">
-        <div id="result-container" class="card shadow-sm border-0 d-none h-100 rounded-4">
-            <div class="card-body p-4">
-                <form id="save-product-form" action="/admin/products/save-ai" method="POST">
-                                     
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold small text-muted text-uppercase">Name (English)</label>
-                            <input type="text" name="name_en" id="res_name_en" class="form-control bg-light border" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold small text-muted text-uppercase">Name (German)</label>
-                            <input type="text" name="name_de" id="res_name_de" class="form-control bg-light border" required>
-                        </div>
-                    </div>
-
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-4">
-                            <label class="form-label fw-bold small text-muted text-uppercase">Brand</label>
-                            <input type="text" name="brandId" id="res_brand" class="form-control bg-light border">
-                        </div>
-                        <div class="col-md-8">
-                            <label class="form-label fw-bold small text-muted text-uppercase">Main Category</label>
-                            <select id="main_category" class="form-select bg-light border mb-2" onchange="updateSubcats()">
-                                <option value="">Select Main Category...</option>
-                            </select>
-                            <label class="form-label fw-bold small text-muted text-uppercase">Subcategory</label>
-                            <select name="categoryId" id="res_category" class="form-select bg-light border" required>
-                                <option value="">Select Subcategory...</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="row g-3 mb-4">
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold small text-muted text-uppercase">Description (English)</label>
-                            <textarea name="description_en" id="res_desc_en" class="form-control bg-light border" rows="3"></textarea>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold small text-muted text-uppercase">Description (German)</label>
-                            <textarea name="description_de" id="res_desc_de" class="form-control bg-light border" rows="3"></textarea>
-                        </div>
-                    </div>
-
-                    <div class="row g-3 mb-4">
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold small text-muted text-uppercase">Extracted Size / Volume</label>
-                            <input type="text" name="size" id="res_size" class="form-control bg-light border">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold small text-muted text-uppercase">Calculated Unit Price</label>
-                            <input type="text" name="unit_price" id="res_unit_price" class="form-control bg-light border">
-                        </div>
-                    </div>
-
-                    <div class="mb-4 p-3 bg-light rounded border">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h6 class="fw-bold mb-0 text-muted text-uppercase">Store Offers</h6>
-                            <button type="button" class="btn btn-sm btn-primary fw-bold px-3 shadow-sm rounded-pill" onclick="addStoreOfferRow()"><i class="fas fa-plus me-1"></i>Add Store to Compare</button>
-                        </div>
-                        <div id="store-offers-list">
-                            <!-- Initially populated dynamically by JS on fetch -->
-                        </div>
-                    </div>
-                    
-                    <div class="row g-3 mb-4">
-                        <div class="col-md-12">
-                            <label class="form-label fw-bold small text-muted text-uppercase">Product Image URL</label>
-                            <div class="d-flex align-items-center">
-                                <img src="" id="res_img_preview" class="rounded shadow-sm border d-none me-3 bg-white" style="height: 48px; width: 48px; object-fit: contain;">
-                                <input type="url" name="image_url" id="res_image" class="form-control bg-light border flex-grow-1" placeholder="https://..." oninput="document.getElementById('res_img_preview').src=this.value; if(this.value){document.getElementById('res_img_preview').classList.remove('d-none');}else{document.getElementById('res_img_preview').classList.add('d-none');}">
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="d-flex justify-content-end mt-3">
-                        <button type="submit" class="btn btn-success px-4 py-2 fw-bold"><i class="fas fa-save me-2"></i> Save to Catalog</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
+    {# /right col #}
 </div>
-
+{# /grid #} {% endblock %} {% block extra_scripts %}
 <script>
-    function guessStoreId(url) {
-        let l = (url || "").toLowerCase();
+    /* ── Image preview helper ─────────────────────────────────────────────── */
+    function updateImgPreview(url) {
+        const img = document.getElementById("res_image_preview");
+        if (url && url.startsWith("http")) {
+            img.src = url;
+            img.classList.remove("hidden");
+            img.onerror = () => img.classList.add("hidden");
+        } else {
+            img.classList.add("hidden");
+        }
+    }
+
+    /* ── Detect store from URL ────────────────────────────────────────────── */
+    function _guessStoreId(url) {
+        const l = (url || "").toLowerCase();
         if (l.includes("billa")) return "billa";
         if (l.includes("spar") || l.includes("interspar")) return "spar";
         if (l.includes("hofer")) return "hofer";
+        if (l.includes("lidl")) return "lidl";
+        if (l.includes("merkur")) return "merkur";
         return "";
     }
 
-    function addStoreOfferRow(storeId="", storeUrl="", price="", promoPrice="", offerDetails="") {
-        const container = document.getElementById("store-offers-list");
-        const rowId = `offer_row_${Date.now()}_${Math.floor(Math.random()*1000)}`;
-        
-        let selBilla = storeId === "billa" ? "selected" : "";
-        let selSpar = storeId === "spar" ? "selected" : "";
-        let selHofer = storeId === "hofer" ? "selected" : "";
-
-        const row = document.createElement("div");
-        row.className = "row g-2 mb-2 align-items-center border p-2 rounded bg-white shadow-sm";
-        row.id = rowId;
-        
-        row.innerHTML = `
-            <div class="col-md-2 col-sm-12">
-                <select name="store_id" class="form-select border shadow-none" required>
-                    <option value="">Store...</option>
-                    <option value="billa" ${selBilla}>Billa</option>
-                    <option value="spar" ${selSpar}>Spar</option>
-                    <option value="hofer" ${selHofer}>Hofer</option>
-                </select>
-            </div>
-            <div class="col-md-3 col-sm-12 mt-2 mt-md-0">
-                <input type="url" name="store_url" class="form-control border shadow-none" placeholder="Product URL..." value="${storeUrl}" required>
-            </div>
-            <div class="col-md-2 col-sm-12 mt-2 mt-md-0">
-                <div class="input-group">
-                    <span class="input-group-text bg-white" title="Base Price">€</span>
-                    <input type="number" step="0.01" name="price" class="form-control border shadow-none" placeholder="Base" value="${price}" required>
-                </div>
-            </div>
-            <div class="col-md-2 col-sm-12 mt-2 mt-md-0">
-                <div class="input-group">
-                    <span class="input-group-text bg-danger text-white border-danger" title="Promo Price">%</span>
-                    <input type="number" step="0.01" name="promo_price" class="form-control border shadow-none" placeholder="Promo" value="${promoPrice}">
-                </div>
-            </div>
-            <div class="col-md-2 col-sm-10 mt-2 mt-md-0">
-                <input type="text" name="offer_details" class="form-control border shadow-none" placeholder="Offer Details (e.g. 2+1)" value="${offerDetails}">
-            </div>
-            <div class="col-md-1 col-sm-2 mt-2 mt-md-0 text-end">
-                <button type="button" class="btn btn-outline-danger btn-sm rounded shadow-sm w-100" onclick="document.getElementById('${rowId}').remove()"><i class="fas fa-trash"></i></button>
-            </div>
-        `;
-        container.appendChild(row);
+    /* ── Set spinner state ────────────────────────────────────────────────── */
+    function _setLoading(on) {
+        document.getElementById("extract-btn").disabled = on;
+        document.getElementById("extract-label").classList.toggle("hidden", on);
+        document
+            .getElementById("extract-spinner")
+            .classList.toggle("hidden", !on);
     }
 
-
-const allCategories = [
-{% for cat in categories %}
-    { id: "{{ cat.categoryId }}", name_en: "{{ cat.name_en|replace('"', '\"') }}", parentId: "{{ cat.parentId|default('') }}" },
-{% endfor %}
-];
-
-function initCategories() {
-    const mainSel = document.getElementById("main_category");
-    mainSel.innerHTML = '<option value="">Select Main Category...</option>';
-    allCategories.forEach(cat => {
-        if (!cat.parentId) {
-            mainSel.innerHTML += `<option value="${cat.id}">${cat.name_en}</option>`;
-        }
-    });
-}
-
-function updateSubcats() {
-    const mainId = document.getElementById("main_category").value;
-    const subSel = document.getElementById("res_category");
-    subSel.innerHTML = '<option value="">Select Subcategory...</option>';
-    if (!mainId) return;
-    
-    allCategories.forEach(cat => {
-        if (cat.parentId === mainId) {
-            subSel.innerHTML += `<option value="${cat.id}">${cat.name_en}</option>`;
-        }
-    });
-}
-
-// Automatically called when page loads
-document.addEventListener("DOMContentLoaded", initCategories);
-
-async function fetchAIProduct() {
-    const url = document.getElementById("store_url").value;
-    const btn = document.getElementById("extractBtn");
-    if (!url) return;
-
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-    btn.disabled = true;
-
-    try {
-        const response = await fetch('/admin/api/products/smart-extract', {
-            method: 'POST',
-            credentials: 'same-origin',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ url: url })
-        });
-        const res = await response.json();
-        
-        if (res.success) {
-            document.getElementById("result-container").classList.remove("d-none");
-            const data = res.data;
-            document.getElementById("res_name_en").value = data.name_en || "";
-            document.getElementById("res_name_de").value = data.name_de || "";
-            document.getElementById("res_desc_en").value = data.description_en || "";
-            document.getElementById("res_desc_de").value = data.description_de || "";
-            document.getElementById("res_brand").value = data.brand || data.brandId || "";
-            
-            // Category auto-select logic
-            let catToSelect = data.categoryId || data.category || "";
-            if (catToSelect) {
-                // Find category string or id
-                let targetCat = allCategories.find(c => c.id === catToSelect);
-                if (targetCat) {
-                    if (targetCat.parentId) {
-                        document.getElementById("main_category").value = targetCat.parentId;
-                        updateSubcats();
-                        document.getElementById("res_category").value = targetCat.id;
-                    } else {
-                        document.getElementById("main_category").value = targetCat.id;
-                        updateSubcats();
-                    }
-                }
-            } else if (data.category_path) {
-                // Heuristic pick by path string
-                let lowerPath = data.category_path.toLowerCase();
-                let bestMatch = null;
-                allCategories.forEach(c => {
-                    if (c.parentId && lowerPath.includes(c.name_en.toLowerCase())) {
-                        bestMatch = c;
-                    }
-                });
-                if (bestMatch) {
-                    document.getElementById("main_category").value = bestMatch.parentId;
-                    updateSubcats();
-                    document.getElementById("res_category").value = bestMatch.id;
-                }
-            }
-
-            document.getElementById("res_image").value = data.image_url || "";
-            document.getElementById("res_size").value = data.size || "";
-            document.getElementById("res_unit_price").value = data.unit_price || "";
-            
-            // Clear existing offers and add the extracted one
-            document.getElementById("store-offers-list").innerHTML = "";
-            let sID = guessStoreId(url);
-            addStoreOfferRow(sID, url, data.price || "", data.promo_price || "", data.offer_details || "");
-            
-            if (data.image_url) {
-                document.getElementById("res_img_preview").src = data.image_url;
-                document.getElementById("res_img_preview").classList.remove("d-none");
-            } else {
-                document.getElementById("res_img_preview").classList.add("d-none");
-            }
+    /* ── Show / hide error banner ─────────────────────────────────────────── */
+    function _setError(msg) {
+        const banner = document.getElementById("extract-error");
+        if (msg) {
+            document.getElementById("extract-error-text").textContent = msg;
+            banner.classList.remove("hidden");
         } else {
-            alert("Failed: " + res.error);
+            banner.classList.add("hidden");
         }
-    } catch (err) {
-        alert("Error: " + err);
-    } finally {
-        btn.innerHTML = '<i class="fas fa-robot me-2"></i> Extract';
-        btn.disabled = false;
     }
-}
+
+    /* ── Populate form fields from AI response ────────────────────────────── */
+    function _populateForm(data, sourceUrl) {
+        // Text fields
+        document.getElementById("res_name_en").value = data.name_en || "";
+        document.getElementById("res_name_de").value = data.name_de || "";
+        document.getElementById("res_price").value = data.price || "";
+        document.getElementById("res_store_url").value = sourceUrl || "";
+        document.getElementById("res_store_url_display").value =
+            sourceUrl || "";
+
+        // Image
+        const imgUrl = data.image_url || "";
+        document.getElementById("res_image_url").value = imgUrl;
+        updateImgPreview(imgUrl);
+
+        // Store selector — auto-detect from URL or use data.store_id
+        const storeId = data.store_id || _guessStoreId(sourceUrl);
+        const storeSel = document.getElementById("res_store_id");
+        storeSel.value = storeId;
+
+        // Category — match by categoryId
+        const catSel = document.getElementById("res_category");
+        const catId = data.categoryId || data.category || "";
+        if (catId) {
+            // Try exact match first
+            let matched = false;
+            for (const opt of catSel.options) {
+                if (opt.value === catId) {
+                    catSel.value = catId;
+                    matched = true;
+                    break;
+                }
+            }
+            // Fallback: case-insensitive name match
+            if (!matched) {
+                const lower = catId.toLowerCase();
+                for (const opt of catSel.options) {
+                    if (opt.text.toLowerCase().includes(lower)) {
+                        catSel.value = opt.value;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    /* ── Main extraction function (called by button) ──────────────────────── */
+    async function fetchAIProduct() {
+        const url = document.getElementById("store_url").value.trim();
+        if (!url) {
+            document.getElementById("store_url").focus();
+            return;
+        }
+
+        _setError(null);
+        _setLoading(true);
+        document.getElementById("result-section").classList.add("hidden");
+
+        try {
+            const res = await fetch("/admin/api/products/smart-extract", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ url }),
+            });
+
+            const json = await res.json();
+
+            if (json.success && json.data) {
+                _populateForm(json.data, url);
+                // Reveal step 2
+                const section = document.getElementById("result-section");
+                section.classList.remove("hidden");
+                section.scrollIntoView({ behavior: "smooth", block: "start" });
+            } else {
+                _setError(
+                    json.error ||
+                        "The AI could not extract product data from this URL. Try a direct product page link.",
+                );
+            }
+        } catch (err) {
+            _setError("Network error — " + err.message);
+        } finally {
+            _setLoading(false);
+        }
+    }
 </script>
 {% endblock %}
-

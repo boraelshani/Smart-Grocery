@@ -1,45 +1,278 @@
-{% extends "admin_layout.html" %}
-{% block title %}Feedback - Smart Grocery{% endblock %}
-
-{% set admin_title = "User Feedback" %}
-{% set admin_subtitle = "Review and resolve user submitted issues." %}
-{% set admin_section = "feedback" %}
-
-{% block admin_content %}
-<div class="card-modern overflow-hidden">
-  <div class="table-responsive">
-    <table class="table table-hover align-middle mb-0">
-      <thead class="bg-light text-secondary small text-uppercase">
-         <tr>
-            <th class="ps-4 py-3 fw-bold">User</th>
-            <th class="fw-bold">Type</th>
-            <th class="fw-bold">Message</th>
-            <th class="fw-bold">Date</th>
-            <th class="text-end pe-4 fw-bold">Actions</th>
-         </tr>
-      </thead>
-      <tbody>
-         {% for f in data.feedback or [] %}
-         <tr>
-            <td class="ps-4 fw-medium text-dark">{{ f.user_email|default('Anonymous') }}</td>
-            <td><span class="badge bg-light text-dark border">{{ f.type|default('General')|title }}</span></td>
-            <td class="text-secondary small" style="max-width: 300px;">
-               <div class="text-truncate" title="{{ f.message }}">{{ f.message }}</div>
-            </td>
-            <td class="text-secondary small">{{ f.timestamp }}</td>
-            <td class="text-end pe-4">
-               <form method="post" action="{{ url_for('admin.admin_resolve_feedback', id=f._id) }}" class="d-inline">
-                  <button type="submit" class="btn btn-sm btn-outline-success rounded-pill px-3" title="Mark Resolved">
-                     <i class="bi bi-check-lg me-1"></i> Resolve
-                  </button>
-               </form>
-            </td>
-         </tr>
-         {% else %}
-         <tr><td colspan="5" class="text-center py-5 text-muted">No unresolved feedback.</td></tr>
-         {% endfor %}
-      </tbody>
-    </table>
-  </div>
+{% extends "admin_layout.html" %} {% block title %}User Feedback — Smart Grocery
+Admin{% endblock %} {% block admin_breadcrumb %}
+<span class="mx-1 text-slate-300">/</span>
+<span class="text-slate-600 font-medium">Feedback</span>
+{% endblock %} {% block admin_title %}User Feedback{% endblock %} {% block
+admin_subtitle %}{{ data.feedback|length }} entries{% endblock %} {# ── Status
+filter pills in the page-header action slot ──────────────────── #} {% block
+admin_actions %}
+<div class="flex items-center gap-1.5">
+    <span class="text-xs text-slate-400 mr-1">Filter:</span>
+    <a
+        href="?status=all"
+        class="px-3 py-1 rounded-full text-xs font-semibold border transition-colors {% if data.status_filter == 'all' %}bg-indigo-600 border-indigo-600 text-white{% else %}bg-white border-slate-200 text-slate-600 hover:bg-slate-50{% endif %}"
+        >All</a
+    >
+    <a
+        href="?status=pending"
+        class="px-3 py-1 rounded-full text-xs font-semibold border transition-colors {% if data.status_filter == 'pending' %}bg-amber-500 border-amber-500 text-white{% else %}bg-white border-slate-200 text-slate-600 hover:bg-slate-50{% endif %}"
+        >Pending</a
+    >
+    <a
+        href="?status=resolved"
+        class="px-3 py-1 rounded-full text-xs font-semibold border transition-colors {% if data.status_filter == 'resolved' %}bg-emerald-600 border-emerald-600 text-white{% else %}bg-white border-slate-200 text-slate-600 hover:bg-slate-50{% endif %}"
+        >Resolved</a
+    >
 </div>
+{% endblock %} {% block admin_content %} {# ── Summary stat row
+──────────────────────────────────────────────────── #} {% set pending_count =
+data.feedback | selectattr('status', 'equalto', 'pending') | list | length %} {%
+set resolved_count = data.feedback | selectattr('status', 'equalto', 'resolved')
+| list | length %}
+
+<div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+    <div class="stat-card">
+        <div class="stat-icon" style="background: #fef9c3; color: #a16207">
+            <i class="bi bi-hourglass-split"></i>
+        </div>
+        <div>
+            <div class="text-2xl font-bold text-slate-800 leading-tight">
+                {{ pending_count }}
+            </div>
+            <div
+                class="text-xs font-semibold text-slate-500 uppercase tracking-wide mt-0.5"
+            >
+                Pending
+            </div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon" style="background: #dcfce7; color: #15803d">
+            <i class="bi bi-check-circle"></i>
+        </div>
+        <div>
+            <div class="text-2xl font-bold text-slate-800 leading-tight">
+                {{ resolved_count }}
+            </div>
+            <div
+                class="text-xs font-semibold text-slate-500 uppercase tracking-wide mt-0.5"
+            >
+                Resolved
+            </div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon" style="background: #eef2ff; color: #6366f1">
+            <i class="bi bi-chat-dots"></i>
+        </div>
+        <div>
+            <div class="text-2xl font-bold text-slate-800 leading-tight">
+                {{ data.feedback|length }}
+            </div>
+            <div
+                class="text-xs font-semibold text-slate-500 uppercase tracking-wide mt-0.5"
+            >
+                Total
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ── Main table card ───────────────────────────────────────────────────── #}
+<div class="admin-card overflow-hidden">
+    {% if data.feedback %}
+    <div class="overflow-x-auto">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Type</th>
+                    <th>Subject</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                    <th class="text-right pr-4">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for fb in data.feedback %} {# ── Main feedback row
+                ─────────────────────────────────────────── #}
+                <tr
+                    class="cursor-pointer hover:bg-slate-50"
+                    onclick="toggleFeedbackRow('fb-msg-{{ loop.index }}')"
+                    title="Click to expand full message"
+                >
+                    {# User email #}
+                    <td>
+                        <div class="flex items-center gap-2">
+                            <span
+                                class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-slate-100 text-slate-600 text-xs font-bold flex-shrink-0"
+                            >
+                                {{ (fb.user_email or 'A')[0]|upper }}
+                            </span>
+                            <span
+                                class="text-sm font-medium text-slate-700 truncate max-w-[140px]"
+                                title="{{ fb.user_email }}"
+                            >
+                                {{ fb.user_email or 'Anonymous' }}
+                            </span>
+                        </div>
+                    </td>
+
+                    {# Type badge #}
+                    <td>
+                        {% set fb_type = (fb.type or 'other')|lower %} {% if
+                        fb_type == 'bug' %}
+                        <span class="badge badge-red"
+                            ><i class="bi bi-bug"></i>Bug</span
+                        >
+                        {% elif fb_type == 'suggestion' %}
+                        <span class="badge badge-blue"
+                            ><i class="bi bi-lightbulb"></i>Suggestion</span
+                        >
+                        {% elif fb_type == 'price_report' %}
+                        <span class="badge badge-purple"
+                            ><i class="bi bi-tag"></i>Price Report</span
+                        >
+                        {% else %}
+                        <span class="badge badge-gray"
+                            ><i class="bi bi-chat"></i>{{
+                            fb.type|default('Other')|title }}</span
+                        >
+                        {% endif %}
+                    </td>
+
+                    {# Subject — truncated to 50 chars #}
+                    <td>
+                        <span
+                            class="text-sm text-slate-700"
+                            title="{{ fb.subject }}"
+                        >
+                            {{ (fb.subject or '(no subject)')[:50] }}{% if
+                            fb.subject and fb.subject|length > 50 %}…{% endif %}
+                        </span>
+                    </td>
+
+                    {# Status badge #}
+                    <td>
+                        {% if (fb.status or 'pending') == 'resolved' %}
+                        <span class="badge badge-green"
+                            ><i class="bi bi-check-circle-fill"></i
+                            >Resolved</span
+                        >
+                        {% else %}
+                        <span class="badge badge-yellow"
+                            ><i class="bi bi-hourglass-split"></i>Pending</span
+                        >
+                        {% endif %}
+                    </td>
+
+                    {# Date #}
+                    <td class="text-sm text-slate-500 whitespace-nowrap">
+                        {{ fb.createdAtDisplay or '—' }}
+                    </td>
+
+                    {# Resolve action #}
+                    <td
+                        class="text-right pr-4"
+                        onclick="event.stopPropagation()"
+                    >
+                        {% if (fb.status or 'pending') != 'resolved' %}
+                        <form
+                            method="POST"
+                            action="/admin/feedback/{{ fb.feedback_id }}/resolve"
+                            class="inline"
+                            onsubmit="
+                                return confirm(
+                                    'Mark this feedback as resolved?',
+                                );
+                            "
+                        >
+                            <button
+                                type="submit"
+                                class="btn-primary btn-sm"
+                                title="Mark as resolved"
+                            >
+                                <i class="bi bi-check-lg"></i>Resolve
+                            </button>
+                        </form>
+                        {% else %}
+                        <span class="text-xs text-slate-400 italic">Done</span>
+                        {% endif %}
+                    </td>
+                </tr>
+
+                {# ── Expanded full-message row
+                ──────────────────────────────────── #}
+                <tr
+                    id="fb-msg-{{ loop.index }}"
+                    class="hidden bg-slate-50 border-b border-slate-100"
+                >
+                    <td colspan="6" class="px-6 py-4">
+                        <div class="flex items-start gap-3">
+                            <div
+                                class="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-sm font-bold"
+                            >
+                                {{ (fb.user_email or 'A')[0]|upper }}
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <span
+                                        class="text-sm font-semibold text-slate-700"
+                                        >{{ fb.user_email or 'Anonymous'
+                                        }}</span
+                                    >
+                                    <span class="text-xs text-slate-400"
+                                        >·</span
+                                    >
+                                    <span class="text-xs text-slate-400"
+                                        >{{ fb.createdAtDisplay or '—' }}</span
+                                    >
+                                    {% if fb.subject %}
+                                    <span class="text-xs text-slate-400"
+                                        >·</span
+                                    >
+                                    <span
+                                        class="text-xs font-medium text-slate-600"
+                                        >{{ fb.subject }}</span
+                                    >
+                                    {% endif %}
+                                </div>
+                                <div
+                                    class="bg-white border border-slate-200 rounded-lg p-4 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap"
+                                >
+                                    {{ fb.message or '(no message)' }}
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="flex flex-col items-center justify-center py-20 text-slate-400">
+        <i class="bi bi-chat-square-dots text-5xl mb-4"></i>
+        <p class="font-semibold text-slate-500 text-lg">No feedback yet</p>
+        <p class="text-sm mt-1 text-slate-400">
+            {% if data.status_filter != 'all' %} No
+            <strong>{{ data.status_filter }}</strong> feedback found.
+            <a href="?status=all" class="text-indigo-600 hover:underline ml-1"
+                >View all</a
+            >
+            {% else %} User feedback and reports will appear here. {% endif %}
+        </p>
+    </div>
+    {% endif %}
+</div>
+
+{% endblock %} {% block extra_scripts %}
+<script>
+    function toggleFeedbackRow(rowId) {
+        const row = document.getElementById(rowId);
+        if (!row) return;
+        row.classList.toggle("hidden");
+    }
+</script>
 {% endblock %}

@@ -1,148 +1,422 @@
-{% extends "admin_layout.html" %}
-{% block title %}Dashboard - Smart Grocery{% endblock %}
+{% extends "admin_layout.html" %} {% block title %}Dashboard — Smart Grocery
+Admin{% endblock %}
 
-{% set admin_title = "Overview" %}
-{% set admin_subtitle = "System status and key metrics." %}
-{% set admin_section = "dashboard" %}
+<!-- Breadcrumb: dashboard is the root page, intentionally empty -->
+{% block admin_breadcrumb %} {% endblock %} {% block admin_title %} Dashboard {%
+endblock %} {% block admin_subtitle %} Platform overview &amp; quick actions {%
+endblock %} {% block admin_actions %}
+<a
+    href="{{ url_for('admin.run_scraper_manual') }}"
+    class="btn-primary btn-sm flex items-center gap-1.5 no-underline"
+>
+    <i class="bi bi-arrow-repeat"></i>
+    Run Price Update
+</a>
+{% endblock %} {% block admin_content %}
 
-{% block admin_content %}
-<div class="row g-4 mb-5">
-  <!-- Stats Cards -->
-  <div class="col-md-3">
-    <div class="card border-0 shadow-sm rounded-4 p-4 d-flex flex-column h-100 justify-content-center">
-       <div class="d-flex align-items-center mb-3">
-          <div class="bg-light rounded-circle p-3 d-flex align-items-center justify-content-center text-primary me-3" style="width: 50px; height: 50px;">
-             <i class="fas fa-box-open fs-4"></i>
-          </div>
-          <h6 class="text-uppercase text-secondary small fw-bold mb-0">Products</h6>
-       </div>
-       <h2 class="display-6 fw-bold text-dark mb-0">{{ data.stats.total_products|default(0) }}</h2>
-       <p class="text-muted small mt-2 mb-0">Active in catalog</p>
+<!-- ═══════════════════════════════════════════════════════════════════════
+     SECTION A — Key metric stat cards (2-col mobile / 4-col desktop)
+     ═══════════════════════════════════════════════════════════════════════ -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <!-- Products -->
+    <div class="stat-card">
+        <div class="stat-icon" style="background: #eef2ff; color: #6366f1">
+            <i class="bi bi-box-seam" style="font-size: 1.2rem"></i>
+        </div>
+        <div>
+            <div class="text-2xl font-bold text-slate-800 leading-tight">
+                {{ data.stats.total_products | default(0) }}
+            </div>
+            <div
+                class="text-xs font-semibold text-slate-500 uppercase tracking-wide mt-0.5"
+            >
+                Products
+            </div>
+            <div class="text-xs text-slate-400 mt-0.5">Active in catalog</div>
+        </div>
     </div>
-  </div>
-  
-  <div class="col-md-3">
-    <div class="card border-0 shadow-sm rounded-4 p-4 d-flex flex-column h-100 justify-content-center">
-       <div class="d-flex align-items-center mb-3">
-          <div class="bg-light rounded-circle p-3 d-flex align-items-center justify-content-center text-warning me-3" style="width: 50px; height: 50px;">
-             <i class="fas fa-store fs-4"></i>
-          </div>
-          <h6 class="text-uppercase text-secondary small fw-bold mb-0">Stores</h6>
-       </div>
-       <h2 class="display-6 fw-bold text-dark mb-0">{{ data.stats.total_stores|default(0) }}</h2>
-       <p class="text-muted small mt-2 mb-0">Monitored chains</p>
-    </div>
-  </div>
 
-  <div class="col-md-3">
-    <div class="card border-0 shadow-sm rounded-4 p-4 d-flex flex-column h-100 justify-content-center">
-       <div class="d-flex align-items-center mb-3">
-          <div class="bg-light rounded-circle p-3 d-flex align-items-center justify-content-center text-success me-3" style="width: 50px; height: 50px;">
-             <i class="fas fa-users fs-4"></i>
-          </div>
-          <h6 class="text-uppercase text-secondary small fw-bold mb-0">Users</h6>
-       </div>
-       <h2 class="display-6 fw-bold text-dark mb-0">{{ data.stats.total_users|default(0) }}</h2>
-       <p class="text-muted small mt-2 mb-0">Registered accounts</p>
+    <!-- Stores -->
+    <div class="stat-card">
+        <div class="stat-icon" style="background: #ecfdf5; color: #10b981">
+            <i class="bi bi-shop" style="font-size: 1.2rem"></i>
+        </div>
+        <div>
+            <div class="text-2xl font-bold text-slate-800 leading-tight">
+                {{ data.stats.total_stores | default(0) }}
+            </div>
+            <div
+                class="text-xs font-semibold text-slate-500 uppercase tracking-wide mt-0.5"
+            >
+                Stores
+            </div>
+            <div class="text-xs text-slate-400 mt-0.5">Monitored chains</div>
+        </div>
     </div>
-  </div>
 
-  <div class="col-md-3">
-    <div class="card border-0 shadow-sm rounded-4 p-4 d-flex flex-column h-100 justify-content-center">
-       <div class="d-flex align-items-center mb-3">
-          <div class="bg-light rounded-circle p-3 d-flex align-items-center justify-content-center text-danger me-3" style="width: 50px; height: 50px;">
-             <i class="fas fa-exclamation-circle fs-4"></i>
-          </div>
-          <h6 class="text-uppercase text-secondary small fw-bold mb-0">Feedback</h6>
-       </div>
-       <h2 class="display-6 fw-bold text-dark mb-0">{{ data.stats.pending_feedback|default(0) }}</h2>
-       <p class="text-muted small mt-2 mb-0">Unresolved items</p>
+    <!-- Users -->
+    <div class="stat-card">
+        <div class="stat-icon" style="background: #f5f3ff; color: #7c3aed">
+            <i class="bi bi-people" style="font-size: 1.2rem"></i>
+        </div>
+        <div>
+            <div class="text-2xl font-bold text-slate-800 leading-tight">
+                {{ data.stats.total_users | default(0) }}
+            </div>
+            <div
+                class="text-xs font-semibold text-slate-500 uppercase tracking-wide mt-0.5"
+            >
+                Users
+            </div>
+            <div class="text-xs text-slate-400 mt-0.5">Registered accounts</div>
+        </div>
     </div>
-  </div>
+
+    <!-- Pending Feedback -->
+    <div class="stat-card">
+        <div class="stat-icon" style="background: #fffbeb; color: #f59e0b">
+            <i class="bi bi-chat-dots" style="font-size: 1.2rem"></i>
+        </div>
+        <div>
+            <div class="text-2xl font-bold text-slate-800 leading-tight">
+                {{ data.stats.pending_feedback | default(0) }}
+            </div>
+            <div
+                class="text-xs font-semibold text-slate-500 uppercase tracking-wide mt-0.5"
+            >
+                Pending Feedback
+            </div>
+            <div class="text-xs text-slate-400 mt-0.5">Unresolved items</div>
+        </div>
+    </div>
 </div>
+<!-- /stat grid -->
 
-<div class="row g-4">
-  <div class="col-lg-8">
-     <div class="card border-0 shadow-sm rounded-4 h-100">
-        <div class="card-header bg-white border-bottom py-3">
-           <ul class="nav nav-pills card-header-pills" id="dashboardTabs" role="tablist">
-              <li class="nav-item" role="presentation">
-                 <button class="nav-link active fw-bold small" id="reports-tab" data-bs-toggle="tab" data-bs-target="#reports" type="button" role="tab" aria-controls="reports" aria-selected="true">Price Reports</button>
-              </li>
-              <li class="nav-item" role="presentation">
-                 <button class="nav-link fw-bold small" id="feedback-tab" data-bs-toggle="tab" data-bs-target="#feedback" type="button" role="tab" aria-controls="feedback" aria-selected="false">Feedback</button>
-              </li>
-           </ul>
-        </div>
-        <div class="card-body p-0 tab-content" id="dashboardTabsContent">
-           <!-- Price Reports Tab -->
-           <div class="tab-pane fade show active" id="reports" role="tabpanel" aria-labelledby="reports-tab">
-              {% if data.recent_reports %}
-              <ul class="list-group list-group-flush">
-                {% for r in data.recent_reports %}
-                <li class="list-group-item px-4 py-3 border-light">
-                   <div class="d-flex w-100 justify-content-between align-items-start mb-1">
-                      <strong class="text-dark">{{ r.product_id|default('Unknown Product') }}</strong>
-                      <span class="badge bg-danger text-white rounded-pill fw-normal">{{ r.store_name|default('Unknown') }}</span>
-                   </div>
-                   <p class="mb-1 text-muted small">Observed Price: <strong class="text-success">€{{ r.observed_price }}</strong></p>
-                   <small class="text-secondary opacity-50" style="font-size: 0.75rem;">{{ r.created_at }}</small>
-                </li>
-                {% endfor %}
-              </ul>
-              {% else %}
-              <div class="h-100 d-flex flex-column align-items-center justify-content-center py-5 text-muted small">
-                 <i class="fas fa-file-invoice-dollar fs-1 opacity-25 mb-2"></i>
-                 No recent price reports.
-              </div>
-              {% endif %}
-           </div>
-           <!-- Feedback Tab -->
-           <div class="tab-pane fade" id="feedback" role="tabpanel" aria-labelledby="feedback-tab">
-              {% if data.recent_feedback %}
-              <ul class="list-group list-group-flush">
-                {% for f in data.recent_feedback %}
-                <li class="list-group-item px-4 py-3 border-light">
-                   <div class="d-flex w-100 justify-content-between align-items-start mb-1">
-                      <strong class="text-dark">{{ f.user_email|default('Anonymous') }}</strong>
-                      <span class="badge bg-light text-secondary rounded-pill fw-normal">{{ f.type|default('General') }}</span>
-                   </div>
-                   <p class="mb-1 text-muted small">{{ f.message|truncate(80) }}</p>
-                   <small class="text-secondary opacity-50" style="font-size: 0.75rem;">{{ f.timestamp }}</small>
-                </li>
-                {% endfor %}
-              </ul>
-              {% else %}
-              <div class="h-100 d-flex flex-column align-items-center justify-content-center py-5 text-muted small">
-                 <i class="fas fa-inbox fs-1 opacity-25 mb-2"></i>
-                 No recent feedback.
-              </div>
-              {% endif %}
-           </div>
-        </div>
-     </div>
-  </div>
+<!-- ═══════════════════════════════════════════════════════════════════════
+     SECTION B — Two-column layout: feedback table (left) + actions (right)
+     ═══════════════════════════════════════════════════════════════════════ -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- ──────────────────────────────────────────────────────────────────────
+       LEFT COLUMN (2/3 width) — Recent Feedback table
+       ────────────────────────────────────────────────────────────────────── -->
+    <div class="lg:col-span-2 flex flex-col">
+        <div class="admin-card flex flex-col flex-1">
+            <!-- Card header -->
+            <div
+                class="flex items-center justify-between px-5 py-4 border-b border-slate-100"
+            >
+                <div class="flex items-center gap-2">
+                    <i class="bi bi-chat-left-text" style="color: #6366f1"></i>
+                    <h2 class="text-sm font-semibold text-slate-800 m-0">
+                        Recent Feedback
+                    </h2>
+                </div>
+                <a
+                    href="{{ url_for('admin.admin_feedback_page') }}"
+                    class="text-xs font-medium no-underline flex items-center gap-1"
+                    style="color: #6366f1"
+                >
+                    View all <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+            <!-- /card header -->
 
-  <!-- Live Operations & Quick Actions -->
-  <div class="col-lg-4">
-     <div class="card shadow-sm border-0 rounded-4 h-100 mb-4">
-        <div class="card-header bg-white border-bottom py-4 text-center">
-           <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-2 shadow" style="width: 54px; height: 54px;">
-               <i class="fas fa-bolt fs-4"></i>
-           </div>
-           <h5 class="fw-bold mb-0">System Operations</h5>
-           <p class="text-muted small mb-0">Manage live data syncing</p>
+            {% if data.recent_feedback %}
+
+            <!-- Feedback table -->
+            <div class="overflow-x-auto flex-1">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Type</th>
+                            <th>Subject / Preview</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for fb in data.recent_feedback %}
+                        <tr>
+                            <!-- User avatar + email -->
+                            <td>
+                                <div class="flex items-center gap-2">
+                                    <div
+                                        class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                                        style="
+                                            background: #eef2ff;
+                                            color: #6366f1;
+                                        "
+                                    >
+                                        {{ (fb.user_email[0] | upper) if
+                                        fb.user_email else '?' }}
+                                    </div>
+                                    <span
+                                        class="text-sm text-slate-700 truncate"
+                                        style="max-width: 130px"
+                                        title="{{ fb.user_email | default('') }}"
+                                    >
+                                        {{ fb.user_email | default('—') }}
+                                    </span>
+                                </div>
+                            </td>
+
+                            <!-- Feedback type badge -->
+                            <td>
+                                {% if fb.type == 'bug' %}
+                                <span class="badge badge-red">Bug</span>
+                                {% elif fb.type == 'suggestion' %}
+                                <span class="badge badge-blue">Suggestion</span>
+                                {% elif fb.type == 'price_report' %}
+                                <span class="badge badge-purple"
+                                    >Price Report</span
+                                >
+                                {% else %}
+                                <span class="badge badge-gray">
+                                    {{ fb.type | default('General') | title }}
+                                </span>
+                                {% endif %}
+                            </td>
+
+                            <!-- Subject or truncated message preview -->
+                            <td>
+                                <span
+                                    class="text-sm text-slate-600"
+                                    title="{{ fb.message | default('') }}"
+                                >
+                                    {% if fb.subject %} {{ fb.subject }} {% elif
+                                    fb.message %} {{ fb.message[:60] }} {% if
+                                    fb.message | length > 60 %}&hellip;{% endif
+                                    %} {% else %}
+                                    <span class="text-slate-400">—</span>
+                                    {% endif %}
+                                </span>
+                            </td>
+
+                            <!-- Status badge -->
+                            <td>
+                                {% if fb.status == 'resolved' %}
+                                <span class="badge badge-green">Resolved</span>
+                                {% else %}
+                                <span class="badge badge-yellow">Pending</span>
+                                {% endif %}
+                            </td>
+
+                            <!-- Formatted date -->
+                            <td>
+                                <span
+                                    class="text-xs text-slate-400 whitespace-nowrap"
+                                >
+                                    {{ fb.createdAtDisplay | default('—') }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <!-- /feedback table -->
+
+            {% else %}
+
+            <!-- Empty state -->
+            <div
+                class="flex-1 flex flex-col items-center justify-center py-14 text-center px-6"
+            >
+                <div
+                    class="w-12 h-12 rounded-full flex items-center justify-center mb-3"
+                    style="background: #f1f5f9"
+                >
+                    <i
+                        class="bi bi-inbox text-slate-400"
+                        style="font-size: 1.25rem"
+                    ></i>
+                </div>
+                <p class="text-sm font-medium text-slate-500 m-0">
+                    No feedback yet
+                </p>
+                <p class="text-xs text-slate-400 mt-1 m-0">
+                    Recent submissions will appear here once users start writing
+                    in.
+                </p>
+            </div>
+            <!-- /empty state -->
+
+            {% endif %}
         </div>
-        <div class="card-body p-4 d-flex flex-column gap-4 align-items-center justify-content-center bg-light">
-           <div class="w-100 p-3 bg-white border rounded shadow-sm">
-               <h6 class="fw-bold text-dark mb-1"><i class="fas fa-tags text-success me-2"></i> Prices Out of Date?</h6>
-               <p class="small text-muted mb-3">Manually trigger the store catalog engine to fetch the latest prices across all monitored supermarkets into the database.</p>
-               <a href="{{ url_for('admin.run_scraper_manual') }}" class="btn btn-primary w-100 py-3 fw-bold rounded-pill shadow">
-                  <i class="fas fa-sync-alt me-2"></i> Run Global Price Update
-               </a>
-           </div>
+        <!-- /admin-card -->
+    </div>
+    <!-- /left column -->
+
+    <!-- ──────────────────────────────────────────────────────────────────────
+       RIGHT COLUMN (1/3 width) — Quick Actions list
+       ────────────────────────────────────────────────────────────────────── -->
+    <div class="lg:col-span-1 flex flex-col">
+        <div class="admin-card flex flex-col flex-1">
+            <!-- Card header -->
+            <div
+                class="flex items-center gap-2 px-5 py-4 border-b border-slate-100"
+            >
+                <i class="bi bi-lightning-charge" style="color: #f59e0b"></i>
+                <h2 class="text-sm font-semibold text-slate-800 m-0">
+                    Quick Actions
+                </h2>
+            </div>
+            <!-- /card header -->
+
+            <!-- Divided action rows -->
+            <div class="flex flex-col divide-y divide-slate-100 flex-1">
+                <!-- AI Smart Import -->
+                <a
+                    href="{{ url_for('admin.admin_smart_import_page') }}"
+                    class="flex items-center gap-3 px-5 py-4 no-underline transition-colors"
+                    style="color: inherit"
+                    onmouseover="this.style.background = '#f8fafc'"
+                    onmouseout="this.style.background = ''"
+                >
+                    <div
+                        class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+                        style="background: #f0fdf4; color: #16a34a"
+                    >
+                        <i class="bi bi-stars"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div
+                            class="text-sm font-semibold text-slate-700 leading-tight"
+                        >
+                            AI Smart Import
+                        </div>
+                        <div class="text-xs text-slate-400 mt-0.5 leading-snug">
+                            Import products with AI enrichment
+                        </div>
+                    </div>
+                    <i
+                        class="bi bi-chevron-right text-slate-300 text-xs flex-shrink-0"
+                    ></i>
+                </a>
+
+                <!-- Run Price Update -->
+                <a
+                    href="{{ url_for('admin.run_scraper_manual') }}"
+                    class="flex items-center gap-3 px-5 py-4 no-underline transition-colors"
+                    style="color: inherit"
+                    onmouseover="this.style.background = '#f8fafc'"
+                    onmouseout="this.style.background = ''"
+                >
+                    <div
+                        class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+                        style="background: #eff6ff; color: #3b82f6"
+                    >
+                        <i class="bi bi-arrow-repeat"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div
+                            class="text-sm font-semibold text-slate-700 leading-tight"
+                        >
+                            Run Price Update
+                        </div>
+                        <div class="text-xs text-slate-400 mt-0.5 leading-snug">
+                            Fetch latest prices from all stores
+                        </div>
+                    </div>
+                    <i
+                        class="bi bi-chevron-right text-slate-300 text-xs flex-shrink-0"
+                    ></i>
+                </a>
+
+                <!-- Manage Products -->
+                <a
+                    href="{{ url_for('admin.admin_products_page') }}"
+                    class="flex items-center gap-3 px-5 py-4 no-underline transition-colors"
+                    style="color: inherit"
+                    onmouseover="this.style.background = '#f8fafc'"
+                    onmouseout="this.style.background = ''"
+                >
+                    <div
+                        class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+                        style="background: #eef2ff; color: #6366f1"
+                    >
+                        <i class="bi bi-box-seam"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div
+                            class="text-sm font-semibold text-slate-700 leading-tight"
+                        >
+                            Manage Products
+                        </div>
+                        <div class="text-xs text-slate-400 mt-0.5 leading-snug">
+                            Browse, edit and remove catalog items
+                        </div>
+                    </div>
+                    <i
+                        class="bi bi-chevron-right text-slate-300 text-xs flex-shrink-0"
+                    ></i>
+                </a>
+
+                <!-- Manage Categories -->
+                <a
+                    href="{{ url_for('admin.admin_categories_page') }}"
+                    class="flex items-center gap-3 px-5 py-4 no-underline transition-colors"
+                    style="color: inherit"
+                    onmouseover="this.style.background = '#f8fafc'"
+                    onmouseout="this.style.background = ''"
+                >
+                    <div
+                        class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+                        style="background: #fdf4ff; color: #a21caf"
+                    >
+                        <i class="bi bi-tag"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div
+                            class="text-sm font-semibold text-slate-700 leading-tight"
+                        >
+                            Manage Categories
+                        </div>
+                        <div class="text-xs text-slate-400 mt-0.5 leading-snug">
+                            Organise the product taxonomy
+                        </div>
+                    </div>
+                    <i
+                        class="bi bi-chevron-right text-slate-300 text-xs flex-shrink-0"
+                    ></i>
+                </a>
+
+                <!-- View Feedback -->
+                <a
+                    href="{{ url_for('admin.admin_feedback_page') }}"
+                    class="flex items-center gap-3 px-5 py-4 no-underline transition-colors"
+                    style="color: inherit"
+                    onmouseover="this.style.background = '#f8fafc'"
+                    onmouseout="this.style.background = ''"
+                >
+                    <div
+                        class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+                        style="background: #fff7ed; color: #ea580c"
+                    >
+                        <i class="bi bi-chat-dots"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div
+                            class="text-sm font-semibold text-slate-700 leading-tight"
+                        >
+                            View Feedback
+                        </div>
+                        <div class="text-xs text-slate-400 mt-0.5 leading-snug">
+                            Review and resolve user submissions
+                        </div>
+                    </div>
+                    <i
+                        class="bi bi-chevron-right text-slate-300 text-xs flex-shrink-0"
+                    ></i>
+                </a>
+            </div>
+            <!-- /action rows -->
         </div>
-     </div>
-  </div>
+        <!-- /admin-card -->
+    </div>
+    <!-- /right column -->
 </div>
+<!-- /two-column layout -->
+
 {% endblock %}
