@@ -190,7 +190,7 @@ admin_content %} {# ── Summary stat row
                                 </span>
                                 {% endif %}
                             </div>
-                            {% if lst.items %}
+                            {% if lst.get('items', []) %}
                             <table
                                 class="admin-table"
                                 style="
@@ -206,7 +206,7 @@ admin_content %} {# ── Summary stat row
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {% for item in lst.items %}
+                                    {% for item in lst.get('items', []) %}
                                     <tr>
                                         <td class="font-medium text-slate-700">
                                             {{ item.name or item.product_display
@@ -286,8 +286,7 @@ admin_content %} {# ── Summary stat row
                         </td>
                         <td>
                             <span class="badge badge-green">
-                                <i class="bi bi-bag"></i>{{ (pl.items or
-                                [])|length }} items
+                                <i class="bi bi-bag"></i>{{ (pl.get('items', []))|length }} items
                             </span>
                         </td>
                         <td class="text-sm text-slate-500">

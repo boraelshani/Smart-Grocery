@@ -265,7 +265,10 @@ def internal_error(error):
 def health():
     try:
         from models.postgres_models import db as sa_db
-        sa_db.session.execute(sa_db.text('SELECT 1'))
+        from sqlalchemy import text
+        with app.app_context():
+            sa_db.session.execute(text('SELECT 1'))
+            sa_db.session.commit()
         return jsonify({'status': 'ok', 'db': 'connected'}), 200
     except Exception as e:
         return jsonify({'status': 'error', 'db': 'disconnected', 'detail': str(e)}), 500
@@ -280,13 +283,27 @@ def debug_db():
     info = {'database_url': (os.environ.get('DATABASE_URL') or '')[:50] + '...'}
     try:
         from models.postgres_models import db as sa_db
-        result = sa_db.session.execute(sa_db.text('SELECT current_database(), current_user'))
-        row = result.fetchone()
-        info['database_name'] = row[0] if row else None
-        info['database_user'] = row[1] if row else None
-        info['status'] = 'connected'
+        from sqlalchemy import text
+        with app.app_context():
+            result = sa_db.session.execute(text('SELECT current_database(), current_user'))
+            row = result.fetchone()
+            info['database_name'] = row[0] if row else None
+            info['database_user'] = row[1] if row else None
+            info['status'] = 'connected'
+            
+            # Test actual data retrieval
+            from models.postgres_models import Product, Store, Category
+            product_count = Product.query.count()
+            store_count = Store.query.count()
+            category_count = Category.query.count()
+            
+            info['product_count'] = product_count
+            info['store_count'] = store_count
+            info['category_count'] = category_count
     except Exception as e:
+        import traceback
         info['error'] = str(e)
+        info['traceback'] = traceback.format_exc()
         info['status'] = 'disconnected'
     return jsonify(info)
 

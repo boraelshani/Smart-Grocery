@@ -94,22 +94,48 @@ class Offer(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     product_id = db.Column(db.Integer, db.ForeignKey('products.id'), nullable=False, index=True)
     store_id = db.Column(db.Text, index=True)
-    price = db.Column(db.Numeric(10, 2))
+    price = db.Column(db.Numeric(10, 2))  # Legacy field, use base_price instead
+    base_price = db.Column(db.Numeric(10, 2))  # Regular price
+    promo_price = db.Column(db.Numeric(10, 2))  # Promotional/discounted price
+    unit_price = db.Column(db.Text)  # e.g., "€1.99/kg"
+    offer_details = db.Column(db.Text)  # e.g., "2+1 gratis", "-30%"
+    min_quantity = db.Column(db.Integer)  # Minimum quantity for promo price (e.g., 24 for "ab 24 Stück")
     product_url = db.Column(db.Text)
     is_available = db.Column(db.Boolean, default=True)
     last_seen = db.Column(db.DateTime)
     created_at = db.Column(db.DateTime)
     updated_at = db.Column(db.DateTime)
 
-    def effective_price(self):
-        return float(self.price) if self.price is not None else None
+    def effective_price(self, quantity=1):
+        """Return the promo price if quantity meets minimum, otherwise base price, otherwise legacy price"""
+        # If there's a minimum quantity requirement and we meet it, use promo price
+        if self.promo_price is not None and self.min_quantity:
+            if quantity >= self.min_quantity:
+                return float(self.promo_price)
+        # If there's a promo price with no quantity requirement, use it
+        elif self.promo_price is not None:
+            return float(self.promo_price)
+        # Otherwise use base price or legacy price
+        if self.base_price is not None:
+            return float(self.base_price)
+        elif self.price is not None:
+            return float(self.price)
+        return None
 
     def to_dict(self):
-        return {'storeProductId': str(self.id), 'productId': str(self.product_id),
-                'storeId': self.store_id, 'productPageUrl': self.product_url,
-                'basePrice': float(self.price) if self.price else None,
-                'price': float(self.price) if self.price else None,
-                'isAvailable': self.is_available}
+        return {
+            'storeProductId': str(self.id),
+            'productId': str(self.product_id),
+            'storeId': self.store_id,
+            'productPageUrl': self.product_url,
+            'basePrice': float(self.base_price) if self.base_price else (float(self.price) if self.price else None),
+            'promoPrice': float(self.promo_price) if self.promo_price else None,
+            'price': self.effective_price(),
+            'unitPrice': self.unit_price,
+            'offerDetails': self.offer_details,
+            'minQuantity': self.min_quantity,
+            'isAvailable': self.is_available
+        }
 
 # ── PRICE HISTORY ───────────────────────────────────────────
 class PriceHistory(db.Model):

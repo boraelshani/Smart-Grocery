@@ -46,8 +46,13 @@ def fetch_product_from_url(url):
         elif soup.title and soup.title.string:
             title = soup.title.string.strip()
 
-        # Clean title of common suffixes (e.g., " | BILLA" or " - SPAR")
-        title = re.split(r'\s*\|\s*|\s*-\s*', title)[0].strip()
+        # Clean title of common prefixes and suffixes
+        # Remove "Meine HOFER Produktempfehlung:" prefix (Hofer specific)
+        title = re.sub(r'^Meine\s+HOFER\s+Produktempfehlung:\s*', '', title, flags=re.IGNORECASE)
+        # Remove store name suffixes (e.g., " | BILLA" or " - SPAR")
+        title = re.split(r'\s*\|\s*|\s*-\s*(?:BILLA|SPAR|HOFER|LIDL|MERKUR)', title, flags=re.IGNORECASE)[0].strip()
+        # Remove trailing " | " or " - " if any remain
+        title = re.sub(r'\s*[\|\-]\s*$', '', title).strip()
 
         # 2. Determine Image
         image_url = ""
@@ -60,17 +65,101 @@ def fetch_product_from_url(url):
             if img_tag.get("src"):
                 image_url = img_tag.get("src")
         
-        # 3. Determine Price
+        # 3. Determine Price (Base and Promo)
         price = ""
+        promo_price = ""
+        
+        # Try OpenGraph price first
         og_price = soup.find("meta", property="product:price:amount")
         if og_price and og_price.get("content"):
             price = og_price.get("content").strip()
-        else:
+        
+        # Try JSON-LD for price data
+        if not price:
+            for script in soup.find_all("script", type="application/ld+json"):
+                try:
+                    data = json.loads(script.string)
+                    if isinstance(data, list):
+                        data = data[0]
+                    
+                    # Check for offers with price
+                    if "offers" in data:
+                        offers = data["offers"]
+                        if isinstance(offers, dict):
+                            if "price" in offers:
+                                price = str(offers["price"])
+                            if "lowPrice" in offers:
+                                promo_price = str(offers["lowPrice"])
+                        elif isinstance(offers, list) and offers:
+                            if "price" in offers[0]:
+                                price = str(offers[0]["price"])
+                except:
+                    continue
+        
+        # Fallback: Extract from page text with improved regex
+        if not price:
             text = soup.get_text(separator=' ', strip=True)
-            # Find common € formatting, matches 1.49, € 1.49, 1,49 € etc.
-            price_match = re.search(r'(?:€\s*)?([0-9]{1,3}[,\.][0-9]{2})(?:\s*€)?', text)
-            if price_match:
-                price = price_match.group(1).replace(',', '.')
+            
+            # Look for price patterns with € symbol
+            # Matches: €1.49, € 1.49, 1,49 €, 1.49€, etc.
+            price_patterns = [
+                r'€\s*(\d{1,3}[,\.]\d{2})',  # €1.49 or € 1.49
+                r'(\d{1,3}[,\.]\d{2})\s*€',  # 1.49€ or 1,49 €
+                r'Preis[:\s]+€?\s*(\d{1,3}[,\.]\d{2})',  # Preis: €1.49
+                r'(?:Statt|UVP)[:\s]+€?\s*(\d{1,3}[,\.]\d{2})',  # Statt: €2.49 (old price)
+            ]
+            
+            # Try to find promotional price first (usually marked with special keywords)
+            promo_keywords = r'(?:Aktion|Angebot|Rabatt|Reduziert|Jetzt|Nur|ab\s*\d+\s*Stück)'
+            promo_match = re.search(rf'{promo_keywords}[^€\d]*€?\s*(\d{{1,3}}[,\.]\d{{2}})', text, re.IGNORECASE)
+            if promo_match:
+                promo_price = promo_match.group(1).replace(',', '.')
+            
+            # Billa-specific: Look for "ab X Stück/Dosen" quantity discount patterns
+            # Example: "ab 24 Stück 0,99" or "ab 24 Dosen € 0,99" or "24er Aktion € 0,99"
+            billa_qty_patterns = [
+                r'(?:ab|per)\s*(\d+)\s*(?:Stück|stk|stück|Dosen|dosen|Flaschen|flaschen)[^€\d]{0,30}€?\s*(\d{1,3}[,\.]\d{2})',
+                r'(\d+)\s*(?:Stück|stk|Dosen|dosen)[^€\d]{0,20}(?:Aktion|Angebot)[^€\d]{0,20}€?\s*(\d{1,3}[,\.]\d{2})',
+                r'(\d+)er[^€\d]{0,30}€?\s*(\d{1,3}[,\.]\d{2})',
+                r'(?:ab|per)\s*(\d+)[^€\d]{0,10}€?\s*(\d{1,3}[,\.]\d{2})',  # Fallback: "ab 24 €0.99"
+            ]
+            qty_for_offer = None
+            for pattern in billa_qty_patterns:
+                billa_qty_match = re.search(pattern, text, re.IGNORECASE)
+                if billa_qty_match:
+                    qty_for_offer = billa_qty_match.group(1)
+                    qty_price = billa_qty_match.group(2).replace(',', '.')
+                    # This is likely a promotional price for bulk purchase
+                    if not promo_price or (qty_price and float(qty_price) < float(promo_price or '999')):
+                        promo_price = qty_price
+                    break
+            
+            # Find regular price
+            for pattern in price_patterns:
+                price_match = re.search(pattern, text, re.IGNORECASE)
+                if price_match:
+                    found_price = price_match.group(1).replace(',', '.')
+                    # If we found a promo price, this might be the old price
+                    if promo_price and "Statt" in pattern or "UVP" in pattern:
+                        price = found_price  # This is the old/regular price
+                    elif not price:
+                        price = found_price
+                    break
+            
+            # If we have both prices, ensure promo is lower than regular
+            if price and promo_price:
+                try:
+                    if float(promo_price) >= float(price):
+                        # Swap them if promo is higher (we got them backwards)
+                        price, promo_price = promo_price, price
+                except:
+                    pass
+        
+        # Normalize price format
+        if price:
+            price = price.replace(',', '.')
+        if promo_price:
+            promo_price = promo_price.replace(',', '.')
 
         # 4. JSON-LD parsing (Brand, Breadcrumbs, Descriptions)
         brand = ""
@@ -139,17 +228,28 @@ def fetch_product_from_url(url):
             encoded_name = urllib.parse.quote(name_en[:30])
             image_url = f"https://dummyimage.com/600x400/e0e0e0/555.png&text=AI+Gen:+{encoded_name}"
 
-        # 3. Map Categories using our core taxonomy mapper
+        # 3. Map Categories using our core taxonomy mapper with enhanced context
         mapped_cat_id = ""
+        category_confidence = 0
+        matched_keywords = []
         try:
             from utils.category_mapper import CategoryMapper
             mapper = CategoryMapper()
-            # Map based on the full store breadcrumb or the title if no breadcrumb found
-            target_string = category_path_raw if category_path_raw else title
-            cat_result = mapper.map_category_with_path(target_string)
+            # Map based on the full store breadcrumb, product name, and description
+            target_string = category_path_raw if category_path_raw else ""
+            # Use the extracted description or the generated one
+            desc_for_mapping = description if description else desc_de
+            cat_result = mapper.map_category_with_path(
+                store_category_path=target_string,
+                product_name=name_de,
+                product_description=desc_for_mapping
+            )
             if cat_result and isinstance(cat_result, dict):
-                 mapped_cat_id = cat_result.get("categoryId", "")
-        except:
+                mapped_cat_id = cat_result.get("categoryId", "")
+                category_confidence = cat_result.get("confidence", 0)
+                matched_keywords = cat_result.get("matched_keywords", [])
+        except Exception as e:
+            print(f"[Category Mapping Error]: {e}")
             pass
 
         # 4. Map Brand string to an ID structure safely
@@ -161,20 +261,50 @@ def fetch_product_from_url(url):
                 brand = brand.title()
             brand_id = brand
 
-        # 5. Extract Size and Unit Price
+        # 5. Extract Size, Unit Price, and Offer Details
         size_str = ""
         unit_price_str = ""
+        offer_details = ""
         
         full_text = text if 'text' in locals() else soup.get_text(separator=' ', strip=True)
         search_corpus = f"{title} {description} {full_text}"
         
-        # Extract offer details like 2+1, -50%, or 1+1 gratis
-        offer_details = ""
-        promo_price = ""
-        offer_match = re.search(r'\b(\d+\s*\+\s*\d+\s*(?:gratis|free)?|-?\d+%\s*(?:rabatt|discount)?|ab\s*\d+\s*(?:stück|stk|packungen))', search_corpus, re.IGNORECASE)
-        if offer_match:
-            offer_details = offer_match.group(1).strip()
-            
+        # Extract offer details with improved patterns
+        offer_patterns = [
+            r'(\d+\s*\+\s*\d+\s*(?:gratis|free|geschenkt))',  # 2+1 gratis
+            r'(-\d+%|\d+%\s*(?:rabatt|discount|günstiger))',  # -50% or 50% Rabatt
+            r'((?:ab|per)\s*\d+\s*(?:stück|stk|dosen|flaschen|packungen)[^\.]{0,30}€?\s*\d+[,\.]\d{2})',  # ab 24 Dosen €0.99
+            r'(\d+er[^\.]{0,20}(?:aktion|angebot))',  # 24er Aktion
+            r'(nur\s*€?\s*\d+[,\.]\d{2})',  # Nur €1.99
+            r'(statt\s*€?\s*\d+[,\.]\d{2})',  # Statt €2.99
+            r'(aktion|angebot|sonderpreis|aktionspreis)',  # General promo keywords (fallback)
+        ]
+        
+        # If we found a quantity-based discount earlier, use that for offer details
+        if 'qty_for_offer' in locals() and qty_for_offer and promo_price:
+            offer_details = f"ab {qty_for_offer} Stück €{promo_price}"
+        else:
+            # Otherwise, search for offer patterns
+            for pattern in offer_patterns:
+                offer_match = re.search(pattern, search_corpus, re.IGNORECASE)
+                if offer_match:
+                    offer_details = offer_match.group(1).strip()
+                    break
+        
+        # If we have a promo price, add it to offer details
+        if promo_price and price:
+            try:
+                regular = float(price)
+                promo = float(promo_price)
+                if promo < regular:
+                    discount_pct = int(((regular - promo) / regular) * 100)
+                    if not offer_details:
+                        offer_details = f"-{discount_pct}%"
+                    else:
+                        offer_details += f" (-{discount_pct}%)"
+            except:
+                pass
+        
         # Try to find printed unit price first
         explicit_unit_match = re.search(r'(?:€|EUR)?\s*(\d{1,3}[.,]\d{2})\s*(?:€|EUR)?\s*/\s*(100\s?g|1\s?kg|100\s?ml|1\s?l|liter|kg)', search_corpus, re.IGNORECASE)
         if explicit_unit_match:
@@ -191,29 +321,33 @@ def fetch_product_from_url(url):
             
             size_str = f"{val_str}{unit}"
             
-            if price and not unit_price_str:
-                try:
-                    p = float(price)
-                    if unit in ['g']:
-                        unit_price = (p / val) * 100
-                        unit_price_str = f"€{unit_price:.2f}/100g"
-                        if val >= 1000:
-                            unit_price = (p / val) * 1000
+            # Calculate unit price if not found and we have a price
+            if not unit_price_str:
+                # Use promo price if available, otherwise regular price
+                calc_price = promo_price if promo_price else price
+                if calc_price:
+                    try:
+                        p = float(calc_price)
+                        if unit in ['g', 'gramm']:
+                            unit_price = (p / val) * 100
+                            unit_price_str = f"€{unit_price:.2f}/100g"
+                            if val >= 1000:
+                                unit_price = (p / val) * 1000
+                                unit_price_str = f"€{unit_price:.2f}/1kg"
+                        elif unit in ['kg']:
+                            unit_price = p / val
                             unit_price_str = f"€{unit_price:.2f}/1kg"
-                    elif unit in ['kg']:
-                        unit_price = p / val
-                        unit_price_str = f"€{unit_price:.2f}/1kg"
-                    elif unit in ['ml']:
-                        unit_price = (p / val) * 100
-                        unit_price_str = f"€{unit_price:.2f}/100ml"
-                    elif unit in ['l', 'liter', 'lite']:
-                        unit_price = p / val
-                        unit_price_str = f"€{unit_price:.2f}/1l"
-                    else:
-                        unit_price = p / val
-                        unit_price_str = f"€{unit_price:.2f}/unit"
-                except:
-                    pass
+                        elif unit in ['ml', 'milliliter']:
+                            unit_price = (p / val) * 100
+                            unit_price_str = f"€{unit_price:.2f}/100ml"
+                        elif unit in ['l', 'liter', 'lite']:
+                            unit_price = p / val
+                            unit_price_str = f"€{unit_price:.2f}/1l"
+                        else:
+                            unit_price = p / val
+                            unit_price_str = f"€{unit_price:.2f}/unit"
+                    except:
+                        pass
 
         return {
             "success": True,
@@ -230,10 +364,13 @@ def fetch_product_from_url(url):
                 "category_path": category_path_raw,
                 "categoryId": mapped_cat_id,
                 "category": mapped_cat_id, # Add this for UI fallback
+                "category_confidence": category_confidence,
+                "category_matched_keywords": matched_keywords,
                 "size": size_str,
                 "unit_price": unit_price_str,
                 "promo_price": promo_price,
-                "offer_details": offer_details
+                "offer_details": offer_details,
+                "min_quantity": int(qty_for_offer) if 'qty_for_offer' in locals() and qty_for_offer else None
             }
         }
     except Exception as e:

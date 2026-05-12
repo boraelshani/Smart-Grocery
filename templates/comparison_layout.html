@@ -285,10 +285,10 @@
                     <span>Verified {{ store.updated_at_relative or 'today' }}</span>
                 </div>
                 <div class="price-tag">
-                    <span class="price-value">€{{ "%.2f"|format(store.price) }}</span>
-                    {% if not loop.first %}
+                    <span class="price-value">{% if store.price is not none %}€{{ "%.2f"|format(store.price) }}{% else %}N/A{% endif %}</span>
+                    {% if not loop.first and store.price is not none and product.stores[0].price is not none %}
                     <span class="price-diff">+€{{ "%.2f"|format(store.price - product.stores[0].price) }} diff</span>
-                    {% else %}
+                    {% elif loop.first %}
                     <span class="price-diff text-success" style="color: var(--accent-green) !important;">Lowest Price Found</span>
                     {% endif %}
                 </div>

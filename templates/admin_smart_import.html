@@ -152,13 +152,14 @@ TWO-COLUMN LAYOUT (left 2/3 = import workflow | right 1/3 = guide card)
                     </div>
                 </div>
 
-                {# Row 2: Category + Image URL #}
+                {# Row 2: Category + Store with confidence indicator #}
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                     <div>
                         <label
                             class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5"
                         >
                             Category <span class="text-red-500">*</span>
+                            <span id="category-confidence-badge" class="hidden ml-2"></span>
                         </label>
                         <select
                             name="categoryId"
@@ -173,6 +174,10 @@ TWO-COLUMN LAYOUT (left 2/3 = import workflow | right 1/3 = guide card)
                             </option>
                             {% endfor %}
                         </select>
+                        <div id="category-keywords" class="hidden mt-1.5 text-xs text-slate-500">
+                            <span class="font-semibold">Matched:</span>
+                            <span id="category-keywords-list"></span>
+                        </div>
                     </div>
                     <div>
                         <label
@@ -220,13 +225,13 @@ TWO-COLUMN LAYOUT (left 2/3 = import workflow | right 1/3 = guide card)
                     </div>
                 </div>
 
-                {# Row 4: Price + Store URL #}
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                {# Row 4: Price + Promo Price #}
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                     <div>
                         <label
                             class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5"
                         >
-                            Price (€)
+                            Regular Price (€)
                         </label>
                         <div class="relative">
                             <span
@@ -243,6 +248,98 @@ TWO-COLUMN LAYOUT (left 2/3 = import workflow | right 1/3 = guide card)
                                 placeholder="0.00"
                             />
                         </div>
+                    </div>
+                    <div>
+                        <label
+                            class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5"
+                        >
+                            Promo Price (€)
+                            <span class="text-xs text-slate-400 font-normal ml-1">(if on sale)</span>
+                        </label>
+                        <div class="relative">
+                            <span
+                                class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-semibold"
+                                >€</span
+                            >
+                            <input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                name="promo_price"
+                                id="res_promo_price"
+                                class="adm-input pl-7"
+                                placeholder="0.00"
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                {# Row 5: Size + Unit Price #}
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label
+                            class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5"
+                        >
+                            Size
+                            <span class="text-xs text-slate-400 font-normal ml-1">(e.g., 500g, 1l)</span>
+                        </label>
+                        <input
+                            type="text"
+                            name="size"
+                            id="res_size"
+                            class="adm-input"
+                            placeholder="500g"
+                        />
+                    </div>
+                    <div>
+                        <label
+                            class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5"
+                        >
+                            Unit Price
+                            <span class="text-xs text-slate-400 font-normal ml-1">(e.g., €1.99/kg)</span>
+                        </label>
+                        <input
+                            type="text"
+                            name="unit_price"
+                            id="res_unit_price"
+                            class="adm-input"
+                            placeholder="€1.99/kg"
+                        />
+                    </div>
+                </div>
+
+                {# Row 6: Offer Details + Min Quantity + Store URL #}
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                    <div>
+                        <label
+                            class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5"
+                        >
+                            Offer Details
+                            <span class="text-xs text-slate-400 font-normal ml-1">(e.g., 2+1 gratis, -30%)</span>
+                        </label>
+                        <input
+                            type="text"
+                            name="offer_details"
+                            id="res_offer_details"
+                            class="adm-input"
+                            placeholder="2+1 gratis"
+                        />
+                    </div>
+                    <div>
+                        <label
+                            class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5"
+                        >
+                            Min Quantity
+                            <span class="text-xs text-slate-400 font-normal ml-1">(for bulk discount)</span>
+                        </label>
+                        <input
+                            type="number"
+                            min="1"
+                            name="min_quantity"
+                            id="res_min_quantity"
+                            class="adm-input"
+                            placeholder="24"
+                        />
                     </div>
                     <div>
                         <label
@@ -459,6 +556,11 @@ TWO-COLUMN LAYOUT (left 2/3 = import workflow | right 1/3 = guide card)
         document.getElementById("res_name_en").value = data.name_en || "";
         document.getElementById("res_name_de").value = data.name_de || "";
         document.getElementById("res_price").value = data.price || "";
+        document.getElementById("res_promo_price").value = data.promo_price || "";
+        document.getElementById("res_size").value = data.size || "";
+        document.getElementById("res_unit_price").value = data.unit_price || "";
+        document.getElementById("res_offer_details").value = data.offer_details || "";
+        document.getElementById("res_min_quantity").value = data.min_quantity || "";
         document.getElementById("res_store_url").value = sourceUrl || "";
         document.getElementById("res_store_url_display").value =
             sourceUrl || "";
@@ -473,9 +575,12 @@ TWO-COLUMN LAYOUT (left 2/3 = import workflow | right 1/3 = guide card)
         const storeSel = document.getElementById("res_store_id");
         storeSel.value = storeId;
 
-        // Category — match by categoryId
+        // Category — match by categoryId with confidence indicator
         const catSel = document.getElementById("res_category");
         const catId = data.categoryId || data.category || "";
+        const confidence = data.category_confidence || 0;
+        const keywords = data.category_matched_keywords || [];
+        
         if (catId) {
             // Try exact match first
             let matched = false;
@@ -495,6 +600,29 @@ TWO-COLUMN LAYOUT (left 2/3 = import workflow | right 1/3 = guide card)
                         break;
                     }
                 }
+            }
+            
+            // Show confidence badge
+            const badge = document.getElementById("category-confidence-badge");
+            badge.classList.remove("hidden");
+            
+            if (confidence >= 70) {
+                badge.className = "ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800";
+                badge.innerHTML = `<i class="bi bi-check-circle-fill mr-1"></i>${confidence}% confident`;
+            } else if (confidence >= 40) {
+                badge.className = "ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800";
+                badge.innerHTML = `<i class="bi bi-exclamation-triangle-fill mr-1"></i>${confidence}% confident - Please review`;
+            } else {
+                badge.className = "ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800";
+                badge.innerHTML = `<i class="bi bi-x-circle-fill mr-1"></i>${confidence}% confident - Low confidence`;
+            }
+            
+            // Show matched keywords
+            if (keywords.length > 0) {
+                const keywordsDiv = document.getElementById("category-keywords");
+                const keywordsList = document.getElementById("category-keywords-list");
+                keywordsDiv.classList.remove("hidden");
+                keywordsList.textContent = keywords.join(", ");
             }
         }
     }

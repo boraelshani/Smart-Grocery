@@ -951,122 +951,126 @@ def admin_save_category():
 @admin_bp.route("/products/save-ai", methods=["POST"])
 def admin_save_ai_product():
     ok, res = _require_admin()
-    from models.postgres_models import (
-        Brand,
-        Category,
-        FeaturedDeal,
-        ListItem,
-        Offer,
-        Product,
-        ShoppingList,
-        Store,
-        User,
-        db,
-    )
-
-    pass
     if not ok:
         return res
+    
+    from models.postgres_models import Brand, Category, Offer, Product, Store, db
+    
     if db is None:
-        return res
-    pid = _id("prod")
-    cid = (request.form.get("categoryId") or "").strip()
-    path, _ = _build_category_path(db, cid)
-
-    en = request.form.get("name_en")
-    de = request.form.get("name_de")
-    if not en:
-        flash("Name required", "error")
+        flash("Database connection error", "error")
         return redirect(url_for("admin.admin_smart_import_page"))
-
-    payload = {
-        "productId": pid,
-        "name_en": en,
-        "name_de": de,
-        "name": en,
-        "brandId": (request.form.get("brandId") or "").strip() or None,
-        "categoryId": cid or None,
-        "categoryPath": path,
-        "unitSize": (request.form.get("size") or "").strip(),
-        "defaultImageUrl": (request.form.get("image_url") or "").strip(),
-        "description_en": request.form.get("description_en"),
-        "description_de": request.form.get("description_de"),
-        "updatedAt": _now_utc(),
-    }
-
-    db.products.update_one(
-        {"productId": pid},
-        {"$set": payload, "$setOnInsert": {"createdAt": _now_utc()}},
-        upsert=True,
-    )
-
-    # Array of stores
-    store_urls = request.form.getlist("store_url")
-    prices = request.form.getlist("price")
-    store_ids = request.form.getlist("store_id")
-
-    for i in range(min(len(store_urls), len(prices))):
-        s_url = store_urls[i].strip()
-        p_val = prices[i].strip()
-        s_id = store_ids[i].strip() if i < len(store_ids) else None
-
-        if not s_url or not p_val or not s_id:
-            continue
-
-        try:
-            p_val = float(p_val)
-        except:
-            continue
-
-        spid = _id("sp")
-        promo_prices = request.form.getlist("promo_price")
-        offer_details = request.form.getlist("offer_details")
-
-        pr_val = None
-        od_val = None
-        if i < len(promo_prices):
+    
+    try:
+        # Get form data
+        name_en = (request.form.get("name_en") or "").strip()
+        name_de = (request.form.get("name_de") or "").strip()
+        
+        if not name_de:
+            flash("German name is required", "error")
+            return redirect(url_for("admin.admin_smart_import_page"))
+        
+        # Get category
+        category_id = request.form.get("categoryId")
+        category = None
+        if category_id:
+            category = Category.query.get(_parse_int(category_id, 0))
+        
+        # Get or create brand
+        brand_name = (request.form.get("brandId") or "").strip()
+        brand_obj = None
+        if brand_name:
+            brand_obj = Brand.query.filter_by(name=brand_name).first()
+            if not brand_obj:
+                brand_obj = Brand(
+                    brand_id=f"brand_{uuid.uuid4().hex[:12]}",
+                    name=brand_name,
+                    name_en=brand_name,
+                    name_de=brand_name
+                )
+                db.session.add(brand_obj)
+                db.session.flush()
+        
+        # Create product
+        product = Product(
+            product_id=f"prod_{uuid.uuid4().hex[:12]}",
+            name_de=name_de,
+            name_en=name_en or name_de,
+            brand=brand_name,
+            category_id=category.id if category else None,
+            unit_size=(request.form.get("size") or "").strip() or None,
+            image_url=(request.form.get("image_url") or "").strip() or None,
+            description_en=(request.form.get("description_en") or "").strip() or None,
+            description_de=(request.form.get("description_de") or "").strip() or None,
+        )
+        db.session.add(product)
+        db.session.flush()  # Get the product ID
+        
+        # Get store and price data
+        store_id = (request.form.get("store_id") or "").strip()
+        price_str = (request.form.get("price") or "").strip()
+        promo_price_str = (request.form.get("promo_price") or "").strip()
+        store_url = (request.form.get("store_url") or "").strip()
+        offer_details = (request.form.get("offer_details") or "").strip() or None
+        unit_price = (request.form.get("unit_price") or "").strip() or None
+        
+        # Create offer if we have store and price
+        if store_id and price_str:
             try:
-                if promo_prices[i].strip():
-                    pr_val = float(promo_prices[i].strip())
-            except:
-                pass
-
-        if i < len(offer_details):
-            od_val = offer_details[i].strip() or None
-
-        db.store_products.update_one(
-            {"storeProductId": spid},
-            {
-                "$set": {
-                    "storeProductId": spid,
-                    "productId": pid,
-                    "storeId": s_id,
-                    "productPageUrl": s_url,
-                    "basePrice": p_val,
-                    "promoPrice": pr_val,
-                    "offerDetails": od_val,
-                    "isAvailable": True,
-                    "lastPriceUpdate": _now_utc(),
-                    "updatedAt": _now_utc(),
-                },
-                "$setOnInsert": {"createdAt": _now_utc()},
-            },
-            upsert=True,
-        )
-
-        db.price_history.insert_one(
-            {
-                "historyId": _id("hist"),
-                "storeProductId": spid,
-                "oldPrice": None,
-                "newPrice": p_val,
-                "timestamp": _now_utc(),
-            }
-        )
-
-    _recompute_product_state(db, pid)
-    flash("AI Product imported successfully!", "success")
-    return redirect(url_for("admin.admin_products_page"))
+                base_price = float(price_str)
+                promo_price = None
+                if promo_price_str:
+                    try:
+                        promo_price = float(promo_price_str)
+                    except:
+                        pass
+                
+                # Verify store exists
+                store = Store.query.filter_by(store_id=store_id).first()
+                if not store:
+                    # Create store if it doesn't exist
+                    store = Store(
+                        store_id=store_id,
+                        name=store_id.capitalize(),
+                        active=True
+                    )
+                    db.session.add(store)
+                    db.session.flush()
+                
+                # Create offer
+                min_quantity_str = (request.form.get("min_quantity") or "").strip()
+                min_quantity = None
+                if min_quantity_str:
+                    try:
+                        min_quantity = int(min_quantity_str)
+                    except:
+                        pass
+                
+                offer = Offer(
+                    product_id=product.id,
+                    store_id=store_id,
+                    base_price=base_price,
+                    promo_price=promo_price,
+                    unit_price=unit_price,
+                    offer_details=offer_details,
+                    min_quantity=min_quantity,
+                    product_url=store_url or None,
+                    is_available=True
+                )
+                db.session.add(offer)
+            except ValueError as e:
+                flash(f"Invalid price format: {e}", "error")
+                db.session.rollback()
+                return redirect(url_for("admin.admin_smart_import_page"))
+        
+        db.session.commit()
+        flash(f"Product '{name_de}' imported successfully!", "success")
+        return redirect(url_for("admin.admin_products_page", edit=product.id))
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error saving AI product: {e}")
+        flash(f"Error saving product: {str(e)}", "error")
+        return redirect(url_for("admin.admin_smart_import_page"))
 
 
 @admin_bp.route("/api/products/search", methods=["GET"])
@@ -1567,111 +1571,122 @@ def admin_smart_extract():
 
 @admin_bp.route("/scans", methods=["GET"])
 def pending_scans():
-    from models.postgres_models import (
-        Brand,
-        Category,
-        FeaturedDeal,
-        ListItem,
-        Offer,
-        Product,
-        ShoppingList,
-        Store,
-        User,
-        db,
-    )
+    ok, res = _require_admin()
+    if not ok:
+        return res
+    from models.postgres_models import PendingProduct
 
-    pass
-    if db is None:
-        return "No DB", 500
-    pending = list(
-        db.pending_products.find({"status": "pending"}).sort("created_at", -1)
-    )
-    return render_template(
-        "admin_pending_scans.html", scancount=len(pending), pending_scans=pending
-    )
+    try:
+        pending = PendingProduct.query.filter_by(status="pending").order_by(PendingProduct.created_at.desc()).all()
+        pending_list = [
+            {
+                "barcode": p.barcode,
+                "name": p.name,
+                "image": p.image,
+                "status": p.status,
+                "submitted_by": p.submitted_by,
+                "created_at": p.created_at,
+            }
+            for p in pending
+        ]
+        return render_template(
+            "admin_pending_scans.html", scancount=len(pending_list), pending_scans=pending_list, user_email=res
+        )
+    except Exception as e:
+        print(f"pending_scans error: {e}")
+        return render_template(
+            "admin_pending_scans.html", scancount=0, pending_scans=[], user_email=res, error=str(e)
+        )
 
 
 @admin_bp.route("/api/scans/<barcode>/approve", methods=["POST"])
 def approve_scan(barcode):
-    from models.postgres_models import (
-        Brand,
-        Category,
-        FeaturedDeal,
-        ListItem,
-        Offer,
-        Product,
-        ShoppingList,
-        Store,
-        User,
-        db,
-    )
-
-    pass
-    if db is None:
-        return jsonify({"success": False})
-
-    data = request.get_json() or {}
-    name = data.get("name")
-    category = data.get("category")
-    price = data.get("price")
-    store = data.get("store")
-
-    db.pending_products.update_one(
-        {"barcode": barcode}, {"$set": {"status": "approved"}}
-    )
-
-    # insert into products directly
+    ok, res = _require_admin()
+    if not ok:
+        return jsonify({"success": False, "error": "Unauthorized"})
+    
+    from models.postgres_models import PendingProduct, Product, Offer, Category, db
     import uuid
 
-    pid = str(uuid.uuid4())
-    name_en = _translate_text(name, "de", "en") or name
-    db.products.insert_one(
-        {
-            "id": pid,
-            "name": name_en,
-            "name_en": name_en,
-            "name_de": name,
-            "barcode": barcode,
-            "category": category,
-            "categoryId": category.lower(),
-            "created_at": datetime.now(timezone.utc),
-        }
-    )
-    if price and store:
-        db.store_products.insert_one(
-            {
-                "productId": pid,
-                "storeId": store.lower(),
-                "price": float(price),
-                "currency": "EUR",
-            }
-        )
+    try:
+        data = request.get_json() or {}
+        name = data.get("name")
+        category = data.get("category")
+        price = data.get("price")
+        store = data.get("store")
 
-    return jsonify({"success": True})
+        # Update pending product status
+        pending = PendingProduct.query.filter_by(barcode=barcode).first()
+        if not pending:
+            return jsonify({"success": False, "error": "Pending product not found"})
+        
+        pending.status = "approved"
+        
+        # Create product
+        name_en = _translate_text(name, "de", "en") or name
+        
+        # Find category by slug or name
+        cat = None
+        if category:
+            cat = Category.query.filter(
+                (Category.slug == category.lower()) | 
+                (Category.name_en.ilike(category)) |
+                (Category.name_de.ilike(category))
+            ).first()
+        
+        new_product = Product(
+            fingerprint=str(uuid.uuid4()),
+            name_de=name,
+            barcode=barcode,
+            category_id=cat.id if cat else None,
+            store_id=store.lower() if store else None,
+            created_at=_now_utc(),
+            updated_at=_now_utc()
+        )
+        db.session.add(new_product)
+        db.session.flush()  # Get the product ID
+        
+        # Create offer if price and store provided
+        if price and store:
+            new_offer = Offer(
+                product_id=new_product.id,
+                store_id=store.lower(),
+                price=float(price),
+                is_available=True,
+                last_seen=_now_utc(),
+                created_at=_now_utc(),
+                updated_at=_now_utc()
+            )
+            db.session.add(new_offer)
+        
+        db.session.commit()
+        return jsonify({"success": True})
+    except Exception as e:
+        db.session.rollback()
+        print(f"approve_scan error: {e}")
+        return jsonify({"success": False, "error": str(e)})
 
 
 @admin_bp.route("/api/scans/<barcode>/reject", methods=["POST"])
 def reject_scan(barcode):
-    from models.postgres_models import (
-        Brand,
-        Category,
-        FeaturedDeal,
-        ListItem,
-        Offer,
-        Product,
-        ShoppingList,
-        Store,
-        User,
-        db,
-    )
+    ok, res = _require_admin()
+    if not ok:
+        return jsonify({"success": False, "error": "Unauthorized"})
+    
+    from models.postgres_models import PendingProduct, db
 
-    pass
-    if db is None:
-        return jsonify({"success": False})
-    db.pending_products.update_one(
-        {"barcode": barcode}, {"$set": {"status": "rejected"}}
-    )
-    return jsonify({"success": True})
+    try:
+        pending = PendingProduct.query.filter_by(barcode=barcode).first()
+        if not pending:
+            return jsonify({"success": False, "error": "Pending product not found"})
+        
+        pending.status = "rejected"
+        db.session.commit()
+        return jsonify({"success": True})
+    except Exception as e:
+        db.session.rollback()
+        print(f"reject_scan error: {e}")
+        return jsonify({"success": False, "error": str(e)})
 
 
 @admin_bp.route("/api/products/bulk-delete", methods=["POST"])

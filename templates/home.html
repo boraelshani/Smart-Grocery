@@ -325,7 +325,7 @@
                   {{ store.get('store') or store.get('name') }}
                 </a>
                 <span class="fw-bold {% if store_price == cheapest_price %}text-success{% else %}text-dark{% endif %}" style="font-size:.9rem;">
-                  €{{ "%.2f"|format(store.get('price')) }}
+                  {% if store.get('price') is not none %}€{{ "%.2f"|format(store.get('price')) }}{% else %}N/A{% endif %}
                 </span>
               </div>
               {% endfor %}
@@ -337,13 +337,17 @@
             </div>
 
             {% if sorted_stores|length > 1 %}
-            {% set save_amount = sorted_stores[-1].get('price')|float - sorted_stores[0].get('price')|float %}
+            {% set first_price = sorted_stores[0].get('price') %}
+            {% set last_price = sorted_stores[-1].get('price') %}
+            {% if first_price is not none and last_price is not none %}
+            {% set save_amount = last_price|float - first_price|float %}
             {% if save_amount > 0 %}
             <div class="border-top pt-2 mb-2">
               <span class="save-badge">
                 <i class="bi bi-graph-down-arrow"></i> Save up to €{{ "%.2f"|format(save_amount) }}
               </span>
             </div>
+            {% endif %}
             {% endif %}
             {% endif %}
             {% endif %}
