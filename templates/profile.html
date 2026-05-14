@@ -1,51 +1,34 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 
 {% block styles %}
-<style> /* Internal CSS for page-specific styling */
-    :root { /* Defines global CSS variables for easy maintenance */
-      --premium-purple: #7c3aed; /* Primary theme color */
-      --premium-indigo: #6366f1; /* Secondary theme color */
-      --premium-dark: #1e1b4b; /* Dark background/text color */
-      --glass-bg: rgba(255, 255, 255, 0.8); /* Semi-transparent background for glassmorphism */
-      --glass-border: rgba(255, 255, 255, 0.4); /* Subtle border for glass elements */
-      --card-radius: 24px; /* Standard corner rounding for cards */
+<style>
+    :root {
+      --premium-purple: #65388f;
+      --premium-indigo: #48236b;
+      --premium-dark: #3a3b3a;
+      --glass-bg: rgba(255, 255, 255, 0.8);
+      --glass-border: rgba(255, 255, 255, 0.4);
+      --card-radius: 8px;
     }
 
-    body { /* Main content styling */
-      background: radial-gradient(circle at top left, #f3f4ff 0%, #ffffff 50%); /* Soft background gradient */
-      min-height: 100vh; /* Ensures the background covers the full viewport height */
+    body {
+      background: var(--bg-cream, #f4f0ec);
+      min-height: 100vh;
     }
 
-    /* Premium Header */ /* Section for the top visual header */
+    /* Flat editorial page header — matches home page purple sections */
     .profile-header {
-      /* Vibrant animated gradient */ /* Uses multiple colors and animation */
-      background: linear-gradient(-45deg, #7c3aed, #6366f1, #8b5cf6, #d946ef); /* Multi-color gradient */
-      background-size: 400% 400%; /* Enlarges the background for smooth movement */
-      animation: gradientBG 15s ease infinite; /* Triggers the background animation */
-      color: white; /* White text for contrast */
-      padding: 6rem 0 10rem; /* Large vertical padding */
-      margin-bottom: -5rem; /* Negative margin to create overlap effect */
-      border-radius: 0 0 50% 50% / 0 0 40px 40px; /* Curved bottom edge */
-      position: relative; /* Allows absolute positioning of child elements */
-      overflow: hidden; /* Clips any content spilling outside the curves */
-      z-index: 10; /* Keeps the header above normal elements */
-      box-shadow: 0 10px 40px rgba(124, 58, 237, 0.4); /* Deep colored shadow */
-    }
-    
-    @keyframes gradientBG { /* Keyframes for the moving background effect */
-      0% { background-position: 0% 50%; } /* Start state */
-      50% { background-position: 100% 50%; } /* Mid state (moved) */
-      100% { background-position: 0% 50%; } /* End state (return) */
+      background: #65388f;
+      color: white;
+      padding: 3rem 0 5.5rem;
+      margin-bottom: -3.5rem;
+      position: relative;
+      overflow: hidden;
+      z-index: 10;
     }
 
-    /* Floating shapes for fun */ /* Decorative elements in the background */
-    .bg-shape {
-      position: absolute; /* Positions shapes relative to the header */
-      background: rgba(255, 255, 255, 0.1); /* Very subtle white color */
-      backdrop-filter: blur(5px); /* Blurs the background behind the shape */
-      border-radius: 20%; /* Rounded corners for the shapes */
-      animation: float 10s infinite ease-in-out; /* Triggers drifting animation */
-    }
+    /* Shapes hidden — no animation on content pages */
+    .bg-shape { display: none; }
     
     .shape-1 { top: 20%; left: 10%; width: 100px; height: 100px; animation-delay: 0s; } /* Position and size for shape 1 */
     .shape-2 { top: 60%; right: 10%; width: 150px; height: 150px; animation-delay: -2s; border-radius: 50%; } /* Position and size for shape 2 */
@@ -76,15 +59,15 @@
       margin-right: auto; /* Centers the grid */
     }
 
-    /* Cards with Bootstrap-y Feel */ /* Styling for the information containers */
+    /* Cards */
     .fun-card {
-      background: white; /* White background */
-      border: none; /* Removes default borders */
-      border-radius: 20px; /* Modern rounded corners */
-      box-shadow: 0 10px 30px rgba(0,0,0,0.08); /* Soft shadow */ /* Subtle elevation */
-      transition: transform 0.3s ease, box-shadow 0.3s ease; /* Smooth hover effects */
-      overflow: hidden; /* Keeps contents within rounded corners */
-      margin-bottom: 2rem; /* Spacing between cards */
+      background: white;
+      border: 1.5px solid var(--bg-beige, #e9e3de);
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      overflow: hidden;
+      margin-bottom: 2rem;
     }
     
     .fun-card:hover { /* Interactive effect on hover */
@@ -118,17 +101,16 @@
     /* Hide old layout stuff if conflicting */ /* Cleanup for legacy content */
     .column-sidebar { display: none; } /* Hides the old sidebar class */
 
-    /* Identity Card (Sidebar Version) */ /* Card used for logging in/status */
+    /* Identity Card */
     .identity-card {
-      background: rgba(255, 255, 255, 0.9); /* Glass-like background */
-      backdrop-filter: blur(10px); /* Blurs content behind card */
-      border-radius: 30px; /* More rounded corners */
-      box-shadow: 0 20px 40px rgba(0,0,0,0.05); /* Very soft shadow */
-      border: 1px solid rgba(255,255,255,0.3); /* Subtle glass border */
-      padding: 2.5rem 2rem; /* Padding for internal components */
-      transition: all 0.3s ease; /* Smooth state changes */
-      position: sticky; /* Keeps the card visible while scrolling */
-      top: 100px; /* Offset for sticky positioning */
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+      border: 1.5px solid var(--bg-beige, #e9e3de);
+      padding: 2.5rem 2rem;
+      transition: all 0.2s ease;
+      position: sticky;
+      top: 100px;
     }
 
     .identity-header { /* Top portion of the identity card */
@@ -142,13 +124,13 @@
       gap: 1.5rem; /* Space between items */
     }
 
-    .info-item { /* Individual information rows */
-      display: flex; /* Flexbox for icon and text */
-      align-items: center; /* Centers items vertically */
-      gap: 15px; /* Space between icon and text */
-      padding: 12px 15px; /* Padding for the row */
-      background: #f8fafc; /* Very light gray background */
-      border-radius: 18px; /* Rounded corners */
+    .info-item {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      padding: 12px 15px;
+      background: var(--bg-cream, #f4f0ec);
+      border-radius: 6px;
       border: 1px solid #f1f5f9; /* Subtle border */
     }
 
@@ -174,11 +156,11 @@
     .profile-avatar { /* The actual profile image styling */
       width: 100%; /* Fills the outer container */
       height: 100%; /* Fills the outer container */
-      border-radius: 30px; /* Rounded corners */
+      border-radius: 8px; /* Rounded corners */
       background-size: cover; /* Ensures image covers the area */
       background-position: center; /* Centers the image */
       border: 4px solid white; /* White frame around the image */
-      box-shadow: 0 12px 30px rgba(124, 58, 237, 0.2); /* Glow effect */
+      box-shadow: 0 8px 20px rgba(101,56,143,0.15); /* Glow effect */
       background-color: #f5f3ff; /* Fallback background color */
       transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Bouncy transition effect */
     }
@@ -189,7 +171,7 @@
       right: -5px; /* Overlaps right edge */
       width: 34px; /* Small fixed width */
       height: 34px; /* Small fixed height */
-      background: #7c3aed; /* Purple button color */
+      background: #65388f;
       color: white; /* White icon color */
       border-radius: 10px; /* Rounded button */
       display: flex; /* Centers the icon */
@@ -281,7 +263,7 @@
     .store-tile { /* Styling for store selector tiles */
       background: #f8fafc; /* Light blue-gray background */
       border: 1px solid #f1f5f9; /* Subtle border */
-      border-radius: 20px; /* Rounded corners */
+      border-radius: 8px;
       padding: 1rem; /* Standard padding */
       cursor: pointer; /* Shows the link pointer on hover */
       transition: all 0.3s ease; /* Smooth animation for all changes */
@@ -296,14 +278,14 @@
 
     .store-tile:hover { /* Interactive effect when mouse is over */
       background: white; /* Brightens background */
-      border-color: #7c3aed; /* Purple border pops out */
+      border-color: #65388f; /* Purple border pops out */
       transform: translateY(-5px); /* Lifts the tile up */
       box-shadow: 0 10px 25px rgba(0,0,0,0.05); /* Adds a shadow under the lift */
     }
 
     .store-tile.selected { /* Styling for tiles representing chosen stores */
       background: #f5f3ff; /* Very light purple background */
-      border-color: #7c3aed; /* Bold purple border */
+      border-color: #65388f; /* Bold purple border */
     }
 
     .store-logo-box { /* Container for the supermarket brand logo */
@@ -321,8 +303,8 @@
     }
 
     .store-tile.selected .store-logo-box { /* Highlight for logo box when tile is selected */
-      border-color: rgba(124, 58, 237, 0.3); /* Faint purple border */
-      box-shadow: 0 5px 15px rgba(124, 58, 237, 0.1); /* Soft purple glow */
+      border-color: rgba(101, 56, 143, 0.3); /* Faint purple border */
+      box-shadow: 0 5px 15px rgba(101, 56, 143, 0.1); /* Soft purple glow */
     }
 
     .store-check { /* Small checkmark icon for selected tiles */
@@ -331,7 +313,7 @@
       right: 10px; /* Distance from right */
       width: 24px; /* Fixed diameter */
       height: 24px; /* Fixed diameter */
-      background: #7c3aed; /* Purple background */
+      background: #65388f; /* Purple background */
       color: white; /* White check icon */
       border-radius: 50%; /* Circular shape */
       display: none; /* Hidden by default */
@@ -359,13 +341,13 @@
     }
 
     .category-tile:hover { /* Hover state for category */
-      border-color: #7c3aed; /* Purple border */
+      border-color: #65388f; /* Purple border */
       background: #f8fafc; /* Faint gray-blue background */
     }
 
     .category-tile.selected { /* Highlighted state for category */
-      background: #7c3aed; /* Solid purple background */
-      border-color: #7c3aed; /* Solid purple border */
+      background: #65388f; /* Solid purple background */
+      border-color: #65388f; /* Solid purple border */
       color: white; /* White text for contrast */
     }
 
@@ -405,7 +387,7 @@
 
     .favorite-card { /* Card representing a favorited product */
       background: #f8fafc; /* Light background */
-      border-radius: 20px; /* Rounded corners */
+      border-radius: 8px;
       padding: 1.25rem; /* Inner padding */
       display: flex; /* Side-by-side layout */
       gap: 1.25rem; /* Space between picture and details */
@@ -418,7 +400,7 @@
       background: white; /* Highlights background */
       transform: scale(1.02); /* Subtle zoom effect */
       box-shadow: 0 10px 30px rgba(0,0,0,0.05); /* Soft drop shadow */
-      border-color: #7c3aed; /* Purple border on focus */
+      border-color: #65388f; /* Purple border on focus */
     }
 
     .favorite-card img { /* Formatting for the favorited product photo */
@@ -432,7 +414,7 @@
 
     .pill-badge { /* Small badge for categories or tags */
       background: #eceaf3; /* Soft purple background */
-      color: #7c3aed; /* Contrast purple text */
+      color: #65388f; /* Contrast purple text */
       padding: 4px 10px; /* Small compact padding */
       border-radius: 8px; /* Rounded square look */
       font-size: 0.7rem; /* Miniature text size */
@@ -445,7 +427,7 @@
     .avatar-option.selected { /* Highlighting for the chosen profile picture */
       border-color: var(--premium-purple) !important; /* Explicit purple border */
       background: #f5f3ff !important; /* Faint background color */
-      box-shadow: 0 10px 20px rgba(124, 58, 237, 0.1) !important; /* Purple glow shadow */
+      box-shadow: 0 10px 20px rgba(101, 56, 143, 0.1) !important; /* Purple glow shadow */
     }
 
     .avatar-check { /* Checkmark for chosen profile image */
@@ -492,18 +474,18 @@
     }
 
     .btn-premium-primary { /* High priority action button */
-      background: linear-gradient(135deg, var(--premium-purple), #6366f1); /* Animated color gradient */
-      background-size: 200% auto; /* For animated shimmer effect */
+      background: #65388f;
+      
       color: white; /* Bold white text */
-      box-shadow: 0 10px 25px rgba(124, 58, 237, 0.3); /* Deep branding shadow */
+      box-shadow: 0 10px 25px rgba(101, 56, 143, 0.3); /* Deep branding shadow */
       border: none; /* No frame */
       transition: all 0.4s ease; /* Smooth transition for gradient */
     }
 
     .btn-premium-primary:hover { /* Interactive effect on primary button */
-      background-position: right center; /* Shifts gradient on hover */
+      background: #48236b;
       transform: translateY(-3px); /* Lifts button */
-      box-shadow: 0 12px 28px rgba(124, 58, 237, 0.4); /* Deepen shadow */
+      box-shadow: 0 12px 28px rgba(101, 56, 143, 0.4); /* Deepen shadow */
       color: white !important; /* Force white text */
     }
 
@@ -533,7 +515,7 @@
       cursor: pointer; /* Indicates interactive */
       background: white; /* Background state */
       border: 2px solid #e2e8f0; /* Standard gray-blue border */
-      border-radius: 24px; /* High-end rounded corners */
+      border-radius: 8px; /* High-end rounded corners */
       padding: 1.25rem 1.5rem; /* Large click area */
       transition: all 0.4e cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Bouncy scaling */
       position: relative; /* Parent context */
@@ -544,7 +526,7 @@
     .store-tile:hover {
       transform: translateY(-8px); /* Large lift distance */
       border-color: var(--premium-purple); /* purple identifier */
-      box-shadow: 0 15px 30px rgba(124, 58, 237, 0.1); /* branded shadow glow */
+      box-shadow: 0 15px 30px rgba(101, 56, 143, 0.1); /* branded shadow glow */
     }
 
     .store-tile.selected {
@@ -565,7 +547,7 @@
       width: 70px; /* larger logo Box */
       height: 70px; /* larger logo Box */
       background: #f8fafc; /* Box light background */
-      border-radius: 20px; /* Square rounding */
+      border-radius: 8px;
       display: flex; /* Centers icon */
       align-items: center; /* Centers icon */
       justify-content: center; /* Centers icon */
@@ -585,7 +567,7 @@
       background: white; /* Ensures clean white backdrop */
       border-color: var(--premium-purple); /* Purple border to match theme */
       transform: scale(1.05); /* Slightly grows for attention */
-      box-shadow: 0 8px 20px rgba(124, 58, 237, 0.1); /* Purple glow effect */
+      box-shadow: 0 8px 20px rgba(101, 56, 143, 0.1); /* Purple glow effect */
     }
 
     .store-check { /* Verification icon for selection */
@@ -605,7 +587,7 @@
       opacity: 0; /* Starts hidden */
       transform: scale(0); /* Starts tiny */
       transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Bouncy pop-in animation */
-      box-shadow: 0 5px 15px rgba(124, 58, 237, 0.3); /* Deep branding shadow */
+      box-shadow: 0 5px 15px rgba(101, 56, 143, 0.3); /* Deep branding shadow */
       z-index: 5; /* Sits above all tile content */
     }
 
@@ -635,7 +617,7 @@
       background: var(--premium-purple); /* Solid theme color background */
       color: white; /* Bright contrast text */
       border-color: var(--premium-purple); /* Matches background */
-      box-shadow: 0 8px 20px rgba(124, 58, 237, 0.2); /* Branded elevation shadow */
+      box-shadow: 0 8px 20px rgba(101, 56, 143, 0.2); /* Branded elevation shadow */
     }
 
     .category-tile .cat-icon { /* Styling for the category visual icon */
@@ -660,7 +642,7 @@
     .modal-input-group { /* Styled container for form fields */
       background: #f8fafc; /* Muted input background */
       border: 2px solid #f1f5f9; /* Subtle frame */
-      border-radius: 20px; /* Matches overall theme roundedness */
+      border-radius: 8px;
       transition: all 0.3s ease; /* Smooth focus states */
       overflow: hidden; /* Keeps borders clean */
     }
@@ -668,7 +650,7 @@
     .modal-input-group:focus-within { /* Response when an input is clicked inside */
       border-color: var(--premium-purple); /* Purple focus border */
       background: white; /* Brightens to white */
-      box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.1); /* Purple glow ring */
+      box-shadow: 0 0 0 4px rgba(101, 56, 143, 0.1); /* Purple glow ring */
     }
 
     .modal-input-group label { /* Hidden/Floating label styling */
@@ -701,7 +683,7 @@
         align-items: center; /* Centers icon and text vertically */
         background: #f8fafc; /* Professional mute background */
         border: 1px solid #f1f5f9; /* Faint border frame */
-        border-radius: 20px; /* Modern corner roundness */
+        border-radius: 8px;
         padding: 15px 20px; /* Comfortable internal spacing */
         gap: 18px; /* Distance between icon and info */
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Hyper-smooth expansion */
@@ -712,8 +694,8 @@
     
     .info-field-glass:hover { /* Interactive response on hover */
         background: #ffffff; /* Pop to white */
-        border-color: #7c3aed; /* Pop of color on hover */ /* Purple frame appears */
-        box-shadow: 0 10px 25px rgba(124, 58, 237, 0.08); /* Colored shadow */ /* Purple drop shadow */
+        border-color: #65388f; /* Pop of color on hover */ /* Purple frame appears */
+        box-shadow: 0 10px 25px rgba(101, 56, 143, 0.08); /* Colored shadow */ /* Purple drop shadow */
         transform: translateY(-3px); /* Lift effect */
     }
     
@@ -727,7 +709,7 @@
         justify-content: center; /* Horizontal centering */
         color: var(--premium-purple); /* Theme colored icon */
         font-size: 1.35rem; /* Clear, visible icon size */
-        box-shadow: 0 4px 12px rgba(124, 58, 237, 0.1); /* Subtle elevation shadow */
+        box-shadow: 0 4px 12px rgba(101, 56, 143, 0.1); /* Subtle elevation shadow */
         flex-shrink: 0; /* Prevents icon from squishing */
         transition: all 0.3s ease; /* Smooth scaling */
     }
@@ -820,7 +802,7 @@
       font-size: 0.7rem; /* Auxiliary info size */
       padding: 0.3rem 0.7rem; /* Compact pill shape */
       background: #f1f5f9; /* Neutral background */
-      border-radius: 20px; /* Round ends */
+      border-radius: 8px;
       font-weight: 600; /* Semi-bold */
       color: #64748b; /* Muted text color */
     }
@@ -921,7 +903,7 @@
              {% if user_data.avatar %} <!-- Condition to check if an avatar image is set -->
                 <img src="{{ user_data.avatar }}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover;"> <!-- The user's uploaded profile picture -->
              {% else %}
-                <i class="bi bi-person-fill" style="font-size: 4rem; color: #7c3aed;"></i> <!-- Default profile icon if no image is present -->
+                <i class="bi bi-person-fill" style="font-size: 4rem; color: #65388f;"></i> <!-- Default profile icon if no image is present -->
              {% endif %}
          </div>
          <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark border border-2 border-white shadow-sm p-2"> <!-- Floating status badge -->
@@ -1530,3 +1512,5 @@
     }); // End of event listener initialization
   </script>
 {% endblock %}
+
+

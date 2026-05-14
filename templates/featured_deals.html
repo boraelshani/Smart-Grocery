@@ -52,42 +52,38 @@
       vertical-align: middle;
     }
     
-    /* Header Gradient background for branding color consistency */
+    /* Header background handled by .premium-hero in hero.css */
     .hero-section {
-      background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+      background: #65388f;
       color: white;
-      padding: 4rem 0; /* Vertical breathing room for centered text */
+      padding: 2.8rem 0;
     }
 
     /* Filter Sidebar Container */
     .filter-card {
-      border: none;
-      border-radius: 15px; /* Softer rounded corners for modern UI look */
+      border: 1px solid var(--bg-beige);
+      border-radius: 6px;
       background: #ffffff;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07); /* Subtle depth without being heavy */
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
     }
 
-    /* 
-     * Product Card Animation 
-     * The white card containing product info.
-     */
+    /* Product Card */
     .product-card-inner {
-      border: 2px solid transparent; /* Prepare for hover border without layout shift (pre-allocation) */
-      border-radius: 15px;
+      border: 1.5px solid var(--bg-beige);
+      border-radius: 6px;
       overflow: hidden;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Professional easing curve for smooth hover */
+      transition: all 0.2s ease;
       background: white;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      box-shadow: none;
       max-width: 100%;
     }
-    
-    /* Hover State: Lift up and glow purple to signal interactivity */
+
     .product-card-inner:hover {
-      transform: translateY(-8px); /* Moves up 8 pixels for "floating" effect */
-      box-shadow: 0 20px 40px rgba(124, 58, 237, 0.12); /* Large soft purple shadow */
-      border-color: var(--premium-purple); /* Border defines the active card */
+      transform: translateY(-4px);
+      box-shadow: 0 12px 28px rgba(101,56,143,0.10);
+      border-color: #65388f;
     }
-    
+
     /* Product Image Container */
     .product-image {
       height: 180px;
@@ -96,19 +92,18 @@
       padding: 45px;
     }
 
-    /* Price tag positioned absolutely over the product image */
+    /* Price badge */
     .price-badge {
       position: absolute;
       top: 10px;
       right: 10px;
-      background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); /* Professional violet */
+      background: #65388f;
       color: white;
-      padding: 6px 10px;
-      border-radius: 20px;
+      padding: 5px 10px;
+      border-radius: 4px;
       font-weight: bold;
       font-size: 0.9rem;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-      z-index: 5; /* Sit above image content */
+      z-index: 5;
     }
 
     .product-card .card-title {
@@ -149,8 +144,8 @@
 
     /* Highlight state when a user selects a specific store to add to list */
     .store-item.selected {
-      background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
-      border-color: #7c3aed;
+      background: #65388f;
+      border-color: #65388f;
       color: white;
     }
 
@@ -170,34 +165,33 @@
     /* Button to jump to retailer's actual website */
     .btn-go-store:hover {
       background: #e0e0ff !important;
-      border-color: #7c3aed !important;
+      border-color: #65388f !important;
       transform: scale(1.1); /* Subtle zoom */
       transition: all 0.2s ease;
     }
 
     /* Primary CTA: Adding item to custom shopping list */
     .btn-add-cart {
-      background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+      background: #65388f;
       border: none;
       color: white;
-      border-radius: 12px;
+      border-radius: 6px;
       padding: 12px 18px;
       font-weight: 700;
       font-size: 0.95rem;
-      transition: all 0.3s ease;
+      transition: all 0.2s ease;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 8px; /* Space between icon and text */
+      gap: 8px;
       cursor: pointer;
       text-decoration: none !important;
-      box-shadow: 0 4px 14px rgba(102, 126, 234, 0.3);
     }
 
     .btn-add-cart:hover {
-      transform: translateY(-2px); /* Lift */
+      transform: translateY(-2px);
       color: white;
-      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+      background: #48236b;
       text-decoration: none !important;
     }
 
@@ -240,16 +234,16 @@
     /* Focus rings for accessibility */
     .form-control:focus,
     .form-select:focus {
-      border-color: #7c3aed;
+      border-color: #65388f;
       box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
     }
 
     /* Filter indicator badge */
     .badge-filter {
-      background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
-      padding: 8px 14px;
-      border-radius: 20px;
-      font-weight: 500;
+      background: #65388f;
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-weight: 600;
     }
 
     /* Helper class for hover-able product links */
@@ -424,7 +418,7 @@
     }
 
     .tray-btn:hover { background: rgba(30, 41, 59, 0.95); color: #ffffff; }
-    .tray-btn-primary { background: linear-gradient(135deg, #7c3aed, #4f46e5); border-color: transparent; }
+    .tray-btn-primary { background: #65388f; border-color: transparent; }
 
     .insight-panel .table td,
     .insight-panel .table th {
@@ -637,7 +631,7 @@
     }
 
     #compareInsightsModal .nav-pills .nav-link.active {
-      background: linear-gradient(135deg, #4f46e5, #7c3aed);
+      background: #65388f;
       color: #fff;
       border-color: transparent;
       box-shadow: 0 8px 18px rgba(79, 70, 229, 0.28);
@@ -702,7 +696,7 @@
     #priceAlertModal .modal-footer .btn-primary,
     #priceReportModal .modal-footer .btn-primary {
       border: none;
-      background: linear-gradient(135deg, #4f46e5, #7c3aed);
+      background: #65388f;
       border-radius: 10px;
       font-weight: 700;
       box-shadow: 0 10px 22px rgba(79, 70, 229, 0.3);
@@ -781,29 +775,26 @@
             .visual-cat-container::-webkit-scrollbar { display: none; }
             .visual-cat-card {
                   display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
-                  background: #f8fafc; border: 1.5px solid #e5e7eb; border-radius: 12px;
+                  background: #fff; border: 1.5px solid var(--bg-beige); border-radius: 6px;
                   min-width: 130px; height: 155px; margin-right: 14px; cursor: pointer;
-                  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+                  transition: all 0.2s ease;
                   text-decoration: none; padding: 12px 8px; position: relative; overflow: hidden;
               }
-              .visual-cat-card::after {
-                  content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, transparent, rgba(0,0,0,0.03));
-              }
               .visual-cat-card:hover {
-                  transform: translateY(-6px); border-color: #d8b4fe;
-                  box-shadow: 0 12px 24px rgba(124, 58, 237, 0.15);
+                  transform: translateY(-4px); border-color: #65388f;
+                  box-shadow: 0 8px 20px rgba(101,56,143,0.12);
               }
               .visual-cat-card.active {
-                  border-color: #8b5cf6; border-width: 2px;
-                  background: #fbfaff; box-shadow: 0 12px 28px rgba(124, 58, 237, 0.18);
+                  border-color: #65388f; border-width: 2px;
+                  background: var(--bg-cream); box-shadow: 0 6px 18px rgba(101,56,143,0.14);
               }
               .visual-cat-img-wrap {
                   width: 90px; height: 90px; display: flex; align-items: center; justify-content: center;
-                  background: transparent; border-radius: 8px; margin-bottom: 12px; z-index: 2; border: none;
+                  background: transparent; border-radius: 4px; margin-bottom: 12px; z-index: 2; border: none;
               }
               .visual-cat-card.active .visual-cat-img-wrap { background: transparent; }
               .visual-cat-img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: darken; filter: brightness(1.05) contrast(1.1); background: transparent; }
-              .visual-cat-title { font-size: 0.85rem; font-weight: 700; color: #475569; text-align: center; z-index: 2; max-width: 120px; word-wrap: break-word; line-height: 1.2; }
+              .visual-cat-title { font-size: 0.85rem; font-weight: 700; color: #5a5a5a; text-align: center; z-index: 2; max-width: 120px; word-wrap: break-word; line-height: 1.2; }
         </style>
         <div class="visual-cat-card {% if not category_filter %}active{% endif %}" onclick="document.getElementById('category-filter').value=''; document.getElementById('searchMenuBtn').click();">
             <div class="visual-cat-img-wrap"><i class="bi bi-ui-radios-grid fs-4" style="color: #64748b;"></i></div>
@@ -928,7 +919,7 @@
             </div>
             
             <!-- CARD CONTENT -->
-            <div class="card-body d-flex flex-column h-100" style="background-color: #f8f9fa;">
+            <div class="card-body d-flex flex-column h-100" style="background-color: #ffffff;">
               <!-- Data Logic to determine display strings -->
               {% set original_price = p.get('original_price') %}
               {% set discount_label = p.get('discount_label') or (p.get('discount_percent') ~ '% off' if
@@ -1000,12 +991,12 @@
                   <div class="d-flex justify-content-end">
                     <div class="d-flex align-items-center gap-2">
                         {% if is_buy_get_deal %}
-                        <div class="fw-bold" style="color: #6d28d9; line-height: 1.2; font-size: 0.95rem;">
+                        <div class="fw-bold" style="color: #65388f; line-height: 1.2; font-size: 0.95rem;">
                           €{{ '%.2f' % (p.get('price') or 0) }} <span style="font-size: 0.75rem; font-weight: normal; color: #64748b;">each</span>
                         </div>
                         <div class="text-secondary small fw-medium" style="background: rgba(109, 40, 217, 0.1); padding: 2px 6px; border-radius: 4px;">{{ offer }}</div>
                         {% else %}
-                        <div class="fw-bold" style="color: #6d28d9; line-height: 1.2; font-size: 0.95rem;">
+                        <div class="fw-bold" style="color: #65388f; line-height: 1.2; font-size: 0.95rem;">
                           €{{ '%.2f' % ((p.get('price') or 0)|float) }}
                         </div>
                         {% if original_price %}
@@ -1112,8 +1103,8 @@
   Loads Bootstrap JS for interactive components (modals, dropdowns).
   Loads our custom 'script.js' which handles the shopping list logic and search.
   -->
-  <footer class="text-center py-4 bg-light border-top">
-    <p class="mb-0 text-muted">&copy; 2025 Smart Grocery Team</p>
+  <footer class="text-center py-4 border-top" style="background: var(--bg-cream);">
+    <p class="mb-0" style="color:#5a5a5a;">&copy; 2025 Smart Grocery Team</p>
   </footer>
 
   
@@ -1167,4 +1158,5 @@
     }
   </script>
 {% endblock %}
+
 

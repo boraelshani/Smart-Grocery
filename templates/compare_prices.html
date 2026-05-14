@@ -1,13 +1,37 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 
 {% block styles %}
 <style>
-    /* Change body background for this page specifically to fit the theme */
-    body {
-        background-color: #f1ecf5 !important; /* Elegant light lavender/purple shade */
+    /* ─── SIMPLE SINGLE-ROW NAVBAR (compare page only) ─── */
+
+    /* Hide the search bar that sits on the home-page nav */
+    .tabs-search-bar { display: none !important; }
+
+    /* Lift the tab-row up to be inline with the logo */
+    .tabs-collapse {
+      order: 2 !important;           /* right after the logo */
+      border-top: none !important;   /* remove the separator line */
+      padding-top: 0 !important;
+      margin-top: 0 !important;
+      margin-bottom: 0 !important;
+      width: auto !important;        /* no longer full-width */
+      flex-grow: 0 !important;
+      flex-basis: auto !important;
+    }
+    /* Keep the nav items in a horizontal row */
+    .tabs-collapse .navbar-nav {
+      flex-direction: row !important;
+      align-items: center !important;
+    }
+    /* Hide barcode-scanner and bell — keep only the user account chip */
+    a[aria-label="Scanner"],
+    a[aria-label="Notifications"] {
+      display: none !important;
     }
 
-    /* 
+    /* Body uses global cream from global.css */
+
+    /*
      * COMPARE PAGE STYLES
      * Specific layout tweaks for the comparison grid and filters.
      */
@@ -57,42 +81,38 @@
       vertical-align: middle;
     }
     
-    /* Header Gradient background for branding color consistency */
+    /* Hero handled by .premium-hero in hero.css */
     .hero-section {
-      background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+      background: #65388f;
       color: white;
-      padding: 4rem 0; /* Vertical breathing room for centered text */
+      padding: 2.8rem 0;
     }
 
     /* Filter Sidebar Container */
     .filter-card {
-      border: none;
-      border-radius: 15px; /* Softer rounded corners for modern UI look */
+      border: 1px solid var(--bg-beige);
+      border-radius: 6px;
       background: #ffffff;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07); /* Subtle depth without being heavy */
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
     }
 
-    /* 
-     * Product Card Animation 
-     * The white card containing product info.
-     */
+    /* Product Card */
     .product-card-inner {
-      border: 2px solid transparent; /* Prepare for hover border without layout shift (pre-allocation) */
-      border-radius: 15px;
+      border: 1.5px solid var(--bg-beige);
+      border-radius: 6px;
       overflow: hidden;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Professional easing curve for smooth hover */
+      transition: all 0.2s ease;
       background: white;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      box-shadow: none;
       max-width: 100%;
     }
-    
-    /* Hover State: Lift up and glow purple to signal interactivity */
+
     .product-card-inner:hover {
-      transform: translateY(-8px); /* Moves up 8 pixels for "floating" effect */
-      box-shadow: 0 20px 40px rgba(124, 58, 237, 0.12); /* Large soft purple shadow */
-      border-color: var(--premium-purple); /* Border defines the active card */
+      transform: translateY(-4px);
+      box-shadow: 0 12px 28px rgba(101,56,143,0.10);
+      border-color: #65388f;
     }
-    
+
     /* Product Image Container */
     .product-image {
       height: 180px;
@@ -101,19 +121,18 @@
       padding: 45px;
     }
 
-    /* Price tag positioned absolutely over the product image */
+    /* Price badge */
     .price-badge {
       position: absolute;
       top: 10px;
       right: 10px;
-      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); /* Bright pink/purple gradient for visibility */
+      background: #65388f;
       color: white;
-      padding: 6px 10px;
-      border-radius: 20px;
+      padding: 5px 10px;
+      border-radius: 4px;
       font-weight: bold;
       font-size: 0.9rem;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-      z-index: 5; /* Sit above image content */
+      z-index: 5;
     }
 
     .product-card .card-title {
@@ -154,8 +173,8 @@
 
     /* Highlight state when a user selects a specific store to add to list */
     .store-item.selected {
-      background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
-      border-color: #7c3aed;
+      background: #65388f;
+      border-color: #65388f;
       color: white;
     }
 
@@ -175,33 +194,33 @@
     /* Button to jump to retailer's actual website */
     .btn-go-store:hover {
       background: #e0e0ff !important;
-      border-color: #7c3aed !important;
+      border-color: #65388f !important;
       transform: scale(1.1); /* Subtle zoom */
       transition: all 0.2s ease;
     }
 
-    /* Primary CTA: Adding item to custom shopping list */
+    /* Primary CTA */
     .btn-add-cart {
-      background: var(--premium-purple);
+      background: #65388f;
       border: none;
       color: white;
-      border-radius: 0;
+      border-radius: 6px;
       padding: 12px 18px;
       font-weight: 600;
       font-size: 0.95rem;
-      transition: all 0.3s ease;
+      transition: all 0.2s ease;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 8px; /* Space between icon and text */
+      gap: 8px;
       cursor: pointer;
       text-decoration: none !important;
     }
 
     .btn-add-cart:hover {
-      transform: translateY(-2px); /* Lift */
+      transform: translateY(-2px);
       color: white;
-      background: var(--premium-indigo);
+      background: #48236b;
       text-decoration: none !important;
     }
 
@@ -210,17 +229,16 @@
       transform: translateY(0);
     }
 
-    /* Light purple version of the add button for secondary actions or specific states */
+    /* Secondary add button */
     .add-to-list-btn {
-      background: linear-gradient(135deg, #d8c4ff 0%, #c0a6ff 100%);
-      border: 2px solid #b799ff;
-      color: #3b2a61;
+      background: var(--bg-cream);
+      border: 1.5px solid var(--bg-beige);
+      color: #65388f;
       font-weight: 700;
       font-size: 0.95rem;
-      border-radius: 12px;
+      border-radius: 6px;
       padding: 12px 18px;
-      box-shadow: 0 4px 14px rgba(95, 69, 168, 0.2);
-      transition: all 0.3s ease;
+      transition: all 0.2s ease;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -230,11 +248,10 @@
     }
 
     .add-to-list-btn:hover {
-      color: #2c1f4f;
+      background: #65388f;
+      color: white;
+      border-color: #65388f;
       transform: translateY(-2px);
-      box-shadow: 0 8px 20px rgba(95, 69, 168, 0.3);
-      border-color: #a380ff;
-      background: linear-gradient(135deg, #e0d4ff 0%, #cdb5ff 100%);
     }
 
     .add-to-list-btn:active {
@@ -244,16 +261,16 @@
     /* Focus rings for accessibility */
     .form-control:focus,
     .form-select:focus {
-      border-color: #7c3aed;
+      border-color: #65388f;
       box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
     }
 
     /* Filter indicator badge */
     .badge-filter {
-      background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
-      padding: 8px 14px;
-      border-radius: 20px;
-      font-weight: 500;
+      background: #65388f;
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-weight: 600;
     }
 
     /* Helper class for hover-able product links */
@@ -428,7 +445,7 @@
     }
 
     .tray-btn:hover { background: rgba(30, 41, 59, 0.95); color: #ffffff; }
-    .tray-btn-primary { background: linear-gradient(135deg, #7c3aed, #4f46e5); border-color: transparent; }
+    .tray-btn-primary { background: #65388f; border-color: transparent; }
 
     .insight-panel .table td,
     .insight-panel .table th {
@@ -608,7 +625,7 @@
 
     #priceAlertModal .modal-header,
     #priceReportModal .modal-header {
-      background: linear-gradient(135deg, #0f172a, #4338ca);
+      background: #65388f;
       color: #fff;
     }
 
@@ -641,10 +658,10 @@
     }
 
     #compareInsightsModal .nav-pills .nav-link.active {
-      background: linear-gradient(135deg, #4f46e5, #7c3aed);
+      background: #65388f;
       color: #fff;
       border-color: transparent;
-      box-shadow: 0 8px 18px rgba(79, 70, 229, 0.28);
+      box-shadow: 0 6px 14px rgba(101,56,143,0.22);
     }
 
     #compareInsightsModal table thead th {
@@ -706,10 +723,10 @@
     #priceAlertModal .modal-footer .btn-primary,
     #priceReportModal .modal-footer .btn-primary {
       border: none;
-      background: linear-gradient(135deg, #4f46e5, #7c3aed);
-      border-radius: 10px;
+      background: #65388f;
+      border-radius: 6px;
       font-weight: 700;
-      box-shadow: 0 10px 22px rgba(79, 70, 229, 0.3);
+      box-shadow: 0 6px 16px rgba(101,56,143,0.22);
       padding: 0.5rem 1rem;
     }
 
@@ -736,6 +753,140 @@
       background: linear-gradient(135deg, #065f46, #047857) !important;
     }
 
+    /* ═══ EDITORIAL SPLIT HERO ═══ */
+    .compare-hero-editorial {
+      background: var(--bg-cream, #f4f0ec);
+      margin-top: 68px;
+      overflow: hidden;
+    }
+    .compare-hero-text {
+      padding: 3rem 2.5rem 3rem clamp(1.5rem, 7%, 4.5rem);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .compare-hero-text > div {
+      max-width: 420px;
+      width: 100%;
+    }
+    .compare-hero-eyebrow {
+      font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.12em; color: #65388f; margin-bottom: 1.2rem;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .compare-hero-headline {
+      font-family: 'Cabinet Grotesk', sans-serif !important;
+      font-size: clamp(3rem, 5.5vw, 4.4rem) !important;
+      font-weight: 500 !important;
+      color: #65388f !important;
+      line-height: 1.05 !important;
+      letter-spacing: -0.01em !important;
+      margin-bottom: 1.5rem;
+    }
+    .compare-hero-sub {
+      color: #48236b; font-size: 1rem; line-height: 1.65;
+      max-width: 400px; margin: 0;
+    }
+    .compare-hero-img-col {
+      overflow: hidden;
+      position: relative;
+      min-height: 300px;
+    }
+    .compare-hero-img-col img {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+      object-position: center;
+      display: block;
+    }
+
+    /* ═══ PRODUCT CARD — identical to home page ═══ */
+    .compare-product-card {
+      background: white;
+      border-radius: 0;
+      border: none;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+      overflow: hidden;
+      display: flex; flex-direction: column;
+      transition: box-shadow 0.2s ease, transform 0.2s ease;
+      height: 100%;
+    }
+    .compare-product-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+    }
+    .cpc-image-wrap {
+      height: 280px; width: 100%;
+      display: flex; align-items: center; justify-content: center;
+      padding: 20px; background: white;
+    }
+    .cpc-image-wrap img { max-height: 100%; max-width: 100%; object-fit: contain; }
+    .cpc-labels { padding: 0 1.5rem 0.4rem; min-height: 26px; }
+    .cpc-label {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 0.75rem; font-weight: 700;
+      padding: 3px 10px; border-radius: 8px;
+    }
+    .cpc-label-value { background: #ede9fe; color: #65388f; }
+    .cpc-label-healthy { background: #dcfce7; color: #15803d; }
+    .cpc-label-best { background: #65388f; color: white; }
+    .cpc-label-deal { background: #dcfce7; color: #059669; }
+    .cpc-body { padding: 0 1.5rem 1.5rem; display: flex; flex-direction: column; flex: 1; }
+    .cpc-name {
+      font-size: 1.1rem; font-weight: 700; color: var(--premium-dark, #3a3b3a);
+      line-height: 1.3; margin-bottom: 0.5rem;
+      display: -webkit-box; -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical; overflow: hidden; min-height: 2.8em;
+    }
+    .cpc-qty { font-size: 0.8rem; color: #9ca3af; margin-bottom: 0.4rem; }
+    .cpc-store-hint {
+      font-size: 0.85rem; margin-bottom: 2px;
+    }
+    .cpc-store-hint.cheapest { color: #65388f; font-weight: 700; }
+    .cpc-store-hint.other { color: #6b7280; font-weight: 500; }
+    .cpc-store-count { font-size: 0.75rem; color: #9ca3af; font-weight: 500; margin-bottom: 0.5rem; }
+    .cpc-save-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: #dcfce7; color: #059669;
+      padding: 3px 10px; border-radius: 8px;
+      font-size: 0.75rem; font-weight: 700; margin-bottom: 0.75rem;
+    }
+    .cpc-actions { margin-top: auto; padding-top: 0.75rem; display: flex; flex-direction: column; gap: 0.4rem; }
+    .cpc-btn-add {
+      background: #ffffff; color: #65388f; border: none;
+      border-radius: 0; padding: 10px 18px;
+      font-size: 0.88rem; font-weight: 800; width: 100%;
+      cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease;
+      display: flex; align-items: center; justify-content: center; gap: 5px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.05);
+      text-decoration: none;
+    }
+    .cpc-btn-add:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(0,0,0,0.1); background: #f8f8f8; color: #65388f; }
+    .cpc-btn-view {
+      background: #ffffff; color: #65388f; border: none;
+      border-radius: 0; padding: 10px 18px;
+      font-size: 0.88rem; font-weight: 800; width: 100%;
+      cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease;
+      text-align: center; text-decoration: none; display: block;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.05);
+    }
+    .cpc-btn-view:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(0,0,0,0.1); background: #f8f8f8; text-decoration: none; color: #65388f; }
+    .cpc-savings-strip { display: none; }
+
+    /* ═══ SECTION HEADER ROW ═══ */
+    .compare-results-header {
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1.5rem;
+    }
+    .compare-results-title {
+      font-size: 1.15rem; font-weight: 800; color: #3a3b3a;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .compare-count-chip {
+      background: var(--bg-beige, #e9e3de); color: #65388f;
+      font-size: 0.75rem; font-weight: 700;
+      padding: 3px 10px; border-radius: 20px;
+    }
+
   </style>
 {% endblock %}
 
@@ -744,20 +895,29 @@
   <!-- Navigation Header (Responsive Bootstrap Navbar) -->
   
 
-  <!-- Hero header with animated background elements -->
-  <header class="premium-hero">
-    <div class="bg-shape shape-1"></div> <!-- Graphic circle 1 -->
-    <div class="bg-shape shape-2"></div> <!-- Graphic circle 2 -->
-    <div class="bg-shape shape-3" style="position: absolute; bottom: 10%; left: 30%; width: 60px; height: 60px; background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(5px); border-radius: 20%; animation: float 10s infinite ease-in-out; animation-delay: -5s;"></div> <!-- Dynamic square -->
-    
-    <div class="container position-relative text-center text-white" style="z-index: 2;"> <!-- High-z content -->
-      <h1 class="display-4 fw-bold mb-3 text-white">
-        <i class="bi bi-graph-up-arrow"></i> Compare Prices <!-- Hero text identifying page purpose -->
-      </h1>
-      <p class="lead mb-0 text-white">Find the best deals across all nearby stores</p> <!-- Mission statement -->
-      <p class="opacity-75 text-white"><i class="bi bi-check-circle"></i> Save money on every purchase</p> <!-- Benefit tagline -->
+  <!-- Editorial Split Hero -->
+  <div class="compare-hero-editorial">
+    <div class="row g-0 align-items-stretch" style="min-height: 260px;">
+      <div class="col-lg-6 d-flex align-items-center compare-hero-text">
+        <div>
+          <div class="compare-hero-eyebrow">
+            <i class="bi bi-house-door"></i>
+            <a href="/" style="color: #65388f; text-decoration: none;">Home</a>
+            <span style="opacity:0.4;">/</span>
+            <a href="{{ url_for('main.compare_prices') }}" style="color: #65388f; text-decoration: none;">Compare</a>
+            {% if category_filter %}
+            <span style="opacity:0.4;">/</span> {{ category_filter|title }}
+            {% endif %}
+          </div>
+          <h1 class="compare-hero-headline">Compare with<br>confidence.</h1>
+          <p class="compare-hero-sub">See prices, shop smarter, and choose what's best for you, your wallet, and the planet.</p>
+        </div>
+      </div>
+      <div class="col-lg-6 compare-hero-img-col">
+        <img src="{{ url_for('static', filename='img/compare_hero.png') }}" alt="Fresh groceries">
+      </div>
     </div>
-  </header>
+  </div>
 
   <section class="container py-4">
       <!-- Hidden Native Bindings -->
@@ -766,11 +926,12 @@
       <input id="sort-filter" type="hidden" value="{{ sort_filter|default('default') }}">
       <button id="searchMenuBtn" class="d-none" onclick="handleCompareSearch()"></button>
 
-      <!-- Compare Prices Breadcrumb -->
+      <!-- Compare Prices Breadcrumb — only shown when browsing a category -->
+      {% if category_filter and breadcrumb_path %}
       <nav aria-label="breadcrumb" class="mb-3">
           <style>
               .breadcrumb-item a { color: #64748b; text-decoration: none; font-weight: 600; transition: color 0.2s; position: relative; }
-              .breadcrumb-item a:hover { color: #7c3aed; text-decoration: underline; }
+              .breadcrumb-item a:hover { color: #65388f; text-decoration: underline; }
               .breadcrumb-item.active { color: #334155; font-weight: 700; }
               
               .hover-popover-container { position: relative; display: inline-block; }
@@ -817,8 +978,9 @@
               {% elif category_filter %}
                   <li class="breadcrumb-item active" aria-current="page">{{ category_filter|title }}</li>
               {% endif %}
-          </ol></ol>
+          </ol>
       </nav>
+      {% endif %}
 
       <!-- Visual Card Categories -->
       <div class="d-flex w-100 overflow-x-auto align-items-center py-2 mb-4 position-relative" style="-webkit-overflow-scrolling: touch; scrollbar-width: none; ms-overflow-style: none;">
@@ -826,29 +988,26 @@
             .visual-cat-container::-webkit-scrollbar { display: none; }
             .visual-cat-card {
                   display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
-                  background: white; border: 1.5px solid #e5e7eb; border-radius: 12px;
+                  background: white; border: 1.5px solid var(--bg-beige); border-radius: 6px;
                   min-width: 130px; height: 155px; margin-right: 14px; cursor: pointer;
-                  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+                  transition: all 0.2s ease;
                   text-decoration: none; padding: 12px 8px; position: relative; overflow: hidden;
               }
-              .visual-cat-card::after {
-                  content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, transparent, rgba(0,0,0,0.03));
-              }
               .visual-cat-card:hover {
-                  transform: translateY(-6px); border-color: #d8b4fe;
-                  box-shadow: 0 12px 24px rgba(124, 58, 237, 0.15);
+                  transform: translateY(-4px); border-color: #65388f;
+                  box-shadow: 0 8px 20px rgba(101,56,143,0.12);
               }
               .visual-cat-card.active {
-                  border-color: #8b5cf6; border-width: 2px;
-                  background: #fbfaff; box-shadow: 0 12px 28px rgba(124, 58, 237, 0.18);
+                  border-color: #65388f; border-width: 2px;
+                  background: var(--bg-cream); box-shadow: 0 6px 18px rgba(101,56,143,0.14);
               }
               .visual-cat-img-wrap {
                   width: 90px; height: 90px; display: flex; align-items: center; justify-content: center;
-                  background: transparent; border-radius: 8px; margin-bottom: 12px; z-index: 2; border: none;
+                  background: transparent; border-radius: 4px; margin-bottom: 12px; z-index: 2; border: none;
               }
               .visual-cat-card.active .visual-cat-img-wrap { background: transparent; }
               .visual-cat-img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; filter: brightness(1.05) contrast(1.05); }
-              .visual-cat-title { font-size: 0.85rem; font-weight: 700; color: #475569; text-align: center; z-index: 2; max-width: 120px; word-wrap: break-word; line-height: 1.2; }
+              .visual-cat-title { font-size: 0.85rem; font-weight: 700; color: #5a5a5a; text-align: center; z-index: 2; max-width: 120px; word-wrap: break-word; line-height: 1.2; }
         </style>
         <div class="visual-cat-card {% if not category_filter %}active{% endif %}" onclick="document.getElementById('category-filter').value=''; document.getElementById('searchMenuBtn').click();">
             <div class="visual-cat-img-wrap"><i class="bi bi-ui-radios-grid fs-4" style="color: #64748b;"></i></div>
@@ -880,39 +1039,31 @@
         </div>
       </div>
 
-      <!-- Real-time status bar for search results -->
-      <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
-        <h4 class="mb-0 fw-bold" style="color: #4b5563;"> <!-- Contextual result header -->
-          <i class="bi bi-box-seam me-2 text-primary"></i>Product Results
-        </h4>
-        <div class="d-flex justify-content-end align-items-center gap-3">
-          <div class="dropdown">
-                  <button class="btn bg-white shadow-sm dropdown-toggle fw-bold" style="border: 1px solid #e2e8f0; color: #475569; padding: 8px 20px; border-radius: 50px;" type="button" id="sortDropdownLabel" data-bs-toggle="dropdown" aria-expanded="false">
-                      <i class="bi bi-sort-down me-1 text-primary"></i> Sort by Price
-                  </button>
-                  <ul class="dropdown-menu border-0 shadow" aria-labelledby="sortDropdownLabel" style="border-radius: 12px; min-width: 200px;">
-                      <li><a class="dropdown-item fw-medium py-2" href="#" onclick="document.getElementById('sort-filter').value='default'; document.getElementById('searchMenuBtn').click(); return false;"><i class="bi bi-star-fill text-warning me-2"></i>Relevance</a></li>
-                      <li><a class="dropdown-item fw-medium py-2" href="#" onclick="document.getElementById('sort-filter').value='price_asc'; document.getElementById('searchMenuBtn').click(); return false;"><i class="bi bi-sort-numeric-down text-success me-2"></i>Price: Lowest First</a></li>
-                      <li><a class="dropdown-item fw-medium py-2" href="#" onclick="document.getElementById('sort-filter').value='price_desc'; document.getElementById('searchMenuBtn').click(); return false;"><i class="bi bi-sort-numeric-up text-danger me-2"></i>Price: Highest First</a></li>
-                      <li><a class="dropdown-item fw-medium py-2" href="#" onclick="document.getElementById('sort-filter').value='name_asc'; document.getElementById('searchMenuBtn').click(); return false;"><i class="bi bi-sort-alpha-down text-primary me-2"></i>Alphabetical (A-Z)</a></li>
-                      <li><a class="dropdown-item fw-medium py-2" href="#" onclick="document.getElementById('sort-filter').value='name_desc'; document.getElementById('searchMenuBtn').click(); return false;"><i class="bi bi-sort-alpha-down-alt text-primary me-2"></i>Alphabetical (Z-A)</a></li>
-                  </ul>
-              </div>
-          <div class="results-status-bar"> 
-          <span class="results-status-text">
-            <i class="bi bi-info-circle me-1"></i>
-            {% if total_products %}
-            Showing {{ showing_start }}-{{ showing_end }} 
-            {% else %}
-            No products found 
-            {% endif %}
-          </span>
+      <!-- Results section header -->
+      <div class="compare-results-header">
+        <div class="compare-results-title">
+          Product Results
           {% if total_products %}
-          <span class="results-status-count">
-            {{ total_products }} Total 
-          </span>
+          <span class="compare-count-chip">{{ total_products }} items</span>
           {% endif %}
         </div>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+          <div class="dropdown">
+            <button class="btn bg-white dropdown-toggle fw-600" style="border: 1.5px solid var(--bg-beige); color: #5a5a5a; padding: 7px 16px; border-radius: 6px; font-size: 0.85rem; font-weight: 600;" type="button" id="sortDropdownLabel" data-bs-toggle="dropdown" aria-expanded="false">
+              <i class="bi bi-sort-down me-1"></i>Sort
+            </button>
+            <ul class="dropdown-menu border-0 shadow-sm" aria-labelledby="sortDropdownLabel" style="border-radius: 8px; border: 1px solid var(--bg-beige) !important; min-width: 180px;">
+              <li><a class="dropdown-item fw-medium py-2" href="#" onclick="document.getElementById('sort-filter').value='default'; document.getElementById('searchMenuBtn').click(); return false;"><i class="bi bi-star-fill text-warning me-2"></i>Relevance</a></li>
+              <li><a class="dropdown-item fw-medium py-2" href="#" onclick="document.getElementById('sort-filter').value='price_asc'; document.getElementById('searchMenuBtn').click(); return false;"><i class="bi bi-sort-numeric-down text-success me-2"></i>Price: Low to High</a></li>
+              <li><a class="dropdown-item fw-medium py-2" href="#" onclick="document.getElementById('sort-filter').value='price_desc'; document.getElementById('searchMenuBtn').click(); return false;"><i class="bi bi-sort-numeric-up text-danger me-2"></i>Price: High to Low</a></li>
+              <li><a class="dropdown-item fw-medium py-2" href="#" onclick="document.getElementById('sort-filter').value='name_asc'; document.getElementById('searchMenuBtn').click(); return false;"><i class="bi bi-sort-alpha-down me-2" style="color:#65388f;"></i>A – Z</a></li>
+            </ul>
+          </div>
+          {% if total_products %}
+          <span style="font-size: 0.83rem; color: #9ca3af; font-weight: 500;">
+            Showing {{ showing_start }}–{{ showing_end }} of {{ total_products }}
+          </span>
+          {% endif %}
         </div>
       </div>
 
@@ -944,111 +1095,88 @@
           data-confidence-score="{{ p.get('confidence', {}).get('score', 0) }}"
           data-confidence-label="{{ p.get('confidence', {}).get('label', 'Unknown') }}">
           
-          <div class="card product-card-inner h-100" style="background-color: #ffffff;">
-            {# 
-               LINK TO DETAILS
-               The entire top section is a link to the detailed view.
-            #}
-            <a href="{{ url_for('main.product_detail', product_id=p.get('id')) }}"
-              class="product-link text-decoration-none text-dark d-block">
-              <div class="position-relative">
-                <!-- Top Left Purple Price Badge -->
-                <span class="badge position-absolute" style="top: 10px; left: 10px; z-index: 10; background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); color: white; padding: 6px 10px; font-weight: 600; letter-spacing: 0.5px; border-radius: 6px; box-shadow: 0 4px 6px rgba(124, 58, 237, 0.2); text-shadow: 0 1px 2px rgba(0,0,0,0.2);">
-                    €<span class="js-compare-price">{{ (p.get('cheapest') and p.get('cheapest').get('price')) or p.get('price','N/A') }}</span>
-                </span>
-                <img
-                  src="{{ prefer_processed(p.get('image') or (p.get('images') and p.get('images')[0]) or url_for('static', filename='placeholder.svg')) }}"
-                  class="card-img-top product-image" alt="{{ p.get('name') or p.get('title','Product') }}">
+          {# Compute store data upfront for the whole card #}
+          {% set valid_stores = p.get('stores', [])|selectattr('price', 'defined')|rejectattr('price', 'none')|list %}
+          {% set number_stores = [] %}
+          {% for s in valid_stores %}{% if s.price is number %}{% set _ = number_stores.append(s) %}{% endif %}{% endfor %}
+          {% set sorted_stores = number_stores|sort(attribute='price')|list %}
+          {% set cheapest_price = sorted_stores[0].get('price')|float if sorted_stores and sorted_stores[0].get('price') is not none else 0 %}
+          {% set max_price = sorted_stores[-1].get('price')|float if sorted_stores and sorted_stores[-1].get('price') is not none else 0 %}
+          {% set save_amount = max_price - cheapest_price if sorted_stores|length > 1 else 0 %}
+
+          <div class="compare-product-card">
+            <!-- Image -->
+            <a href="{{ url_for('main.product_detail', product_id=p.get('id')) }}" class="text-decoration-none d-block">
+              <div class="cpc-image-wrap">
+                <img src="{{ prefer_processed(p.get('image') or (p.get('images') and p.get('images')[0]) or url_for('static', filename='placeholder.svg')) }}"
+                     alt="{{ p.get('name') or p.get('title','Product') }}">
               </div>
             </a>
-            
-            <div class="card-body d-flex flex-column h-100" style="background-color: #fff;">
-              <div class="d-flex justify-content-between align-items-start mb-3">
-                <h5 class="card-title mb-0 fw-bold" style="font-size: 1rem; flex: 1;">{{ p.get('name') or p.get('title','') }}</h5>
-                <button type="button" class="btn btn-link p-0 text-muted ms-2 js-report-btn"
+
+            <!-- Body — mirrors home page product-card-horizontal layout -->
+            <div class="cpc-body">
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <div class="cpc-name product-description-clamp">{{ p.get('name') or p.get('title','') }}</div>
+                <button type="button" class="btn btn-link p-0 ms-2 flex-shrink-0 js-report-btn"
+                  style="color: #d1d5db; font-size: 0.8rem;"
                   title="Report inaccurate price"
                   data-product-id="{{ p.get('id') }}"
                   data-product-name="{{ p.get('name') or p.get('title','')|e }}"
                   data-product-stores='{{ p.get("stores")|tojson|forceescape }}'>
-                  <i class="bi bi-exclamation-triangle" style="font-size: 1.1rem;"></i>
+                  <i class="bi bi-exclamation-triangle" style="font-size:.9rem;"></i>
                 </button>
               </div>
 
-              {% if p.get('combo_deal') %}
-              <div class="mb-2">
-                <span class="combo-badge"><i class="bi bi-lightning-charge-fill me-1"></i>{{ p.get('combo_deal_label') or 'Combo offer' }}</span>
-              </div>
-              {% endif %}
-
-              <div class="flex-grow-1 w-100">
-                {% if p.get('stores') %}
-                {% set valid_stores = p.get('stores', [])|selectattr('price', 'defined')|rejectattr('price', 'none')|list %}
-                {% set number_stores = [] %}
-                {% for s in valid_stores %}
-                  {% if s.price is number %}
-                    {% set _ = number_stores.append(s) %}
-                  {% endif %}
-                {% endfor %}
-                {% set sorted_stores = number_stores|sort(attribute='price')|list %}
-                {% set cheapest_price = sorted_stores[0].get('price')|float if sorted_stores and sorted_stores[0].get('price') is not none else 0 %}
-                <div class="d-flex flex-column gap-2 w-100 mb-3">
-                  {% for store in sorted_stores %}
-                  {% set store_price = store.get('price')|float if store.get('price') is not none else 0 %}
-                  {% set is_cheapest = store_price == cheapest_price %}
-                  <div class="d-flex justify-content-between align-items-start w-100">
-                    <a {% if store.get('url') %}href="{{ store.get('url') }}" target="_blank"{% else %}href="javascript:void(0)"{% endif %} onclick="event.stopPropagation();" class="{% if is_cheapest %}text-success fw-bold{% else %}text-secondary fw-medium{% endif %} text-truncate store-link" style="font-size: 0.95rem; max-width: 65%; font-family: system-ui, -apple-system, sans-serif; line-height: 1.2; text-decoration: none; transition: transform 0.2s ease, color 0.2s ease; display: inline-block;" onmouseover="this.style.transform='scale(1.1)'; this.style.transformOrigin='left center'; this.style.color='#6f42c1';" onmouseout="this.style.transform='scale(1)'; this.style.color='';">
-                       {{ store.get('store') or store.get('name') }}
-                    </a>
-                    <div class="d-flex align-items-start">
-                      <span class="fw-bold {% if is_cheapest %}text-success{% else %}text-dark{% endif %}" style="font-size: 1rem; line-height: 1.2;">
-                        €{{ "%.2f"|format(store.get('price')) }}
-                      </span>
-                      {% if is_cheapest %}
-                      <span class="badge bg-warning text-dark ms-2 align-self-center">🏆 Best Price</span>
-                      {% endif %}
-                    </div>
-                  </div>
-                  {% endfor %}
-                </div>
-                
-                {% if sorted_stores|length > 1 %}
-                {% set save_amount = (sorted_stores[-1].get('price')|float if sorted_stores[-1].get('price') is not none else 0) - cheapest_price %}
-                {% if save_amount > 0 %}
-                <div class="border-top pt-2 mt-2 w-100">
-                  <span class="text-success fw-bold d-flex align-items-center" style="font-size: 0.95rem;">
-                    <i class="bi bi-graph-down-arrow me-2" style="font-size: 1.1rem;"></i> Save up to €{{ "%.2f"|format(save_amount) }}
+              {% if sorted_stores %}
+              <div class="d-flex flex-column gap-1 mb-2 w-100">
+                {% for store in sorted_stores[:3] %}
+                {% set store_price = store.get('price')|float if store.get('price') is not none else 0 %}
+                {% set is_cheapest = store_price == cheapest_price %}
+                <div class="d-flex justify-content-between align-items-center w-100">
+                  <a {% if store.get('url') %}href="{{ store.get('url') }}" target="_blank"{% else %}href="javascript:void(0)"{% endif %}
+                     onclick="event.stopPropagation();"
+                     class="{% if is_cheapest %}text-premium-purple fw-bold{% else %}text-secondary fw-medium{% endif %} text-truncate"
+                     style="font-size:.85rem; max-width:65%; text-decoration:none;">
+                    {{ store.get('store') or store.get('name') }}
+                  </a>
+                  <span class="fw-bold {% if is_cheapest %}text-premium-purple{% else %}text-dark{% endif %}" style="font-size:.9rem;">
+                    {% if store.get('price') is not none %}€{{ "%.2f"|format(store.get('price')) }}{% else %}N/A{% endif %}
                   </span>
                 </div>
-                {% endif %}
-                {% endif %}
+                {% endfor %}
+                {% if sorted_stores|length > 3 %}
+                <div class="text-muted text-center w-100 mt-1" style="font-size:.75rem; font-weight:500;">
+                  + {{ sorted_stores|length - 3 }} more stores
+                </div>
                 {% endif %}
               </div>
+              {% if save_amount > 0 %}
+              <div class="border-top pt-2 mb-2">
+                <span class="cpc-save-badge">
+                  <i class="bi bi-graph-down-arrow"></i> Save up to €{{ "%.2f"|format(save_amount) }}
+                </span>
+              </div>
+              {% endif %}
+              {% endif %}
 
-              <div class="mt-auto pt-3">
-                {% if p.get('expires') %}
-                <p class="text-muted small mb-3">
-                  <i class="bi bi-clock-history"></i> Expires in {{ p.get('expires') }}
-                </p>
-                {% endif %}
-                <div class="d-flex flex-column gap-2">
-                  <button type="button" class="btn btn-premium btn-premium-add w-100"
-                    data-name="{{ p.get('name') or p.get('title','')|e }}" data-id="{{ p.get('id') }}"
-                    data-price="{{ (p.get('cheapest') and p.get('cheapest').get('price')) or p.get('price','N/A')|e }}"
-                    data-initial-price="{{ (p.get('cheapest') and p.get('cheapest').get('price')) or p.get('price','N/A')|e }}"
-                    data-original-price="{{ p.original_price|e if p.original_price else '' }}"
-                    data-image="{{ prefer_processed(p.get('image') or (p.get('images') and p.get('images')[0]) or url_for('static', filename='placeholder.svg'))|e }}"
-                    data-store=""
-                    data-offer-json='{{ p.offer|tojson|forceescape if p.offer else "" }}'
-                    data-tier-json='{{ p.discount_tiers|tojson|forceescape if p.discount_tiers else "" }}'
-                    data-special-offer="{{ p.special_offer_type or '' }}"
-                    data-offer-type="{{ p.offer_type or '' }}"
-                    data-offer-x="{{ p.offer_x or '' }}"
-                    data-offer-y="{{ p.offer_y or '' }}"
-                    onclick="event.stopPropagation(); handleAddToCart(event, this);">
-                    <i class="bi bi-cart-plus-fill"></i>Add to List
-                  </button>
-
-                </div>
+              <div class="d-grid mt-auto">
+                <button type="button" class="cpc-btn-add btn-premium btn-premium-add"
+                  data-name="{{ p.get('name') or p.get('title','')|e }}"
+                  data-id="{{ p.get('id') }}"
+                  data-price="{{ (p.get('cheapest') and p.get('cheapest').get('price')) or p.get('price','N/A')|e }}"
+                  data-initial-price="{{ (p.get('cheapest') and p.get('cheapest').get('price')) or p.get('price','N/A')|e }}"
+                  data-original-price="{{ p.original_price|e if p.original_price else '' }}"
+                  data-image="{{ prefer_processed(p.get('image') or (p.get('images') and p.get('images')[0]) or url_for('static', filename='placeholder.svg'))|e }}"
+                  data-store=""
+                  data-offer-json='{{ p.offer|tojson|forceescape if p.offer else "" }}'
+                  data-tier-json='{{ p.discount_tiers|tojson|forceescape if p.discount_tiers else "" }}'
+                  data-special-offer="{{ p.special_offer_type or '' }}"
+                  data-offer-type="{{ p.offer_type or '' }}"
+                  data-offer-x="{{ p.offer_x or '' }}"
+                  data-offer-y="{{ p.offer_y or '' }}"
+                  onclick="event.stopPropagation(); handleAddToCart(event, this);">
+                  <i class="bi bi-bar-chart-fill me-1"></i> Compare Prices
+                </button>
               </div>
             </div>
           </div>
@@ -1209,7 +1337,7 @@
           <div class="modal-content"
             style="border-radius: 14px; border: none; box-shadow: 0 12px 40px rgba(0,0,0,0.15);"> <!-- Elevated container -->
             <div class="modal-header"
-              style="background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); color: white; border: none; border-radius: 14px 14px 0 0; padding: 1.1rem 1.4rem;"> <!-- Branded header gradient -->
+              style="background: #65388f; color: white; border: none; border-radius: 6px 6px 0 0; padding: 1.1rem 1.4rem;">
               <h6 class="modal-title mb-0" id="listSelectorLabel">
                 <i class="bi bi-cart-plus me-2"></i>Add to Shopping List <!-- Prompt for final user action -->
               </h6>
@@ -1243,8 +1371,8 @@
         </div>
       </div>
 
-      <footer class="text-center py-4 bg-light border-top"> <!-- Persistent bottom content -->
-        <p class="mb-0 text-muted">&copy; 2025 Smart Grocery Team</p> <!-- Copyright declaration -->
+      <footer class="text-center py-4 border-top" style="background: var(--bg-cream);">
+        <p class="mb-0" style="color:#5a5a5a;">&copy; 2025 Smart Grocery Team</p>
       </footer>
 
       <div id="comparison-tray" class="comparison-tray" aria-live="polite">
@@ -1264,7 +1392,7 @@
       <div class="modal fade" id="compareInsightsModal" tabindex="-1" aria-labelledby="compareInsightsLabel" aria-hidden="true">
         <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
           <div class="modal-content">
-            <div class="modal-header border-0" style="background:linear-gradient(135deg,#0f172a,#4338ca); color:white;">
+            <div class="modal-header border-0" style="background:#65388f; color:white;">
               <h5 class="modal-title" id="compareInsightsLabel"><i class="bi bi-stars me-2"></i>Comparison Insights</h5>
               <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
@@ -1328,7 +1456,7 @@
         <div class="modal-dialog modal-dialog-centered modal-lg"> <!-- Enlarged overlay for high-fidelity data -->
           <div class="modal-content overflow-hidden border-0 shadow-lg" style="border-radius: 20px;">
             <div class="modal-header border-0 pb-0"
-              style="background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);"> <!-- Branded header gradient -->
+              style="background: #65388f;">
               <h5 class="modal-title product-modal-title text-white fw-bold py-2 mt-2" id="productModalLabel">
                 <i class="bi bi-info-circle me-2"></i>Product Details <!-- Informational header -->
               </h5>
@@ -1408,5 +1536,6 @@
         }
       </script>
 {% endblock %}
+
 
 

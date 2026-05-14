@@ -7,7 +7,7 @@ GOAL: Visuals for the Landing Page.
 
 /* Legacy Header (Landing) */
 .header {
-  background: linear-gradient(135deg, #7c3aed, #6d28d9);
+  background: #65388f;
   color: white;
   padding: 1rem 0;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
@@ -23,53 +23,33 @@ GOAL: Visuals for the Landing Page.
 
 /* Standard Hero */
 .hero {
-  background: linear-gradient(135deg, #f3e8ff, #ede9fe);
+  background: var(--bg-cream);
   padding: 130px 0 60px;
   text-align: center;
 }
 .hero h1 {
   font-size: 2.5rem;
   margin-bottom: 1rem;
-  color: #5b21b6;
+  color: var(--premium-purple);
 }
 .hero p {
   font-size: 1.2rem;
   max-width: 800px;
   margin: 0 auto 2rem;
-  color: #7c3aed;
+  color: var(--premium-dark);
 }
 
-/* Premium Hero with Animation */
+/* Page Hero — flat editorial banner, consistent with home page section style */
 .premium-hero {
-  background: linear-gradient(-45deg, #7c3aed, #6366f1, #8b5cf6, #d946ef);
-  background-size: 400% 400%;
-  animation: gradientBG 15s ease infinite;
-  margin-top: 0;
-  padding-top: 11rem;
-  padding-bottom: 9rem;
+  background: #65388f;
+  margin-top: 68px;
+  padding: 2.8rem 0 3rem;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 10px 40px rgba(124, 58, 237, 0.4);
-  border-radius: 0 0 50% 50% / 0 0 60px 60px;
 }
 
-@keyframes gradientBG {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
-/* Floating Shapes */
-.bg-shape {
-  position: absolute;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(5px);
-  border-radius: 20%;
-  animation: float 10s infinite ease-in-out;
-}
-.shape-1 { top: 10%; left: 5%; width: 80px; height: 80px; }
-.shape-2 { top: 50%; right: 5%; width: 120px; height: 120px; border-radius: 50%; animation-delay: -2s; }
-.shape-3 { bottom: 10%; left: 30%; width: 60px; height: 60px; animation-delay: -5s; }
+/* Decorative shapes hidden — no animation on content pages */
+.bg-shape { display: none; }
 
 @keyframes float {
   0%, 100% { transform: translateY(0) rotate(0deg); }

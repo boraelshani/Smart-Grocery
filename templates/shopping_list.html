@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 
 {% block styles %}
 <style>
@@ -303,42 +303,7 @@
 			border: 1px solid rgba(255, 255, 255, 0.2);
 		}
 
-		/* Premium Header */
-    .premium-hero {
-      background: linear-gradient(-45deg, #7c3aed, #6366f1, #8b5cf6, #d946ef);
-      background-size: 400% 400%;
-      animation: gradientBG 15s ease infinite;
-      margin-top: 0;
-      padding-top: 8rem;
-      padding-bottom: 9rem;
-      position: relative;
-      overflow: hidden;
-      box-shadow: 0 10px 40px rgba(124, 58, 237, 0.4);
-      border-radius: 0 0 50% 50% / 0 0 60px 60px;
-    }
-
-    @keyframes gradientBG {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
-    }
-
-    /* Floating shapes */
-    .bg-shape {
-      position: absolute;
-      background: rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(5px);
-      border-radius: 20%;
-      animation: float 10s infinite ease-in-out;
-    }
-    .shape-1 { top: 10%; left: 5%; width: 80px; height: 80px; }
-    .shape-2 { top: 50%; right: 5%; width: 120px; height: 120px; border-radius: 50%; animation-delay: -2s; }
-    .shape-3 { bottom: 10%; left: 30%; width: 60px; height: 60px; animation-delay: -5s; }
-    
-    @keyframes float {
-      0%, 100% { transform: translateY(0) rotate(0deg); }
-      50% { transform: translateY(-30px) rotate(10deg); }
-    }
+		/* Page hero uses hero.css .premium-hero — flat #65388f with margin-top: 68px */
 
 		/* Premium Modals */
 		.modal-content {
@@ -387,27 +352,25 @@
 			z-index: 1060 !important;
 		}
 
-		/* Safe Premium Button Style (Does not trigger JS Add-To-List) */
+		/* Premium Button Style */
 		.btn-premium-style {
-			background: #7c3aed !important;
+			background: #65388f !important;
 			color: white !important;
 			border: none !important;
-			border-radius: 12px !important;
+			border-radius: 6px !important;
 			padding: 10px 18px !important;
 			font-weight: 700 !important;
 			font-size: 0.95rem !important;
-			transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+			transition: all 0.2s ease !important;
 			display: flex !important;
 			align-items: center !important;
 			justify-content: center !important;
 			gap: 8px !important;
-			box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3) !important;
 		}
 
 		.btn-premium-style:hover {
-			background: #6d28d9 !important;
-			transform: translateY(-2px) scale(1.02) !important;
-			box-shadow: 0 10px 20px rgba(124, 58, 237, 0.4) !important;
+			background: #48236b !important;
+			transform: translateY(-2px) !important;
 		}
 	</style>
 {% endblock %}
@@ -416,11 +379,8 @@
 <!-- Navigation -->
   
 
-  <!-- Premium Shopping List Header -->
-  <header class="premium-hero" style="padding: 11rem 0 4rem;">
-    <div class="bg-shape shape-1"></div>
-    <div class="bg-shape shape-2"></div>
-    <div class="bg-shape shape-3" style="position: absolute; bottom: 10%; left: 30%; width: 60px; height: 60px; background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(5px); border-radius: 20%; animation: float 10s infinite ease-in-out; animation-delay: -5s;"></div>
+  <!-- Shopping List Header -->
+  <header class="premium-hero">
     
  
 	<!-- 
@@ -437,8 +397,8 @@
           <h1 class="display-5 fw-800 mb-1" style="font-weight: 800;">My Shopping Lists</h1>
           <p class="lead opacity-90 mb-0">Organize your trips and optimize your budget.</p>
         </div>
-        <button class="btn btn-premium-style shadow-lg" 
-            style="background: white !important; color: #7c3aed !important; border: none !important; font-size: 1.1rem; padding: 12px 28px !important;"
+        <button class="btn btn-premium-style shadow-lg"
+            style="background: white !important; color: #65388f !important; border: none !important; font-size: 1.1rem; padding: 12px 28px !important;"
             data-bs-toggle="modal" data-bs-target="#createListModal">
           <!-- 
              MODAL TRIGGER:
@@ -770,7 +730,7 @@
 		<div class="modal-dialog modal-dialog-centered" style="max-width: 420px;">
 			<div class="modal-content border-0 shadow-lg" style="border-radius: 30px; overflow: hidden;">
 				<div class="modal-header border-0 pb-0 pt-4 px-4 d-flex align-items-center">
-					<div class="header-icon-circle me-3" style="width: 48px; height: 48px; background: #f5f3ff; border-radius: 14px; display: flex; align-items: center; justify-content: center; color: var(--premium-purple);">
+					<div class="header-icon-circle me-3" style="width: 48px; height: 48px; background: var(--pastel-lavender); border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #65388f;">
 						<i class="bi bi-plus-circle-fill fs-4"></i>
 					</div>
 					<h5 class="modal-title fw-800 text-premium-purple m-0">New Shopping List</h5>
@@ -837,7 +797,7 @@
 		<div class="modal-dialog modal-dialog-centered" style="max-width: 450px;">
 			<div class="modal-content border-0 shadow-lg" style="border-radius: 30px; overflow: hidden;">
 				<div class="modal-header border-0 pb-0 pt-4 px-4 d-flex align-items-center">
-					<div class="header-icon-circle me-3" style="width: 48px; height: 48px; background: #e0e7ff; border-radius: 14px; display: flex; align-items: center; justify-content: center; color: #4338ca;">
+					<div class="header-icon-circle me-3" style="width: 48px; height: 48px; background: var(--pastel-lavender); border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #65388f;">
 						<i class="bi bi-person-plus-fill fs-5"></i>
 					</div>
 					<h5 class="modal-title fw-800 text-premium-dark m-0">Share List</h5>
@@ -869,7 +829,7 @@
 		<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" style="max-width: 400px;">
 			<div class="modal-content border-0 shadow-lg" style="border-radius: 30px; overflow: hidden;">
 				<div class="modal-header border-0 pb-0 pt-4 px-4 d-flex align-items-center">
-					<div class="header-icon-circle me-3" style="width: 48px; height: 48px; background: #e0e7ff; border-radius: 14px; display: flex; align-items: center; justify-content: center; color: #4338ca;">
+					<div class="header-icon-circle me-3" style="width: 48px; height: 48px; background: var(--pastel-lavender); border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #65388f;">
 						<i class="bi bi-people-fill fs-5"></i>
 					</div>
 					<h5 class="modal-title fw-800 text-premium-dark m-0">Shared With</h5>
@@ -889,7 +849,7 @@
 		<div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
 			<div class="modal-content border-0 shadow-lg" style="border-radius: 30px; overflow: hidden;">
 				<div class="modal-header border-0 pb-0 pt-4 px-4 d-flex align-items-center">
-					<div class="header-icon-circle me-3" style="width: 48px; height: 48px; background: #eff6ff; border-radius: 14px; display: flex; align-items: center; justify-content: center; color: #3b82f6;">
+					<div class="header-icon-circle me-3" style="width: 48px; height: 48px; background: var(--pastel-lavender); border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #65388f;">
 						<i class="bi bi-pencil-fill fs-5"></i>
 					</div>
 					<h5 class="modal-title fw-800 text-premium-dark m-0">Rename List</h5>
@@ -1694,7 +1654,7 @@
 			// Show Owner
 			html += `
 				<div class="d-flex align-items-center p-3 rounded-4" style="background: #f8fafc; border: 1px solid #f1f5f9;">
-					<div class="header-icon-circle me-3" style="width: 40px; height: 40px; background: #e0e7ff; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #4338ca;">
+					<div class="header-icon-circle me-3" style="width: 40px; height: 40px; background: var(--pastel-lavender); border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #65388f;">
 						<i class="bi bi-person-badge fs-5"></i>
 					</div>
 					<div class="me-auto">
@@ -1709,7 +1669,7 @@
 				currentSharedListUsers.forEach(collab => {
 					html += `
 						<div class="d-flex align-items-center p-3 rounded-4" style="background: #ffffff; border: 1px solid #f1f5f9;">
-							<div class="header-icon-circle me-3" style="width: 40px; height: 40px; background: #fdf2f8; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #ec4899;">
+							<div class="header-icon-circle me-3" style="width: 40px; height: 40px; background: var(--pastel-beige); border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #c4714f;">
 								<i class="bi bi-person fs-5"></i>
 							</div>
 							<div class="me-auto">
@@ -2385,3 +2345,5 @@
 
 
 {% endblock %}
+
+
