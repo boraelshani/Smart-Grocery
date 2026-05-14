@@ -2,6 +2,11 @@
 
 {% block styles %}
 <style>
+    /* Change body background for this page specifically to fit the theme */
+    body {
+        background-color: #f1ecf5 !important; /* Elegant light lavender/purple shade */
+    }
+
     /* 
      * COMPARE PAGE STYLES
      * Specific layout tweaks for the comparison grid and filters.
@@ -177,12 +182,12 @@
 
     /* Primary CTA: Adding item to custom shopping list */
     .btn-add-cart {
-      background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+      background: var(--premium-purple);
       border: none;
       color: white;
-      border-radius: 12px;
+      border-radius: 0;
       padding: 12px 18px;
-      font-weight: 700;
+      font-weight: 600;
       font-size: 0.95rem;
       transition: all 0.3s ease;
       display: flex;
@@ -191,13 +196,12 @@
       gap: 8px; /* Space between icon and text */
       cursor: pointer;
       text-decoration: none !important;
-      box-shadow: 0 4px 14px rgba(102, 126, 234, 0.3);
     }
 
     .btn-add-cart:hover {
       transform: translateY(-2px); /* Lift */
       color: white;
-      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+      background: var(--premium-indigo);
       text-decoration: none !important;
     }
 

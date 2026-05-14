@@ -31,18 +31,23 @@ GOAL: Wrappers for Products, Deals, and Categories.
 
 /* 1. Horizontal Card (Scroll View) */
 .product-card-horizontal {
-  min-width: 320px;
-  max-width: 320px;
+  min-width: 270px;
+  max-width: 270px;
   background: white;
-  border-radius: 24px;
-  border: 1px solid #f1f5f9;
+  border-radius: 0px; /* Sharp edges */
+  border: none; /* Removed beige border for chic look on purple background */
   display: flex !important;
   flex-direction: column !important;
   overflow: hidden;
   transition: all 0.3s ease;
+  height: 100%;
+}
+.product-card-horizontal:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2); /* Stronger shadow on dark bg */
 }
 .card-image-wrapper {
-  height: 200px;
+  height: 280px; /* Longer image wrapper */
   width: 100%;
   display: flex !important;
   align-items: center !important;
@@ -51,61 +56,63 @@ GOAL: Wrappers for Products, Deals, and Categories.
   background: white;
 }
 .card-image-wrapper img { max-height: 100%; max-width: 100%; object-fit: contain; }
-.product-card-body { padding: 1.5rem; background: #fbfcfe; flex-grow: 1; }
-.product-name { font-weight: 800; color: #1e1b4b; margin-bottom: 0.5rem; font-size: 1.1rem; }
+.product-card-body { padding: 1.5rem; background: #fff; flex-grow: 1; border-top: none; }
+.product-name { font-weight: 700; color: var(--premium-dark); margin-bottom: 0.5rem; font-size: 1.1rem; }
 
 /* 2. Category Card */
 .category-card {
   min-width: 190px;
   height: 140px;
   background: white;
-  border-radius: 20px;
+  border-radius: 8px; /* Softer */
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
   justify-content: center !important;
-  border: 1px solid #f1f5f9;
+  border: 1px solid var(--bg-beige);
   text-decoration: none;
   transition: all 0.3s ease;
 }
 .category-card:hover {
-  background: #f5f3ff;
-  border-color: #7c3aed;
-  transform: translateY(-5px);
+  background: var(--bg-cream);
+  border-color: var(--premium-purple);
+  transform: translateY(-2px);
 }
-.category-icon { font-size: 2.5rem !important; margin-bottom: 0.5rem; }
-.category-name { font-weight: 700; color: #1e1b4b; }
+.category-icon { font-size: 2.2rem !important; margin-bottom: 0.5rem; }
+.category-name { font-weight: 600; color: var(--premium-dark); }
 
 /* 3. General Card (Modern) */
 .card {
   background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.06) !important;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0, 0.04) !important;
   overflow: hidden;
-  border: 1px solid #e9d5ff;
+  border: 1px solid var(--bg-beige);
 }
 .card-header {
-  background: linear-gradient(180deg, rgba(243, 232, 255, 0.9), rgba(237, 229, 254, 0.95));
+  background: var(--bg-cream);
   padding: 16px 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  border-bottom: 1px solid var(--bg-beige);
 }
 .card-content { padding: 0 16px 16px 16px; }
-.card-footer { background: transparent; }
+.card-footer { background: transparent; border-top: 1px solid var(--bg-beige); }
 
 /* 4. Featured Deal Card */
-.featured-deals { padding: 40px 0; background: #faf5ff; }
-.featured-deals h2 { text-align: center; font-size: 1.8rem; color: #5b21b6; margin-bottom: 30px; }
+.featured-deals { padding: 40px 0; background: var(--bg-cream); }
+.featured-deals h2 { text-align: center; font-size: 1.8rem; color: var(--premium-dark); margin-bottom: 30px; font-family: 'Cabinet Grotesk', sans-serif;}
 .featured-deals .deal-card {
   margin: 20px 0;
   padding: 20px;
   background: #fff;
   border-radius: 10px;
-  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.06) !important;
+  box-shadow: 0 2px 8px rgba(116, 95, 120, 0.1) !important;
   transition: transform 0.3s;
+  border: 1px solid var(--bg-beige);
 }
-.featured-deals .deal-card:hover { transform: translateY(-5px); }
+.featured-deals .deal-card:hover { transform: translateY(-5px); border-color: var(--premium-violet); }
 .featured-deals .deal-card img {
   width: 100%;
   height: 150px;
@@ -115,36 +122,45 @@ GOAL: Wrappers for Products, Deals, and Categories.
   background: white !important;
   padding: 10px;
 }
-.featured-deals .deal-card h3 { font-size: 1.2rem; color: #7c3aed; margin-bottom: 10px; }
+.featured-deals .deal-card h3 { font-size: 1.2rem; color: var(--premium-purple); margin-bottom: 10px; }
 .featured-deals .deal-card p { font-size: 1rem; color: #555; margin-bottom: 15px; }
 
 /* 5. Lightweight Product Card (Grid) */
 .product-card-inner {
   border: none;
-  border-radius: 12px;
+  border-radius: 0; /* Sharp edges for simple, clean, chic look */
   background: #ffffff;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
-  transition: box-shadow 0.15s ease;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08); 
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
   will-change: transform;
+  max-width: 270px; /* Less wide */
+  margin: 0 auto; /* Center in grid */
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
-.product-card-inner:hover { box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08); }
+.product-card-inner:hover {
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15); 
+  transform: translateY(-4px);
+}
 .product-image {
-  height: 240px;
+  height: 300px; /* Longer card look */
   object-fit: contain;
   background: #ffffff !important;
-  padding: 15px;
+  padding: 20px;
   display: block;
 }
 .price-badge {
   position: absolute;
   top: 12px;
   right: 12px;
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  background: var(--premium-purple); 
   color: white;
   padding: 6px 12px;
-  border-radius: 16px;
-  font-weight: 700;
-  font-size: 0.95rem;
+  border-radius: 0; /* Sharp edge for badge */
+  font-weight: 600;
+  font-size: 0.9rem;
+  letter-spacing: 0.5px;
 }
 
 /* Image Utilities */

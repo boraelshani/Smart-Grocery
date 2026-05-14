@@ -26,12 +26,19 @@ GOAL: Define global design tokens (colors) and normalize browser styles.
 ═══════════════════════════════════════════════════════════════════════════
 */
 :root {
-  --premium-purple: #7c3aed;   /* Brand Violet */
-  --premium-indigo: #6366f1;   /* Accent Indigo */
-  --premium-violet: #8b5cf6;   /* Lighter Violet */
-  --premium-dark: #1e1b4b;     /* Navy Text */
+  --premium-purple: #65388f;   /* Deep Vivid Purple (User requested) */
+  --premium-indigo: #48236b;   /* Darker Purple (for hovers) */
+  --premium-violet: #a58ac2;   /* Lighter Purple/Lavender (for accents) */
+  --premium-dark: #3a3b3a;     /* Deep Earthy Text */
+  --bg-cream: #f4f0ec;         /* Cream Background */
+  --bg-beige: #e9e3de;         /* Warm Beige / Taupe */
   --glass-white: rgba(255, 255, 255, 0.72);
   --glass-border: rgba(255, 255, 255, 0.2);
+
+  /* Modern Pastel Tones for Banners */
+  --pastel-beige: #efe9df;
+  --pastel-green: #e2e8df;
+  --pastel-lavender: #eee8f1;
 }
 
 * {
@@ -41,17 +48,24 @@ GOAL: Define global design tokens (colors) and normalize browser styles.
 }
 
 body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background-color: #f8f6ff; /* Light purple wellness theme */
-  color: #333;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background-color: var(--bg-cream);
+  color: var(--premium-dark);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Cabinet Grotesk', sans-serif;
+  font-weight: 700;
+  color: var(--premium-dark);
 }
 
 a {
-  color: #7c3aed;
+  color: var(--premium-purple);
   text-decoration: none;
 }
 
 a:hover {
+  color: var(--premium-indigo);
   text-decoration: underline;
 }
 
@@ -93,10 +107,10 @@ input[type=number] {
   transition: all 0.2s ease;
 }
 
-.text-premium-purple { color: #7c3aed !important; }
-.bg-soft-purple { background-color: rgba(124, 58, 237, 0.08) !important; }
-.text-primary { color: #7c3aed; }
-.text-muted { color: #a78bfa; }
+.text-premium-purple { color: var(--premium-purple) !important; }
+.bg-soft-purple { background-color: rgba(116, 95, 120, 0.08) !important; } /* Muted Violet slightly transparent */
+.text-primary { color: var(--premium-purple); }
+.text-muted { color: #8c8c8c; }
 .text-decoration-line-through { text-decoration: line-through; }
 
 .rotate-180 { transform: rotate(180deg) !important; } .transition-transform { transition: transform 0.3s ease; }
@@ -107,10 +121,10 @@ input[type=number] {
   100% { background-position: 200% 0; }
 }
 .skeleton {
-  background: linear-gradient(90deg, #e9d5ff 25%, #f3e8ff 50%, #e9d5ff 75%);
+  background: linear-gradient(90deg, #e6dfd3 25%, #f1ecdf 50%, #e6dfd3 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s ease-in-out infinite;
-  border-radius: 6px;
+  border-radius: 4px;
   display: block;
 }
 .skeleton-sm { height: 12px; width: 60%; }

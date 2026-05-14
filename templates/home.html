@@ -9,126 +9,102 @@
 {% block content %}
 
 <!-- ═══════════════════════════════════════════════
-     BENTO HERO SECTION
+     MODERN EDITORIAL HERO SECTION
      ═══════════════════════════════════════════════ -->
-<div class="bento-hero-wrapper">
-  <div class="bento-orb bento-orb-1"></div>
-  <div class="bento-orb bento-orb-2"></div>
-  <div class="bento-orb bento-orb-3"></div>
-
-  <div class="container" style="position:relative; z-index:2;">
+<div class="modern-hero">
+  <div class="container pb-4 pt-5">
     <div class="row align-items-center g-5">
 
       <!-- Left: Headline + CTA + Search -->
-      <div class="col-lg-5">
-        <div class="bento-chip mb-3">
-          <i class="bi bi-stars"></i> Smart Grocery
-        </div>
-        <h1 class="bento-headline">
-          Shop Smarter.<br>
-          <span class="grad-text">Save More.</span><br>
-          Every Week.
+      <div class="col-lg-5 hero-text-col">
+        <h1 class="modern-headline">
+          Groceries,<br>
+          thoughtfully.
         </h1>
-        <p class="bento-subline">
-          Compare prices across every major store, get AI-powered recipes from your basket, and manage shared lists with your whole family — all in one place.
+        <p class="modern-subline">
+          Compare prices, build your list, and find recipes that make everyday meals simpler, healthier, and more sustainable.
         </p>
-        <div class="bento-cta-row">
-          <a href="{{ url_for('main.compare_prices') }}" class="bento-btn-primary">
-            <i class="bi bi-arrow-left-right"></i> Compare Prices
+        
+        <div class="modern-cta-row mt-4">
+          <a href="{{ url_for('main.compare_prices') }}" class="modern-btn-primary">
+            Compare Prices
           </a>
-          <a href="/shopping-list" class="bento-btn-secondary">
-            <i class="bi bi-list-check"></i> My Lists
+          <a href="/shopping-list" class="modern-btn-secondary">
+            My Lists
           </a>
         </div>
-
-        <!-- Inline hero search -->
-        <form class="hero-search-bar" action="{{ url_for('main.compare_prices') }}" method="get">
-          <i class="bi bi-search" style="color: rgba(255,255,255,0.65); flex-shrink:0;"></i>
-          <input type="text" name="search" placeholder="Search products, brands, stores…" autocomplete="off">
-          <button type="submit" class="hero-search-btn">
-            <i class="bi bi-arrow-right"></i>
-          </button>
-        </form>
       </div>
 
-      <!-- Right: Bento Grid -->
-      <div class="col-lg-7">
-        <div class="bento-grid">
-
-          <!-- CARD 1: Price Comparison (tall, 2 rows) -->
-          <a href="{{ url_for('main.compare_prices') }}" class="bento-card bento-card-compare">
-            <div class="bento-card-arrow"><i class="bi bi-arrow-up-right"></i></div>
-            <img src="https://res.cloudinary.com/drljgepgy/image/upload/v1777675580/SmartGrocery_img1_ekntrf.png"
-                 alt="Price Comparison visual"
-                 class="compare-image"
-                 loading="lazy">
-            <div style="position:relative; z-index:2;">
-              <div class="bento-chip"><i class="bi bi-arrow-left-right me-1"></i>Price Comparison</div>
-              <div class="bento-card-title">Find the Lowest<br>Price Instantly</div>
-              <div class="bento-card-desc">Live cross-store scanning across all major retailers. Never overpay again.</div>
-            </div>
-          </a>
-
-          <!-- CARD 2: AI Recipes -->
-          <a href="/shopping-list/recipe-planner" class="bento-card bento-card-recipe">
-            <div class="bento-card-arrow"><i class="bi bi-arrow-up-right"></i></div>
-            <div class="recipe-ingredients">
-              <div class="ri-dot">🥕</div>
-              <div class="ri-dot">🧅</div>
-              <div class="ri-dot">🍅</div>
-            </div>
-            <div class="recipe-visual">📖</div>
-            <div style="position:relative; z-index:2;">
-              <div class="bento-chip"><i class="bi bi-stars me-1"></i>AI Recipes</div>
-              <div class="bento-card-title">Recipe Book<br>Powered by AI</div>
-              <div class="bento-card-desc">Turn your basket into delicious weekly meals.</div>
-            </div>
-          </a>
-
-          <!-- CARD 3: Smart Lists -->
-          <a href="/shopping-list" class="bento-card bento-card-lists">
-            <div class="bento-card-arrow"><i class="bi bi-arrow-up-right"></i></div>
-            <div class="lists-visual">
-              <div class="lv-item"><div class="lv-check done"></div>Milk × 2</div>
-              <div class="lv-item"><div class="lv-check done"></div>Bread</div>
-              <div class="lv-item"><div class="lv-check"></div>Eggs × 12</div>
-              <div class="lv-item"><div class="lv-check"></div>Butter</div>
-            </div>
-            <div style="position:relative; z-index:2;">
-              <div class="bento-chip"><i class="bi bi-list-check me-1"></i>Smart Lists</div>
-              <div class="bento-card-title">Multiple<br>Lists</div>
-              <div class="bento-card-desc">Organise by store, occasion, or category.</div>
-            </div>
-          </a>
-
-          <!-- CARD 4: Shared Lists (wide) -->
-          <a href="/shopping-list" class="bento-card bento-card-shared">
-            <div class="bento-card-arrow"><i class="bi bi-arrow-up-right"></i></div>
-            <div class="shared-visual">
-              <div class="sv-avatar sv-a1">A</div>
-              <div class="sv-avatar sv-a2">S</div>
-              <div class="sv-avatar sv-a3">M</div>
-              <div class="sv-avatar sv-a4">J</div>
-              <div class="sv-live-dot"></div>
-            </div>
-            <div class="sv-sync-items">
-              <div class="sv-item-pill"><i class="bi bi-check-circle-fill text-success"></i> Apples added</div>
-              <div class="sv-item-pill"><i class="bi bi-pencil-fill" style="color:#fbbf24;"></i> Editing…</div>
-            </div>
-            <div style="position:relative; z-index:2;">
-              <div class="bento-chip"><i class="bi bi-people-fill me-1"></i>Shared Lists</div>
-              <div class="bento-card-title">Shop Together,<br>In Real Time</div>
-              <div class="bento-card-desc">Invite family or housemates. Everyone sees updates live — no more duplicate buys.</div>
-            </div>
-          </a>
-
+      <!-- Right: Main Photography / Imagery with overlapping card -->
+      <div class="col-lg-7 position-relative">
+        <div class="modern-img-wrapper animate-fade-up">
+          <img src="{{ url_for('static', filename='img/home_hero_1.png') }}" alt="Fresh produce" loading="lazy">
+        </div>
+        
+        <!-- Floating Accent Card -->
+        <div class="modern-floating-card animate-fade-up animate-fade-up-delay-1" id="floating-promo-card">
+          <button type="button" class="btn-close" aria-label="Close" onclick="document.getElementById('floating-promo-card').style.display='none'" style="position: absolute; top: 15px; right: 15px; font-size: 0.8rem; opacity: 0.5; transition: opacity 0.2s;"></button>
+          <div class="d-flex align-items-start gap-3">
+             <div class="floating-icon">
+                <i class="bi bi-flower1"></i>
+             </div>
+             <div>
+                <h4 class="floating-title">Save money.<br>Live better.</h4>
+                <p class="floating-text">Track prices and unlock smarter savings.</p>
+                <a href="#how" class="floating-link" onclick="document.querySelector('.how-section').scrollIntoView({behavior: 'smooth'})">See how it works <i class="bi bi-arrow-right"></i></a>
+             </div>
+          </div>
         </div>
       </div>
 
     </div>
   </div>
 </div>
-<!-- END BENTO HERO -->
+<!-- END MODERN HERO -->
+
+<!-- ═══════════════════════════════════════════════
+     FEATURE BANNERS SECTION
+     ═══════════════════════════════════════════════ -->
+<div class="features-banner-section">
+  <div class="container pb-5">
+    <div class="row g-0 features-row animate-fade-up animate-fade-up-delay-2">
+      <!-- Banner 1 -->
+      <div class="col-md-4">
+        <div class="feature-banner banner-beige">
+          <div class="banner-icon-circ"><i class="bi bi-tags"></i></div>
+          <div class="banner-text">
+            <h3>Save money</h3>
+            <p>Compare prices across stores and get the best deals.</p>
+            <a href="{{ url_for('main.compare_prices') }}">Explore deals <i class="bi bi-arrow-right"></i></a>
+          </div>
+        </div>
+      </div>
+      <!-- Banner 2 -->
+      <div class="col-md-4">
+        <div class="feature-banner banner-sage">
+          <div class="banner-icon-circ"><i class="bi bi-leaf"></i></div>
+          <div class="banner-text">
+            <h3>Reduce waste</h3>
+            <p>Find recipes that use what you have and love.</p>
+            <a href="#">Browse recipes <i class="bi bi-arrow-right"></i></a>
+          </div>
+        </div>
+      </div>
+      <!-- Banner 3 -->
+      <div class="col-md-4">
+        <div class="feature-banner banner-lavender">
+          <div class="banner-icon-circ"><i class="bi bi-list-check"></i></div>
+          <div class="banner-text">
+            <h3>Plan better</h3>
+            <p>Build lists, track essentials, and shop with ease.</p>
+            <a href="/shopping-list">Create your list <i class="bi bi-arrow-right"></i></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- END FEATURES BANNERS -->
 
 
 <!-- ═══════════════════════════════════════════════
@@ -318,13 +294,13 @@
               <div class="d-flex justify-content-between align-items-center w-100">
                 <a {% if store.get('url') %}href="{{ store.get('url') }}" target="_blank"{% else %}href="javascript:void(0)"{% endif %}
                    onclick="event.stopPropagation();"
-                   class="{% if store_price == cheapest_price %}text-success fw-bold{% else %}text-secondary fw-medium{% endif %} text-truncate"
-                   style="font-size:.85rem; max-width:65%; text-decoration:none; transition: color 0.2s ease;"
-                   onmouseover="this.style.color='#6f42c1'"
-                   onmouseout="this.style.color=''">
-                  {{ store.get('store') or store.get('name') }}
-                </a>
-                <span class="fw-bold {% if store_price == cheapest_price %}text-success{% else %}text-dark{% endif %}" style="font-size:.9rem;">
+                     class="{% if store_price == cheapest_price %}text-premium-purple fw-bold{% else %}text-secondary fw-medium{% endif %} text-truncate"
+                     style="font-size:.85rem; max-width:65%; text-decoration:none; transition: color 0.2s ease;"
+                     onmouseover="this.style.color='#6f42c1'"
+                     onmouseout="this.style.color=''">
+                    {{ store.get('store') or store.get('name') }}
+                  </a>
+                  <span class="fw-bold {% if store_price == cheapest_price %}text-premium-purple{% else %}text-dark{% endif %}" style="font-size:.9rem;">
                   {% if store.get('price') is not none %}€{{ "%.2f"|format(store.get('price')) }}{% else %}N/A{% endif %}
                 </span>
               </div>
