@@ -25,48 +25,39 @@ GOAL: Styles for the Navbar, including the dynamic "Glass" effect.
 
 .navbar-brand i { color: white !important; }
 
-/* PREMIUM NAVBAR (Transparent Start) */
+/* PREMIUM NAVBAR (Always Solid White) */
 .navbar-premium {
-  background: transparent !important;
-  border-bottom: none !important;
-  box-shadow: none !important;
+  background: #ffffff !important;
+  border-bottom: 1.5px solid #ede8f5 !important;
+  box-shadow: 0 2px 16px rgba(124, 58, 237, 0.05) !important;
   width: 100%;
   z-index: 1000;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: box-shadow 0.3s ease;
   position: fixed;
   top: 0;
 }
 
 /* PREMIUM NAVBAR (Scrolled Sticky State) */
 .navbar-premium.scrolled {
-  background: rgba(255, 255, 255, 0.9) !important;
-  backdrop-filter: blur(12px); /* Glass blur */
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08) !important;
-  position: fixed;
-  top: 0;
+  background: rgba(255, 255, 255, 0.98) !important;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 4px 24px rgba(124, 58, 237, 0.09) !important;
 }
 
 /* Navbar Variables (Text Colors) */
-.navbar-premium .nav-link, 
+.navbar-premium .nav-link,
 .navbar-premium .navbar-brand {
-  color: rgba(255, 255, 255, 0.9) !important;
+  color: #2d2d2d !important;
   font-weight: 600;
 }
 
-.navbar-premium.scrolled .nav-link, 
+.navbar-premium.scrolled .nav-link,
 .navbar-premium.scrolled .navbar-brand {
-  color: #1e293b !important;
+  color: #2d2d2d !important;
 }
 
-/* Hover states — override Bootstrap's navbar-dark white hover */
-.navbar-premium:not(.scrolled) .nav-link:not(.nav-icon-btn):not(.nav-profile-btn):hover {
-  color: rgba(255, 255, 255, 1) !important;
-  background: rgba(255, 255, 255, 0.14) !important;
-  border-radius: 10px;
-}
-
-.navbar-premium.scrolled .nav-link:not(.nav-icon-btn):not(.nav-profile-btn):hover {
+/* Hover states */
+.navbar-premium .nav-link:not(.nav-icon-btn):not(.nav-profile-btn):hover {
   color: #7c3aed !important;
   background: rgba(124, 58, 237, 0.07) !important;
   border-radius: 10px;
@@ -74,19 +65,12 @@ GOAL: Styles for the Navbar, including the dynamic "Glass" effect.
 
 /* Active Tab Styles */
 .navbar-premium .nav-link:not(.nav-icon-btn):not(.nav-profile-btn).active {
-  background: rgba(255, 255, 255, 0.15) !important;
-  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+  background: #f0e8ff !important;
+  border: 1px solid rgba(124, 58, 237, 0.22) !important;
   border-radius: 12px;
-  color: white !important;
+  color: #7c3aed !important;
   padding-left: 1rem !important;
   padding-right: 1rem !important;
-}
-
-.navbar-premium.scrolled .nav-link:not(.nav-icon-btn):not(.nav-profile-btn).active {
-  background: #f5f3ff !important;
-  border: 1px solid #7c3aed !important;
-  color: #7c3aed !important;
-  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.1);
 }
 
 /* Brand Icon Box */
@@ -202,10 +186,9 @@ GOAL: Styles for the Navbar, including the dynamic "Glass" effect.
   width: 44px;
   height: 44px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.4) !important;
-  color: white !important;
+  background: #f5f0fe;
+  border: 1px solid rgba(124, 58, 237, 0.15) !important;
+  color: #7c3aed !important;
   transition: all 0.2s ease;
   text-decoration: none !important;
   display: flex;
@@ -213,31 +196,22 @@ GOAL: Styles for the Navbar, including the dynamic "Glass" effect.
   justify-content: center;
 }
 .nav-bell-btn:hover {
-  background: rgba(255, 255, 255, 0.32) !important;
+  background: #ede5fc !important;
   transform: scale(1.05);
-  color: white !important;
-}
-.navbar-premium.scrolled .nav-bell-btn {
-  background: #f8fafc !important;
-  border-color: #e2e8f0 !important;
-  color: #1e293b !important;
-}
-.navbar-premium.scrolled .nav-bell-btn:hover {
-  background: #f1f5f9 !important;
   color: #7c3aed !important;
-  transform: scale(1.05);
   box-shadow: 0 6px 14px rgba(124, 58, 237, 0.12);
 }
 
 /* Profile Toggle Box */
 .profile-dropdown-toggle {
-  background: rgba(255, 255, 255, 0.15);
-  color: white !important;
+  background: #f5f0fe;
+  border: 1px solid rgba(124, 58, 237, 0.2) !important;
+  color: #2d1b5e !important;
   min-height: 48px;
   text-decoration: none !important;
 }
 .profile-dropdown-toggle:hover {
-  background: rgba(255, 255, 255, 0.25);
+  background: #ede5fc;
   text-decoration: none !important;
 }
 
@@ -372,27 +346,9 @@ GOAL: Styles for the Navbar, including the dynamic "Glass" effect.
 
 .navbar-premium .navbar-toggler {
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.22) !important;
-  padding: 0.55rem 0.7rem;
-}
-
-.navbar-premium.scrolled .navbar-toggler {
   background: #ffffff;
-  border-color: #e2e8f0 !important;
-}
-
-.navbar-premium.scrolled .profile-dropdown-toggle {
-  background: #f8fafc;
-  border-color: #e2e8f0 !important;
-  color: #1e293b !important;
-}
-.navbar-premium.scrolled .profile-dropdown-toggle:hover {
-  background: #f1f5f9;
-}
-
-.navbar-premium.scrolled .profile-dropdown-toggle:hover .profile-toggle-name {
-  color: #6366f1;
+  border: 1px solid #e2e8f0 !important;
+  padding: 0.55rem 0.7rem;
 }
 
 /* Animations for dropdown */

@@ -75,6 +75,7 @@
     background-color: var(--bg-cream);
     padding-top: 50px;
     padding-bottom: 60px;
+    margin-top: 68px;
 }
 
 .hero-text-col {
@@ -739,7 +740,7 @@
 
 .home-section {
     padding: 4rem 0;
-    background: #65388f; /* User requested #65388f background */
+    background: #65388f;
 }
 .home-section .section-title,
 .home-section .section-subtitle {
@@ -751,11 +752,11 @@
 
 .home-section-alt {
     padding: 4rem 0;
-    background: #5b3180; /* Slightly darker shade base on #65388f for subtle contrast */
+    background: #5b3180;
 }
 .home-section-alt .section-title,
 .home-section-alt .section-subtitle {
-    color: white !important; /* Make text readable on dark background */
+    color: white !important;
 }
 .home-section-alt .section-title i {
     color: #e0d0f5 !important;
@@ -787,14 +788,14 @@
 }
 
 .view-all-btn {
-    background: var(--bg-cream); /* Oatmeal color */
+    background: var(--bg-cream);
     color: var(--premium-purple);
     padding: 10px 22px;
-    border-radius: 0px; /* Sharp corners to match theme */
+    border-radius: 0px;
     font-weight: 800;
     font-size: 0.9rem;
     border: none;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05); /* Slight pop off background */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
     transition:
         background 0.2s ease,
         color 0.2s ease,
@@ -806,7 +807,7 @@
 }
 
 .view-all-btn:hover {
-    background: #e8e2dc; /* Slightly darker cream on hover */
+    background: #e8e2dc;
     color: var(--premium-purple);
     transform: translateX(3px);
     text-decoration: none;
@@ -1233,55 +1234,27 @@
 
 .newsletter-section {
     padding: 5rem 0;
-    background: #f8f7ff;
+    background: #eae4dc;
 }
 
 .newsletter-inner {
-    background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 50%, #5b21b6 100%);
-    border-radius: 32px;
+    background: #eae4dc;
+    border-radius: 0;
     padding: 4rem;
     position: relative;
     overflow: hidden;
 }
 
-/* Decorative circle — top right */
-.newsletter-inner::before {
-    content: "";
-    position: absolute;
-    top: -80px;
-    right: -80px;
-    width: 280px;
-    height: 280px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.06);
-    pointer-events: none;
-}
-
-/* Decorative circle — bottom left */
-.newsletter-inner::after {
-    content: "";
-    position: absolute;
-    bottom: -100px;
-    left: -60px;
-    width: 320px;
-    height: 320px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.04);
-    pointer-events: none;
-}
-
 .newsletter-form {
     max-width: 500px;
     margin: 0 auto;
-    background: rgba(255, 255, 255, 0.12);
-    -webkit-backdrop-filter: blur(12px);
-    backdrop-filter: blur(12px);
-    padding: 8px;
-    border-radius: 20px;
+    background: #ffffff;
+    padding: 6px;
+    border-radius: 4px;
     display: flex;
     align-items: center;
     gap: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1.5px solid #c8bfb3;
     position: relative;
     z-index: 1;
 }
@@ -1292,41 +1265,38 @@
     border: none;
     outline: none;
     padding: 12px 18px;
-    color: #ffffff;
+    color: #2d2d2d;
     font-size: 0.95rem;
     font-weight: 500;
     min-width: 0;
 }
 
 .newsletter-form input::placeholder {
-    color: rgba(255, 255, 255, 0.65);
+    color: #999999;
 }
 
 .newsletter-form button {
-    background: #ffffff;
-    color: #7c3aed;
+    background: #2d4a2d;
+    color: #ffffff;
     border: none;
     padding: 12px 28px;
-    border-radius: 14px;
-    font-weight: 800;
+    border-radius: 4px;
+    font-weight: 700;
     font-size: 0.9rem;
     cursor: pointer;
     flex-shrink: 0;
-    transition:
-        background 0.2s ease,
-        transform 0.2s ease;
+    transition: background 0.2s ease;
 }
 
 .newsletter-form button:hover {
-    background: #f5f3ff;
-    transform: scale(1.03);
+    background: #1e3a1e;
 }
 
 .newsletter-benefit {
     display: flex;
     align-items: center;
     gap: 8px;
-    color: rgba(255, 255, 255, 0.8);
+    color: #5a5a5a;
     font-size: 0.88rem;
     font-weight: 600;
     position: relative;
@@ -1502,6 +1472,7 @@
 
     .newsletter-inner {
         padding: 2.5rem 1.5rem;
+        border-radius: 0;
     }
 
     .section-header {
