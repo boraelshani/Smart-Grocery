@@ -6,8 +6,10 @@ function setupNavbarScroll() { // Visibility handler
     // Check vertical scroll position (Y-axis) relative to top of viewport
     if (window.scrollY > 50) { // Threshold for effect
       nav.classList.add('scrolled'); // Apply background and border styles
+      document.body.classList.add('scrolled'); // Add to body for padding adjustment
     } else { // Return to top position
       nav.classList.remove('scrolled'); // Restore original transparency
+      document.body.classList.remove('scrolled'); // Remove from body
     }
   };
 

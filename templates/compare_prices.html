@@ -1,33 +1,12 @@
 ﻿{% extends "base.html" %}
 
+{# Import the unified product card component #}
+{% from 'components/product_card.html' import product_card %}
+
 {% block styles %}
 <style>
-    /* ─── SIMPLE SINGLE-ROW NAVBAR (compare page only) ─── */
-
-    /* Hide the search bar that sits on the home-page nav */
-    .tabs-search-bar { display: none !important; }
-
-    /* Lift the tab-row up to be inline with the logo */
-    .tabs-collapse {
-      order: 2 !important;           /* right after the logo */
-      border-top: none !important;   /* remove the separator line */
-      padding-top: 0 !important;
-      margin-top: 0 !important;
-      margin-bottom: 0 !important;
-      width: auto !important;        /* no longer full-width */
-      flex-grow: 0 !important;
-      flex-basis: auto !important;
-    }
-    /* Keep the nav items in a horizontal row */
-    .tabs-collapse .navbar-nav {
-      flex-direction: row !important;
-      align-items: center !important;
-    }
-    /* Hide barcode-scanner and bell — keep only the user account chip */
-    a[aria-label="Scanner"],
-    a[aria-label="Notifications"] {
-      display: none !important;
-    }
+    /* ─── COMPARE PAGE USES UNIFIED NAVBAR ─── */
+    /* No custom navbar overrides - uses the global purple navbar from navbar.css */
 
     /* Body uses global cream from global.css */
 
@@ -1067,120 +1046,10 @@
         </div>
       </div>
 
-      <div class="row g-4" id="products-grid">
+      <div class="products-grid" id="products-grid">
         {% if products %}
-        
-        {# 
-           MAIN PRODUCT LOOP
-           Iterates through the paginated list of products to display them in a grid.
-           Each product card contains:
-           1. Product Image & Main Price Badge (Cheapest found)
-           2. Metadata (Name, Category)
-           3. Nested Loop of Stores where it's available
-           4. "Add to List" CTA
-           
-           Data Attributes (data-stores, data-price, etc.) are used by JavaScript 
-           for client-side sorting and filtering without reloading.
-        #}
         {% for p in products %}
-        <div class="col-md-6 col-lg-3 col-xl-3 product-card" 
-          data-stores='{{ p.get("stores")|tojson }}'
-          data-price="{{ (p.get('cheapest') and p.get('cheapest').get('price')) or p.get('price','') }}"
-          data-name="{{ p.get('name','') |lower }}" 
-          data-category="{{ p.get('category','') |lower }}"
-          data-product-id="{{ p.get('id') }}"
-          data-product-name="{{ p.get('name') or p.get('title','')|e }}"
-          data-unit-price="{{ p.get('normalized_unit_price') if p.get('normalized_unit_price') is not none else '' }}"
-          data-unit-label="{{ p.get('normalized_unit_label','') }}"
-          data-confidence-score="{{ p.get('confidence', {}).get('score', 0) }}"
-          data-confidence-label="{{ p.get('confidence', {}).get('label', 'Unknown') }}">
-          
-          {# Compute store data upfront for the whole card #}
-          {% set valid_stores = p.get('stores', [])|selectattr('price', 'defined')|rejectattr('price', 'none')|list %}
-          {% set number_stores = [] %}
-          {% for s in valid_stores %}{% if s.price is number %}{% set _ = number_stores.append(s) %}{% endif %}{% endfor %}
-          {% set sorted_stores = number_stores|sort(attribute='price')|list %}
-          {% set cheapest_price = sorted_stores[0].get('price')|float if sorted_stores and sorted_stores[0].get('price') is not none else 0 %}
-          {% set max_price = sorted_stores[-1].get('price')|float if sorted_stores and sorted_stores[-1].get('price') is not none else 0 %}
-          {% set save_amount = max_price - cheapest_price if sorted_stores|length > 1 else 0 %}
-
-          <div class="compare-product-card">
-            <!-- Image -->
-            <a href="{{ url_for('main.product_detail', product_id=p.get('id')) }}" class="text-decoration-none d-block">
-              <div class="cpc-image-wrap">
-                <img src="{{ prefer_processed(p.get('image') or (p.get('images') and p.get('images')[0]) or url_for('static', filename='placeholder.svg')) }}"
-                     alt="{{ p.get('name') or p.get('title','Product') }}">
-              </div>
-            </a>
-
-            <!-- Body — mirrors home page product-card-horizontal layout -->
-            <div class="cpc-body">
-              <div class="d-flex justify-content-between align-items-start mb-2">
-                <div class="cpc-name product-description-clamp">{{ p.get('name') or p.get('title','') }}</div>
-                <button type="button" class="btn btn-link p-0 ms-2 flex-shrink-0 js-report-btn"
-                  style="color: #d1d5db; font-size: 0.8rem;"
-                  title="Report inaccurate price"
-                  data-product-id="{{ p.get('id') }}"
-                  data-product-name="{{ p.get('name') or p.get('title','')|e }}"
-                  data-product-stores='{{ p.get("stores")|tojson|forceescape }}'>
-                  <i class="bi bi-exclamation-triangle" style="font-size:.9rem;"></i>
-                </button>
-              </div>
-
-              {% if sorted_stores %}
-              <div class="d-flex flex-column gap-1 mb-2 w-100">
-                {% for store in sorted_stores[:3] %}
-                {% set store_price = store.get('price')|float if store.get('price') is not none else 0 %}
-                {% set is_cheapest = store_price == cheapest_price %}
-                <div class="d-flex justify-content-between align-items-center w-100">
-                  <a {% if store.get('url') %}href="{{ store.get('url') }}" target="_blank"{% else %}href="javascript:void(0)"{% endif %}
-                     onclick="event.stopPropagation();"
-                     class="{% if is_cheapest %}text-premium-purple fw-bold{% else %}text-secondary fw-medium{% endif %} text-truncate"
-                     style="font-size:.85rem; max-width:65%; text-decoration:none;">
-                    {{ store.get('store') or store.get('name') }}
-                  </a>
-                  <span class="fw-bold {% if is_cheapest %}text-premium-purple{% else %}text-dark{% endif %}" style="font-size:.9rem;">
-                    {% if store.get('price') is not none %}€{{ "%.2f"|format(store.get('price')) }}{% else %}N/A{% endif %}
-                  </span>
-                </div>
-                {% endfor %}
-                {% if sorted_stores|length > 3 %}
-                <div class="text-muted text-center w-100 mt-1" style="font-size:.75rem; font-weight:500;">
-                  + {{ sorted_stores|length - 3 }} more stores
-                </div>
-                {% endif %}
-              </div>
-              {% if save_amount > 0 %}
-              <div class="border-top pt-2 mb-2">
-                <span class="cpc-save-badge">
-                  <i class="bi bi-graph-down-arrow"></i> Save up to €{{ "%.2f"|format(save_amount) }}
-                </span>
-              </div>
-              {% endif %}
-              {% endif %}
-
-              <div class="d-grid mt-auto">
-                <button type="button" class="cpc-btn-add btn-premium btn-premium-add"
-                  data-name="{{ p.get('name') or p.get('title','')|e }}"
-                  data-id="{{ p.get('id') }}"
-                  data-price="{{ (p.get('cheapest') and p.get('cheapest').get('price')) or p.get('price','N/A')|e }}"
-                  data-initial-price="{{ (p.get('cheapest') and p.get('cheapest').get('price')) or p.get('price','N/A')|e }}"
-                  data-original-price="{{ p.original_price|e if p.original_price else '' }}"
-                  data-image="{{ prefer_processed(p.get('image') or (p.get('images') and p.get('images')[0]) or url_for('static', filename='placeholder.svg'))|e }}"
-                  data-store=""
-                  data-offer-json='{{ p.offer|tojson|forceescape if p.offer else "" }}'
-                  data-tier-json='{{ p.discount_tiers|tojson|forceescape if p.discount_tiers else "" }}'
-                  data-special-offer="{{ p.special_offer_type or '' }}"
-                  data-offer-type="{{ p.offer_type or '' }}"
-                  data-offer-x="{{ p.offer_x or '' }}"
-                  data-offer-y="{{ p.offer_y or '' }}"
-                  onclick="event.stopPropagation(); handleAddToCart(event, this);">
-                  <i class="bi bi-bar-chart-fill me-1"></i> Compare Prices
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+          {{ product_card(p) }}
         {% endfor %}
         {% else %}
         <div class="col-12">

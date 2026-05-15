@@ -1,0 +1,77 @@
+/*
+═══════════════════════════════════════════════════════════════════════════
+NAVBAR FIXES - Ensures consistent behavior across all pages
+═══════════════════════════════════════════════════════════════════════════
+*/
+
+/* ═══ GLOBAL BODY PADDING ═══ */
+body {
+  padding-top: 140px !important;
+  transition: padding-top 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* When scrolled, reduce padding */
+body.scrolled {
+  padding-top: 76px !important;
+}
+
+/* ═══ PAGE-SPECIFIC ADJUSTMENTS ═══ */
+
+/* Remove extra margins from hero sections */
+.compare-hero-editorial,
+.premium-hero,
+.modern-hero,
+.product-detail-hero {
+  margin-top: 0 !important;
+}
+
+/* ═══ MOBILE ADJUSTMENTS ═══ */
+@media (max-width: 991.98px) {
+  body {
+    padding-top: 70px !important;
+  }
+  
+  body.scrolled {
+    padding-top: 70px !important;
+  }
+}
+
+@media (max-width: 575.98px) {
+  body {
+    padding-top: 65px !important;
+  }
+  
+  body.scrolled {
+    padding-top: 65px !important;
+  }
+}
+
+/* ═══ PREVENT LAYOUT SHIFT ═══ */
+.navbar-premium {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ═══ MEGA MENU Z-INDEX FIX ═══ */
+.mega-menu-content {
+  z-index: 1040 !important;
+}
+
+.navbar-premium .dropdown-menu {
+  z-index: 1060 !important;
+}
+
+#globalSearchResults {
+  z-index: 1060 !important;
+}
+
+/* ═══ PRINT STYLES ═══ */
+@media print {
+  .navbar-premium {
+    display: none !important;
+  }
+  
+  body,
+  body.scrolled {
+    padding-top: 0 !important;
+  }
+}

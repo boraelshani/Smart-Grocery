@@ -1,1162 +1,492 @@
 ﻿{% extends "base.html" %}
 
+{# Import the unified product card component #}
+{% from 'components/product_card.html' import product_card %}
+
 {% block styles %}
 <style>
-    /* 
-     * COMPARE PAGE STYLES
-     * Specific layout tweaks for the comparison grid and filters.
-     */
-    .compare-search-row {
-      --search-height: 46px;      /* CSS Variable to synchronize height across input and buttons */
-      /* adjust to match input height */
-      margin-bottom: 1.5rem;
-      /* slightly more space before product grid for visual breathing room */
-    }
-
-    /* 
-     * Search Input Group Alignment 
-     * Ensuring the text input and search button align perfectly horizontally
-     * even on different browsers using flexbox.
-     */
-    .compare-search-row .input-group {
-      display: flex !important;
-      align-items: center !important; /* Vertically center children */
-    }
-
-    /* Force specific height on form control to prevent platform-specific rendering issues */
-    .compare-search-row .input-group .form-control {
-      height: var(--search-height) !important; /* Use shared variable */
-      box-sizing: border-box; /* Include padding in height calculation */
-      display: flex !important;
-      align-items: center !important;
-      padding: 0.45rem 0.75rem !important;
-      font-size: 1rem;
-    }
-
-    /* Force same height on buttons for a unified search bar look */
-    .compare-search-row .input-group .btn,
-    .compare-search-row .input-group .btn-group .btn {
-      height: var(--search-height) !important;
-      box-sizing: border-box;
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important; /* Center text/icons inside */
-      padding: 0 0.75rem !important;
-      font-size: 1rem;
+  /* ═══ DEALS PAGE - MATCHING COMPARE PAGE STYLE ═══ */
+  
+  /* Hero Section */
+  .deals-hero-editorial {
+    background: var(--bg-cream, #f4f0ec);
+    overflow: hidden;
+  }
+  
+  .deals-hero-text {
+    padding: 3rem 2.5rem 3rem clamp(1.5rem, 7%, 4.5rem);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .deals-hero-text > div {
+    max-width: 420px;
+    width: 100%;
+  }
+  
+  .deals-hero-eyebrow {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: #65388f;
+    margin-bottom: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  
+  .deals-hero-headline {
+    font-family: 'Cabinet Grotesk', sans-serif !important;
+    font-size: clamp(3rem, 5.5vw, 4.4rem) !important;
+    font-weight: 500 !important;
+    color: #65388f !important;
+    line-height: 1.05 !important;
+    letter-spacing: -0.01em !important;
+    margin-bottom: 1.5rem;
+  }
+  
+  .deals-hero-sub {
+    color: #48236b;
+    font-size: 1rem;
+    line-height: 1.65;
+    max-width: 400px;
+    margin: 0;
+  }
+  
+  .deals-hero-img-col {
+    overflow: hidden;
+    position: relative;
+    min-height: 300px;
+  }
+  
+  .deals-hero-img-col img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    display: block;
+  }
+  
+  /* Category Filter Pills */
+  .category-pills-container {
+    display: flex;
+    gap: 0.75rem;
+    overflow-x: auto;
+    padding: 1rem 0;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  
+  .category-pills-container::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .category-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.65rem 1.25rem;
+    background: white;
+    border: 2px solid #e9e3de;
+    border-radius: 50px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: #65388f;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    text-decoration: none;
+  }
+  
+  .category-pill:hover {
+    background: #65388f;
+    color: white;
+    border-color: #65388f;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(101, 56, 143, 0.3);
+    text-decoration: none;
+  }
+  
+  .category-pill.active {
+    background: #65388f;
+    color: white;
+    border-color: #65388f;
+    box-shadow: 0 4px 12px rgba(101, 56, 143, 0.3);
+  }
+  
+  /* Results Header */
+  .deals-results-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .deals-results-title {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: #3a3b3a;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .deals-count-chip {
+    background: var(--bg-beige, #e9e3de);
+    color: #65388f;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 20px;
+  }
+  
+  /* Sort Dropdown */
+  .sort-dropdown-btn {
+    background: white;
+    border: 1px solid #e9e3de;
+    color: #65388f;
+    padding: 0.6rem 1.25rem;
+    border-radius: 50px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .sort-dropdown-btn:hover {
+    background: #65388f;
+    color: white;
+    border-color: #65388f;
+    box-shadow: 0 4px 12px rgba(101, 56, 143, 0.3);
+  }
+  
+  .dropdown-menu {
+    border: 1px solid #e9e3de;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+    padding: 0.5rem 0;
+    margin-top: 0.5rem;
+  }
+  
+  .dropdown-item {
+    padding: 0.65rem 1.25rem;
+    color: #3a3b3a;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+  }
+  
+  .dropdown-item:hover {
+    background: #f4f0ec;
+    color: #65388f;
+  }
+  
+  .dropdown-item i {
+    width: 20px;
+    text-align: center;
+  }
+  
+  /* Pagination */
+  .custom-pagination-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 3rem;
+    margin-bottom: 2rem;
+  }
+  
+  .pagination-pills {
+    display: flex;
+    gap: 0.5rem;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .pagination-pills .page-item {
+    list-style: none;
+  }
+  
+  .pagination-pills .page-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    height: 44px;
+    padding: 0.5rem 1rem;
+    background: white;
+    border: 2px solid #e9e3de;
+    border-radius: 50px;
+    color: #65388f;
+    font-weight: 700;
+    font-size: 0.9rem;
+    text-decoration: none;
+    transition: all 0.2s ease;
+  }
+  
+  .pagination-pills .page-link:hover {
+    background: #65388f;
+    color: white;
+    border-color: #65388f;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(101, 56, 143, 0.3);
+  }
+  
+  .pagination-pills .page-item.active .page-link {
+    background: #65388f;
+    color: white;
+    border-color: #65388f;
+    box-shadow: 0 4px 12px rgba(101, 56, 143, 0.3);
+  }
+  
+  .pagination-pills .page-item.disabled .page-link {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+  
+  .pagination-pills .nav-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  /* Empty State */
+  .empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+  }
+  
+  .empty-state-icon {
+    font-size: 4rem;
+    color: #e9e3de;
+    margin-bottom: 1.5rem;
+  }
+  
+  .empty-state h3 {
+    color: #6b7280;
+    font-size: 1.5rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  .empty-state p {
+    color: #9ca3af;
+    font-size: 1rem;
+  }
+  
+  /* Responsive */
+  @media (max-width: 768px) {
+    .deals-hero-headline {
+      font-size: 2.5rem !important;
     }
     
-    /* Vertically center icon within button using line-height */
-    .compare-search-row .input-group .btn i {
-      line-height: 1;
-      display: inline-block;
-      vertical-align: middle;
+    .deals-results-header {
+      flex-direction: column;
+      align-items: flex-start;
     }
     
-    /* Header background handled by .premium-hero in hero.css */
-    .hero-section {
-      background: #65388f;
-      color: white;
-      padding: 2.8rem 0;
+    .category-pills-container {
+      padding: 0.75rem 0;
     }
-
-    /* Filter Sidebar Container */
-    .filter-card {
-      border: 1px solid var(--bg-beige);
-      border-radius: 6px;
-      background: #ffffff;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-    }
-
-    /* Product Card */
-    .product-card-inner {
-      border: 1.5px solid var(--bg-beige);
-      border-radius: 6px;
-      overflow: hidden;
-      transition: all 0.2s ease;
-      background: white;
-      box-shadow: none;
-      max-width: 100%;
-    }
-
-    .product-card-inner:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 12px 28px rgba(101,56,143,0.10);
-      border-color: #65388f;
-    }
-
-    /* Product Image Container */
-    .product-image {
-      height: 180px;
-      object-fit: contain;
-      background: #ffffff !important;
-      padding: 45px;
-    }
-
-    /* Price badge */
-    .price-badge {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      background: #65388f;
-      color: white;
-      padding: 5px 10px;
-      border-radius: 4px;
-      font-weight: bold;
-      font-size: 0.9rem;
-      z-index: 5;
-    }
-
-    .product-card .card-title {
-      font-size: 1rem;
-      line-height: 1.2;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-    }
-
-    /* Small badge for product categorization */
-    .category-badge {
-      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-      color: white;
-      border: none;
-      padding: 6px 14px;
-      border-radius: 12px;
+    
+    .category-pill {
       font-size: 0.85rem;
-    }
-
-    /* Individual store listing item inside the comparison grid */
-    .store-item {
-      border: 1px solid #e9ecef;
-      border-radius: 10px;
-      padding: 12px;
-      margin-bottom: 8px;
-      background: #f8f9fa;
-      transition: all 0.2s ease;
-      cursor: pointer;
-    }
-
-    /* Move item slightly to the right on hover for interactive feedback */
-    .store-item:hover {
-      background: #e9ecef;
-      transform: translateX(5px);
-    }
-
-    /* Highlight state when a user selects a specific store to add to list */
-    .store-item.selected {
-      background: #65388f;
-      border-color: #65388f;
-      color: white;
-    }
-
-    /* Override child colors when store-item is selected */
-    .store-item.selected i:not(.bi-box-arrow-up-right) {
-      color: white !important;
-    }
-
-    .store-item.selected .fw-semibold {
-      color: white !important;
-    }
-
-    .store-item.selected .text-success {
-      color: white !important;
-    }
-
-    /* Button to jump to retailer's actual website */
-    .btn-go-store:hover {
-      background: #e0e0ff !important;
-      border-color: #65388f !important;
-      transform: scale(1.1); /* Subtle zoom */
-      transition: all 0.2s ease;
-    }
-
-    /* Primary CTA: Adding item to custom shopping list */
-    .btn-add-cart {
-      background: #65388f;
-      border: none;
-      color: white;
-      border-radius: 6px;
-      padding: 12px 18px;
-      font-weight: 700;
-      font-size: 0.95rem;
-      transition: all 0.2s ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      cursor: pointer;
-      text-decoration: none !important;
-    }
-
-    .btn-add-cart:hover {
-      transform: translateY(-2px);
-      color: white;
-      background: #48236b;
-      text-decoration: none !important;
-    }
-
-    /* Reset lift on click for "pressed" feel */
-    .btn-add-cart:active {
-      transform: translateY(0);
-    }
-
-    /* Light purple version of the add button for secondary actions or specific states */
-    .add-to-list-btn {
-      background: linear-gradient(135deg, #d8c4ff 0%, #c0a6ff 100%);
-      border: 2px solid #b799ff;
-      color: #3b2a61;
-      font-weight: 700;
-      font-size: 0.95rem;
-      border-radius: 12px;
-      padding: 12px 18px;
-      box-shadow: 0 4px 14px rgba(95, 69, 168, 0.2);
-      transition: all 0.3s ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      cursor: pointer;
-      width: 100%;
-    }
-
-    .add-to-list-btn:hover {
-      color: #2c1f4f;
-      transform: translateY(-2px);
-      box-shadow: 0 8px 20px rgba(95, 69, 168, 0.3);
-      border-color: #a380ff;
-      background: linear-gradient(135deg, #e0d4ff 0%, #cdb5ff 100%);
-    }
-
-    .add-to-list-btn:active {
-      transform: translateY(0);
-    }
-
-    /* Focus rings for accessibility */
-    .form-control:focus,
-    .form-select:focus {
-      border-color: #65388f;
-      box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
-    }
-
-    /* Filter indicator badge */
-    .badge-filter {
-      background: #65388f;
-      padding: 6px 12px;
-      border-radius: 4px;
-      font-weight: 600;
-    }
-
-    /* Helper class for hover-able product links */
-    .product-link {
-      cursor: pointer;
-    }
-
-    /* Container for the page navigation buttons at the bottom */
-    .pagination-pane {
-      background: #ffffff;
-      border-radius: 14px;
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08); /* Modern soft shadow for layout depth */
-      padding: 14px 18px;
-    }
-
-    /* Individual page number styling for the pagination links */
-    .pagination .page-link {
-      border-radius: 12px;
-      min-width: 44px; /* Sufficient hit area for mouse/touch */
-      text-align: center;
-    }
-
-    /* Target for the product listing area */
-    #products-grid {
-      transition: opacity 0.18s ease-out; /* Smooth transition for filtered content */
-    }
-
-    /* Dramatic visual feedback during asynchronous data fetching */
-    #products-grid.fade-out {
-      opacity: 0.15;
-    }
-
-    /* Logic for interactive elements that should appear "above" others on hover */
-    .hover-lift {
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
-
-    .hover-lift:hover {
-      transform: translateY(-5px); /* Lift upwards */
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15) !important; /* Increase shadow depth */
-    }
-
-    .unit-price-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.35rem;
-      background: #eef2ff;
-      border: 1px solid #c7d2fe;
-      color: #4338ca;
-      border-radius: 999px;
-      font-size: 0.8rem;
-      padding: 0.22rem 0.6rem;
-      font-weight: 700;
-    }
-
-    .confidence-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.3rem;
-      font-size: 0.74rem;
-      border-radius: 999px;
-      padding: 0.28rem 0.55rem;
-      border: 1px solid transparent;
-      font-weight: 700;
-    }
-    .confidence-success { background: #ecfdf3; color: #166534; border-color: #86efac; }
-    .confidence-warning { background: #fff7ed; color: #9a3412; border-color: #fdba74; }
-    .confidence-secondary { background: #f8fafc; color: #334155; border-color: #cbd5e1; }
-
-    .combo-badge {
-      background: linear-gradient(135deg, #f97316, #ef4444);
-      color: white;
-      border: none;
-      border-radius: 999px;
-      font-size: 0.72rem;
-      font-weight: 700;
-      padding: 0.3rem 0.6rem;
-    }
-
-    .compare-toolbar {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 0.5rem;
-      margin-top: 0.55rem;
-    }
-
-    .compare-toolbar .btn-report-price {
-      grid-column: span 2;
-    }
-
-    .btn-soft {
-      border: 1px solid #dbeafe;
-      background: linear-gradient(135deg, #f8fbff, #eef2ff);
-      color: #1d4ed8;
-      border-radius: 12px;
-      font-weight: 600;
-      font-size: 0.78rem;
-      padding: 0.42rem 0.55rem;
-    }
-    .btn-soft:hover {
-      transform: translateY(-1px);
-      border-color: #93c5fd;
-      color: #1e40af;
-    }
-
-    .comparison-tray {
-      position: fixed;
-      left: 50%;
-      bottom: 1rem;
-      transform: translateX(-50%);
-      z-index: 1080;
-      width: min(1100px, calc(100% - 1.2rem));
-      background: rgba(15, 23, 42, 0.92);
-      border: 1px solid rgba(148, 163, 184, 0.25);
-      box-shadow: 0 24px 55px rgba(2, 6, 23, 0.4);
-      border-radius: 22px;
-      backdrop-filter: blur(16px);
-      padding: 0.8rem;
-      color: #e2e8f0;
-      display: none;
-    }
-
-    .comparison-tray.active { display: block; }
-
-    .tray-grid {
-      display: grid;
-      grid-template-columns: 1.4fr 1fr;
-      gap: 0.75rem;
-      align-items: stretch;
-    }
-
-    .tray-items {
-      display: flex;
-      gap: 0.6rem;
-      overflow-x: auto;
-      padding-bottom: 0.2rem;
-    }
-
-    .tray-item {
-      min-width: 180px;
-      background: rgba(148, 163, 184, 0.15);
-      border: 1px solid rgba(148, 163, 184, 0.3);
-      border-radius: 14px;
-      padding: 0.55rem 0.7rem;
-      position: relative;
-    }
-
-    .tray-item-title {
-      font-size: 0.83rem;
-      font-weight: 700;
-      line-height: 1.2;
-      max-height: 2.4em;
-      overflow: hidden;
-    }
-
-    .tray-actions {
-      display: flex;
-      gap: 0.45rem;
-      flex-wrap: wrap;
-      justify-content: flex-end;
-      align-content: center;
-    }
-
-    .tray-btn {
-      border: 1px solid rgba(148, 163, 184, 0.4);
-      background: rgba(15, 23, 42, 0.6);
-      color: #e2e8f0;
-      border-radius: 12px;
-      font-size: 0.8rem;
-      font-weight: 700;
-      padding: 0.48rem 0.72rem;
-    }
-
-    .tray-btn:hover { background: rgba(30, 41, 59, 0.95); color: #ffffff; }
-    .tray-btn-primary { background: #65388f; border-color: transparent; }
-
-    .insight-panel .table td,
-    .insight-panel .table th {
-      vertical-align: middle;
-      font-size: 0.9rem;
-    }
-
-    .report-count-pill {
-      font-size: 0.72rem;
-      font-weight: 700;
-      background: #eff6ff;
-      color: #1d4ed8;
-      border-radius: 999px;
-      padding: 0.25rem 0.5rem;
-      border: 1px solid #bfdbfe;
-    }
-
-    .status-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.4rem;
-      background: linear-gradient(135deg, #eff6ff, #eef2ff);
-      border: 1px solid #c7d2fe;
-      color: #1e3a8a;
-      border-radius: 999px;
-      padding: 0.34rem 0.72rem;
-      font-size: 0.78rem;
-      font-weight: 700;
-    }
-
-    .stores-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.35rem;
-      background: #f8fafc;
-      border: 1px solid #cbd5e1;
-      color: #334155;
-      border-radius: 999px;
-      padding: 0.34rem 0.72rem;
-      font-size: 0.78rem;
-      font-weight: 700;
-    }
-
-    .status-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 0.7rem;
-      margin-bottom: 0.5rem;
-    }
-
-    .status-group {
-      display: flex;
-      align-items: center;
-      gap: 0.45rem;
-      flex-wrap: wrap;
-      min-width: 0;
-    }
-
-    .inline-actions {
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
-      flex-shrink: 0;
-      position: relative;
-      z-index: 50;
-    }
-
-    .inline-action-btn {
-      position: relative;
-      z-index: 50;
-      cursor: pointer;
-      pointer-events: auto;
-      border: 1px solid #dbeafe;
-      background: linear-gradient(135deg, #f8fbff, #eef2ff);
-      color: #1d4ed8;
-      border-radius: 10px;
-      width: 34px;
-      height: 34px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 0;
-      font-size: 0.95rem;
-    }
-
-    .inline-action-btn:hover {
-      transform: translateY(-1px);
-      border-color: #93c5fd;
-      color: #1e40af;
-    }
-
-    .quick-actions-row {
-      display: flex;
-      gap: 0.45rem;
-      margin-top: 0.55rem;
-      margin-bottom: 0.35rem;
-    }
-
-    .quick-action-btn {
-      border: 1px solid #dbeafe;
-      background: linear-gradient(135deg, #f8fbff, #eef2ff);
-      color: #1d4ed8;
-      border-radius: 10px;
-      width: 34px;
-      height: 34px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 0;
-      font-size: 0.95rem;
-    }
-
-    .quick-action-btn:hover {
-      transform: translateY(-1px);
-      border-color: #93c5fd;
-      color: #1e40af;
-    }
-
-    .compare-secondary-btn {
-      border-radius: 12px;
-      font-weight: 700;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
-      width: 100%;
-      padding: 0.55rem 0.75rem;
-    }
-
-    .price-main {
-      display: inline-flex;
-      align-items: center;
-      justify-content: flex-end;
-      min-width: 90px;
-      gap: 0.2rem;
-    }
-
-    .star-slot {
-      width: 0.95rem;
-      display: inline-flex;
-      justify-content: center;
-      align-items: center;
-      flex-shrink: 0;
-    }
-
-    .star-slot.empty {
-      visibility: hidden;
-    }
-
-    @media (max-width: 991.98px) {
-      .compare-toolbar { grid-template-columns: 1fr; }
-      .compare-toolbar .btn-report-price { grid-column: span 1; }
-      .tray-grid { grid-template-columns: 1fr; }
-      .comparison-tray { bottom: 0.6rem; border-radius: 16px; }
-      .status-row { flex-wrap: wrap; }
-      .inline-actions { margin-left: auto; }
-    }
-
-    /* Premium modal redesign for compare/alert/report popups */
-    #compareInsightsModal .modal-content,
-    #priceAlertModal .modal-content,
-    #priceReportModal .modal-content {
-      border: 1px solid #dbeafe;
-      border-radius: 20px;
-      overflow: hidden;
-      box-shadow: 0 26px 58px rgba(15, 23, 42, 0.22);
-      background: linear-gradient(180deg, #ffffff, #f8fafc);
-    }
-
-    #compareInsightsModal .modal-header,
-    #priceAlertModal .modal-header,
-    #priceReportModal .modal-header {
-      border-bottom: 1px solid rgba(191, 219, 254, 0.7);
-      padding: 1rem 1.2rem;
-    }
-
-    #priceAlertModal .modal-header,
-    #priceReportModal .modal-header {
-      background: linear-gradient(135deg, #0f172a, #4338ca);
-      color: #fff;
-    }
-
-    #priceAlertModal .modal-header .btn-close,
-    #priceReportModal .modal-header .btn-close {
-      filter: invert(1) grayscale(100%);
-      opacity: 0.85;
-    }
-
-    #compareInsightsModal .modal-title,
-    #priceAlertModal .modal-title,
-    #priceReportModal .modal-title {
-      font-weight: 800;
-      letter-spacing: 0.01em;
-    }
-
-    #compareInsightsModal .modal-body,
-    #priceAlertModal .modal-body,
-    #priceReportModal .modal-body {
-      padding: 1.15rem 1.2rem;
-    }
-
-    #compareInsightsModal .nav-pills .nav-link {
-      border-radius: 999px;
-      border: 1px solid #dbeafe;
-      background: #f8fbff;
-      color: #1e3a8a;
-      font-weight: 700;
-      padding: 0.42rem 0.9rem;
-    }
-
-    #compareInsightsModal .nav-pills .nav-link.active {
-      background: #65388f;
-      color: #fff;
-      border-color: transparent;
-      box-shadow: 0 8px 18px rgba(79, 70, 229, 0.28);
-    }
-
-    #compareInsightsModal table thead th {
-      background: #eef2ff;
-      color: #1e3a8a;
-      border-bottom: 1px solid #c7d2fe;
-      font-size: 0.8rem;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      font-weight: 800;
-    }
-
-    #compareInsightsModal table tbody td {
-      border-color: #e2e8f0;
-      font-size: 0.9rem;
-    }
-
-    #priceAlertModal .form-label,
-    #priceReportModal .form-label {
-      color: #334155;
-      font-weight: 700;
-      font-size: 0.86rem;
-    }
-
-    #priceAlertModal .form-control,
-    #priceReportModal .form-control,
-    #priceReportModal .form-select {
-      border-radius: 12px;
-      border: 1px solid #cbd5e1;
-      background: #fff;
-      min-height: 42px;
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
-    }
-
-    #priceAlertModal .form-control:focus,
-    #priceReportModal .form-control:focus,
-    #priceReportModal .form-select:focus {
-      border-color: #818cf8;
-      box-shadow: 0 0 0 0.2rem rgba(99, 102, 241, 0.18);
-    }
-
-    #priceAlertModal .input-group-text,
-    #priceReportModal .input-group-text {
-      border-radius: 12px 0 0 12px;
-      border: 1px solid #cbd5e1;
-      border-right: none;
-      background: #eef2ff;
-      color: #3730a3;
-      font-weight: 700;
-    }
-
-    #priceAlertModal .modal-footer,
-    #priceReportModal .modal-footer {
-      border-top: 1px solid #e2e8f0;
-      padding: 0.9rem 1.2rem 1.1rem;
-      background: #f8fafc;
-    }
-
-    #priceAlertModal .modal-footer .btn-primary,
-    #priceReportModal .modal-footer .btn-primary {
-      border: none;
-      background: #65388f;
-      border-radius: 10px;
-      font-weight: 700;
-      box-shadow: 0 10px 22px rgba(79, 70, 229, 0.3);
       padding: 0.5rem 1rem;
     }
-
-    #priceAlertModal .modal-footer .btn-outline-secondary,
-    #priceReportModal .modal-footer .btn-outline-secondary {
-      border-radius: 10px;
-      font-weight: 600;
-    }
-
-    #report-feedback.text-success {
-      color: #15803d !important;
-      font-weight: 700;
-    }
-
-    #report-feedback.text-danger {
-      color: #b91c1c !important;
-      font-weight: 700;
-    }
-
-    #compare-alert-toast-holder .toast {
-      border-radius: 14px;
-      border: 1px solid rgba(167, 243, 208, 0.6);
-      box-shadow: 0 14px 32px rgba(15, 118, 110, 0.22);
-      background: linear-gradient(135deg, #065f46, #047857) !important;
-    }
-
-  </style>
+  }
+</style>
 {% endblock %}
 
 {% block content %}
-<!-- 
-  ═══════════════════════════════════════════════════════════════════════════
-  NAVIGATION BAR
-  ═══════════════════════════════════════════════════════════════════════════
-  Standard Bootstrap navbar with Jinja logic to highlight the active page.
-  Uses 'request.endpoint' to determine which link gets the 'active' class.
-  Explanation: Checks "Where am I?" If the current URL is /featured-deals, 
-  it adds the CSS class active to the button so the user knows which page they are on.
-  -->
-  
+<!-- Editorial Split Hero -->
+<div class="deals-hero-editorial">
+  <div class="row g-0 align-items-stretch" style="min-height: 260px;">
+    <div class="col-lg-6 d-flex align-items-center deals-hero-text">
+      <div>
+        <div class="deals-hero-eyebrow">
+          <i class="bi bi-house-door"></i>
+          <a href="/" style="color: #65388f; text-decoration: none;">Home</a>
+          <span style="opacity:0.4;">/</span>
+          <span>Deals</span>
+        </div>
+        <h1 class="deals-hero-headline">Save big on<br>your favorites.</h1>
+        <p class="deals-hero-sub">Limited-time offers and exclusive discounts from top stores. Don't miss out!</p>
+      </div>
+    </div>
+    <div class="col-lg-6 deals-hero-img-col">
+      <img src="{{ url_for('static', filename='img/deals_hero.png') }}" 
+           alt="Special deals" 
+           onerror="this.src='{{ url_for('static', filename='img/home_hero_1.png') }}'">
+    </div>
+  </div>
+</div>
 
-  <!-- 
-  ═══════════════════════════════════════════════════════════════════════════
-  HERO HEADER
-  ═══════════════════════════════════════════════════════════════════════════
-  Decorative header area with abstract shapes and introductory text.
-  Visual Flair: Uses absolute positioned divs (.bg-shape) to create the background pattern 
-  behind the text.
-  -->
-  <header class="premium-hero">
-    <!-- Animated shapes defined in CSS (see style.css) -->
-    <div class="bg-shape shape-1"></div>
-    <div class="bg-shape shape-2"></div>
-    <!-- Custom inline decoration for visual flair -->
-    <div class="bg-shape shape-3" style="position: absolute; bottom: 10%; left: 30%; width: 60px; height: 60px; background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(5px); border-radius: 20%; animation: float 10s infinite ease-in-out; animation-delay: -5s;"></div>
+<section class="container py-4">
+  <!-- Hidden form inputs for filtering -->
+  <input id="product-search-input" type="hidden" value="{{ search_query or '' }}">
+  <input id="category-filter" type="hidden" value="{{ category_filter or '' }}">
+  <input id="sort-filter" type="hidden" value="{{ sort_filter|default('default') }}">
+  <button id="searchMenuBtn" class="d-none" onclick="handleDealsSearch()"></button>
+
+  <!-- Category Filter Pills -->
+  <div class="category-pills-container">
+    <a href="{{ url_for('main.featured_deals_page') }}" 
+       class="category-pill {% if not category_filter %}active{% endif %}">
+      <i class="bi bi-grid-3x3-gap"></i>
+      All Deals
+    </a>
     
-    <div class="container position-relative text-center text-white" style="z-index: 2;">
-      <h1 class="display-4 fw-bold mb-3 text-white"><i class="bi bi-lightning-fill me-2"></i>Featured Deals</h1>
-      <p class="lead mb-0 text-white" style="opacity: 0.95;">Limited-time offers and exclusive discounts - Save big today!</p>
-    </div>
-  </header>
+    {% set cats = category_options if category_options is defined else [] %}
+    {% for cat_obj in cats %}
+      {% set cat_name = cat_obj.name if cat_obj is mapping else cat_obj %}
+      {% set slug = cat_name|lower %}
+      <a href="{{ url_for('main.featured_deals_page', category=slug) }}" 
+         class="category-pill {% if category_filter and slug==category_filter|lower %}active{% endif %}">
+        <i class="bi bi-tag"></i>
+        {{ cat_name }}
+      </a>
+    {% endfor %}
+  </div>
 
-    <section class="container mt-4 mb-2">
-      <!-- Hidden Native Bindings -->
-      <input id="product-search-input" type="hidden" value="{{ search_query or '' }}">
-      <input id="category-filter" type="hidden" value="{{ category_filter or '' }}">
-      <input id="sort-filter" type="hidden" value="{{ sort_filter|default('default') }}">
-      <button id="searchMenuBtn" class="d-none" onclick="handleDealsSearch()"></button>
-
-      <!-- Visual Card Categories -->
-      <div class="d-flex w-100 overflow-x-auto align-items-center py-2 mb-4" style="-webkit-overflow-scrolling: touch; scrollbar-width: none; ms-overflow-style: none;">
-        <style>
-            .visual-cat-container::-webkit-scrollbar { display: none; }
-            .visual-cat-card {
-                  display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
-                  background: #fff; border: 1.5px solid var(--bg-beige); border-radius: 6px;
-                  min-width: 130px; height: 155px; margin-right: 14px; cursor: pointer;
-                  transition: all 0.2s ease;
-                  text-decoration: none; padding: 12px 8px; position: relative; overflow: hidden;
-              }
-              .visual-cat-card:hover {
-                  transform: translateY(-4px); border-color: #65388f;
-                  box-shadow: 0 8px 20px rgba(101,56,143,0.12);
-              }
-              .visual-cat-card.active {
-                  border-color: #65388f; border-width: 2px;
-                  background: var(--bg-cream); box-shadow: 0 6px 18px rgba(101,56,143,0.14);
-              }
-              .visual-cat-img-wrap {
-                  width: 90px; height: 90px; display: flex; align-items: center; justify-content: center;
-                  background: transparent; border-radius: 4px; margin-bottom: 12px; z-index: 2; border: none;
-              }
-              .visual-cat-card.active .visual-cat-img-wrap { background: transparent; }
-              .visual-cat-img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: darken; filter: brightness(1.05) contrast(1.1); background: transparent; }
-              .visual-cat-title { font-size: 0.85rem; font-weight: 700; color: #5a5a5a; text-align: center; z-index: 2; max-width: 120px; word-wrap: break-word; line-height: 1.2; }
-        </style>
-        <div class="visual-cat-card {% if not category_filter %}active{% endif %}" onclick="document.getElementById('category-filter').value=''; document.getElementById('searchMenuBtn').click();">
-            <div class="visual-cat-img-wrap"><i class="bi bi-ui-radios-grid fs-4" style="color: #64748b;"></i></div>
-            <div class="visual-cat-title">All Items</div>
-        </div>
-            
-            {% set cats = category_options if category_options is defined else [] %}
-            {% for cat_obj in cats %}
-            {% set cat_name = cat_obj.name if cat_obj is mapping else cat_obj %}
-            {% set slug = cat_name|lower %}
-            {% set img_url = cat_obj.image if cat_obj is mapping else '' %}
-            
-            <div class="visual-cat-card {% if category_filter and slug==category_filter|lower %}active{% endif %}" onclick="document.getElementById('category-filter').value='{{ slug }}'; document.getElementById('searchMenuBtn').click();">
-                <div class="visual-cat-img-wrap">
-                    {% if img_url %}
-                    <img src="{{ img_url }}" alt="{{ cat_name }}" class="visual-cat-img">
-                    {% else %}
-                    <i class="bi bi-basket text-primary fs-5"></i>
-                    {% endif %}
-                </div>
-                <div class="visual-cat-title">{{ cat_name }}</div>
-            </div>
-            {% endfor %}
-        </div>
-      </section>
-
-      <!-- ============================== RESULTS STATUS
-  ═══════════════════════════════════════════════════════════════════════════
-  Shows "Showing 1-30 of 150 Active Deals" logic.
-  Variables like 'showing_start', 'showing_end', and 'total_products' are calculated 
-  in Python before being sent here.
-  -->
-  <section class="container mt-2">
-      <!-- Real-time status bar for search results -->
-      <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
-        <h4 class="mb-0 fw-bold" style="color: #4b5563;"> <!-- Contextual result header -->
-          <i class="bi bi-box-seam me-2 text-primary"></i>Active Deals
-        </h4>
-        <div class="d-flex justify-content-end align-items-center gap-3">
-          <div class="dropdown">
-                  <button class="btn bg-white shadow-sm dropdown-toggle fw-bold" style="border: 1px solid #e2e8f0; color: #475569; padding: 8px 20px; border-radius: 50px;" type="button" id="sortDropdownLabel" data-bs-toggle="dropdown" aria-expanded="false">
-                      <i class="bi bi-sort-down me-1 text-primary"></i> Sort by Price
-                  </button>
-                  <ul class="dropdown-menu border-0 shadow" aria-labelledby="sortDropdownLabel" style="border-radius: 12px; min-width: 200px;">
-                      <li><a class="dropdown-item fw-medium py-2" href="#" onclick="document.getElementById('sort-filter').value='default'; document.getElementById('searchMenuBtn').click(); return false;"><i class="bi bi-star-fill text-warning me-2"></i>Relevance</a></li>
-                      <li><a class="dropdown-item fw-medium py-2" href="#" onclick="document.getElementById('sort-filter').value='price_asc'; document.getElementById('searchMenuBtn').click(); return false;"><i class="bi bi-sort-numeric-down text-success me-2"></i>Price: Lowest First</a></li>
-                      <li><a class="dropdown-item fw-medium py-2" href="#" onclick="document.getElementById('sort-filter').value='price_desc'; document.getElementById('searchMenuBtn').click(); return false;"><i class="bi bi-sort-numeric-up text-danger me-2"></i>Price: Highest First</a></li>
-                      <li><a class="dropdown-item fw-medium py-2" href="#" onclick="document.getElementById('sort-filter').value='name_asc'; document.getElementById('searchMenuBtn').click(); return false;"><i class="bi bi-sort-alpha-down text-primary me-2"></i>Alphabetical (A-Z)</a></li>
-                      <li><a class="dropdown-item fw-medium py-2" href="#" onclick="document.getElementById('sort-filter').value='name_desc'; document.getElementById('searchMenuBtn').click(); return false;"><i class="bi bi-sort-alpha-down-alt text-primary me-2"></i>Alphabetical (Z-A)</a></li>
-                  </ul>
-              </div>
-
-        
-          
-          <div class="results-status-bar"> 
-          <span class="results-status-text">
-            <i class="bi bi-info-circle me-1"></i>
-            {% if total_products %}
-            Showing {{ showing_start }}-{{ showing_end }} 
-            {% else %}
-            No products found 
-            {% endif %}
-          </span>
-          {% if total_products %}
-          <span class="results-status-count">
-            {{ total_products }} Total 
-          </span>
-          {% endif %}
-        </div>
-      </div>
-
-      <div class="row g-4" id="deals-grid">
-      {% if deals %}
-      {% for p in deals %}
-        <!-- 
-        PRODUCT CARD CONTAINER
-        Includes data attributes for JS filtering (data-store, data-price, etc.)
-        Data Attributes: Prints the price/category deeply into HTML (invisible to user)
-        so JavaScript can read them later for instant filtering.
-        -->
-        <div class="col-md-6 col-lg-3 product-card" 
-          data-stores='{{ p.get("stores")|tojson }}'
-          data-store="{{ (p.get('store') or p.get('source','') or '')|lower }}" 
-          data-price="{{ p.get('price','') }}"
-          data-name="{{ p.get('title','')|lower }}" 
-          data-category="{{ p.get('category','')|lower }}">
-          
-          {% set detail_url = url_for('main.product_detail', product_id=p.get('id') or p.get('_id')) %}
-          
-          <!-- CLICKABLE CARD AREA -->
-          <div class="card product-card-inner h-100 shadow-sm border-0" 
-            data-detail-url="{{ detail_url }}"
-            onclick="goToDealDetail(event, this)" 
-            style="cursor: pointer;">
-            
-            <!-- IMAGE & BADGES AREA -->
-            <div class="position-relative">
-              {% set pid = p.get('_id') or p.get('id') %}
-              <!-- Top Left Badges Group -->
-                <div class="position-absolute d-flex flex-column gap-2" style="top: 10px; left: 10px; z-index: 10;">
-                    {% set discount_label = p.get('discount_label') or (p.get('discount_percent') ~ '% off' if p.get('discount_percent') is not none else '') %}
-                    {% if discount_label %}
-                    <span class="badge" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; padding: 6px 10px; font-weight: 600; letter-spacing: 0.5px; border-radius: 6px; box-shadow: 0 4px 6px rgba(220, 38, 38, 0.2); width: fit-content; text-shadow: 0 1px 2px rgba(0,0,0,0.2);">
-                      {{ discount_label }}
-                    </span>
-                    {% endif %}
-                </div>
-
-                <!-- Product Image: Uses placeholder if missing -->
-              <img src="{{ prefer_processed(p.get('image') or url_for('static', filename='placeholder.svg')) }}"
-                class="card-img-top product-image" alt="{{ p.get('title') or p.get('name','Product') }}">
-              
-
-              
-              <!-- Favorite Heart Button (Floating) -->
-              <button class="btn-favorite btn rounded-circle shadow-sm {{ 'active' if p.get('is_favorited') else '' }}" 
-                style="position: absolute; top: 10px; right: 10px; z-index: 10; width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; padding: 0; color: #64748b; background-color: white; transition: all 0.2s;"
-                onmouseover="this.style.backgroundColor='#f8f9fa';" onmouseout="this.style.backgroundColor='white';"
-                onclick="toggleFavorite(event, '{{ pid }}', this)" title="Add to favorites">
-                <i class="bi {{ 'bi-heart-fill text-danger' if p.get('is_favorited') else 'bi-heart text-secondary' }}" style="font-size: 1.1rem; line-height: 1; margin-top: 2px;"></i>
-              </button>
-            </div>
-            
-            <!-- CARD CONTENT -->
-            <div class="card-body d-flex flex-column h-100" style="background-color: #ffffff;">
-              <!-- Data Logic to determine display strings -->
-              {% set original_price = p.get('original_price') %}
-              {% set discount_label = p.get('discount_label') or (p.get('discount_percent') ~ '% off' if
-              p.get('discount_percent') is not none else '') %}
-              {% set offer_obj = p.get('offer') if p.get('offer') is mapping else None %}
-              {% set offer = p.get('offer', '') %}
-              {% set discount_tiers = p.get('discount_tiers') %}
-              
-              <!-- Logic for Multibuy (Buy X Get Y) -->
-              {% set offer_x = offer_obj.x if offer_obj is not none else (p.get('buy_quantity') or p.get('multibuy_buy')
-              or '') %}
-              {% set offer_y = offer_obj.y if offer_obj is not none else (p.get('free_quantity') or p.get('multibuy_free')
-              or '') %}
-              {% set offer_type = offer_obj.type if offer_obj is not none else ('buyXgetY' if offer_x and offer_y else '')
-              %}
-              {% set is_buy_get_deal = (offer_type == 'buyXgetY') or ('buy' in offer|lower and ('get' in offer|lower or
-              'free' in offer|lower or '+' in offer)) %}
-              
-              <!-- TITLE & BADGE -->
-              <div class="d-flex justify-content-between align-items-start mb-3">
-                <div class="d-flex flex-column gap-1" style="flex: 1;">
-                  <h6 class="card-title mb-0 fw-bold text-dark" style="font-size: 0.95rem; line-height: 1.3; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">{{ p.get('title') or p.get('name','') }}</h6>
-                </div>
-                <button type="button" class="btn btn-link p-0 text-muted ms-2 js-report-btn"
-                  title="Report inaccurate price"
-                  data-product-id="{{ p.get('id') }}"
-                  data-product-name="{{ p.get('title') or p.get('name','')|e }}"
-                  data-product-stores='{{ p.get("stores")|tojson|forceescape if p.get("stores") else "[]" }}'>
-                  <i class="bi bi-exclamation-triangle" style="font-size: 1.1rem;"></i>
-                </button>
-              </div>
-              
-              <div class="flex-grow-1">
-              <!-- STORE & PRICE DISPLAY LOGIC -->
-              {% if p.get('stores') and p.get('stores')|length > 0 %}
-              {% set sorted_stores = p.get('stores')|sort(attribute='price')|list %}
-              {% set cheapest_price = sorted_stores[0].get('price')|float %}
-              <div class="d-flex flex-column gap-2 w-100">
-                {% for store in sorted_stores[:3] %}
-                {% set store_price = store.get('price')|float %}
-                {% set is_cheapest = store_price == cheapest_price %}
-                <div class="d-flex justify-content-between align-items-start w-100">
-                  <a {% if store.get('url') %}href="{{ store.get('url') }}" target="_blank"{% else %}href="javascript:void(0)"{% endif %} onclick="event.stopPropagation();" class="{% if is_cheapest %}text-success fw-bold{% else %}text-secondary fw-medium{% endif %} text-truncate store-link" style="font-size: 0.85rem; max-width: 65%; font-family: system-ui, -apple-system, sans-serif; line-height: 1.2; text-decoration: none; transition: transform 0.2s ease, color 0.2s ease; display: inline-block;" onmouseover="this.style.transform='scale(1.1)'; this.style.transformOrigin='left center'; this.style.color='#6f42c1';" onmouseout="this.style.transform='scale(1)'; this.style.color='';">
-                     {{ store.get('store') or store.get('name') }}
-                  </a>
-                  <div class="d-flex align-items-start">
-                    <span class="fw-bold {% if is_cheapest %}text-success{% else %}text-dark{% endif %}" style="font-size: 0.95rem; line-height: 1.2;">
-                      €{{ "%.2f"|format(store.get('price')) }}
-                    </span>
-                  </div>
-                </div>
-                {% endfor %}
-              </div>
-              {% if sorted_stores|length > 1 %}
-              {% set save_amount = sorted_stores[-1].get('price')|float - cheapest_price %}
-              {% if save_amount > 0 %}
-              <div class="border-top pt-2 mt-2 mb-2 w-100">
-                <span class="text-success fw-bold d-flex align-items-center justify-content-center" style="font-size: 0.85rem;">
-                  <i class="bi bi-graph-down-arrow me-1" style="font-size: 0.95rem;"></i> Save up to €{{ "%.2f"|format(save_amount) }}
-                </span>
-              </div>
-              {% endif %}
-              {% endif %}
-              {% else %}
-              <div class="d-flex justify-content-between align-items-start mb-3">
-                  <span class="text-muted fw-medium text-truncate" style="font-size: 0.85rem; max-width: 60%; font-family: system-ui, -apple-system, sans-serif; line-height: 1.2;">
-                      {{ p.get('store') or p.get('source','') }}
-                  </span>
-                  <div class="d-flex justify-content-end">
-                    <div class="d-flex align-items-center gap-2">
-                        {% if is_buy_get_deal %}
-                        <div class="fw-bold" style="color: #65388f; line-height: 1.2; font-size: 0.95rem;">
-                          €{{ '%.2f' % (p.get('price') or 0) }} <span style="font-size: 0.75rem; font-weight: normal; color: #64748b;">each</span>
-                        </div>
-                        <div class="text-secondary small fw-medium" style="background: rgba(109, 40, 217, 0.1); padding: 2px 6px; border-radius: 4px;">{{ offer }}</div>
-                        {% else %}
-                        <div class="fw-bold" style="color: #65388f; line-height: 1.2; font-size: 0.95rem;">
-                          €{{ '%.2f' % ((p.get('price') or 0)|float) }}
-                        </div>
-                        {% if original_price %}
-                        <div class="text-muted small text-decoration-line-through mt-1">€{{ '%.2f' % (original_price|float) }}</div>
-                        {% endif %}
-                        {% endif %}
-                    </div>
-                  </div>
-              </div>
-              {% endif %}
-              </div>
-              
-              <!-- ACTION BUTTONS -->
-              <div class="mt-auto d-flex flex-column gap-2">
-                <!-- 
-                Add to List Button:
-                Has onclick="event.stopPropagation()" to prevent clicking the button from also clicking the whole card.
-                Passes all product details (id, title, price, image) so script.js can read them.
-                -->
-                <button type="button" class="btn btn-premium btn-premium-add w-100"
-                  data-id="{{ pid }}" data-title="{{ p.get('title') or p.get('name','') }}"
-                  data-price="{{ p.get('price','') }}" data-original-price="{{ p.get('original_price','') }}"
-                  data-image="{{ p.get('image') or url_for('static', filename='placeholder.svg') }}"
-                  data-store="{{ p.get('store') or p.get('source','') }}"
-                  data-offer-json='{{ offer_obj|tojson|forceescape if offer_obj is not none else "" }}'
-                  data-tier-json='{{ discount_tiers|tojson|forceescape if discount_tiers else "" }}'
-                  data-offer-type="{{ offer_type }}" data-offer-x="{{ offer_x }}" data-offer-y="{{ offer_y }}">
-                  <i class="bi bi-cart-plus-fill"></i>Add to List
-                </button>
-                
-                <!-- View Details Button -->
-                <a href="{{ detail_url }}" class="btn btn-premium btn-premium-view w-100"
-                  onclick="event.stopPropagation();">
-                  <i class="bi bi-info-circle-fill"></i> View Details
-                </a>
-              </div>
-            </div>
-          </div>
-        </div>
-      {% endfor %}
-      {% else %}
-      
-      <!-- 
-      EMPTY STATE 
-      Displayed only if the 'deals' list is empty or None.
-      Provides user feedback instead of just showing a blank page.
-      -->
-      <div class="col-12 text-center py-5">
-        <div class="empty-state-icon mb-3">
-          <i class="bi bi-basket text-muted" style="font-size: 4rem; opacity: 0.3;"></i>
-        </div>
-        <h3 class="text-muted">No featured deals at the moment.</h3>
-        <p class="text-muted">Check back later for new offers from your favorite stores.</p>
-      </div>
+  <!-- Results Header -->
+  <div class="deals-results-header">
+    <h4 class="deals-results-title mb-0">
+      <i class="bi bi-lightning-charge-fill" style="color: #f59e0b;"></i>
+      Active Deals
+      {% if total_products %}
+      <span class="deals-count-chip">{{ total_products }}</span>
       {% endif %}
-    </div>
-
-    <!-- 
-    ═══════════════════════════════════════════════════════════════════════════
-    PAGINATION CONTROLS
-    ═══════════════════════════════════════════════════════════════════════════
-    Standard Bootstrap pagination component.
-    Logic handles Previous/Next buttons and page numbers.
-    It calculates which page numbers to show using math logic.
-    -->
-    {% if total_pages and total_pages > 1 %}
-    <div class="custom-pagination-container">
-      <ul class="pagination-pills">
-        <!-- Previous Button -->
-        <li class="page-item {{ 'disabled' if page == 1 }}">
-          <a class="page-link nav-link"
-            href="{{ url_for('main.featured_deals_page', page=page-1, category=category_filter, search=search_query) }}">
-            <i class="bi bi-arrow-left"></i> <span>Prev</span>
+    </h4>
+    
+    <div class="dropdown">
+      <button class="sort-dropdown-btn dropdown-toggle" 
+              type="button" 
+              id="sortDropdown" 
+              data-bs-toggle="dropdown" 
+              aria-expanded="false">
+        <i class="bi bi-sort-down"></i>
+        Sort
+      </button>
+      <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="sortDropdown">
+        <li>
+          <a class="dropdown-item" href="#" 
+             onclick="document.getElementById('sort-filter').value='default'; document.getElementById('searchMenuBtn').click(); return false;">
+            <i class="bi bi-star-fill text-warning"></i>
+            Relevance
           </a>
         </li>
-
-        <!-- Page Numbers Logic (Windowed) -->
-        {% set start_page = [1, page - 2]|max %}
-        {% set end_page = [total_pages, start_page + 4]|min %}
-        {% set start_page = [1, end_page - 4]|max %}
-
-        {% for p in range(start_page, end_page + 1) %}
-        <li class="page-item {{ 'active' if p == page }}">
-          <a class="page-link"
-            href="{{ url_for('main.featured_deals_page', page=p, category=category_filter, search=search_query) }}">{{ p
-            }}</a>
+        <li>
+          <a class="dropdown-item" href="#" 
+             onclick="document.getElementById('sort-filter').value='price_asc'; document.getElementById('searchMenuBtn').click(); return false;">
+            <i class="bi bi-sort-numeric-down text-success"></i>
+            Price: Low to High
+          </a>
         </li>
-        {% endfor %}
-        
-        <!-- Next Button -->
-        <li class="page-item {{ 'disabled' if page == total_pages }}">
-          <a class="page-link nav-link"
-            href="{{ url_for('main.featured_deals_page', page=page+1, category=category_filter, search=search_query) }}">
-            <span>Next</span> <i class="bi bi-arrow-right"></i>
+        <li>
+          <a class="dropdown-item" href="#" 
+             onclick="document.getElementById('sort-filter').value='price_desc'; document.getElementById('searchMenuBtn').click(); return false;">
+            <i class="bi bi-sort-numeric-up text-danger"></i>
+            Price: High to Low
+          </a>
+        </li>
+        <li>
+          <a class="dropdown-item" href="#" 
+             onclick="document.getElementById('sort-filter').value='name_asc'; document.getElementById('searchMenuBtn').click(); return false;">
+            <i class="bi bi-sort-alpha-down"></i>
+            Name: A-Z
+          </a>
+        </li>
+        <li>
+          <a class="dropdown-item" href="#" 
+             onclick="document.getElementById('sort-filter').value='name_desc'; document.getElementById('searchMenuBtn').click(); return false;">
+            <i class="bi bi-sort-alpha-down-alt"></i>
+            Name: Z-A
           </a>
         </li>
       </ul>
     </div>
-    {% endif %}
-  </section>
-
-  <!-- 
-  FOOTER & SCRIPTS
-  Loads Bootstrap JS for interactive components (modals, dropdowns).
-  Loads our custom 'script.js' which handles the shopping list logic and search.
-  -->
-  <footer class="text-center py-4 border-top" style="background: var(--bg-cream);">
-    <p class="mb-0" style="color:#5a5a5a;">&copy; 2025 Smart Grocery Team</p>
-  </footer>
-
-  
-  
-
-  <!-- Inline Script: Card Click Handling -->
-  
-
-  
-  <!-- 
-  This modal is hidden by default. 
-  It pops up via JavaScript when a user needs to choose which shopping list to add an item to.
-  -->
-  
   </div>
-{% endblock %}
 
-{% block scripts %}
+  <!-- Products Grid -->
+  <div class="products-grid" id="deals-grid">
+    {% if deals %}
+      {% for p in deals %}
+        {{ product_card(p) }}
+      {% endfor %}
+    {% else %}
+      <div class="empty-state">
+        <div class="empty-state-icon">
+          <i class="bi bi-tag"></i>
+        </div>
+        <h3>No deals available right now</h3>
+        <p>Check back soon for amazing offers from your favorite stores!</p>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Pagination -->
+  {% if total_pages and total_pages > 1 %}
+  <div class="custom-pagination-container">
+    <ul class="pagination-pills">
+      <!-- Previous Button -->
+      <li class="page-item {{ 'disabled' if page == 1 }}">
+        <a class="page-link nav-link"
+           href="{{ url_for('main.featured_deals_page', page=page-1, category=category_filter, search=search_query) }}">
+          <i class="bi bi-arrow-left"></i>
+          <span>Prev</span>
+        </a>
+      </li>
+
+      <!-- Page Numbers -->
+      {% set start_page = [1, page - 2]|max %}
+      {% set end_page = [total_pages, start_page + 4]|min %}
+      {% set start_page = [1, end_page - 4]|max %}
+
+      {% for p in range(start_page, end_page + 1) %}
+      <li class="page-item {{ 'active' if p == page }}">
+        <a class="page-link"
+           href="{{ url_for('main.featured_deals_page', page=p, category=category_filter, search=search_query) }}">
+          {{ p }}
+        </a>
+      </li>
+      {% endfor %}
+      
+      <!-- Next Button -->
+      <li class="page-item {{ 'disabled' if page == total_pages }}">
+        <a class="page-link nav-link"
+           href="{{ url_for('main.featured_deals_page', page=page+1, category=category_filter, search=search_query) }}">
+          <span>Next</span>
+          <i class="bi bi-arrow-right"></i>
+        </a>
+      </li>
+    </ul>
+  </div>
+  {% endif %}
+</section>
+
 <script>
-    function goToDealDetail(event, cardEl) {
-      // Prevent navigation if clicking buttons inside the card
-      const target = event.target;
-      if (target.closest('.claim-deal-btn') || target.closest('a.btn') || target.closest('.btn-premium-add') || target.closest('.btn-premium-view') || target.closest('.btn-favorite')) {
-        return;
-      }
-      const url = cardEl.dataset.detailUrl;
-      if (url) {
-        window.location.href = url;
-      }
-    }
-
-    function handleDealsSearch() {
-      const searchInput = document.getElementById('product-search-input');
-      const searchTerm = (searchInput ? searchInput.value : '').trim();
-      
-      const catInput = document.getElementById('category-filter');
-      const categoryFilter = (catInput ? catInput.value : '').trim();
-      
-      const sortInput = document.getElementById('sort-filter');
-      const sortFilter = (sortInput ? sortInput.value : '').trim(); 
-
-      let url = '{{ url_for("main.featured_deals_page") }}';
-      const params = new URLSearchParams();
-
-      if (searchTerm) params.set('search', searchTerm);
-      if (categoryFilter) params.set('category', categoryFilter);
-      if (sortFilter) params.set('sort', sortFilter);
-
-      if (params.toString()) url += '?' + params.toString();
-      window.location.href = url;
-    }
-  </script>
+// Handle deals search/filter
+function handleDealsSearch() {
+  const search = document.getElementById('product-search-input').value;
+  const category = document.getElementById('category-filter').value;
+  const sort = document.getElementById('sort-filter').value;
+  
+  let url = '{{ url_for("main.featured_deals_page") }}?';
+  const params = [];
+  
+  if (search) params.push('search=' + encodeURIComponent(search));
+  if (category) params.push('category=' + encodeURIComponent(category));
+  if (sort && sort !== 'default') params.push('sort=' + encodeURIComponent(sort));
+  
+  window.location.href = url + params.join('&');
+}
+</script>
 {% endblock %}
-
-

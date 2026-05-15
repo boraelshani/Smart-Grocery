@@ -1,0 +1,170 @@
+{# 
+═══════════════════════════════════════════════════════════════════════════
+UNIFIED PRODUCT CARD COMPONENT
+Reusable Jinja2 macro for consistent product display across all pages
+═══════════════════════════════════════════════════════════════════════════
+#}
+
+{% macro product_card(product) %}
+{% set pid = product.get('id') or product.get('_id') %}
+{% set product_name = product.get('name') or product.get('title', 'Product') %}
+{% set product_image = product.get('image') or url_for('static', filename='placeholder.svg') %}
+{% set product_unit = product.get('unit') or product.get('size') or product.get('quantity') or '' %}
+{% set product_category = product.get('category') or '' %}
+
+{# Determine labels #}
+{% set labels = [] %}
+{% if product.get('is_new') %}
+  {% set _ = labels.append({'type': 'new', 'text': 'New', 'icon': 'bi-star-fill'}) %}
+{% endif %}
+{% if product.get('discount_percent') or product.get('discount_label') %}
+  {% set discount_text = product.get('discount_label') or (product.get('discount_percent')|string + '% OFF') %}
+  {% set _ = labels.append({'type': 'discount', 'text': discount_text, 'icon': 'bi-tag-fill'}) %}
+{% endif %}
+{% if product.get('offer') or product.get('special_offer_type') %}
+  {% set _ = labels.append({'type': 'offer', 'text': 'Offer', 'icon': 'bi-gift-fill'}) %}
+{% endif %}
+{% if product.get('is_popular') %}
+  {% set _ = labels.append({'type': 'popular', 'text': 'Popular', 'icon': 'bi-fire'}) %}
+{% endif %}
+{% if product.get('is_healthy') or 'healthy' in product_category|lower %}
+  {% set _ = labels.append({'type': 'healthy', 'text': 'Healthy', 'icon': 'bi-heart-pulse-fill'}) %}
+{% endif %}
+{% if product.get('is_vegan') or 'vegan' in product_name|lower or 'vegan' in product_category|lower %}
+  {% set _ = labels.append({'type': 'vegan', 'text': 'Vegan', 'icon': 'bi-flower1'}) %}
+{% endif %}
+{% if product.get('is_organic') or 'organic' in product_name|lower %}
+  {% set _ = labels.append({'type': 'organic', 'text': 'Organic', 'icon': 'bi-leaf-fill'}) %}
+{% endif %}
+{% if product.get('is_gluten_free') or 'gluten free' in product_name|lower %}
+  {% set _ = labels.append({'type': 'gluten-free', 'text': 'Gluten Free', 'icon': 'bi-check-circle-fill'}) %}
+{% endif %}
+
+{# Store prices #}
+{% set stores = product.get('stores') or [] %}
+{% set sorted_stores = stores|sort(attribute='price')|list if stores else [] %}
+
+{# If no stores array, create one from single store data #}
+{% if not sorted_stores and product.get('price') %}
+  {% set single_store = {
+    'store': product.get('store') or product.get('source', 'Store'),
+    'price': product.get('price')
+  } %}
+  {% set sorted_stores = [single_store] %}
+{% endif %}
+
+{% set cheapest_price = sorted_stores[0].get('price')|float if sorted_stores else None %}
+{% set original_price = product.get('original_price') %}
+
+{# Savings calculation #}
+{% set savings = None %}
+{% if sorted_stores and sorted_stores|length > 1 %}
+  {% set first_price = sorted_stores[0].get('price')|float %}
+  {% set last_price = sorted_stores[-1].get('price')|float %}
+  {% if first_price and last_price and last_price > first_price %}
+    {% set savings = last_price - first_price %}
+  {% endif %}
+{% elif original_price and cheapest_price and original_price|float > cheapest_price %}
+  {% set savings = original_price|float - cheapest_price %}
+{% endif %}
+
+{# Offer data #}
+{% set offer_obj = product.get('offer') if product.get('offer') is mapping else None %}
+{% set offer_x = offer_obj.x if offer_obj is not none else (product.get('buy_quantity') or product.get('multibuy_buy') or '') %}
+{% set offer_y = offer_obj.y if offer_obj is not none else (product.get('free_quantity') or product.get('multibuy_free') or '') %}
+{% set offer_type = offer_obj.type if offer_obj is not none else ('buyXgetY' if (offer_x and offer_y) else '') %}
+
+<div class="product-card-unified" 
+     {% if pid %}onclick="window.location='{{ url_for('main.product_detail', product_id=pid) }}'"{% endif %}>
+  
+  {# Image Section #}
+  <div class="card-image-section">
+    <img src="{{ product_image }}" 
+         alt="{{ product_name }}" 
+         loading="lazy"
+         onerror="this.src='{{ url_for('static', filename='placeholder.svg') }}'">
+    
+    {# Product Labels #}
+    {% if labels %}
+    <div class="product-labels">
+      {% for label in labels[:2] %}{# Show max 2 labels for smaller cards #}
+      <span class="product-label label-{{ label.type }}">
+        <i class="bi {{ label.icon }}"></i>
+        {{ label.text }}
+      </span>
+      {% endfor %}
+    </div>
+    {% endif %}
+    
+    {# Favorite Button #}
+    <button class="btn-favorite {{ 'active' if product.get('is_favorited') else '' }}"
+            data-product-id="{{ pid }}"
+            onclick="event.stopPropagation(); toggleFavorite(event, '{{ pid }}', this)"
+            aria-label="Add to favorites">
+      <i class="bi {{ 'bi-heart-fill' if product.get('is_favorited') else 'bi-heart' }}"></i>
+    </button>
+  </div>
+  
+  {# Card Body #}
+  <div class="card-body-section">
+    {# Product Name #}
+    <div class="product-name">{{ product_name }}</div>
+    
+    {# Product Size/Unit #}
+    {% if product_unit %}
+    <div class="product-size">
+      <i class="bi bi-box"></i> {{ product_unit }}
+    </div>
+    {% endif %}
+    
+    {# Store Prices - Show all stores #}
+    {% if sorted_stores %}
+    <div class="store-prices-list">
+      {% for store in sorted_stores[:3] %}{# Show max 3 stores #}
+      {% set is_cheapest = loop.first %}
+      <div class="store-price-row {% if is_cheapest %}cheapest{% endif %}">
+        <span class="store-name">
+          <i class="bi bi-shop"></i>
+          {{ store.get('store') or store.get('name', 'Store') }}
+        </span>
+        <span class="store-price">€{{ "%.2f"|format(store.get('price')|float) }}</span>
+      </div>
+      {% endfor %}
+      {% if sorted_stores|length > 3 %}
+      <div class="more-stores-hint">
+        +{{ sorted_stores|length - 3 }} more stores
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+    
+    {# Savings Badge #}
+    {% if savings and savings > 0 %}
+    <div class="savings-badge">
+      <i class="bi bi-graph-down-arrow"></i>
+      Save €{{ "%.2f"|format(savings) }}
+    </div>
+    {% endif %}
+    
+    {# Action Button - Only Add to List #}
+    <div class="product-card-actions">
+      <button type="button"
+              class="btn-add-to-list"
+              data-id="{{ pid }}"
+              data-name="{{ product_name }}"
+              data-price="{{ cheapest_price or '0.00' }}"
+              data-original-price="{{ original_price or '' }}"
+              data-image="{{ product_image }}"
+              data-store="{{ sorted_stores[0].get('store') if sorted_stores else '' }}"
+              data-offer-json='{{ offer_obj|tojson|forceescape if offer_obj is not none else "" }}'
+              data-offer-type="{{ offer_type }}"
+              data-offer-x="{{ offer_x }}"
+              data-offer-y="{{ offer_y }}"
+              onclick="event.stopPropagation(); window.showListSelector(this);">
+        <i class="bi bi-cart-plus-fill"></i>
+        Add to List
+      </button>
+    </div>
+  </div>
+</div>
+{% endmacro %}

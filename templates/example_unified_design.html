@@ -1,0 +1,404 @@
+{% extends "base.html" %}
+
+{% block title %}Design System Example - Smart Grocery{% endblock %}
+
+{% block styles %}
+<style>
+  /* Page-specific styles */
+  .demo-section {
+    padding: 3rem 0;
+    border-bottom: 2px solid var(--border-light);
+  }
+  
+  .demo-section:last-child {
+    border-bottom: none;
+  }
+  
+  .demo-header {
+    margin-bottom: 2rem;
+  }
+  
+  .demo-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--purple-700);
+    margin-bottom: 0.5rem;
+  }
+  
+  .demo-description {
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+  }
+  
+  .label-showcase {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+  
+  .color-swatch {
+    width: 120px;
+    height: 120px;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+  
+  .color-name {
+    font-size: 0.75rem;
+    margin-top: 0.5rem;
+    opacity: 0.9;
+  }
+  
+  .typography-example {
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  
+  <!-- Hero Section -->
+  <div class="text-center mb-5">
+    <h1 class="display-4 fw-bold mb-3" style="color: var(--purple-700);">
+      Smart Grocery Design System
+    </h1>
+    <p class="lead text-secondary">
+      A comprehensive showcase of our unified design components and styling
+    </p>
+  </div>
+
+  <!-- Product Cards Section -->
+  <section class="demo-section">
+    <div class="demo-header">
+      <h2 class="demo-title">Unified Product Cards</h2>
+      <p class="demo-description">
+        Consistent product card design used across all pages with labels, pricing, and actions
+      </p>
+    </div>
+    
+    {% from 'components/product_card.html' import product_card %}
+    
+    <div class="products-grid">
+      <!-- Example 1: New Product with Discount -->
+      {{ product_card({
+        'id': 'demo-1',
+        'name': 'Organic Avocados',
+        'image': url_for('static', filename='placeholder.svg'),
+        'unit': '4 pack',
+        'price': 3.99,
+        'original_price': 4.99,
+        'store': 'Aldi',
+        'is_new': True,
+        'is_organic': True,
+        'discount_percent': 20
+      }) }}
+      
+      <!-- Example 2: Popular Vegan Product -->
+      {{ product_card({
+        'id': 'demo-2',
+        'name': 'Plant-Based Protein Shake',
+        'image': url_for('static', filename='placeholder.svg'),
+        'unit': '500ml',
+        'price': 2.49,
+        'store': 'Lidl',
+        'is_popular': True,
+        'is_vegan': True,
+        'is_healthy': True
+      }) }}
+      
+      <!-- Example 3: Special Offer -->
+      {{ product_card({
+        'id': 'demo-3',
+        'name': 'Fresh Salmon Fillets',
+        'image': url_for('static', filename='placeholder.svg'),
+        'unit': '250g',
+        'price': 5.99,
+        'original_price': 7.99,
+        'store': 'Tesco',
+        'special_offer_type': 'buy-one-get-one',
+        'discount_percent': 25
+      }) }}
+      
+      <!-- Example 4: Gluten Free Product -->
+      {{ product_card({
+        'id': 'demo-4',
+        'name': 'Gluten Free Pasta',
+        'image': url_for('static', filename='placeholder.svg'),
+        'unit': '500g',
+        'price': 1.99,
+        'store': 'Dunnes',
+        'is_gluten_free': True,
+        'is_healthy': True
+      }) }}
+    </div>
+  </section>
+
+  <!-- Product Labels Section -->
+  <section class="demo-section">
+    <div class="demo-header">
+      <h2 class="demo-title">Product Labels</h2>
+      <p class="demo-description">
+        Visual badges that highlight product attributes and special features
+      </p>
+    </div>
+    
+    <div class="label-showcase">
+      <span class="product-label label-new">
+        <i class="bi bi-star-fill"></i> NEW
+      </span>
+      <span class="product-label label-discount">
+        <i class="bi bi-tag-fill"></i> 20% OFF
+      </span>
+      <span class="product-label label-offer">
+        <i class="bi bi-gift-fill"></i> SPECIAL OFFER
+      </span>
+      <span class="product-label label-popular">
+        <i class="bi bi-fire"></i> POPULAR
+      </span>
+      <span class="product-label label-healthy">
+        <i class="bi bi-heart-pulse-fill"></i> HEALTHY
+      </span>
+      <span class="product-label label-vegan">
+        <i class="bi bi-flower1"></i> VEGAN
+      </span>
+      <span class="product-label label-organic">
+        <i class="bi bi-leaf-fill"></i> ORGANIC
+      </span>
+      <span class="product-label label-gluten-free">
+        <i class="bi bi-check-circle-fill"></i> GLUTEN FREE
+      </span>
+      <span class="product-label label-best-price">
+        <i class="bi bi-star-fill"></i> BEST PRICE
+      </span>
+      <span class="product-label label-limited">
+        <i class="bi bi-clock-fill"></i> LIMITED
+      </span>
+    </div>
+  </section>
+
+  <!-- Typography Section -->
+  <section class="demo-section">
+    <div class="demo-header">
+      <h2 class="demo-title">Typography System</h2>
+      <p class="demo-description">
+        Refined font hierarchy for better readability and visual appeal
+      </p>
+    </div>
+    
+    <div class="typography-example">
+      <h1>Heading 1 - Cabinet Grotesk Bold</h1>
+      <h2>Heading 2 - Cabinet Grotesk Bold</h2>
+      <h3>Heading 3 - Cabinet Grotesk Semibold</h3>
+      <h4>Heading 4 - Plus Jakarta Sans Bold</h4>
+      <h5>Heading 5 - Plus Jakarta Sans Bold</h5>
+      <h6>Heading 6 - Plus Jakarta Sans Bold</h6>
+      <p class="lead">Lead paragraph - Plus Jakarta Sans Regular (1.25rem)</p>
+      <p>Body text - Plus Jakarta Sans Regular (1rem). This is the standard paragraph text used throughout the website. It has optimal line height (1.7) for comfortable reading.</p>
+      <small>Small text - Plus Jakarta Sans Regular (0.875rem)</small>
+    </div>
+  </section>
+
+  <!-- Color Palette Section -->
+  <section class="demo-section">
+    <div class="demo-header">
+      <h2 class="demo-title">Color Palette</h2>
+      <p class="demo-description">
+        Our brand colors and semantic color system
+      </p>
+    </div>
+    
+    <div class="row g-4">
+      <div class="col-md-3">
+        <div class="color-swatch" style="background: var(--purple-700);">
+          <span>Primary</span>
+          <span class="color-name">#7c3aed</span>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="color-swatch" style="background: var(--success);">
+          <span>Success</span>
+          <span class="color-name">#10b981</span>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="color-swatch" style="background: var(--warning);">
+          <span>Warning</span>
+          <span class="color-name">#f59e0b</span>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="color-swatch" style="background: var(--error);">
+          <span>Error</span>
+          <span class="color-name">#ef4444</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Buttons Section -->
+  <section class="demo-section">
+    <div class="demo-header">
+      <h2 class="demo-title">Button Styles</h2>
+      <p class="demo-description">
+        Enhanced button components with smooth interactions
+      </p>
+    </div>
+    
+    <div class="d-flex flex-wrap gap-3">
+      <button class="btn-enhanced btn-primary-enhanced">
+        <i class="bi bi-cart-plus-fill"></i>
+        Primary Button
+      </button>
+      <button class="btn-enhanced btn-secondary-enhanced">
+        <i class="bi bi-eye"></i>
+        Secondary Button
+      </button>
+      <button class="btn-add-to-list">
+        <i class="bi bi-cart-plus-fill"></i>
+        Add to List
+      </button>
+      <button class="btn-view-details">
+        <i class="bi bi-eye"></i>
+        View Details
+      </button>
+    </div>
+  </section>
+
+  <!-- Cards Section -->
+  <section class="demo-section">
+    <div class="demo-header">
+      <h2 class="demo-title">Card Components</h2>
+      <p class="demo-description">
+        Enhanced card designs with hover effects
+      </p>
+    </div>
+    
+    <div class="row g-4">
+      <div class="col-md-4">
+        <div class="card-enhanced">
+          <h4>Enhanced Card</h4>
+          <p>This is an enhanced card component with modern styling and smooth hover effects.</p>
+          <button class="btn-enhanced btn-primary-enhanced">Learn More</button>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card-enhanced">
+          <h4>Feature Card</h4>
+          <p>Cards automatically lift on hover and have consistent shadows throughout the site.</p>
+          <button class="btn-enhanced btn-secondary-enhanced">Explore</button>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card-enhanced">
+          <h4>Info Card</h4>
+          <p>All cards use the same border radius and shadow system for visual consistency.</p>
+          <button class="btn-enhanced btn-primary-enhanced">Get Started</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Badges Section -->
+  <section class="demo-section">
+    <div class="demo-header">
+      <h2 class="demo-title">Badges & Pills</h2>
+      <p class="demo-description">
+        Small components for highlighting information
+      </p>
+    </div>
+    
+    <div class="d-flex flex-wrap gap-3">
+      <span class="badge-enhanced badge-purple">
+        <i class="bi bi-star-fill"></i> Featured
+      </span>
+      <span class="badge-enhanced badge-success">
+        <i class="bi bi-check-circle-fill"></i> Available
+      </span>
+      <span class="badge-enhanced badge-warning">
+        <i class="bi bi-exclamation-triangle-fill"></i> Low Stock
+      </span>
+      <span class="badge-enhanced badge-error">
+        <i class="bi bi-x-circle-fill"></i> Out of Stock
+      </span>
+      <span class="savings-badge">
+        <i class="bi bi-graph-down-arrow"></i> Save €2.50
+      </span>
+    </div>
+  </section>
+
+  <!-- Forms Section -->
+  <section class="demo-section">
+    <div class="demo-header">
+      <h2 class="demo-title">Form Elements</h2>
+      <p class="demo-description">
+        Enhanced form controls with better focus states
+      </p>
+    </div>
+    
+    <div class="row">
+      <div class="col-md-6">
+        <label class="form-label-enhanced">Email Address</label>
+        <input type="email" class="form-control-enhanced" placeholder="your@email.com">
+      </div>
+      <div class="col-md-6">
+        <label class="form-label-enhanced">Password</label>
+        <input type="password" class="form-control-enhanced" placeholder="••••••••">
+      </div>
+    </div>
+  </section>
+
+  <!-- Implementation Guide -->
+  <section class="demo-section">
+    <div class="demo-header">
+      <h2 class="demo-title">Implementation Guide</h2>
+      <p class="demo-description">
+        Quick reference for using these components in your pages
+      </p>
+    </div>
+    
+    <div class="card-enhanced">
+      <h4>Using the Product Card</h4>
+      <pre style="background: #f8f9fa; padding: 1rem; border-radius: 8px; overflow-x: auto;"><code>{% raw %}{% from 'components/product_card.html' import product_card %}
+
+{{ product_card({
+  'id': 'product-id',
+  'name': 'Product Name',
+  'image': 'image-url',
+  'unit': '500g',
+  'price': 4.99,
+  'store': 'Store Name',
+  'is_new': True,
+  'is_vegan': True
+}) }}{% endraw %}</code></pre>
+      
+      <h4 class="mt-4">CSS Variables</h4>
+      <pre style="background: #f8f9fa; padding: 1rem; border-radius: 8px; overflow-x: auto;"><code>/* Use these variables in your custom CSS */
+color: var(--purple-700);
+background: var(--bg-primary);
+border: 1px solid var(--border-light);
+box-shadow: var(--shadow-md);</code></pre>
+    </div>
+  </section>
+
+  <!-- Back to Home -->
+  <div class="text-center mt-5">
+    <a href="{{ url_for('main.home') }}" class="btn-enhanced btn-primary-enhanced">
+      <i class="bi bi-house-door-fill"></i>
+      Back to Home
+    </a>
+  </div>
+
+</div>
+{% endblock %}

@@ -6,6 +6,9 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}">
 {% endblock %}
 
+{# Import the unified product card component #}
+{% from 'components/product_card.html' import product_card %}
+
 {% block content %}
 
 <!-- ═══════════════════════════════════════════════
@@ -217,86 +220,9 @@
       </a>
     </div>
 
-    <div class="row g-4">
+    <div class="products-grid">
       {% for product in products[:8] %}
-      {% set pid = product.get('id') or product.get('_id') %}
-      <div class="col-lg-3 col-md-6 animate-fade-up">
-        <div class="product-card-horizontal h-100 {% if pid %}cursor-pointer{% endif %}"
-             {% if pid %}onclick="window.location='{{ url_for('main.product_detail', product_id=pid) }}'"{% endif %}>
-
-          <div class="card-image-wrapper">
-            <img src="{{ product.get('image') or url_for('static', filename='placeholder.svg') }}"
-                 alt="{{ product.get('name', 'Product') }}"
-                 loading="lazy">
-          </div>
-
-          <div class="product-card-body d-flex flex-column">
-            <div class="d-flex justify-content-between align-items-start mb-2">
-              <div class="product-name product-description-clamp mb-0" style="flex:1;">{{ product.get('name', 'Premium Item') }}</div>
-              <button type="button" class="btn btn-link p-0 text-muted ms-2 js-report-btn"
-                      title="Report inaccurate price"
-                      data-product-id="{{ product.get('id') or product.get('_id') }}"
-                      data-product-name="{{ product.get('name') or product.get('title','')|e }}"
-                      data-product-stores='{{ product.get("stores")|tojson|forceescape }}'>
-                <i class="bi bi-exclamation-triangle" style="font-size:.9rem;"></i>
-              </button>
-            </div>
-
-            {% if product.get('stores') and product.get('stores')|length > 0 %}
-            {% set sorted_stores = product.get('stores')|sort(attribute='price')|list %}
-            {% set cheapest_price = sorted_stores[0].get('price')|float %}
-            <div class="d-flex flex-column gap-1 mb-2 w-100">
-              {% for store in sorted_stores[:3] %}
-              {% set store_price = store.get('price')|float %}
-              <div class="d-flex justify-content-between align-items-center w-100">
-                <a {% if store.get('url') %}href="{{ store.get('url') }}" target="_blank"{% else %}href="javascript:void(0)"{% endif %}
-                   onclick="event.stopPropagation();"
-                     class="{% if store_price == cheapest_price %}text-premium-purple fw-bold{% else %}text-secondary fw-medium{% endif %} text-truncate"
-                     style="font-size:.85rem; max-width:65%; text-decoration:none; transition: color 0.2s ease;"
-                     onmouseover="this.style.color='#6f42c1'"
-                     onmouseout="this.style.color=''">
-                    {{ store.get('store') or store.get('name') }}
-                  </a>
-                  <span class="fw-bold {% if store_price == cheapest_price %}text-premium-purple{% else %}text-dark{% endif %}" style="font-size:.9rem;">
-                  {% if store.get('price') is not none %}€{{ "%.2f"|format(store.get('price')) }}{% else %}N/A{% endif %}
-                </span>
-              </div>
-              {% endfor %}
-              {% if sorted_stores|length > 3 %}
-              <div class="text-muted text-center w-100 mt-1" style="font-size:.75rem; font-weight:500;">
-                + {{ sorted_stores|length - 3 }} more stores
-              </div>
-              {% endif %}
-            </div>
-
-            {% if sorted_stores|length > 1 %}
-            {% set first_price = sorted_stores[0].get('price') %}
-            {% set last_price = sorted_stores[-1].get('price') %}
-            {% if first_price is not none and last_price is not none %}
-            {% set save_amount = last_price|float - first_price|float %}
-            {% if save_amount > 0 %}
-            <div class="border-top pt-2 mb-2">
-              <span class="save-badge">
-                <i class="bi bi-graph-down-arrow"></i> Save up to €{{ "%.2f"|format(save_amount) }}
-              </span>
-            </div>
-            {% endif %}
-            {% endif %}
-            {% endif %}
-            {% endif %}
-
-            <div class="d-grid mt-auto">
-              {% if pid %}
-              <a href="{{ url_for('main.product_detail', product_id=pid) }}"
-                 class="btn btn-premium-purple"
-                 onclick="event.stopPropagation();">
-                <i class="bi bi-bar-chart-fill me-1"></i> Compare Prices
-              </a>
-              {% endif %}
-            </div>
-          </div>
-        </div>
-      </div>
+        {{ product_card(product) }}
       {% endfor %}
     </div>
   </div>
@@ -321,67 +247,9 @@
       </a>
     </div>
 
-    <div class="row g-4">
+    <div class="products-grid">
       {% for deal in featured_deals[:8] %}
-      {% set deal_id = deal.get('id') or deal.get('_id') %}
-      {% set offer_obj = deal.get('offer') if deal.get('offer') is mapping else None %}
-      {% set offer_x = offer_obj.x if offer_obj is not none else (deal.get('buy_quantity') or deal.get('multibuy_buy') or '') %}
-      {% set offer_y = offer_obj.y if offer_obj is not none else (deal.get('free_quantity') or deal.get('multibuy_free') or '') %}
-      {% set offer_type = offer_obj.type if offer_obj is not none else ('buyXgetY' if (offer_x and offer_y) else '') %}
-
-      <div class="col-lg-3 col-md-6 animate-fade-up">
-        <div class="product-card-horizontal h-100" style="cursor:pointer;">
-          {% if deal.get('discount_label') or deal.get('discount_percent') %}
-          <div class="discount-badge">
-            {{ deal.get('discount_label') or (deal.get('discount_percent') ~ '% OFF') }}
-          </div>
-          {% endif %}
-          <button class="btn-favorite {{ 'active' if deal.get('is_favorited') else '' }}"
-                  data-product-id="{{ deal_id }}"
-                  onclick="toggleFavorite(event, '{{ deal_id }}', this)"
-                  aria-label="Add to favourites">
-            <i class="bi {{ 'bi-heart-fill' if deal.get('is_favorited') else 'bi-heart' }}"></i>
-          </button>
-          <div class="card-image-wrapper cursor-pointer"
-               onclick="window.location='{{ url_for('main.product_detail', product_id=deal_id) }}';">
-            <img src="{{ deal.get('image') or url_for('static', filename='placeholder.svg') }}"
-                 alt="{{ deal.get('title') or deal.get('name') }}"
-                 loading="lazy">
-          </div>
-          <div class="product-card-body d-flex flex-column">
-            <div class="product-name product-description-clamp">{{ deal.get('title') or deal.get('name', 'Premium Deal') }}</div>
-            <div class="product-store mb-2">
-              <i class="bi bi-shop me-1"></i>{{ deal.get('store') or deal.get('source', 'Partner Store') }}
-            </div>
-            <div class="product-price">
-              €{{ deal.get('price', '0.00') }}
-              {% if deal.get('original_price') %}
-              <small style="text-decoration:line-through;">€{{ deal.get('original_price') }}</small>
-              {% endif %}
-            </div>
-            <div class="d-grid gap-2">
-              <button type="button"
-                      class="btn btn-premium-add w-100"
-                      data-id="{{ deal_id }}"
-                      data-name="{{ deal.get('title') or deal.get('name') }}"
-                      data-price="{{ deal.get('price') }}"
-                      data-original-price="{{ deal.get('original_price') or '' }}"
-                      data-image="{{ deal.get('image') or url_for('static', filename='placeholder.svg') }}"
-                      data-store="{{ deal.get('store') or deal.get('source', 'Partner') }}"
-                      data-offer-json='{{ offer_obj|tojson|forceescape if offer_obj is not none else "" }}'
-                      data-offer-type="{{ offer_type }}"
-                      data-offer-x="{{ offer_x }}"
-                      data-offer-y="{{ offer_y }}">
-                <i class="bi bi-cart-plus-fill me-1"></i> Add to List
-              </button>
-              <a href="{{ url_for('main.product_detail', product_id=deal_id) }}"
-                 class="btn btn-premium-view btn-sm w-100">
-                <i class="bi bi-info-circle me-1"></i> View Details
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
+        {{ product_card(deal) }}
       {% endfor %}
     </div>
   </div>
@@ -407,69 +275,9 @@
       </a>
     </div>
 
-    <div class="row g-4">
+    <div class="products-grid">
       {% for product in popular_products[:8] %}
-      {% set pid = product.get('id') or product.get('_id') %}
-      {% set store_data = (product.get('stores') or [{}])[0] %}
-      {% set store_name = product.get('store') or store_data.get('store') or 'Multiple Stores' %}
-      {% set offer_obj = product.get('offer') if product.get('offer') is mapping else None %}
-      {% set offer_x = offer_obj.x if offer_obj is not none else (product.get('buy_quantity') or product.get('multibuy_buy') or '') %}
-      {% set offer_y = offer_obj.y if offer_obj is not none else (product.get('free_quantity') or product.get('multibuy_free') or '') %}
-      {% set offer_type = offer_obj.type if offer_obj is not none else ('buyXgetY' if (offer_x and offer_y) else '') %}
-
-      <div class="col-lg-3 col-md-6 animate-fade-up">
-        <div class="product-card-horizontal h-100"
-             {% if pid %}onclick="window.location='{{ url_for('main.product_detail', product_id=pid) }}'"{% endif %}
-             style="cursor:pointer;">
-          {% if product.get('discount_label') or product.get('discount_percent') %}
-          <div class="discount-badge">
-            {{ product.get('discount_label') or (product.get('discount_percent') ~ '% OFF') }}
-          </div>
-          {% endif %}
-          <button class="btn-favorite {{ 'active' if product.get('is_favorited') else '' }}"
-                  data-product-id="{{ pid }}"
-                  onclick="toggleFavorite(event, '{{ pid }}', this); event.stopPropagation();"
-                  aria-label="Add to favourites">
-            <i class="bi {{ 'bi-heart-fill' if product.get('is_favorited') else 'bi-heart' }}"></i>
-          </button>
-          <div class="card-image-wrapper">
-            <img src="{{ product.get('image') or url_for('static', filename='placeholder.svg') }}"
-                 alt="{{ product.get('name') }}"
-                 loading="lazy">
-          </div>
-          <div class="product-card-body d-flex flex-column">
-            <div class="product-name product-description-clamp">{{ product.get('name', 'Popular Item') }}</div>
-            <div class="product-store mb-2">
-              <i class="bi bi-shop me-1"></i>{{ store_name }}
-            </div>
-            <div class="product-price">
-              €{{ '%.2f'|format((product.price or store_data.get('price') or 0)|float) }}
-            </div>
-            <div class="d-grid gap-2 mt-auto">
-              <button type="button"
-                      class="btn btn-premium-add w-100"
-                      data-id="{{ pid }}"
-                      data-name="{{ product.name }}"
-                      data-price="{{ product.price or store_data.get('price') or '0.00' }}"
-                      data-original-price="{{ product.original_price or '' }}"
-                      data-image="{{ product.image or url_for('static', filename='placeholder.svg') }}"
-                      data-store="{{ store_name }}"
-                      data-offer-json='{{ offer_obj|tojson|forceescape if offer_obj is not none else "" }}'
-                      data-offer-type="{{ offer_type }}"
-                      data-offer-x="{{ offer_x }}"
-                      data-offer-y="{{ offer_y }}"
-                      onclick="event.stopPropagation(); window.showListSelector(this);">
-                <i class="bi bi-cart-plus-fill me-1"></i> Add to List
-              </button>
-              <a href="{{ url_for('main.product_detail', product_id=pid) }}"
-                 class="btn btn-premium-view btn-sm w-100"
-                 onclick="event.stopPropagation();">
-                <i class="bi bi-eye me-1"></i> Details
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
+        {{ product_card(product) }}
       {% endfor %}
     </div>
   </div>
