@@ -21,28 +21,6 @@
 - **Scripting:** JavaScript (Vanilla JS & Async Fetch API)
 - **Security:** Bcrypt (hashing), JWT (JSON Web Tokens)
 
-## Team Members and Roles
-
-### **Bora Elshani** - Team Lead & Full Stack Engineer
-**Key Contributions:**
-*   **Backend Architecture:** Designed `app.py` entry point and Flask configuration.
-*   **Core Logic:** Implemented route modules handling primary navigation and user flow.
-*   **Data Models:** Architected `users_model.py` for auth and `models.py` for fallback data.
-*   **Data Pipeline:** Wrote scripts for importing featured deals from JSON to MongoDB.
-*   **Frontend UX:** Developed the interactive Shopping List (`shopping_list.html`), Profile management (`profile.html`), and Deal view (`featured_deal_detail.html`).
-*   **Client-Side Logic:** Wrote complex JavaScript for dynamic shopping list updates and price calculations.
-
-### **Dren Buqa** - Full Stack Engineer & UI/UX Designer
-**Key Contributions:**
-*   **Auth System:** Built secure Login/Signup routes (`auth_routes.py`) and Admin capabilities (`admin_routes.py`).
-*   **Database Models:** Developed core data access layers for `products_model.py`, `stores_model.py`, and `featured_deals_model.py`.
-*   **Visual Design:** Created the unified visual identity (`style.css`), responsive layouts, and animations.
-*   **Frontend UI:** Designed the Home page (`home.html`), Login/Signup forms, and Comparison interface (`compare_prices.html`).
-*   **Error Handling:** Designed custom 404/500 pages for better user experience.
-*   **JavaScript:** Implemented form validation and interactive search filters.
-
----
-
 ## Setup Instructions
 
 ### Prerequisites
