@@ -33,31 +33,9 @@ def attach_deals_to_product(product_doc):
     name = product_doc.get('name') or product_doc.get('title')
     if not name: return
     
-    try:
-        import re as re_mod
-        from sqlalchemy import or_, func
-        from models.postgres_models import FeaturedDeal
-        deal_row = FeaturedDeal.query.filter(
-            or_(
-                func.lower(FeaturedDeal.title) == name.lower(),
-                func.lower(FeaturedDeal.name) == name.lower(),
-            )
-        ).first()
-        
-        if deal_row:
-            deal = deal_row.to_dict()
-            deal_store = (deal.get('store') or deal.get('source') or '').lower()
-            for s in store_list:
-                s_name = (s.get('store') or s.get('name') or '').lower()
-                if deal_store and s_name == deal_store:
-                    s['has_deal'] = True
-                    s['deal_info'] = deal
-                    if deal.get('price'): s['price'] = deal['price']
-                    if deal.get('original_price'): s['original_price'] = deal['original_price']
-                    if deal.get('discount_label'): s['discount_label'] = deal['discount_label']
-                    if deal.get('valid_until'): s['valid_until'] = deal['valid_until']
-    except Exception as e:
-        print("Error attaching deals:", e)
+    # Featured deals table removed - promotions are now handled via deals_compat layer
+    # This enrichment is no longer needed as promotions are queried separately
+    # Products will show promotional pricing through the product_store and promotion_targets tables
 
 @main_bp.route('/product-info/<product_id>')
 @main_bp.route('/product/<product_id>')

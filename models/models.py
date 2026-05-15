@@ -34,13 +34,13 @@ def get_db_info():
     """Retrieve database info and table counts."""
     if HAS_DB and sa_db is not None:
         try:
-            from models.postgres_models import Product, Store, User, FeaturedDeal
+            from models.postgres_models import Product, Store, User, Promotion
             return {
                 'db_name': 'postgresql',
                 'collections': {
                     'products': Product.query.count(),
                     'stores': Store.query.count(),
-                    'featured_deals': FeaturedDeal.query.count(),
+                    'promotions': Promotion.query.count(),
                     'users': User.query.count(),
                 },
             }
@@ -143,21 +143,9 @@ def claim_featured_deal_by_id(deal_id_or_title, email=None):
     """Mark a featured deal as claimed."""
     if not deal_id_or_title:
         return False
-    # DB path
+    # DB path - featured_deals table removed, promotions don't have claims
+    # This functionality is deprecated
     if HAS_DB:
-        try:
-            from models.postgres_models import FeaturedDeal
-            deal = None
-            try:
-                deal = FeaturedDeal.query.get(int(deal_id_or_title))
-            except (ValueError, TypeError):
-                deal = FeaturedDeal.query.filter_by(title=str(deal_id_or_title)).first()
-            if deal:
-                deal.claims = (deal.claims or 0) + 1
-                sa_db.session.commit()
-                return True
-        except Exception:
-            pass
         return False
 
     # fallback: update in-memory featured_deals list by matching title

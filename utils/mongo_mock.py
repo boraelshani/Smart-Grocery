@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from sqlalchemy import or_, and_, desc, asc, func
 from models.postgres_models import (
     db, Product, Category, Store, Brand, Offer, User,
-    ShoppingList, ListItem, FeaturedDeal, Feedback,
+    ShoppingList, ListItem, Feedback,
     CommunityPriceReport, PriceHistory, PendingProduct,
     PublicList, Favorite, SavedRecipe, PriceFeedback, Notification,
 )
@@ -177,8 +177,6 @@ def _model_to_dict(obj, model_type):
         result["is_admin"] = bool(obj.is_admin)
     elif isinstance(obj, ShoppingList):
         result["listId"] = obj.list_id
-    elif isinstance(obj, FeaturedDeal):
-        result["category"] = obj.category_slug
     elif isinstance(obj, Offer):
         result["storeProductId"] = str(obj.id)
         result["productId"] = obj.product_id
@@ -407,7 +405,7 @@ class MockDb:
         self.list_items = MockCollection(ListItem)
         self.feedback = MockCollection(Feedback)
         self.community_price_reports = MockCollection(CommunityPriceReport)
-        self.featured_deals = MockCollection(FeaturedDeal)
+        # featured_deals table was removed - use deals_compat layer instead
         self.price_history = MockCollection(PriceHistory)
         self.pending_products = MockCollection(PendingProduct)
         self.public_lists = MockCollection(PublicList)

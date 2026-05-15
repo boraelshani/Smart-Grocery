@@ -95,7 +95,7 @@ class Product(db.Model):
     default_image_url = db.Column(db.Text)
     barcode = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=_now)
-    updated_at = db.Column(db.DateTime, default=_now)
+    updated_at = db.Column(db.DateTime, default=_now, onupdate=_now)
     
     # Relationships
     product_stores = db.relationship('ProductStore', backref='product', lazy='dynamic', cascade='all, delete-orphan')
@@ -145,6 +145,7 @@ class ProductStore(db.Model):
     product_url = db.Column(db.Text)
     last_seen = db.Column(db.DateTime)
     created_at = db.Column(db.DateTime, default=_now)
+    updated_at = db.Column(db.DateTime, default=_now, onupdate=_now)
     
     # Relationships
     promotion_targets = db.relationship('PromotionTarget', backref='product_store', lazy='dynamic', cascade='all, delete-orphan')
@@ -202,6 +203,7 @@ class Offer(db.Model):
     max_quantity = db.Column(db.Integer)
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=_now)
+    updated_at = db.Column(db.DateTime, default=_now, onupdate=_now)
     
     # Relationships
     promotions = db.relationship('Promotion', backref='offer', lazy='dynamic')
@@ -255,6 +257,7 @@ class Promotion(db.Model):
     end_date = db.Column(db.Date)
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=_now)
+    updated_at = db.Column(db.DateTime, default=_now, onupdate=_now)
     
     # Relationships
     targets = db.relationship('PromotionTarget', backref='promotion', lazy='dynamic', cascade='all, delete-orphan')
@@ -438,205 +441,3 @@ class ListItem(db.Model):
 
 # Additional models (Notification, Favorite, Feedback, etc.) remain unchanged
 # ... (include all other models from original file)
-
-# ══════════════════════════════════════════════════════════════════════════════
-# SCRAPER RUNS
-# ══════════════════════════════════════════════════════════════════════════════
-
-class ScraperRun(db.Model):
-    __tablename__ = 'scraper_runs'
-    __table_args__ = {'extend_existing': True}
-    
-    id = db.Column(db.Integer, primary_key=True)
-    status = db.Column(db.Text)
-    products_processed = db.Column(db.Integer, default=0)
-    offers_updated = db.Column(db.Integer, default=0)
-    errors = db.Column(db.Integer, default=0)
-    created_at = db.Column(db.DateTime(timezone=True), default=_now)
-
-# ══════════════════════════════════════════════════════════════════════════════
-# NOTIFICATIONS
-# ══════════════════════════════════════════════════════════════════════════════
-
-class Notification(db.Model):
-    __tablename__ = 'notifications'
-    __table_args__ = {'extend_existing': True}
-    
-    id = db.Column(db.Integer, primary_key=True)
-    user_email = db.Column(db.Text, index=True)
-    type = db.Column(db.Text)
-    title = db.Column(db.Text)
-    message = db.Column(db.Text)
-    action_url = db.Column(db.Text)
-    priority = db.Column(db.Text, default='normal')
-    read = db.Column(db.Boolean, default=False, index=True)
-    product_id = db.Column(db.Text)
-    deal_id = db.Column(db.Text)
-    store_name = db.Column(db.Text)
-    is_toasted = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=_now, index=True)
-
-    def to_dict(self):
-        return {
-            'id': str(self.id),
-            '_id': str(self.id),
-            'user_email': self.user_email,
-            'type': self.type,
-            'title': self.title,
-            'message': self.message,
-            'action_url': self.action_url,
-            'priority': self.priority,
-            'read': self.read,
-            'product_id': self.product_id,
-            'deal_id': self.deal_id,
-            'store_name': self.store_name,
-            'is_toasted': self.is_toasted,
-            'created_at': self.created_at
-        }
-
-# ══════════════════════════════════════════════════════════════════════════════
-# FAVORITES
-# ══════════════════════════════════════════════════════════════════════════════
-
-class Favorite(db.Model):
-    __tablename__ = 'favorites'
-    __table_args__ = {'extend_existing': True}
-    
-    id = db.Column(db.Integer, primary_key=True)
-    user_email = db.Column(db.Text, index=True)
-    product_id = db.Column(db.Text)
-    product_name = db.Column(db.Text)
-    product_image = db.Column(db.Text)
-    category = db.Column(db.Text)
-    best_price = db.Column(db.Numeric)
-    store = db.Column(db.Text)
-    discount_tiers = db.Column(db.JSON)
-    offer = db.Column(db.Text)
-    added_at = db.Column(db.DateTime, default=_now)
-
-    def to_dict(self):
-        return {
-            'id': str(self.id),
-            'user_email': self.user_email,
-            'product_id': self.product_id,
-            'product_name': self.product_name,
-            'product_image': self.product_image,
-            'category': self.category,
-            'best_price': float(self.best_price) if self.best_price else None,
-            'store': self.store,
-            'added_at': self.added_at
-        }
-
-# ══════════════════════════════════════════════════════════════════════════════
-# FEEDBACK
-# ══════════════════════════════════════════════════════════════════════════════
-
-class Feedback(db.Model):
-    __tablename__ = 'feedback'
-    __table_args__ = {'extend_existing': True}
-    
-    id = db.Column(db.Integer, primary_key=True)
-    feedback_id = db.Column(db.Text, unique=True)
-    user_email = db.Column(db.Text)
-    type = db.Column(db.Text)
-    subject = db.Column(db.Text)
-    message = db.Column(db.Text)
-    status = db.Column(db.Text, default='pending')
-    created_at = db.Column(db.DateTime, default=_now)
-    updated_at = db.Column(db.DateTime, default=_now)
-
-class PriceFeedback(db.Model):
-    __tablename__ = 'price_feedback'
-    __table_args__ = {'extend_existing': True}
-    
-    id = db.Column(db.Integer, primary_key=True)
-    product_id = db.Column(db.Text)
-    store = db.Column(db.Text)
-    user_email = db.Column(db.Text)
-    is_correct = db.Column(db.Boolean)
-    reported_price = db.Column(db.Numeric)
-    timestamp = db.Column(db.DateTime, default=_now)
-
-# ══════════════════════════════════════════════════════════════════════════════
-# SAVED RECIPES
-# ══════════════════════════════════════════════════════════════════════════════
-
-class SavedRecipe(db.Model):
-    __tablename__ = 'saved_recipes'
-    __table_args__ = {'extend_existing': True}
-    
-    id = db.Column(db.Integer, primary_key=True)
-    user_email = db.Column(db.Text, index=True)
-    title = db.Column(db.Text)
-    ingredients = db.Column(db.JSON)
-    instructions = db.Column(db.JSON)
-    total_items = db.Column(db.Integer, default=0)
-    matched_items = db.Column(db.Integer, default=0)
-    total_price = db.Column(db.Numeric, default=0)
-    created_at = db.Column(db.DateTime, default=_now)
-
-# ══════════════════════════════════════════════════════════════════════════════
-# COMMUNITY PRICE REPORTS
-# ══════════════════════════════════════════════════════════════════════════════
-
-class CommunityPriceReport(db.Model):
-    __tablename__ = 'community_price_reports'
-    __table_args__ = {'extend_existing': True}
-    
-    id = db.Column(db.Integer, primary_key=True)
-    product_id_int = db.Column(db.Integer)
-    product_id = db.Column(db.Text)
-    store_name = db.Column(db.Text)
-    observed_price = db.Column(db.Numeric)
-    note = db.Column(db.Text)
-    reporter_type = db.Column(db.Text)
-    reporter_id = db.Column(db.Integer)
-    created_at = db.Column(db.DateTime, default=_now)
-
-# ══════════════════════════════════════════════════════════════════════════════
-# PENDING PRODUCTS
-# ══════════════════════════════════════════════════════════════════════════════
-
-class PendingProduct(db.Model):
-    __tablename__ = 'pending_products'
-    __table_args__ = {'extend_existing': True}
-    
-    id = db.Column(db.Integer, primary_key=True)
-    barcode = db.Column(db.Text, unique=True, index=True)
-    name = db.Column(db.Text)
-    image = db.Column(db.Text)
-    status = db.Column(db.Text, default='pending')
-    submitted_by = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=_now)
-
-# ══════════════════════════════════════════════════════════════════════════════
-# PUBLIC LISTS
-# ══════════════════════════════════════════════════════════════════════════════
-
-class PublicList(db.Model):
-    __tablename__ = 'public_lists'
-    __table_args__ = {'extend_existing': True}
-    
-    id = db.Column(db.Integer, primary_key=True)
-    list_id = db.Column(db.Text, unique=True)
-    name = db.Column(db.Text)
-    items = db.Column(db.JSON)
-    created_at = db.Column(db.DateTime, default=_now)
-
-# ══════════════════════════════════════════════════════════════════════════════
-# BRANDS
-# ══════════════════════════════════════════════════════════════════════════════
-
-class Brand(db.Model):
-    __tablename__ = 'brands'
-    __table_args__ = {'extend_existing': True}
-    
-    id = db.Column(db.Integer, primary_key=True)
-    brand_id = db.Column(db.Text, unique=True)
-    name = db.Column(db.Text)
-    name_en = db.Column(db.Text)
-    name_de = db.Column(db.Text)
-    image_url = db.Column(db.Text)
-    website = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=_now)
-    updated_at = db.Column(db.DateTime, default=_now)

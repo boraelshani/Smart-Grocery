@@ -62,20 +62,13 @@ body {
   flex-shrink: 0;
 }
 
-/* Search bar in top row - CENTERED and BIGGER */
+/* Search bar in top row - CENTERED */
 .navbar-premium .tabs-search-bar {
   grid-column: 2;
   grid-row: 1;
   justify-self: center;
-  max-width: 800px;
-  width: 100%;
-}
-
-/* Search bar - larger and more to the right */
-.navbar-premium .tabs-search-bar {
-  flex: 1;
   max-width: 650px;
-  margin: 0 2rem 0 auto;
+  width: 100%;
   position: relative;
 }
 
@@ -227,6 +220,10 @@ body {
 
 .profile-dropdown-toggle:hover .profile-toggle-name {
   color: white !important;
+}
+
+.profile-dropdown-toggle:hover .navbar-avatar {
+  border-color: white !important;
 }
 
 .profile-toggle-name {
@@ -497,7 +494,7 @@ MEGA MENU SYSTEM
   padding: 0;
   border: 1px solid rgba(124, 58, 237, 0.1);
   border-radius: 1.5rem;
-  background: rgba(255,255,255,0.98) !important;
+  background: #f4f0ec !important;
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   box-shadow: 0 20px 60px rgba(124, 58, 237, 0.15), 0 10px 25px rgba(0,0,0,0.05);
@@ -550,12 +547,16 @@ body.scrolled .mega-menu-content {
   border: none;
   background: transparent;
   font-size: 0.95rem;
-  color: rgba(255, 255, 255, 0.85);
+  color: white !important;
+}
+
+.custom-pill-nav .nav-link i {
+  color: white !important;
 }
 
 .custom-pill-nav .nav-link:hover { 
   background: rgba(255, 255, 255, 0.15);
-  color: white;
+  color: white !important;
 }
 
 .custom-pill-nav .nav-link.active { 
@@ -563,6 +564,10 @@ body.scrolled .mega-menu-content {
   color: #7c3aed !important; 
   font-weight: 700; 
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.custom-pill-nav .nav-link.active i {
+  color: #7c3aed !important;
 }
 
 /* Mega menu layout */

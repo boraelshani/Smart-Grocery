@@ -1,7 +1,7 @@
 from flask import render_template, session, request, current_app, url_for, redirect
 from .. import main_bp
 from models.products_model import products_model
-from models.featured_deals_model import featured_deals_model
+from models.deals_compat import list_active_promotions, get_promotion_by_id
 from models.multibuy_offers_model import multibuy_offers_model
 from models.quantity_discounts_model import quantity_discounts_model
 from models.favorites_model import favorites_model
@@ -47,10 +47,11 @@ def featured_deals_page():
     
     using_fallback = False
     try:
-        deals = featured_deals_model.list_featured_deals() + \
+        deals = list_active_promotions() + \
                 multibuy_offers_model.list_active_offers() + \
                 quantity_discounts_model.list_active_discounts()
-    except:
+    except Exception as e:
+        print(f'Error loading deals: {e}')
         using_fallback = True
         deals = load_featured_deals_fallback()
 
@@ -84,6 +85,44 @@ def featured_deals_page():
     
     category_options = helpers.get_category_options()
 
+    # Calculate breadcrumb path and visual categories based on the full tree
+    breadcrumb_path = []
+    visual_categories = category_options  # Default to roots
+    
+    if category_filter:
+        cf_lower = category_filter.lower()
+        found_in_tree = False
+        
+        for l1 in category_options:
+            if l1.get('name', '').lower() == cf_lower:
+                breadcrumb_path = [l1]
+                if l1.get('subcategories'):
+                    visual_categories = l1['subcategories']
+                else:
+                    visual_categories = category_options
+                found_in_tree = True
+                break
+                
+            for l2 in l1.get('subcategories', []):
+                if l2.get('name', '').lower() == cf_lower:
+                    breadcrumb_path = [l1, l2]
+                    if l2.get('subcategories'):
+                        visual_categories = l2['subcategories']
+                    else:
+                        visual_categories = l1['subcategories']
+                    found_in_tree = True
+                    break
+                    
+                for l3 in l2.get('subcategories', []):
+                    if l3.get('name', '').lower() == cf_lower:
+                        breadcrumb_path = [l1, l2, l3]
+                        # l3 usually has no subcategories in our depth-3 tree
+                        visual_categories = l2['subcategories']
+                        found_in_tree = True
+                        break
+                if found_in_tree: break
+            if found_in_tree: break
+
     if category_filter:
         if not any(category_filter.lower() == c['name'].lower() for c in category_options):
             category_options.append({"name": category_filter.title()})
@@ -96,6 +135,8 @@ def featured_deals_page():
                           current_page=page,
                           category_filter=category_filter,
                           category_options=category_options,
+                          breadcrumb_path=breadcrumb_path,
+                          visual_categories=visual_categories,
                           search_query=search_query,
                           using_fallback=using_fallback)
 

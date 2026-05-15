@@ -1,6 +1,6 @@
 from flask import jsonify, request
 from . import compare_bp
-from models.featured_deals_model import featured_deals_model
+from models.deals_compat import list_active_promotions, get_promotion_by_id
 from models.multibuy_offers_model import multibuy_offers_model
 from models.products_model import products_model
 from models.quantity_discounts_model import quantity_discounts_model
@@ -12,7 +12,7 @@ from comparison.store_matcher import build_store_meta_map
 def _fetch_product_or_deal_by_id(product_id):
     if not product_id: return None
     doc = products_model.get_product_by_id(str(product_id))
-    if not doc: doc = featured_deals_model.get_deal_by_id(str(product_id))
+    if not doc: doc = get_promotion_by_id(str(product_id))
     if not doc: doc = multibuy_offers_model.get_offer_by_id(str(product_id))
     if not doc:
         try: doc = quantity_discounts_model.get_discount_by_id(str(product_id))

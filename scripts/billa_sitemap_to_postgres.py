@@ -146,38 +146,96 @@ def _normalize_price(raw_price: Any) -> Optional[float]:
     return round(price, 2)
 
 
-def _extract_price(product: Dict[str, Any]) -> Optional[float]:
+def _extract_price_data(product: Dict[str, Any]) -> Dict[str, Any]:
+    """Extract comprehensive price and offer data from product."""
     price_obj = product.get("price")
-    candidates: List[Any] = []
-    if isinstance(price_obj, dict):
-        regular = price_obj.get("regular")
-        if isinstance(regular, dict):
-            candidates.extend(
-                [
-                    regular.get("value"),
-                    regular.get("promotionValue"),
-                    regular.get("perStandardizedQuantity"),
-                ]
-            )
-        elif regular is not None:
-            candidates.append(regular)
-        candidates.extend(
-            [
-                price_obj.get("value"),
-                price_obj.get("promotionValue"),
-                price_obj.get("perStandardizedQuantity"),
-                price_obj.get("basePrice"),
-                price_obj.get("salePrice"),
-            ]
-        )
-    else:
-        candidates.append(price_obj)
+    result = {
+        "base_price": None,
+        "promo_price": None,
+        "unit_price": None,
+        "offer_details": None,
+        "min_quantity": None,
+    }
+    
+    if not isinstance(price_obj, dict):
+        price = _normalize_price(price_obj)
+        if price:
+            result["base_price"] = price
+        return result
+    
+    # Extract regular/base price
+    regular = price_obj.get("regular")
+    if isinstance(regular, dict):
+        base_val = regular.get("value")
+        promo_val = regular.get("promotionValue")
+        result["base_price"] = _normalize_price(base_val)
+        if promo_val and promo_val != base_val:
+            result["promo_price"] = _normalize_price(promo_val)
+    elif regular is not None:
+        result["base_price"] = _normalize_price(regular)
+    
+    # Check for crossed/original price (indicates discount)
+    crossed = price_obj.get("crossed")
+    if crossed:
+        crossed_price = _normalize_price(crossed)
+        if crossed_price and not result["base_price"]:
+            result["base_price"] = crossed_price
+        elif crossed_price and result["base_price"] and crossed_price > result["base_price"]:
+            # Crossed price is higher, so current price is promo
+            result["promo_price"] = result["base_price"]
+            result["base_price"] = crossed_price
+    
+    # Extract unit price (e.g., "€1.99/kg")
+    unit_price_obj = price_obj.get("baseUnitLong") or price_obj.get("perStandardizedQuantity")
+    if unit_price_obj:
+        result["unit_price"] = str(unit_price_obj)
+    
+    # Extract discount percentage
+    discount_pct = price_obj.get("discountPercentage")
+    if discount_pct:
+        result["offer_details"] = f"-{abs(int(discount_pct))}%"
+    
+    # Check for quantity-based offers (e.g., "ab 24 Stück")
+    min_qty = price_obj.get("minQuantity") or price_obj.get("minimumQuantity")
+    if min_qty:
+        try:
+            result["min_quantity"] = int(min_qty)
+        except (TypeError, ValueError):
+            pass
+    
+    # Extract offer labels/badges
+    labels = product.get("labels") or product.get("badges") or []
+    if isinstance(labels, list):
+        for label in labels:
+            if isinstance(label, dict):
+                label_text = label.get("text") or label.get("name") or ""
+            else:
+                label_text = str(label)
+            
+            if label_text:
+                # Look for offer patterns
+                if any(x in label_text.lower() for x in ["aktion", "angebot", "rabatt", "gratis", "+"]):
+                    if result["offer_details"]:
+                        result["offer_details"] += f" | {label_text}"
+                    else:
+                        result["offer_details"] = label_text
+    
+    # If no base price found, try other fields
+    if not result["base_price"]:
+        for key in ("value", "basePrice", "salePrice"):
+            val = price_obj.get(key)
+            if val:
+                result["base_price"] = _normalize_price(val)
+                if result["base_price"]:
+                    break
+    
+    return result
 
-    for candidate in candidates:
-        price = _normalize_price(candidate)
-        if price is not None:
-            return price
-    return None
+
+def _extract_price(product: Dict[str, Any]) -> Optional[float]:
+    """Legacy function for backward compatibility - returns effective price."""
+    price_data = _extract_price_data(product)
+    return price_data.get("promo_price") or price_data.get("base_price")
 
 
 def _extract_image(product: Dict[str, Any]) -> Optional[str]:
@@ -428,30 +486,49 @@ def _extract_resolved_product(html: str, target_slug: str) -> Optional[Dict[str,
     return None
 
 
-def _fetch_product(session: requests.Session, url: str, retries: int = 3) -> Optional[Dict[str, Any]]:
+def _fetch_product(session: requests.Session, url: str, retries: int = 5) -> Optional[Dict[str, Any]]:
     slug = url.rstrip("/").split("/")[-1]
     last_error = None
     for attempt in range(1, retries + 1):
         try:
-            response = session.get(url, headers=HEADERS, timeout=45)
+            response = session.get(url, headers=HEADERS, timeout=60, allow_redirects=True)
             response.raise_for_status()
             product = _extract_resolved_product(response.text, slug)
             if product:
                 return product
+            # If no product found, it might be a redirect or removed product
+            if attempt < retries:
+                time.sleep(min(8, attempt * 2))
+                continue
             return None
+        except requests.exceptions.Timeout as exc:
+            last_error = exc
+            if attempt < retries:
+                print(f"[BILLA] Timeout on {url}, retry {attempt}/{retries}")
+                time.sleep(min(10, attempt * 3))
+        except requests.exceptions.HTTPError as exc:
+            # 404 or 410 means product no longer exists
+            if exc.response.status_code in (404, 410):
+                return None
+            last_error = exc
+            if attempt < retries:
+                time.sleep(min(8, attempt * 2))
         except Exception as exc:
             last_error = exc
             if attempt < retries:
-                time.sleep(min(6, attempt * 2))
-    print(f"[BILLA] Failed to fetch {url}: {last_error}")
+                time.sleep(min(8, attempt * 2))
+    
+    print(f"[BILLA] Failed to fetch {url} after {retries} attempts: {last_error}")
     return None
 
 
 def _build_product_row(category_index: CategoryIndex, product_url: str, product: Dict[str, Any]) -> Dict[str, Any]:
     slug = str(product.get("slug") or "").strip()
     name = str(product.get("name") or "").strip()
-    price = _extract_price(product)
-    if not slug or not name or price is None:
+    price_data = _extract_price_data(product)
+    
+    # Need at least a base price
+    if not slug or not name or not price_data.get("base_price"):
         return {}
 
     brand = product.get("brand")
@@ -478,8 +555,13 @@ def _build_product_row(category_index: CategoryIndex, product_url: str, product:
         "barcode": None,
         "created_at": _now(),
         "updated_at": _now(),
-        "offer_price": price,
         "product_url": product_url,
+        # Offer data
+        "base_price": price_data["base_price"],
+        "promo_price": price_data["promo_price"],
+        "unit_price": price_data["unit_price"],
+        "offer_details": price_data["offer_details"],
+        "min_quantity": price_data["min_quantity"],
     }
 
 
@@ -506,9 +588,15 @@ def _ensure_store(cursor) -> None:
     )
 
 
-def _insert_products(cursor, rows: List[Dict[str, Any]]) -> None:
+def _insert_products(cursor, rows: List[Dict[str, Any]], update_mode: str = 'full') -> None:
+    """Insert or update products.
+    
+    Args:
+        update_mode: 'full' = update all fields, 'minimal' = only update updated_at
+    """
     if not rows:
         return
+    
     records = [
         (
             row["fingerprint"],
@@ -525,12 +613,36 @@ def _insert_products(cursor, rows: List[Dict[str, Any]]) -> None:
         )
         for row in rows
     ]
-    execute_values(
-        cursor,
-        "INSERT INTO products (fingerprint, name_de, brand, category_id, store_id, unit_normalized, size_normalized, default_image_url, barcode, created_at, updated_at) VALUES %s ON CONFLICT (fingerprint) DO UPDATE SET name_de = EXCLUDED.name_de, brand = EXCLUDED.brand, category_id = EXCLUDED.category_id, store_id = EXCLUDED.store_id, unit_normalized = EXCLUDED.unit_normalized, size_normalized = EXCLUDED.size_normalized, default_image_url = EXCLUDED.default_image_url, barcode = EXCLUDED.barcode, updated_at = EXCLUDED.updated_at",
-        records,
-        page_size=1000,
-    )
+    
+    if update_mode == 'minimal':
+        # Only update timestamp for existing products (price-only updates)
+        execute_values(
+            cursor,
+            """INSERT INTO products (fingerprint, name_de, brand, category_id, store_id, unit_normalized, size_normalized, default_image_url, barcode, created_at, updated_at) 
+            VALUES %s 
+            ON CONFLICT (fingerprint) DO UPDATE SET updated_at = EXCLUDED.updated_at""",
+            records,
+            page_size=1000,
+        )
+    else:
+        # Full update for new products or changed products
+        execute_values(
+            cursor,
+            """INSERT INTO products (fingerprint, name_de, brand, category_id, store_id, unit_normalized, size_normalized, default_image_url, barcode, created_at, updated_at) 
+            VALUES %s 
+            ON CONFLICT (fingerprint) DO UPDATE SET 
+                name_de = EXCLUDED.name_de, 
+                brand = EXCLUDED.brand, 
+                category_id = EXCLUDED.category_id, 
+                store_id = EXCLUDED.store_id, 
+                unit_normalized = EXCLUDED.unit_normalized, 
+                size_normalized = EXCLUDED.size_normalized, 
+                default_image_url = EXCLUDED.default_image_url, 
+                barcode = EXCLUDED.barcode, 
+                updated_at = EXCLUDED.updated_at""",
+            records,
+            page_size=1000,
+        )
 
 
 def _insert_offers(cursor, rows: List[Dict[str, Any]]) -> None:
@@ -546,11 +658,21 @@ def _insert_offers(cursor, rows: List[Dict[str, Any]]) -> None:
         product_id = fp_to_id.get(row["fingerprint"])
         if not product_id:
             continue
+        
+        # Use base_price for legacy price field, but store both base and promo
+        base_price = row.get("base_price")
+        promo_price = row.get("promo_price")
+        
         offer_rows.append(
             (
                 product_id,
                 STORE_ID,
-                row["offer_price"],
+                base_price,  # Legacy price field
+                base_price,  # base_price
+                promo_price,  # promo_price
+                row.get("unit_price"),
+                row.get("offer_details"),
+                row.get("min_quantity"),
                 row["product_url"],
                 True,
                 ts,
@@ -564,7 +686,19 @@ def _insert_offers(cursor, rows: List[Dict[str, Any]]) -> None:
 
     execute_values(
         cursor,
-        "INSERT INTO offers (product_id, store_id, price, product_url, is_available, last_seen, created_at, updated_at) VALUES %s ON CONFLICT (product_id, store_id) DO UPDATE SET price=EXCLUDED.price, product_url=EXCLUDED.product_url, is_available=EXCLUDED.is_available, last_seen=EXCLUDED.last_seen, updated_at=EXCLUDED.updated_at",
+        """INSERT INTO offers (product_id, store_id, price, base_price, promo_price, unit_price, offer_details, min_quantity, product_url, is_available, last_seen, created_at, updated_at) 
+        VALUES %s 
+        ON CONFLICT (product_id, store_id) DO UPDATE SET 
+            price=EXCLUDED.price, 
+            base_price=EXCLUDED.base_price, 
+            promo_price=EXCLUDED.promo_price, 
+            unit_price=EXCLUDED.unit_price, 
+            offer_details=EXCLUDED.offer_details, 
+            min_quantity=EXCLUDED.min_quantity, 
+            product_url=EXCLUDED.product_url, 
+            is_available=EXCLUDED.is_available, 
+            last_seen=EXCLUDED.last_seen, 
+            updated_at=EXCLUDED.updated_at""",
         offer_rows,
         page_size=1000,
     )
@@ -574,12 +708,15 @@ def _insert_price_history(cursor, rows: List[Dict[str, Any]]) -> None:
     if not rows:
         return
     fingerprints = [row["fingerprint"] for row in rows]
-    cursor.execute("SELECT p.id, o.id, o.price FROM products p JOIN offers o ON p.id = o.product_id WHERE p.fingerprint = ANY(%s)", (fingerprints,))
+    cursor.execute(
+        "SELECT p.id, o.id, o.base_price, o.promo_price FROM products p JOIN offers o ON p.id = o.product_id WHERE p.fingerprint = ANY(%s)",
+        (fingerprints,)
+    )
     data = cursor.fetchall()
     if not data:
         return
 
-    offer_ids = [offer_id for _product_id, offer_id, _price in data]
+    offer_ids = [offer_id for _product_id, offer_id, _base, _promo in data]
     cursor.execute(
         "SELECT offer_id FROM price_history WHERE offer_id = ANY(%s) AND source = %s",
         (offer_ids, STORE_ID),
@@ -588,16 +725,20 @@ def _insert_price_history(cursor, rows: List[Dict[str, Any]]) -> None:
 
     ts = _now()
     history_rows = []
-    for _product_id, offer_id, price in data:
+    for _product_id, offer_id, base_price, promo_price in data:
         if offer_id in existing_offer_ids:
             continue
-        history_rows.append((offer_id, None, float(price) if price is not None else None, ts, STORE_ID))
-    execute_values(
-        cursor,
-        "INSERT INTO price_history (offer_id, old_price, new_price, changed_at, source) VALUES %s",
-        history_rows,
-        page_size=1000,
-    )
+        # Record the effective price (promo if available, otherwise base)
+        effective_price = promo_price if promo_price else base_price
+        history_rows.append((offer_id, None, float(effective_price) if effective_price is not None else None, ts, STORE_ID))
+    
+    if history_rows:
+        execute_values(
+            cursor,
+            "INSERT INTO price_history (offer_id, old_price, new_price, changed_at, source) VALUES %s",
+            history_rows,
+            page_size=1000,
+        )
 
 
 def _row_persisted(database_uri: str, fingerprint: str) -> bool:
@@ -618,7 +759,12 @@ def _row_persisted(database_uri: str, fingerprint: str) -> bool:
         check_conn.close()
 
 
-def _persist_rows(conn, rows: List[Dict[str, Any]], database_uri: str) -> psycopg2.extensions.connection:
+def _persist_rows(conn, rows: List[Dict[str, Any]], database_uri: str, update_mode: str = 'full') -> psycopg2.extensions.connection:
+    """Persist product and offer data.
+    
+    Args:
+        update_mode: 'full' = new product, 'minimal' = price/offer update only
+    """
     if not rows:
         return conn
 
@@ -626,9 +772,11 @@ def _persist_rows(conn, rows: List[Dict[str, Any]], database_uri: str) -> psycop
     for attempt in range(1, 4):
         try:
             with conn.cursor() as cursor:
-                _insert_products(cursor, rows)
+                _insert_products(cursor, rows, update_mode=update_mode)
                 _insert_offers(cursor, rows)
-                _insert_price_history(cursor, rows)
+                # Only insert price history for actual price changes
+                if update_mode == 'full' or any(row.get('price_changed') for row in rows):
+                    _insert_price_history(cursor, rows)
                 conn.commit()
             return conn
         except psycopg2.Error:
@@ -658,9 +806,36 @@ def _persist_rows(conn, rows: List[Dict[str, Any]], database_uri: str) -> psycop
     return conn
 
 
-def _load_existing_fingerprints(cursor) -> set[str]:
-    cursor.execute("SELECT fingerprint FROM products WHERE store_id = %s", (STORE_ID,))
-    return {row[0] for row in cursor.fetchall()}
+def _load_existing_products(cursor) -> Dict[str, Dict[str, Any]]:
+    """Load existing products with their current offer data for comparison."""
+    cursor.execute("""
+        SELECT 
+            p.fingerprint,
+            p.id,
+            p.name_de,
+            o.base_price,
+            o.promo_price,
+            o.unit_price,
+            o.offer_details,
+            o.min_quantity
+        FROM products p
+        LEFT JOIN offers o ON p.id = o.product_id AND o.store_id = %s
+        WHERE p.store_id = %s
+    """, (STORE_ID, STORE_ID))
+    
+    result = {}
+    for row in cursor.fetchall():
+        fingerprint, prod_id, name, base_price, promo_price, unit_price, offer_details, min_qty = row
+        result[fingerprint] = {
+            'id': prod_id,
+            'name': name,
+            'base_price': float(base_price) if base_price else None,
+            'promo_price': float(promo_price) if promo_price else None,
+            'unit_price': unit_price,
+            'offer_details': offer_details,
+            'min_quantity': min_qty,
+        }
+    return result
 
 
 def scrape_billa_to_postgres(
@@ -687,14 +862,13 @@ def scrape_billa_to_postgres(
                 _clear_product_graph(cursor)
             category_rows = _get_category_rows(cursor)
             category_index = CategoryIndex(category_rows)
-            existing_fingerprints = _load_existing_fingerprints(cursor) if resume else set()
+            existing_products = _load_existing_products(cursor) if resume else {}
             conn.commit()
 
-        if resume and existing_fingerprints:
-            product_urls = [
-                url for url in product_urls if _fingerprint_from_url(url) not in existing_fingerprints
-            ]
-            print(f"[BILLA] Resume mode: {len(product_urls):,} product URLs still pending")
+        # In resume mode, we still need to check ALL products for price/offer updates
+        # But we'll handle them differently based on whether they exist
+        if resume and existing_products:
+            print(f"[BILLA] Resume mode: {len(existing_products):,} existing products will be checked for updates")
 
         if shard_count > 1:
             if shard_index < 0 or shard_index >= shard_count:
@@ -709,9 +883,12 @@ def scrape_billa_to_postgres(
         total = len(product_urls)
         processed = 0
         inserted = 0
+        updated = 0
+        skipped = 0
+        failed = 0
 
         print(f"[BILLA] Fetching product pages with {workers} workers in batches of {chunk_size}...")
-        for batch in _chunked(product_urls, chunk_size):
+        for batch_idx, batch in enumerate(_chunked(product_urls, chunk_size)):
             batch_rows: List[Dict[str, Any]] = []
             seen = set()
 
@@ -723,38 +900,95 @@ def scrape_billa_to_postgres(
                     try:
                         product = future.result()
                     except Exception as exc:
-                        print(f"[BILLA] {processed}/{total} failed for {url}: {exc}")
+                        print(f"[BILLA] {processed}/{total} exception for {url}: {exc}")
+                        failed += 1
                         continue
 
                     if not product:
+                        skipped += 1
+                        if processed % 500 == 0:
+                            print(f"[BILLA] Progress: {processed}/{total} | New: {inserted} | Updated: {updated} | Skipped: {skipped} | Failed: {failed}")
                         continue
 
                     row = _build_product_row(category_index, url, product)
                     if not row:
+                        skipped += 1
                         continue
+                    
                     fingerprint = row["fingerprint"]
-                    if fingerprint in existing_fingerprints or fingerprint in seen:
+                    if fingerprint in seen:
+                        skipped += 1
                         continue
                     seen.add(fingerprint)
-                    batch_rows.append(row)
+                    
+                    # Check if product exists and needs update
+                    existing = existing_products.get(fingerprint)
+                    
+                    if existing:
+                        # Product exists - check if we need to update
+                        needs_update = False
+                        price_changed = False
+                        
+                        # Check if price changed
+                        new_base = row.get("base_price")
+                        new_promo = row.get("promo_price")
+                        old_base = existing.get("base_price")
+                        old_promo = existing.get("promo_price")
+                        
+                        if new_base != old_base or new_promo != old_promo:
+                            needs_update = True
+                            price_changed = True
+                        
+                        # Check if offer details changed (promotions, unit price, etc.)
+                        if (row.get("offer_details") != existing.get("offer_details") or
+                            row.get("unit_price") != existing.get("unit_price") or
+                            row.get("min_quantity") != existing.get("min_quantity")):
+                            needs_update = True
+                        
+                        if needs_update:
+                            # Update only offer data, not full product
+                            row['price_changed'] = price_changed
+                            conn = _persist_rows(conn, [row], database_uri, update_mode='minimal')
+                            updated += 1
+                            if processed % 500 == 0:
+                                print(f"[BILLA] Progress: {processed}/{total} | New: {inserted} | Updated: {updated} | Skipped: {skipped} | Failed: {failed}")
+                        else:
+                            # No changes needed
+                            skipped += 1
+                    else:
+                        # New product - full insert
+                        batch_rows.append(row)
+                        conn = _persist_rows(conn, [row], database_uri, update_mode='full')
+                        inserted += 1
+                        existing_products[fingerprint] = {
+                            'base_price': row.get("base_price"),
+                            'promo_price': row.get("promo_price"),
+                            'unit_price': row.get("unit_price"),
+                            'offer_details': row.get("offer_details"),
+                            'min_quantity': row.get("min_quantity"),
+                        }
+                        batch_rows.clear()
 
-                    conn = _persist_rows(conn, [row], database_uri)
-                    inserted += 1
-                    existing_fingerprints.add(fingerprint)
-                    batch_rows.clear()
-
-                    if processed % 200 == 0:
-                        print(f"[BILLA] Processed {processed}/{total}, committed {inserted} products")
+                        if processed % 500 == 0:
+                            print(f"[BILLA] Progress: {processed}/{total} | New: {inserted} | Updated: {updated} | Skipped: {skipped} | Failed: {failed}")
 
             if batch_rows:
-                conn = _persist_rows(conn, batch_rows, database_uri)
+                conn = _persist_rows(conn, batch_rows, database_uri, update_mode='full')
                 inserted += len(batch_rows)
-                existing_fingerprints.update(row["fingerprint"] for row in batch_rows)
+                for row in batch_rows:
+                    existing_products[row["fingerprint"]] = {
+                        'base_price': row.get("base_price"),
+                        'promo_price': row.get("promo_price"),
+                        'unit_price': row.get("unit_price"),
+                        'offer_details': row.get("offer_details"),
+                        'min_quantity': row.get("min_quantity"),
+                    }
                 batch_rows.clear()
 
-            print(f"[BILLA] Committed {inserted:,}/{total:,} products")
+            print(f"[BILLA] Batch {batch_idx + 1} complete: New={inserted:,} | Updated={updated:,} | Skipped={skipped:,} | Failed={failed}")
 
-        print(f"[BILLA] Done. Imported {inserted:,} products into PostgreSQL.")
+        print(f"[BILLA] Done. New products: {inserted:,} | Updated: {updated:,}")
+        print(f"[BILLA] Summary: Processed={processed}, New={inserted}, Updated={updated}, Skipped={skipped}, Failed={failed}")
     except Exception:
         if conn.closed == 0:
             conn.rollback()

@@ -1,10 +1,10 @@
 """
-PRODUCTS MODEL — PostgreSQL / SQLAlchemy (matches Neon schema)
+PRODUCTS MODEL — PostgreSQL / SQLAlchemy (updated for normalized schema)
 """
 from __future__ import annotations
 from typing import List, Optional, Dict, Any
 from sqlalchemy import or_, func, desc, asc
-from models.postgres_models import db, Product, Offer, Store, Category, PriceHistory
+from models.postgres_models import db, Product, ProductStore, Store, Category, PriceHistory
 
 
 class ProductsModel:
@@ -21,6 +21,7 @@ class ProductsModel:
                         if isinstance(cond, dict) and '$regex' in cond:
                             pat = f"%{cond['$regex']}%"
                             if field in ('name', 'title'):
+                                sa_ors.append(Product.name.ilike(pat))
                                 sa_ors.append(Product.name_de.ilike(pat))
                             elif field == 'brand':
                                 sa_ors.append(Product.brand.ilike(pat))
@@ -37,7 +38,7 @@ class ProductsModel:
                 if col == 'price':
                     q = q.order_by(asc(Product.id) if direction == 1 else desc(Product.id))
                 elif col == 'name':
-                    q = q.order_by(asc(Product.name_de) if direction == 1 else desc(Product.name_de))
+                    q = q.order_by(asc(Product.name) if direction == 1 else desc(Product.name))
         else:
             q = q.order_by(desc(Product.updated_at))
         rows = q.offset(skip).limit(limit).all()
@@ -55,6 +56,7 @@ class ProductsModel:
                         if isinstance(cond, dict) and '$regex' in cond:
                             pat = f"%{cond['$regex']}%"
                             if field in ('name', 'title'):
+                                sa_ors.append(Product.name.ilike(pat))
                                 sa_ors.append(Product.name_de.ilike(pat))
                             elif field == 'brand':
                                 sa_ors.append(Product.brand.ilike(pat))
@@ -70,7 +72,9 @@ class ProductsModel:
         if not name:
             return []
         pat = f"%{name.strip()}%"
-        rows = Product.query.filter(Product.name_de.ilike(pat)).order_by(Product.name_de).limit(limit).all()
+        rows = Product.query.filter(
+            or_(Product.name.ilike(pat), Product.name_de.ilike(pat))
+        ).order_by(Product.name).limit(limit).all()
         return [self._hydrate_product(p) for p in rows]
 
     def get_product_by_id(self, product_id):
@@ -85,7 +89,12 @@ class ProductsModel:
     def get_product_by_name(self, name):
         if not name:
             return None
-        row = Product.query.filter(func.lower(Product.name_de) == name.lower().strip()).first()
+        row = Product.query.filter(
+            or_(
+                func.lower(Product.name) == name.lower().strip(),
+                func.lower(Product.name_de) == name.lower().strip()
+            )
+        ).first()
         return self._hydrate_product(row) if row else None
 
     def get_price_history(self, product_id, limit=8):
@@ -95,83 +104,102 @@ class ProductsModel:
             pid = int(product_id)
         except (ValueError, TypeError):
             return []
-        offers = Offer.query.filter_by(product_id=pid).all()
-        if not offers:
-            return []
-        offer_ids = [o.id for o in offers]
+        
+        # Get price history for this product across all stores
         history = PriceHistory.query.filter(
-            PriceHistory.offer_id.in_(offer_ids)
+            PriceHistory.product_id == pid
         ).order_by(desc(PriceHistory.changed_at)).limit(limit).all()
-        store_map = {o.id: o.store_id for o in offers}
+        
+        # Get store names
+        store_ids = list(set(h.store_id for h in history if h.store_id))
         store_names = {}
-        store_ids = list(set(store_map.values()))
         if store_ids:
             stores = Store.query.filter(Store.store_id.in_(store_ids)).all()
             store_names = {s.store_id: s.name for s in stores}
+        
         return [
-            {'store': store_names.get(store_map.get(h.offer_id, ''), ''),
-             'old_price': float(h.old_price) if h.old_price else None,
-             'new_price': float(h.new_price) if h.new_price else None,
-             'price': float(h.new_price) if h.new_price else None,
-             'timestamp': h.changed_at.isoformat() if h.changed_at else None,
-             'date': h.changed_at.strftime('%Y-%m-%d') if h.changed_at else None}
+            {
+                'store': store_names.get(h.store_id, h.store_id),
+                'old_price': float(h.old_price) if h.old_price else None,
+                'new_price': float(h.new_price) if h.new_price else None,
+                'price': float(h.new_price) if h.new_price else None,
+                'timestamp': h.changed_at.isoformat() if h.changed_at else None,
+                'date': h.changed_at.strftime('%Y-%m-%d') if h.changed_at else None
+            }
             for h in history
         ]
 
     def _hydrate_products_bulk(self, rows: list) -> list:
         if not rows:
             return []
+        
         product_ids = [r.id for r in rows]
         product_map = {r.id: r for r in rows}
-        offers = Offer.query.filter(
-            Offer.product_id.in_(product_ids),
-            Offer.is_available == True
+        
+        # Get product-store pricing data
+        product_stores = ProductStore.query.filter(
+            ProductStore.product_id.in_(product_ids),
+            ProductStore.is_available == True
         ).all()
-        offer_store_ids = list(set(o.store_id for o in offers if o.store_id))
-        product_store_ids = list(set(r.store_id for r in rows if r.store_id))
-        all_store_ids = list(set(offer_store_ids + product_store_ids))
+        
+        # Get store names
+        store_ids = list(set(ps.store_id for ps in product_stores))
         store_name_map = {}
-        if all_store_ids:
-            stores = Store.query.filter(Store.store_id.in_(all_store_ids)).all()
+        if store_ids:
+            stores = Store.query.filter(Store.store_id.in_(store_ids)).all()
             store_name_map = {s.store_id: s.name for s in stores}
+        
+        # Get categories
         cat_ids = list(set(r.category_id for r in rows if r.category_id))
         cat_map = {}
         if cat_ids:
             cats = Category.query.filter(Category.id.in_(cat_ids)).all()
             cat_map = {c.id: c for c in cats}
-        product_offers = {}
-        for o in offers:
-            product_offers.setdefault(o.product_id, []).append(o)
+        
+        # Group product_stores by product_id
+        product_pricing = {}
+        for ps in product_stores:
+            product_pricing.setdefault(ps.product_id, []).append(ps)
+        
         results = []
         for row in rows:
             doc = row.to_dict()
-            row_offers = product_offers.get(row.id, [])
+            row_pricing = product_pricing.get(row.id, [])
+            
             stores_list = []
             cheapest_price = None
             cheapest_store = None
-            for o in row_offers:
-                price = o.effective_price()
-                store_name = store_name_map.get(o.store_id, o.store_id)
-                stores_list.append({'store': store_name, 'name': store_name, 'price': price,
-                                    'url': o.product_url, 'image': row.default_image_url,
-                                    'storeProductId': str(o.id)})
+            
+            for ps in row_pricing:
+                price = float(ps.base_price) if ps.base_price else None
+                store_name = store_name_map.get(ps.store_id, ps.store_id)
+                
+                stores_list.append({
+                    'store': store_name,
+                    'name': store_name,
+                    'price': price,
+                    'url': ps.product_url,
+                    'image': row.default_image_url,
+                    'storeProductId': f'{ps.product_id}_{ps.store_id}'
+                })
+                
                 if price is not None and (cheapest_price is None or price < cheapest_price):
                     cheapest_price = price
                     cheapest_store = store_name
-            if not stores_list and row.store_id:
-                store_name = store_name_map.get(row.store_id, row.store_id)
-                stores_list.append({'store': store_name, 'name': store_name, 'price': None,
-                                    'url': None, 'image': row.default_image_url, 'storeProductId': None})
-                cheapest_store = store_name
+            
             doc['stores'] = stores_list
             doc['price'] = cheapest_price
             doc['store'] = cheapest_store
+            
             if cheapest_price is not None and cheapest_store:
                 doc['cheapest'] = {'price': cheapest_price, 'store': cheapest_store}
+            
             if row.category_id and row.category_id in cat_map:
                 cat = cat_map[row.category_id]
                 doc['category'] = cat.name_en or cat.name_de
+            
             results.append(doc)
+        
         return results
 
     def _hydrate_product(self, row: Product) -> dict:

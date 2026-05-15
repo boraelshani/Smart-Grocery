@@ -1,35 +1,31 @@
 """
-FEATURED DEALS MODEL — PostgreSQL / SQLAlchemy (matches Neon schema)
+FEATURED DEALS MODEL — Compatibility wrapper for new normalized schema
+Uses the deals_compat layer to provide the same interface as before
 """
-from models.postgres_models import db, FeaturedDeal
-from sqlalchemy import desc
+from models.deals_compat import list_active_promotions, get_promotion_by_id
 
 
 class FeaturedDealsModel:
 
     def list_featured_deals(self, limit=200):
-        rows = FeaturedDeal.query.filter(
-            FeaturedDeal.active == True
-        ).order_by(desc(FeaturedDeal.id)).limit(limit).all()
-        return [r.to_dict() for r in rows]
+        """Get all active promotional deals"""
+        deals = list_active_promotions()
+        return deals[:limit] if limit else deals
 
     def get_deals_count(self):
-        return FeaturedDeal.query.filter_by(active=True).count()
+        """Count active promotional deals"""
+        return len(list_active_promotions())
 
     def get_deal_by_id(self, deal_id):
-        if not deal_id:
-            return None
-        try:
-            row = db.session.get(FeaturedDeal, int(deal_id))
-            return row.to_dict() if row else None
-        except (ValueError, TypeError):
-            return None
+        """Get a single deal by ID"""
+        return get_promotion_by_id(deal_id)
 
     def get_latest_deals(self, limit=10):
-        rows = FeaturedDeal.query.filter_by(
-            active=True
-        ).order_by(desc(FeaturedDeal.id)).limit(limit).all()
-        return [r.to_dict() for r in rows]
+        """Get latest promotional deals"""
+        deals = list_active_promotions()
+        # Sort by discount percentage (highest first)
+        deals.sort(key=lambda d: d.get('discount_percent', 0), reverse=True)
+        return deals[:limit] if limit else deals
 
 
 featured_deals_model = FeaturedDealsModel()
