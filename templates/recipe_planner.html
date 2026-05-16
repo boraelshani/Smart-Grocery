@@ -130,10 +130,13 @@ body { margin: 0; padding: 0; overscroll-behavior-y: none; }
   position: relative;
   overflow: hidden;
   min-height: 420px;
+  max-height: 520px;
 }
 .rp-food-img {
-  width: 100%; height: 100%;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
+  object-position: center 35%;
   display: block;
 }
 /* Horizontal feature pills under tabs */
@@ -664,7 +667,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                         <span><i class="bi bi-basket me-1"></i>${mealIng} Ing.</span>
                                       </div>
                                       <p class="text-primary small mt-2 fw-bold m-0 d-flex align-items-center justify-content-between">
-                                        <span class="text-success fw-bold">${mealObj.price_estimation||''}</span>
+                                        <span class="text-muted fw-normal" style="font-size:0.78rem;">Real store prices inside</span>
                                         Get Recipe <i class="bi bi-arrow-right"></i>
                                       </p>
                                     </div>
