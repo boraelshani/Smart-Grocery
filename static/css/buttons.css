@@ -141,9 +141,9 @@ GOAL: Standardized button styles, gradients, and hover effects.
 }
 
 /* Favorites Heart */
-.btn.rounded-circle:hover { transform: scale(1.1); box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3) !important; }
-.btn.rounded-circle i.bi-heart-fill { color: #dc2626 !important; }
-.btn-favorite.active i { color: #ff4757 !important; }
+.btn.rounded-circle:hover { transform: scale(1.1); box-shadow: 0 4px 12px rgba(124, 58, 237, 0.2) !important; }
+.btn.rounded-circle i.bi-heart-fill { color: #db2777 !important; }
+.btn-favorite.active i { color: #db2777 !important; }
 
 
 /* Refined Report Button Style */
@@ -196,14 +196,15 @@ GOAL: Standardized button styles, gradients, and hover effects.
 }
 
 .btn-favorite:hover {
-    background-color: #f1f5f9 !important; /* just a little gray */
-    border-color: #cbd5e1;
+    background-color: #f5f3ff !important;
+    border-color: #c4b5fd !important;
+    color: #7c3aed;
 }
 
-.btn-favorite:active, 
+.btn-favorite:active,
 .btn-favorite.active {
-    background-color: #ffffff !important; /* container is white */
-    border-color: #fee2e2;
+    background-color: #fce7f3 !important;
+    border-color: #fbcfe8 !important;
 }
 
 .btn-favorite i {
@@ -212,5 +213,5 @@ GOAL: Standardized button styles, gradients, and hover effects.
 
 .btn-favorite:active i,
 .btn-favorite.active i {
-    color: #ef4444 !important; /* heart red */
+    color: #db2777 !important;
 }

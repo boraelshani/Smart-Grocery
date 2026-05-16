@@ -1110,12 +1110,25 @@
         transform 0.2s ease;
 }
 
-.btn-favorite:hover,
+.btn-favorite:hover {
+    background: #f5f3ff;
+    color: #7c3aed;
+    border-color: #c4b5fd;
+    transform: scale(1.1);
+}
+
 .btn-favorite.active {
-    background: #fff1f2;
-    color: #f43f5e;
-    border-color: #fecdd3;
-    transform: scale(1.12);
+    background: #fce7f3;
+    color: #db2777;
+    border-color: #fbcfe8;
+    transform: scale(1);
+}
+
+.btn-favorite.active:hover {
+    background: #fce7f3;
+    color: #db2777;
+    border-color: #f9a8d4;
+    transform: scale(1.1);
 }
 
 /* Save badge */

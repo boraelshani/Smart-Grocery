@@ -11,14 +11,14 @@
      * Specialized Hero for Product Detail with rounded bottom pattern.
      */
     .product-detail-hero {
-      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #8b5cf6 100%); /* Premium purple gradient background */
-      color: white; /* Contrast text color for dark gradient backgrounds */
-      padding: 9rem 0 4rem; /* Top padding accommodates the fixed absolute navigation bar */
-      border-bottom-left-radius: 50px; /* Large unique rounded corner for a soft UI feel */
-      border-bottom-right-radius: 50px; /* Symmetrical rounded corner at the bottom right */
-      position: relative; /* Established as reference for absolutely positioned decorators */
-      overflow: hidden; /* Clips any decorative shapes that exceed the hero container boundaries */
-      margin-bottom: 2rem; /* Buffer space before the product specifications begin */
+      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #8b5cf6 100%);
+      color: white;
+      padding: 9rem 0 4rem;
+      border-bottom-left-radius: 0;
+      border-bottom-right-radius: 0;
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 2rem;
     }
 
     /* Background pattern dots overlay */
@@ -38,13 +38,13 @@
      * Semi-transparent button that blurs the background behind it.
      */
     .btn-glass-back {
-      background: rgba(255, 255, 255, 0.15); /* Translucent white foundation */
-      backdrop-filter: blur(10px); /* The Blur Effect making it feel like frosted glass */
-      border: 1px solid rgba(255, 255, 255, 0.3); /* Subtle border for definition against dark colors */
-      color: white; /* Clear text label */
-      font-weight: 600; /* Semi-bold text for readability on glass */
-      padding: 0.6rem 1.2rem; /* Comfortable touch area for the button */
-      border-radius: 16px; /* Smooth corners matching the modern design language */
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: white;
+      font-weight: 600;
+      padding: 0.6rem 1.2rem;
+      border-radius: 0;
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* High-performance smooth animation curve */
       display: inline-flex; /* Align icon and text horizontally */
       align-items: center; /* Center icon and text vertically */
@@ -154,40 +154,41 @@
 
     /* Category Badge */
     .category-badge {
-      display: inline-block; /* Allows vertical padding and margin while staying inline */
-      background: rgba(255, 255, 255, 0.15); /* Translucent pill background */
-      color: white; /* Label color */
-      padding: 6px 12px; /* Internal spacing for pill shape */
-      border-radius: 999px; /* Maximum rounding for a pill/capsule appearance */
-      font-weight: 700; /* Bold label for prominence */
-      border: 1px solid rgba(255, 255, 255, 0.25); /* Subtle border for glass defining edges */
+      display: inline-block;
+      background: rgba(255, 255, 255, 0.15);
+      color: white;
+      padding: 6px 12px;
+      border-radius: 0;
+      font-weight: 700;
+      border: 1px solid rgba(255, 255, 255, 0.25);
     }
 
     /* Glass Card for Image */
     .glass-card {
-      background: rgba(255, 255, 255, 0.08); /* Transparent layer foundation */
-      border: 1px solid rgba(255, 255, 255, 0.25); /* Border to catch light reflections */
-      border-radius: 18px; /* Rounding for contemporary feel */
-      box-shadow: 0 14px 36px rgba(0, 0, 0, 0.18); /* Deep shadow for floating effect */
-      backdrop-filter: blur(6px); /* Level of background blur */
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 0;
+      box-shadow: 0 14px 36px rgba(0, 0, 0, 0.18);
+      backdrop-filter: blur(6px);
     }
 
     /* Image Container */
     .image-card {
-      background: #ffffff; /* Contrast white background to make product images pop */
-      border-radius: 18px; /* Matching corner radius with the outer card */
-      padding: 1.25rem; /* Gutter between image and card edges */
-      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12); /* Secondary shadow for component isolation */
-      position: relative; /* Reference for the overlaid favorite button */
+      background: #ffffff;
+      border-radius: 0;
+      padding: 1.25rem;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      position: relative;
+      border: 1px solid #e9ecef;
     }
 
     .product-image-large {
-      width: 100%; /* Spans full width of the white card and stays responsive */
-      height: 420px; /* Fixed height for visual consistency across products */
-      object-fit: contain; /* Ensures the product photo fits without cropping or distortion */
-      background: #fff; /* White background within the image area */
-      border-radius: 16px; /* Slightly tighter rounding than the card for nesting */
-      padding: 18px; /* Prevents the image from touching card edges */
+      width: 100%;
+      height: 420px;
+      object-fit: contain;
+      background: #fff;
+      border-radius: 0;
+      padding: 18px;
     }
 
     /* Favorite Button */
@@ -217,20 +218,21 @@
     }
 
     .favorite-btn.active {
-      background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); /* Filled heart background state */
-      color: white; /* Heart icon becomes white when active */
+      background: #fce7f3;
+      color: #db2777;
+      border: 2px solid #fbcfe8;
     }
 
     /* Price Display */
     .price-display-card {
-      background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); /* High-impact price banner gradient */
-      border-radius: 18px; /* Rounded card layout */
-      padding: 1.75rem; /* Generous internal padding */
-      color: white; /* Bright text for dark background contrast */
-      margin-bottom: 1.5rem; /* Gap between price and store info */
-      box-shadow: 0 12px 35px rgba(124, 58, 237, 0.25); /* Lifted appearance using theme shadow colors */
-      position: relative; /* Reference for price pill decorators */
-      overflow: hidden; /* Clips glowing orb pseudo-elements */
+      background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+      border-radius: 0;
+      padding: 1.75rem;
+      color: white;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 8px 24px rgba(124, 58, 237, 0.25);
+      position: relative;
+      overflow: hidden;
     }
 
     .price-display-card::before {
@@ -268,11 +270,12 @@
 
     /* Info Card */
     .info-card {
-      background: white; /* Standard card background for data clarity */
-      border-radius: 18px; /* Uniform rounded module style */
-      padding: 1.75rem; /* Standard inner gutter */
-      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08); /* Lower elevation shadow for sub-cards */
-      margin-bottom: 1.25rem; /* Vertical spacing between cards */
+      background: white;
+      border-radius: 0;
+      padding: 1.75rem;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      margin-bottom: 1.25rem;
+      border: 1px solid #e9ecef;
     }
 
     /* Section Titles */
@@ -292,11 +295,11 @@
 
     /* Meta Badges */
     .meta-chips .badge {
-      font-weight: 700; /* Bold text for high-importance metadata tags */
-      padding: 0.5rem 1rem; /* Comfortable padding for the tag shape */
-      border-radius: 12px; /* Smooth rounded corners for tags */
-      margin-right: 0.5rem; /* Horizontal spacing between multiple tags */
-      margin-bottom: 0.5rem; /* Vertical spacing if tags wrap to next line */
+      font-weight: 700;
+      padding: 0.5rem 1rem;
+      border-radius: 0;
+      margin-right: 0.5rem;
+      margin-bottom: 0.5rem;
     }
 
     /* Store Selection Grid */
@@ -315,14 +318,14 @@
 
     /* Store Cards */
     .store-card {
-      background: white; /* Clean background for retailer options */
-      border: 2px solid #e9ecef; /* Light gray border for non-selected cards */
-      border-radius: 14px; /* Standardized card corner radius */
-      padding: 1.25rem; /* Spacing within the interaction area */
-      cursor: pointer; /* Visual indicator that the whole card can be clicked */
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Advanced timing for smooth state changes */
-      position: relative; /* Reference for absolute components like checkmarks */
-      overflow: hidden; /* Clips animations inside the card boundaries */
+      background: white;
+      border: 2px solid #e9ecef;
+      border-radius: 0;
+      padding: 1.25rem;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
     }
 
     .store-card:hover {
@@ -350,15 +353,15 @@
     }
 
     .store-card .store-logo {
-      width: 60px; /* Uniform width for all store images */
-      height: 60px; /* Uniform height for all store images */
-      border-radius: 12px; /* Soft rounding for logo framing */
-      object-fit: contain; /* Prevents logos from being stretched/warped */
-      background: #f8f9fa; /* Light background for the logo image */
-      padding: 8px; /* Internal margin for the logo within its box */
-      margin: 0 auto 0.75rem; /* Centers the logo horizontally and adds bottom margin */
-      display: block; /* Forces block display for layout consistency */
-      border: 2px solid #e9ecef; /* Subtle border around the logo box */
+      width: 60px;
+      height: 60px;
+      border-radius: 0;
+      object-fit: contain;
+      background: #f8f9fa;
+      padding: 8px;
+      margin: 0 auto 0.75rem;
+      display: block;
+      border: 2px solid #e9ecef;
     }
 
     .store-card.selected .store-logo {
@@ -425,14 +428,14 @@
 
     /* Add to List Button */
     .add-to-list-btn {
-      width: 100%; /* Spans full width of the side column */
-      background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); /* Primary action gradient */
-      border: none; /* Clean edges */
-      color: white; /* Bright text for contrast */
-      padding: 1.1rem; /* Large touch/click target area */
-      border-radius: 14px; /* Standardized radius */
-      font-weight: 700; /* Bold label */
-      font-size: 1.05rem; /* Prominent label size */
+      width: 100%;
+      background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+      border: none;
+      color: white;
+      padding: 1.1rem;
+      border-radius: 0;
+      font-weight: 700;
+      font-size: 1.05rem;
       cursor: pointer; /* Interaction pointer */
       transition: all 0.3s; /* Smooth hover transition */
       box-shadow: 0 8px 25px rgba(124, 58, 237, 0.3); /* Elevated appearance */
@@ -452,9 +455,9 @@
     .price-history-card {
       background: linear-gradient(180deg, #ffffff 0%, #f8f7ff 100%);
       border: 1px solid #ece7ff;
-      border-radius: 18px;
+      border-radius: 0;
       padding: 1.5rem;
-      box-shadow: 0 8px 30px rgba(124, 58, 237, 0.08);
+      box-shadow: none;
     }
 
     .price-history-item {
@@ -555,7 +558,7 @@
 
             <!-- Add to List Button (inside Price Card) --> <!-- The primary CTA for adding this item to the user's shopping list -->
             <button id="add-to-list-btn" class="btn w-100 mt-3 d-flex align-items-center justify-content-center fw-bold"
-              style="background: rgba(255, 255, 255, 0.2); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.4); color: white; padding: 0.8rem; border-radius: 12px; transition: all 0.2s;"
+              style="background: rgba(255, 255, 255, 0.2); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.4); color: white; padding: 0.8rem; border-radius: 0; transition: all 0.2s;"
               onmouseover="this.style.background='rgba(255, 255, 255, 0.3)'; this.style.transform='translateY(-2px)'"
               onmouseout="this.style.background='rgba(255, 255, 255, 0.2)'; this.style.transform='translateY(0)'"
               data-name="{{ product.name }}" data-id="{{ product._id or product.id }}" data-price="{{ best_price_value or '' }}" data-store="{{ best_price_stores[0] if best_price_stores and best_price_stores|length > 0 else '' }}"
@@ -678,15 +681,15 @@
                   <div class="card-price mb-2">€{{ store.price }}</div> <!-- Retailer-specific product price -->
 
                   {% if store.get('has_deal') %}
-                  <div class="offer-badge mb-2 d-flex flex-column align-items-center justify-content-center" style="border: 2px dashed #ff4757; border-radius: 8px; padding: 4px; background: #fff5f5;">
+                  <div class="offer-badge mb-2 d-flex flex-column align-items-center justify-content-center" style="border: 2px dashed #60a5fa; border-radius: 0; padding: 4px; background: #eff6ff;">
                     <div class="d-flex align-items-center gap-2">
-                        <span class="badge bg-danger px-2 py-1"><i class="bi bi-fire"></i> {{ store.get('discount_label', 'Hot Deal!') }}</span>
+                        <span class="badge px-2 py-1" style="background: linear-gradient(135deg, #60a5fa 0%, #2563eb 100%); border-radius: 0;"><i class="bi bi-fire"></i> {{ store.get('discount_label', 'Hot Deal!') }}</span>
                         {% if store.get('original_price') %}
                         <span class="text-muted text-decoration-line-through fw-bold" style="font-size:0.8rem">€{{ "%.2f"|format(store.original_price|float) }}</span>
                         {% endif %}
                     </div>
                     {% if store.get('valid_until') %}
-                    <small class="text-danger fw-bold mt-1" style="font-size: 0.75rem;"><i class="bi bi-clock-history"></i> Ends: {{ store.valid_until }}</small>
+                    <small class="fw-bold mt-1" style="font-size: 0.75rem; color: #2563eb;"><i class="bi bi-clock-history"></i> Ends: {{ store.valid_until }}</small>
                     {% endif %}
                   </div>
                   {% endif %}
@@ -695,7 +698,7 @@
                   {% if store.get('url') %} <!-- Optional link to grocery website -->
                   <a href="{{ store.get('url') }}" target="_blank" rel="noopener noreferrer"
                     class="btn btn-sm btn-go-store w-100 py-2 d-flex align-items-center justify-content-center gap-2"
-                    style="background: #f0f0ff; border-radius: 8px; color: #7c3aed; border: 1px solid #dadaff; font-weight: 600; font-size: 0.85rem;">
+                    style="background: #f0f0ff; border-radius: 0; color: #7c3aed; border: 1px solid #dadaff; font-weight: 600; font-size: 0.85rem;">
                     <i class="bi bi-box-arrow-up-right"></i> Visit Store <!-- External redirect button -->
                   </a>
                   {% endif %}

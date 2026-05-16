@@ -192,52 +192,28 @@ class ProductStore(db.Model):
 class Offer(db.Model):
     __tablename__ = 'offers'
     __table_args__ = {'extend_existing': True}
-    
+
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.Text, nullable=False)
     description = db.Column(db.Text)
-    discount_type = db.Column(db.Text, nullable=False)  # percentage, fixed, bogo, bundle, tiered
+    discount_type = db.Column(db.Text, nullable=False)
     discount_value = db.Column(db.Numeric(10, 2), nullable=False)
     min_quantity = db.Column(db.Integer, default=1)
     max_quantity = db.Column(db.Integer)
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=_now)
-    
-    # Relationships
-    promotions = db.relationship('Promotion', backref='offer', lazy='dynamic')
+    updated_at = db.Column(db.DateTime, default=_now)
 
     def to_dict(self):
         return {
-            'offerId': str(self.id),
             'id': str(self.id),
             'name': self.name,
             'description': self.description,
             'discountType': self.discount_type,
             'discountValue': float(self.discount_value) if self.discount_value else None,
-            'minQuantity': self.min_quantity,
-            'maxQuantity': self.max_quantity,
             'isActive': self.is_active,
             'createdAt': self.created_at,
-            'updatedAt': self.updated_at
         }
-    
-    def apply_discount(self, base_price, quantity=1):
-        """Calculate discounted price"""
-        if quantity < self.min_quantity:
-            return base_price
-        
-        if self.max_quantity and quantity > self.max_quantity:
-            return base_price
-        
-        if self.discount_type == 'percentage':
-            return base_price * (1 - float(self.discount_value) / 100)
-        elif self.discount_type == 'fixed':
-            return max(0, base_price - float(self.discount_value))
-        elif self.discount_type == 'bogo':
-            # Buy one get one: half price for quantity
-            return base_price * (quantity // 2 + quantity % 2) / quantity
-        else:
-            return base_price
 
 # ══════════════════════════════════════════════════════════════════════════════
 # PROMOTIONS - Time-bound campaigns

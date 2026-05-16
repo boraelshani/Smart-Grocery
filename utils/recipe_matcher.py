@@ -2,7 +2,7 @@
 Recipe ingredient matcher - matches ingredients to PostgreSQL products.
 """
 import re
-from models.postgres_models import Product, Offer, Category
+from models.postgres_models import Product, ProductStore, Store, Category
 from models.postgres_models import db as sa_db
 from sqlalchemy import func, or_
 
@@ -68,19 +68,22 @@ def calculate_proportion_message(req_text, prod_unit, price):
 
 
 def _get_product_price(product):
-    """Get the lowest available offer price for a product."""
-    cheapest = Offer.query.filter_by(
+    """Get the lowest available price for a product across all stores."""
+    cheapest = ProductStore.query.filter_by(
         product_id=product.id, is_available=True
-    ).order_by(Offer.price.asc()).first()
-    return float(cheapest.price) if cheapest and cheapest.price else None
+    ).order_by(ProductStore.base_price.asc()).first()
+    return float(cheapest.base_price) if cheapest and cheapest.base_price else None
 
 
 def _get_product_cheapest_store(product):
-    """Get the store name for the cheapest offer."""
-    cheapest = Offer.query.filter_by(
+    """Get the store name for the cheapest product-store entry."""
+    cheapest = ProductStore.query.filter_by(
         product_id=product.id, is_available=True
-    ).order_by(Offer.price.asc()).first()
-    return cheapest.store_id if cheapest else None
+    ).order_by(ProductStore.base_price.asc()).first()
+    if not cheapest:
+        return None
+    store = Store.query.filter_by(store_id=cheapest.store_id).first()
+    return store.name if store else cheapest.store_id
 
 
 def match_ingredients_to_products(ingredients):

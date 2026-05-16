@@ -1,475 +1,522 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 
 {% block title %}Smart Grocery - Recipe Planner{% endblock %}
 
 {% block styles %}
 <style>
-/* Modern Filters Styling */
-.filters-container {
-  display: inline-flex;
-  flex-wrap: nowrap;
-  justify-content: center;
-  gap: 6px;
-  margin: 0 auto 1.5rem auto;
-  max-width: 100%;
-  overflow-x: auto;
-  padding-bottom: 8px;
-}
-.filters-container::-webkit-scrollbar {
-  height: 4px;
-}
-.filters-container::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.3);
-  border-radius: 10px;
-}
-.filter-pill {
-  padding: 4px 10px;
-  border-radius: 50px;
-  white-space: nowrap;
-  background: rgba(255, 255, 255, 0.98);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  box-shadow: 0 8px 30px -10px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+/* ─── RESET ──────────────────────────────────────────────────────── */
+body { margin: 0; padding: 0; overscroll-behavior-y: none; }
+
+/* ─── HERO ───────────────────────────────────────────────────────── */
+.rp-hero {
+  background: #fff;
+  padding-top: 68px;
   display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
+  align-items: stretch;
+  min-height: 480px;
 }
-.filter-pill:hover {
-  box-shadow: 0 12px 40px -10px rgba(0, 0, 0, 0.15);
-  transform: translateY(-2px);
-}
-.filter-pill-icon {
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
+.rp-left {
+  padding: 3rem 2.5rem 2.5rem 3rem;
   display: flex;
-  align-items: center;
+  flex-direction: column;
   justify-content: center;
-  font-size: 0.85rem;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.06);
 }
-.filter-pill select {
-  background: transparent !important;
-  border: none !important;
-  font-weight: 700 !important;
-  color: #1e293b !important;
-  padding: 0 10px 0 0 !important;
-  font-size: 0.8rem;
-  box-shadow: none !important;
-  outline: none !important;
-  cursor: pointer;
-  line-height: 1.2;
+.rp-icon-box {
+  width: 68px; height: 68px;
+  border-radius: 18px;
+  border: 2px solid #e5e7eb;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2rem;
+  margin-bottom: 1.25rem;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
-.filter-pill select:focus {
-  box-shadow: none !important;
-}
-.filter-label {
-  font-size: 0.6rem;
-  text-transform: uppercase;
-  letter-spacing: 1px;
+.rp-title {
+  font-size: 2.9rem;
   font-weight: 800;
-  color: #64748b;
-  margin-bottom: 2px;
-  line-height: 1;
-}
-@media (max-width: 576px) {
-  .filters-container {
-    flex-direction: column;
-    gap: 10px;
-  }
-}
-
-/* Page hero — flat, editorial, matching home page sections */
-.hero-section {
-  background: #65388f;
-  color: white;
-  padding: 2.8rem 0 3rem;
-  margin-top: 68px;
-  position: relative;
-  overflow: hidden;
-}
-
-body {
-  margin: 0;
-  padding: 0;
-  overscroll-behavior-y: none;
-  min-height: 100%;
-}
-
-.hero-content {
-  position: relative;
-  z-index: 2;
-}
-
-.hero-title {
-  font-family: 'Cabinet Grotesk', sans-serif;
-  font-size: 2.8rem;
-  font-weight: 800;
-  margin-bottom: 1rem;
+  color: #1a0a2e;
   letter-spacing: -0.03em;
-  color: #ffffff;
+  line-height: 1.1;
+  margin-bottom: 0.75rem;
+}
+.rp-subtitle {
+  font-size: 1rem;
+  color: #64748b;
+  max-width: 440px;
+  line-height: 1.65;
+  margin-bottom: 1.75rem;
 }
 
-.hero-subtitle {
-  font-size: 1.05rem;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.85);
-  max-width: 600px;
-  margin: 0 auto 2rem;
-}
-
-/* Search Input Styling */
-.search-box {
-  background: white;
-  border-radius: 6px;
-  padding: 6px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+/* Search bar */
+.rp-search {
   display: flex;
-  align-items: center;
-  max-width: 700px;
-  margin: 0 auto;
-  transition: box-shadow 0.2s ease;
+  background: #fff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+  max-width: 560px;
+  box-shadow: 0 4px 18px rgba(0,0,0,0.07);
+  margin-bottom: 1.1rem;
 }
-
-.search-box:focus-within {
-  box-shadow: 0 12px 32px rgba(0,0,0,0.18);
-}
-
-.search-box input {
+.rp-search input {
+  flex: 1;
   border: none;
   outline: none;
-  flex: 1;
-  padding: 15px 25px;
-  font-size: 1.2rem;
-  color: var(--premium-dark, #1a202c);
-  font-weight: 500;
-  border-radius: 50px;
+  padding: 1rem 1.25rem;
+  font-size: 0.95rem;
+  color: #1e293b;
   background: transparent;
 }
-
-.search-box button {
+.rp-search input::placeholder { color: #94a3b8; }
+.rp-search button {
   background: #65388f;
   border: none;
-  color: white;
-  padding: 15px 36px;
-  border-radius: 6px;
-  font-size: 1.1rem;
-  font-weight: 600;
+  color: #fff;
+  padding: 0.875rem 1.5rem;
+  font-size: 0.92rem;
+  font-weight: 700;
   cursor: pointer;
-  transition: all 0.2s ease;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 0.45rem;
+  white-space: nowrap;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+.rp-search button:hover  { background: #4b236b; }
+.rp-search button:disabled { opacity: 0.65; cursor: not-allowed; }
+
+/* Quick tag pills */
+.rp-tags { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
+.rp-tag {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  padding: 0.4rem 0.85rem;
+  border-radius: 50px;
+  background: #f8f9fa;
+  border: 1.5px solid #e9ecef;
+  font-size: 0.83rem;
+  font-weight: 600;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.18s;
+  user-select: none;
+}
+.rp-tag:hover { background: #ede9f7; border-color: #c4b5f4; color: #65388f; }
+
+/* Tab switcher */
+.rp-tabs {
+  background: #f1f5f9;
+  border-radius: 50px;
+  padding: 4px;
+  display: inline-flex;
+  gap: 2px;
+  align-self: flex-start;
+}
+.rp-tab {
+  border: none;
+  background: transparent;
+  border-radius: 50px;
+  padding: 0.42rem 1.2rem;
+  font-weight: 700;
+  font-size: 0.88rem;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.rp-tab.active { background: #65388f; color: #fff; box-shadow: 0 2px 8px rgba(101,56,143,0.25); }
+
+/* Right image panel */
+.rp-right {
+  position: relative;
+  overflow: hidden;
+  min-height: 420px;
+}
+.rp-food-img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+}
+/* Horizontal feature pills under tabs */
+.rp-feature-pills {
+  display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 1rem;
+}
+.rp-feature-pill {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  font-size: 0.83rem; font-weight: 600; color: #4b236b;
+}
+.rp-feature-icon {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: #ede9f7;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.78rem; color: #65388f; flex-shrink: 0;
 }
 
-.search-box button:hover {
-  background: #48236b;
-  transform: translateY(-2px);
-  box-shadow: 0 8px 18px rgba(101,56,143,0.22);
+/* ─── CUSTOMIZE SECTION ──────────────────────────────────────────── */
+.rp-customize {
+  background: #65388f;
+  padding: 1.75rem 0 2rem;
+}
+.rp-customize-title {
+  color: rgba(255,255,255,0.75);
+  font-size: 0.75rem; font-weight: 700;
+  letter-spacing: 1.5px; text-transform: uppercase;
+  margin-bottom: 0.9rem;
+}
+.rp-filter-cards { display: flex; gap: 0.65rem; flex-wrap: wrap; align-items: stretch; }
+.rp-filter-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 0.7rem 1rem;
+  display: flex; align-items: center; gap: 0.65rem;
+  cursor: pointer; flex: 1; min-width: 160px;
+  transition: box-shadow 0.2s;
+}
+.rp-filter-card:hover { box-shadow: 0 4px 18px rgba(0,0,0,0.18); }
+.rp-filter-card-icon {
+  width: 36px; height: 36px; border-radius: 10px;
+  background: #ede9f7;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem; color: #65388f; flex-shrink: 0;
+}
+.rp-filter-card-body { flex: 1; min-width: 0; }
+.rp-filter-card-label {
+  font-size: 0.68rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.7px;
+  color: #94a3b8; line-height: 1; margin-bottom: 3px;
+  white-space: nowrap;
+}
+.rp-filter-card-select {
+  border: none !important; outline: none !important;
+  background: transparent !important;
+  font-size: 0.88rem; font-weight: 700; color: #1e293b;
+  padding: 0; cursor: pointer; width: 100%;
+}
+.rp-filter-card-chevron { color: #cbd5e1; font-size: 0.75rem; flex-shrink: 0; }
+.rp-more-filters {
+  background: rgba(255,255,255,0.12);
+  border: 1.5px solid rgba(255,255,255,0.28);
+  border-radius: 12px;
+  padding: 0.7rem 1.1rem;
+  display: flex; align-items: center; gap: 0.45rem;
+  color: #fff; font-weight: 700; font-size: 0.88rem;
+  cursor: pointer; white-space: nowrap;
+  text-decoration: none; transition: background 0.2s;
+  flex-shrink: 0;
+}
+.rp-more-filters:hover { background: rgba(255,255,255,0.22); color: #fff; }
+
+/* ─── CONTENT BELOW ──────────────────────────────────────────────── */
+.rp-content {
+  min-height: 60vh;
+  padding-bottom: 5rem;
+  padding-top: 1.75rem;
 }
 
-.search-box button:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-  transform: none;
-}
-
-/* Ingredient Cards */
+/* Ingredient cards */
 .ingredient-card {
   background: white;
-  border-radius: 6px;
-  border: 1.5px solid var(--bg-beige);
-  margin-bottom: 1.25rem;
+  border-radius: 14px;
+  border: 1.5px solid #f1f5f9;
+  margin-bottom: 1.1rem;
   transition: all 0.2s ease;
   overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
 }
 .ingredient-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 10px 24px rgba(101,56,143,0.10);
-  border-color: #65388f;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(101,56,143,0.10);
+  border-color: #c4b5f4;
 }
-
 .ingredient-header {
-  padding: 1rem 1.5rem;
+  padding: 0.9rem 1.4rem;
   background: #f8fafc;
   border-bottom: 1px solid #f1f5f9;
   font-weight: 600;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 1.05rem;
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 1.02rem;
 }
-
 .ingredient-body {
-  padding: 1.5rem;
-  display: flex;
-  align-items: center;
-  gap: 1.5rem;
+  padding: 1.25rem 1.4rem;
+  display: flex; align-items: center; gap: 1.25rem;
 }
-
 .matched-product-img {
-  width: 80px;
-  height: 80px;
-  object-fit: contain;
-  border-radius: 16px;
-  background: white;
-  padding: 5px;
-  border: 1px solid #f1f5f9;
+  width: 76px; height: 76px; object-fit: contain;
+  border-radius: 12px; background: white;
+  padding: 5px; border: 1px solid #f1f5f9;
 }
+.unmatched-card .ingredient-header { background: #fef2f2; color: #991b1b; border-bottom-color: #fee2e2; }
+.badge-store { font-weight: 600; padding: 0.45em 0.8em; letter-spacing: 0.4px; }
 
-/* Summary Card */
+/* Summary card */
 .summary-card {
-  position: sticky;
-  top: 100px;
-  border-radius: 6px;
-  border: 1.5px solid var(--bg-beige);
+  position: sticky; top: 88px;
+  border-radius: 14px;
+  border: 1.5px solid #f1f5f9;
   box-shadow: 0 4px 16px rgba(0,0,0,0.05);
-  background: white;
-  padding: 1.5rem;
+  background: white; padding: 1.4rem;
 }
-
 .summary-card .card-header {
   background: transparent;
   border-bottom: 2px dashed #f1f5f9;
-  padding-bottom: 1rem;
-  margin-bottom: 1rem;
+  padding-bottom: 1rem; margin-bottom: 1rem;
 }
 
-/* Unmatched State */
-.unmatched-card .ingredient-header {
-  background: #fef2f2;
-  color: #991b1b;
-  border-bottom-color: #fee2e2;
+/* Idea cards */
+.idea-card {
+  border-radius: 16px !important; border: none !important; overflow: hidden;
+  cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08) !important;
 }
-.unmatched-card .ingredient-body {
-  background: #fafafa;
-  opacity: 0.8;
-}
+.idea-card:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(101,56,143,0.14) !important; }
 
-.badge-store {
-  font-weight: 600;
-  padding: 0.5em 0.8em;
-  letter-spacing: 0.5px;
+/* ─── RESPONSIVE ─────────────────────────────────────────────────── */
+@media (max-width: 991px) {
+  .rp-left { padding: 2rem 1.5rem; }
+  .rp-title { font-size: 2.2rem; }
+  .rp-filter-cards { flex-direction: column; }
+  .rp-filter-card { min-width: unset; }
 }
 </style>
 {% endblock %}
 
 {% block content %}
-<!-- Premium Hero Section -->
-<section class="hero-section text-center">
-  <div class="container hero-content">
-    <span class="badge bg-white text-primary rounded-pill px-3 py-2 mb-4 shadow-sm" style="font-size: 0.9rem;">
-      <i class="bi bi-stars text-warning me-1"></i> AI Powered
-    </span>
-    <h1 class="hero-title">Recipe Planner</h1>
-    <p class="hero-subtitle mb-4">Enter a recipe name, or leave it blank and use the filters to get AI-generated meal ideas.</p>
 
-          <form id="smartForm" class="mx-auto" style="max-width: 750px; position: relative; z-index: 20;">
-        <div class="search-box w-100 position-relative mb-3">
-          <input type="text" id="smartInput"
-                 placeholder="e.g. Spaghetti Carbonara, or leave empty for ideas..." 
-                 autocomplete="off">
-          <button type="submit" id="smartBtn" class="bg-warning text-white border-0 fw-bold">
-            <i class="bi bi-magic"></i> Ask AI
-          </button>
+<!-- ═══ HERO ═════════════════════════════════════════════════════════ -->
+<section class="rp-hero">
+  <div class="container-fluid p-0">
+    <div class="row g-0 h-100">
+
+      <!-- LEFT: copy + form -->
+      <div class="col-lg-6 rp-left">
+        <h1 class="rp-title">Recipe Planner</h1>
+        <p class="rp-subtitle">Tell us what you're craving or what you have on hand. We'll create healthy, tasty recipes just for you.</p>
+
+        <form id="smartForm" autocomplete="off">
+          <div class="rp-search">
+            <input type="text" id="smartInput" placeholder="e.g. Spaghetti Carbonara, or leave empty for ideas...">
+            <button type="submit" id="smartBtn">
+              <i class="bi bi-stars"></i> Generate Recipes
+            </button>
+          </div>
+        </form>
+
+        <div class="rp-tabs">
+          <button class="rp-tab active" id="tabSearch" onclick="toggleSearch('search')">Smart Search</button>
+          {% if session.get('user') %}
+          <button class="rp-tab" id="tabBook" onclick="toggleSearch('book')">My Recipe Book</button>
+          {% endif %}
         </div>
-        
-        <p class="text-white-50 small mb-3 text-uppercase fw-bold" style="letter-spacing: 1px;"><i class="bi bi-sliders2 me-1"></i> Optional AI Overrides</p>
-        <div class="filters-container">
-          <!-- Diet Filter -->
-          <label class="filter-pill" for="dietPreference">
-              <div class="filter-pill-icon bg-primary bg-opacity-10 text-primary">
-                  <i class="bi bi-person-hearts"></i>
-              </div>
-              <div class="d-flex flex-column text-start">
-                  <span class="filter-label">Diet</span>
-                  <select id="dietPreference">
-                      <option value="any">🍲 Any Diet</option>
-                      <option value="vegetarian">🥗 Vegetarian</option>
-                      <option value="vegan">🌿 Vegan</option>
-                      <option value="meat-based">🥩 Meat-based</option>
-                      <option value="keto">🥑 Keto</option>
-                  </select>
-              </div>
-          </label>
 
-          <!-- Time Filter -->
-          <label class="filter-pill" for="timePreference">
-              <div class="filter-pill-icon bg-danger bg-opacity-10 text-danger">
-                  <i class="bi bi-stopwatch"></i>
-              </div>
-              <div class="d-flex flex-column text-start">
-                  <span class="filter-label">Max Time</span>
-                  <select id="timePreference">
-                      <option value="any">Any time</option>
-                      <option value="15">15 mins</option>
-                      <option value="30">30 mins</option>
-                      <option value="45">45 mins</option>
-                      <option value="60">60+ mins</option>
-                  </select>
-              </div>
-          </label>
-          <!-- Budget Filter -->
-          <label class="filter-pill" for="budgetPreference">
-              <div class="filter-pill-icon bg-warning bg-opacity-10 text-warning">
-                  <i class="bi bi-cash-coin"></i>
-              </div>
-              <div class="d-flex flex-column text-start">
-                  <span class="filter-label">Max Price</span>
-                  <select id="budgetPreference" style="border: none; background: transparent; outline: none; font-size: 0.95rem; font-weight: 600; color: #1e293b; padding: 0; cursor: pointer; appearance: none;">
-                      <option value="">Any limit</option>
-                      <option value="5">Under 5€</option>
-                      <option value="10">Under 10€</option>
-                      <option value="15">Under 15€</option>
-                      <option value="20">Under 20€</option>
-                      <option value="30">Under 30€</option>
-                  </select>
-              </div>
-          </label>
-
-
-          <!-- Ingredients Filter -->
-          <label class="filter-pill" for="ingredientsPreference">
-              <div class="filter-pill-icon bg-success bg-opacity-10 text-success">
-                  <i class="bi bi-basket2"></i>
-              </div>
-              <div class="d-flex flex-column text-start">
-                  <span class="filter-label">Max Items</span>
-                  <select id="ingredientsPreference">
-                      <option value="any">Any amount</option>
-                      <option value="5">Up to 5 items</option>
-                      <option value="10">Up to 10 items</option>
-                      <option value="15">Up to 15 items</option>
-                  </select>
-              </div>
-          </label>
+        <div class="rp-feature-pills">
+          <span class="rp-feature-pill">
+            <div class="rp-feature-icon"><i class="bi bi-heart-pulse-fill"></i></div>
+            Healthy &amp; Balanced
+          </span>
+          <span class="rp-feature-pill">
+            <div class="rp-feature-icon"><i class="bi bi-clock-fill"></i></div>
+            Save Time &amp; Money
+          </span>
+          <span class="rp-feature-pill">
+            <div class="rp-feature-icon"><i class="bi bi-person-check-fill"></i></div>
+            Personalized For You
+          </span>
         </div>
-      </form>
-
-      <div class="d-inline-flex bg-white rounded-pill p-1 mb-4 shadow-sm position-relative" style="z-index: 20;">
-        <button type="button" class="btn btn-primary rounded-pill px-4 fw-bold" id="tabSearch" onclick="toggleSearch('search')">Smart Search</button>
-        {% if session.get('user') %}
-        <button type="button" class="btn btn-light text-dark rounded-pill px-4 fw-bold border-0 bg-transparent" id="tabBook" onclick="toggleSearch('book')">My Recipe Book</button>
-        {% endif %}
       </div>
+
+      <!-- RIGHT: food image + features overlay -->
+      <div class="col-lg-6 rp-right d-none d-lg-block">
+        <img src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=900&h=620&fit=crop&q=80"
+             class="rp-food-img" alt="Healthy food bowl">
+      </div>
+
     </div>
-  </section>
+  </div>
+</section>
 
-<!-- Content Section -->
-<div class="container" style="margin-top: 1.5rem; position: relative; z-index: 10; padding-bottom: 5rem; min-height: 60vh;">
+<!-- ═══ CUSTOMIZE FILTERS ════════════════════════════════════════════ -->
+<div class="rp-customize">
+  <div class="container">
+    <p class="rp-customize-title"><i class="bi bi-sliders2 me-1"></i> Customize Your Recipes</p>
+    <div class="rp-filter-cards">
 
+      <label class="rp-filter-card" for="dietPreference">
+        <div class="rp-filter-card-icon"><i class="bi bi-person-hearts"></i></div>
+        <div class="rp-filter-card-body">
+          <div class="rp-filter-card-label">Diet Preference</div>
+          <select class="rp-filter-card-select" id="dietPreference">
+            <option value="any">Any Diet</option>
+            <option value="vegetarian">🥗 Vegetarian</option>
+            <option value="vegan">🌿 Vegan</option>
+            <option value="meat-based">🥩 Meat-based</option>
+            <option value="keto">🥑 Keto</option>
+          </select>
+        </div>
+        <i class="bi bi-chevron-down rp-filter-card-chevron"></i>
+      </label>
+
+      <label class="rp-filter-card" for="timePreference">
+        <div class="rp-filter-card-icon"><i class="bi bi-stopwatch"></i></div>
+        <div class="rp-filter-card-body">
+          <div class="rp-filter-card-label">Max Cooking Time</div>
+          <select class="rp-filter-card-select" id="timePreference">
+            <option value="any">Any Time</option>
+            <option value="15">15 mins</option>
+            <option value="30">30 mins</option>
+            <option value="45">45 mins</option>
+            <option value="60">60+ mins</option>
+          </select>
+        </div>
+        <i class="bi bi-chevron-down rp-filter-card-chevron"></i>
+      </label>
+
+      <label class="rp-filter-card" for="budgetPreference">
+        <div class="rp-filter-card-icon"><i class="bi bi-cash-coin"></i></div>
+        <div class="rp-filter-card-body">
+          <div class="rp-filter-card-label">Max Price</div>
+          <select class="rp-filter-card-select" id="budgetPreference">
+            <option value="">Any Budget</option>
+            <option value="5">Under 5€</option>
+            <option value="10">Under 10€</option>
+            <option value="15">Under 15€</option>
+            <option value="20">Under 20€</option>
+            <option value="30">Under 30€</option>
+          </select>
+        </div>
+        <i class="bi bi-chevron-down rp-filter-card-chevron"></i>
+      </label>
+
+      <label class="rp-filter-card" for="ingredientsPreference">
+        <div class="rp-filter-card-icon"><i class="bi bi-basket2"></i></div>
+        <div class="rp-filter-card-body">
+          <div class="rp-filter-card-label">Max Ingredients</div>
+          <select class="rp-filter-card-select" id="ingredientsPreference">
+            <option value="any">Any Amount</option>
+            <option value="5">Up to 5 items</option>
+            <option value="10">Up to 10 items</option>
+            <option value="15">Up to 15 items</option>
+          </select>
+        </div>
+        <i class="bi bi-chevron-down rp-filter-card-chevron"></i>
+      </label>
+
+      <a href="#" class="rp-more-filters" onclick="return false;">
+        <i class="bi bi-sliders2"></i> More Filters <i class="bi bi-chevron-right ms-1"></i>
+      </a>
+
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MAIN CONTENT ═════════════════════════════════════════════════ -->
+<div class="container rp-content">
+
+  <!-- Budget / ideas grid -->
   <div id="budgetIdeasSection" class="mb-5 d-none">
     <div class="d-flex justify-content-between align-items-center mb-3">
-      <h3 class="fw-bold" style="color: #1a202c;"><i class="bi bi-lightbulb-fill text-warning me-2"></i>Friendly Budget Ideas</h3>
+      <h3 class="fw-bold" style="color:#1a202c;"><i class="bi bi-lightbulb-fill text-warning me-2"></i>Recipe Ideas For You</h3>
     </div>
-    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4" id="budgetIdeasContainer">
-      <!-- AI meals go here -->
-    </div>
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4" id="budgetIdeasContainer"></div>
   </div>
 
   {% if session.get('user') %}
   {% include "book.html" ignore missing %}
   {% endif %}
 
-  <div id="loadingState" class="text-center py-5 d-none bg-white rounded-4 p-5" style="border-radius: 6px; border: 1.5px solid var(--bg-beige); box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
-    <div class="spinner-grow text-primary" style="width: 4rem; height: 4rem;" role="status">
+  <!-- Loading state -->
+  <div id="loadingState" class="text-center py-5 d-none bg-white rounded-4 p-5" style="border:1.5px solid #f1f5f9; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+    <div class="spinner-grow text-primary" style="width:4rem;height:4rem;" role="status">
       <span class="visually-hidden">Loading...</span>
     </div>
-    <h3 class="mt-4 fw-bold" style="color: #1a202c;">Building your recipe...</h3>
+    <h3 class="mt-4 fw-bold" style="color:#1a202c;">Building your recipe...</h3>
     <p class="text-muted fs-5">Matching ingredients to the cheapest real-world products.</p>
   </div>
 
+  <!-- Results -->
   <div id="resultsContainer" class="row d-none">
-    <!-- Detailed Recipe Header -->
+
+    <!-- Recipe header card -->
     <div class="col-12 mb-4">
-        <button class="btn btn-light rounded-pill fw-bold text-dark px-4 py-2 mb-4 shadow-sm" id="backToIdeasBtn" style="border: 1px solid #e2e8f0;">
-            <i class="bi bi-arrow-left me-2"></i> Back to All Recipes
-        </button>
-
-        <div class="d-flex flex-column flex-md-row gap-4 p-4 bg-white align-items-center align-items-md-stretch" style="border-radius: 6px; border: 1.5px solid var(--bg-beige); box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
-            <img id="detailedRecipeImg" src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=250&fit=crop&q=10" class="rounded-4 img-fluid" style="width: 250px; height: 200px; object-fit: cover;">
-            <div class="d-flex flex-column justify-content-center flex-grow-1 text-center text-md-start">
-                <h1 id="detailedRecipeTitle" class="fw-bold text-dark mb-3">Recipe Name</h1>
-                <div class="d-flex flex-wrap gap-3 justify-content-center justify-content-md-start">
-                    <span class="badge bg-light text-dark fs-6 rounded-pill px-4 py-2 shadow-sm border" id="detailedRecipeTime"><i class="bi bi-clock me-2 text-primary"></i>20 mins</span>
-                    <span class="badge bg-light text-dark fs-6 rounded-pill px-4 py-2 shadow-sm border" id="detailedRecipePrice"><i class="bi bi-cash-coin me-2 text-success"></i>Est. 15€</span>
-                    <span class="badge bg-light text-dark fs-6 rounded-pill px-4 py-2 shadow-sm border" id="detailedRecipeItems"><i class="bi bi-basket me-2 text-warning"></i>10 items</span>
-                </div>
-            </div>
+      <button class="btn btn-light rounded-pill fw-bold text-dark px-4 py-2 mb-4 shadow-sm" id="backToIdeasBtn" style="border:1px solid #e2e8f0;">
+        <i class="bi bi-arrow-left me-2"></i> Back to All Recipes
+      </button>
+      <div class="d-flex flex-column flex-md-row gap-4 p-4 bg-white align-items-center align-items-md-stretch" style="border-radius:16px;border:1.5px solid #f1f5f9;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+        <img id="detailedRecipeImg" src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=250&fit=crop&q=10" class="rounded-4 img-fluid" style="width:250px;height:200px;object-fit:cover;">
+        <div class="d-flex flex-column justify-content-center flex-grow-1 text-center text-md-start">
+          <h1 id="detailedRecipeTitle" class="fw-bold text-dark mb-3">Recipe Name</h1>
+          <div class="d-flex flex-wrap gap-3 justify-content-center justify-content-md-start">
+            <span class="badge bg-light text-dark fs-6 rounded-pill px-4 py-2 shadow-sm border" id="detailedRecipeTime"><i class="bi bi-clock me-2 text-primary"></i>20 mins</span>
+            <span class="badge bg-light text-dark fs-6 rounded-pill px-4 py-2 shadow-sm border" id="detailedRecipePrice"><i class="bi bi-cash-coin me-2 text-success"></i>Est. 15€</span>
+            <span class="badge bg-light text-dark fs-6 rounded-pill px-4 py-2 shadow-sm border" id="detailedRecipeItems"><i class="bi bi-basket me-2 text-warning"></i>10 items</span>
+          </div>
         </div>
+      </div>
     </div>
 
+    <!-- Ingredient list -->
     <div class="col-lg-8 mb-4 mb-lg-0">
-      <div class="d-flex justify-content-between align-items-center mb-4 p-4 bg-white" style="border-radius: 6px; border: 1.5px solid var(--bg-beige); box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
-        <h3 class="fw-bold m-0" style="color: #1a202c;"><i class="bi bi-card-checklist text-primary me-2"></i>Shopping List</h3>
-        <span class="badge rounded-pill px-3 py-2 fs-6 shadow-sm" style="background: #65388f; color: white;" id="itemCountBadge">0 items</span>
-      </div>
-      
-
-      <div id="ingredientsList">
-        <!-- Javascript will inject ingredient cards here -->
+      <div class="d-flex justify-content-between align-items-center mb-4 p-4 bg-white" style="border-radius:16px;border:1.5px solid #f1f5f9;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+        <h3 class="fw-bold m-0" style="color:#1a202c;"><i class="bi bi-card-checklist text-primary me-2"></i>Shopping List</h3>
+        <span class="badge rounded-pill px-3 py-2 fs-6 shadow-sm" style="background:#65388f;color:white;" id="itemCountBadge">0 items</span>
       </div>
 
-      <div id="additionalProductsSection" class="mt-4 p-4 bg-white d-none" style="border-radius: 6px; border: 1.5px solid var(--bg-beige); box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
-        <h4 class="fw-bold mb-3" style="color: #1a202c;"><i class="bi bi-plus-circle text-secondary me-2"></i>Additional Ingredients</h4>
-        <p class="text-muted small mb-3">These recipe items were not found directly in our catalog. You might need to pick them up separately.</p>
-        <div id="additionalProductsList" class="d-flex flex-wrap gap-2">
-          <!-- JS will inject badges here -->
-        </div>
-      </div>
-      
-      <div id="recipePreparationBlock" class="mt-5 p-4 bg-white" style="border-radius: 6px; border: 1.5px solid var(--bg-beige); box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
-        <h3 class="fw-bold m-0 mb-4" style="color: #1a202c;"><i class="bi bi-journal-text text-primary me-2"></i>Preparation Steps</h3>
-        <div id="instructionsList" class="ps-3" style="border-left: 3px solid #e2e8f0; font-size: 1.1rem; line-height: 1.6; color: #475569;">
-          <!-- JS will inject steps here -->
-        </div>
+      <div id="ingredientsList"></div>
+
+      <div id="additionalProductsSection" class="mt-4 p-4 bg-white d-none" style="border-radius:16px;border:1.5px solid #f1f5f9;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+        <h4 class="fw-bold mb-3" style="color:#1a202c;"><i class="bi bi-plus-circle text-secondary me-2"></i>Additional Ingredients</h4>
+        <p class="text-muted small mb-3">These items weren't found in our catalog — pick them up separately.</p>
+        <div id="additionalProductsList" class="d-flex flex-wrap gap-2"></div>
       </div>
 
+      <div id="recipePreparationBlock" class="mt-4 p-4 bg-white" style="border-radius:16px;border:1.5px solid #f1f5f9;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+        <h3 class="fw-bold m-0 mb-4" style="color:#1a202c;"><i class="bi bi-journal-text text-primary me-2"></i>Preparation Steps</h3>
+        <div id="instructionsList" class="ps-3" style="border-left:3px solid #e2e8f0;font-size:1.05rem;line-height:1.65;color:#475569;"></div>
+      </div>
     </div>
-    
+
+    <!-- Summary sidebar -->
     <div class="col-lg-4">
       <div class="summary-card">
         <div class="card-header">
-          <h4 class="card-title fw-bold m-0" style="color: #1a202c;"><i class="bi bi-cart3 text-primary me-2"></i>Summary</h4>
+          <h4 class="card-title fw-bold m-0" style="color:#1a202c;"><i class="bi bi-cart3 text-primary me-2"></i>Summary</h4>
         </div>
         <div class="card-body p-0 pt-3">
           <div class="d-flex justify-content-between align-items-center mb-3">
             <span class="text-muted fs-5">Matched Items</span>
-            <strong id="summaryMatchedCount" class="fs-5" style="color: #1a202c;">0</strong>
+            <strong id="summaryMatchedCount" class="fs-5" style="color:#1a202c;">0</strong>
           </div>
           <div class="d-flex justify-content-between align-items-center mb-4">
             <span class="text-muted fs-5">Unmatched</span>
             <strong id="summaryUnmatchedCount" class="fs-5 text-danger">0</strong>
           </div>
-          <div class="p-3 mb-4 rounded-3" style="background: #f8fafc; border: 1px solid #f1f5f9;">
+          <div class="p-3 mb-4 rounded-3" style="background:#f8fafc;border:1px solid #f1f5f9;">
             <div class="d-flex justify-content-between align-items-center">
-              <span class="fs-5 fw-bold" style="color: #1a202c;">Est. Total</span>
+              <span class="fs-5 fw-bold" style="color:#1a202c;">Est. Total</span>
               <span class="fs-3 fw-bold text-success" id="summaryTotal">€0.00</span>
             </div>
           </div>
-          
-          <button id="addToTargetListBtn" class="btn w-100 btn-lg shadow-sm border-0 d-flex justify-content-center align-items-center gap-2 mb-3" style="background: #65388f; color: white; padding: 0.875rem 1.5rem; border-radius: 6px !important;" data-bs-toggle="modal" data-bs-target="#listSelectModal">
+          <button id="addToTargetListBtn" class="btn w-100 btn-lg shadow-sm border-0 d-flex justify-content-center align-items-center gap-2 mb-3"
+                  style="background:#65388f;color:white;padding:0.875rem 1.5rem;border-radius:10px !important;"
+                  data-bs-toggle="modal" data-bs-target="#listSelectModal">
             <i class="bi bi-cart-plus fs-5"></i> <span class="fw-bold fs-5">Add to List</span>
           </button>
-          
           {% if session.get('user') %}
-          <button id="saveRecipeBtn" class="btn w-100 btn-lg shadow-sm border-0 d-flex justify-content-center align-items-center gap-2" style="background: var(--bg-cream); color: #65388f; border: 1.5px solid var(--bg-beige) !important; padding: 0.875rem 1.5rem; border-radius: 6px !important;" onclick="saveCurrentRecipe()">
+          <button id="saveRecipeBtn" class="btn w-100 btn-lg d-flex justify-content-center align-items-center gap-2"
+                  style="background:#f8f9fa;color:#65388f;border:1.5px solid #e9ecef !important;padding:0.875rem 1.5rem;border-radius:10px !important;"
+                  onclick="saveCurrentRecipe()">
             <i class="bi bi-bookmark-heart fs-5"></i> <span class="fw-bold fs-5">Save Recipe</span>
           </button>
           {% endif %}
         </div>
       </div>
     </div>
-  </div>
+
+  </div><!-- /resultsContainer -->
 </div>
 
-<!-- Modal for selecting which shopping list to add to -->
+<!-- ═══ MODAL ══════════════════════════════════════════════════════════ -->
 <div class="modal fade" id="listSelectModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content border-0 shadow">
+    <div class="modal-content border-0 shadow rounded-4">
       <div class="modal-header border-bottom-0 pb-0">
         <h5 class="modal-title fw-bold">Add to Shopping List</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -495,145 +542,145 @@ body {
 {% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    const smartForm = document.getElementById('smartForm');
-    const smartInput = document.getElementById('smartInput');
-    const smartBtn = document.getElementById('smartBtn');
-    
-    const loadingState = document.getElementById('loadingState');
-    const resultsContainer = document.getElementById('resultsContainer');
-    const budgetIdeasSection = document.getElementById('budgetIdeasSection');  
+    const smartForm       = document.getElementById('smartForm');
+    const smartInput      = document.getElementById('smartInput');
+    const smartBtn        = document.getElementById('smartBtn');
+    const loadingState    = document.getElementById('loadingState');
+    const resultsContainer  = document.getElementById('resultsContainer');
+    const budgetIdeasSection  = document.getElementById('budgetIdeasSection');
     const budgetIdeasContainer = document.getElementById('budgetIdeasContainer');
     const ingredientsList = document.getElementById('ingredientsList');
-    
+
     let matchedProductsData = [];
 
+    /* ── Tab switcher ──────────────────────────────────────────────── */
     window.toggleSearch = function(mode) {
-        const sForm = document.getElementById('smartForm');
         const sBtnTab = document.getElementById('tabSearch');
-        const bkBtn = document.getElementById('tabBook');
-        const savedRecipesSection = document.getElementById('savedRecipesSection') || document.getElementById('grandBookSection');
+        const bkBtn   = document.getElementById('tabBook');
+        const savedSection = document.getElementById('savedRecipesSection') || document.getElementById('grandBookSection');
 
-        if(sBtnTab) sBtnTab.className = 'btn btn-light text-dark rounded-pill px-4 fw-bold border-0 bg-transparent';
-        if(bkBtn) bkBtn.className = 'btn btn-light text-dark rounded-pill px-4 fw-bold border-0 bg-transparent';
+        if (sBtnTab) sBtnTab.className = 'rp-tab';
+        if (bkBtn)   bkBtn.className   = 'rp-tab';
 
         if (mode === 'book') {
-            if(sForm) sForm.classList.add('d-none');
-            if (resultsContainer) resultsContainer.classList.add('d-none');
-            if (budgetIdeasSection) budgetIdeasSection.classList.add('d-none');
-            if (savedRecipesSection) savedRecipesSection.classList.remove('d-none');
-            if (bkBtn) bkBtn.className = 'btn btn-primary rounded-pill px-4 fw-bold text-white border-0 shadow-sm';
+            if (resultsContainer)    resultsContainer.classList.add('d-none');
+            if (budgetIdeasSection)  budgetIdeasSection.classList.add('d-none');
+            if (savedSection)        savedSection.classList.remove('d-none');
+            if (bkBtn) bkBtn.className = 'rp-tab active';
         } else {
-            if(sForm) sForm.classList.remove('d-none');
-            if (savedRecipesSection) savedRecipesSection.classList.add('d-none');
-            if (sBtnTab) sBtnTab.className = 'btn btn-primary rounded-pill px-4 fw-bold text-white border-0 shadow-sm';
+            if (savedSection) savedSection.classList.add('d-none');
+            if (sBtnTab) sBtnTab.className = 'rp-tab active';
         }
     };
-    
+
     toggleSearch('search');
 
+    /* ── Quick tag shortcut ────────────────────────────────────────── */
+    window.quickTag = function(query, diet, time) {
+        smartInput.value = query;
+        const dietSel = document.getElementById('dietPreference');
+        const timeSel = document.getElementById('timePreference');
+        if (dietSel && diet) dietSel.value = diet;
+        if (timeSel && time) timeSel.value = time;
+        smartForm.dispatchEvent(new SubmitEvent('submit', { cancelable: true }));
+    };
+
+    /* ── Back button ───────────────────────────────────────────────── */
     document.getElementById('backToIdeasBtn')?.addEventListener('click', () => {
-        document.getElementById('resultsContainer').classList.add('d-none');
-        document.getElementById('budgetIdeasSection').classList.remove('d-none');
+        resultsContainer.classList.add('d-none');
+        budgetIdeasSection.classList.remove('d-none');
     });
 
+    /* ── Main form submit ──────────────────────────────────────────── */
     if (smartForm) {
         smartForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const query = smartInput.value.trim();
-            // allow querying with no string if they just want ideas
-            // if (!query) return;
 
-            const dietPref = document.getElementById('dietPreference').value;
-            const timePref = document.getElementById('timePreference').value;
+            const dietPref   = document.getElementById('dietPreference').value;
+            const timePref   = document.getElementById('timePreference').value;
             const ingredientsPref = document.getElementById('ingredientsPreference').value;
             const budgetPrefElt = document.getElementById('budgetPreference');
             const budgetPref = budgetPrefElt ? budgetPrefElt.value.trim() : '';
 
-            smartBtn.disabled = true;
+            smartBtn.disabled   = true;
             smartInput.disabled = true;
             resultsContainer.classList.add('d-none');
             if (budgetIdeasSection) budgetIdeasSection.classList.add('d-none');
-            const savedRecipesSection = document.getElementById('savedRecipesSection') || document.getElementById('grandBookSection');
-            if (savedRecipesSection) savedRecipesSection.classList.add('d-none');
-            
+            const savedSection = document.getElementById('savedRecipesSection') || document.getElementById('grandBookSection');
+            if (savedSection) savedSection.classList.add('d-none');
+
             loadingState.classList.remove('d-none');
-            document.querySelector('#loadingState h3').textContent = "Analyzing your request...";
-            document.querySelector('#loadingState p').textContent = "Consulting our culinary AI to serve you the best options.";
+            document.querySelector('#loadingState h3').textContent = 'Analyzing your request...';
+            document.querySelector('#loadingState p').textContent  = 'Consulting our culinary AI to serve you the best options.';
             loadingState.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-            const isExact = document.getElementById('smartForm').dataset.exactRecipe === 'true';
+            const isExact = smartForm.dataset.exactRecipe === 'true';
             let targetQuery = query;
-            if (isExact) {
-                targetQuery = document.getElementById('smartForm').dataset.recipeTarget;
-                smartInput.value = query; // Restore input in case it changed
-            }
-            document.getElementById('smartForm').dataset.exactRecipe = 'false';
+            if (isExact) targetQuery = smartForm.dataset.recipeTarget;
+            smartForm.dataset.exactRecipe = 'false';
+
             try {
-                const res = await fetch('/api/recipe/smart', {
+                const res  = await fetch('/api/recipe/smart', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                      query: targetQuery,
-                      budget: budgetPref,
-                      preference: dietPref,
-                      max_time: timePref,
-                      max_ingredients: ingredientsPref,
-                      exact: isExact
+                    body: JSON.stringify({
+                        query: targetQuery,
+                        budget: budgetPref,
+                        preference: dietPref,
+                        max_time: timePref,
+                        max_ingredients: ingredientsPref,
+                        exact: isExact
                     })
                 });
                 const data = await res.json();
                 loadingState.classList.add('d-none');
-                
+
                 if (data.success) {
                     if (data.type === 'budget') {
-                        // Handle budget ideas response
+                        /* ── Ideas grid ── */
                         budgetIdeasSection.classList.remove('d-none');
                         budgetIdeasContainer.innerHTML = '';
-                        
-if (data.meals.length === 0) {
-                              budgetIdeasContainer.innerHTML = '<div class="alert alert-warning w-100">Could not find any recipes for your search.</div>';
-                          } else {
-                              data.meals.forEach((mealObj, idx) => {
-                                  const mealName = mealObj.name ? mealObj.name : mealObj;
-                                  const mealTime = mealObj.time ? mealObj.time : 'Quick';
-                                  const mealIng = mealObj.ingredients_range ? mealObj.ingredients_range : 'Few';
-                            
-                            const imgId = 'meal-img-' + idx;
-                            // Check if image_url is provided by backend directly
-                            const defaultImg = mealObj.image_url || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=250&fit=crop&q=10';
-                            
-                            const card = document.createElement('div');
-                            card.className = 'col';
-                            card.innerHTML = `
-                              <div class="card h-100 border-0 shadow-sm" style="border-radius: 6px; overflow: hidden; cursor: pointer; transition: transform 0.2s;" onclick="fillAndSubmitRecipe('${mealName.replace(/'/g, "\\'")}', '${mealTime}', '${mealObj.price_estimation || ''}', '${imgId}')">
-                                <img id="${imgId}" src="${defaultImg}" class="card-img-top" alt="${mealName}" style="height: 180px; object-fit: cover;">
-                                <div class="card-body p-3">
-                                  <h5 class="card-title fw-bold text-dark mb-2">${mealName}</h5>
-                                  <div class="d-flex align-items-center gap-2 mb-2 text-muted small fw-medium">
-                                    <span><i class="bi bi-clock me-1"></i>${mealTime}</span>
-                                    <span><i class="bi bi-basket me-1"></i>${mealIng} Ing.</span>
-                                  </div>
-                                  <p class="text-primary small mt-2 fw-bold m-0 d-flex align-items-center justify-content-between">
-                                    <span class="text-success fw-bold">${mealObj.price_estimation || ''}</span>
-                                    Get Recipe <i class="bi bi-arrow-right"></i>
-                                  </p>
-                                </div>
-                              </div>
-                            `;
-                            budgetIdeasContainer.appendChild(card);
-                            
-                            // Fetch real image dynamically only if not provided
-                            if (!mealObj.image_url) {
-                                fetch('/api/recipe/image?q=' + encodeURIComponent(mealName + ' food meal high quality'))
-                                    .then(res => res.json())
-                                    .then(resData => {
-                                        if(resData.success && resData.url) {
-                                            document.getElementById(imgId).src = resData.url;
-                                        }
-                                    }).catch(err => console.error('Image fetch error:', err));
-                            }
-                        });                          }                    } else {
-                        // Handle specific recipe generation response
+
+                        if (data.meals.length === 0) {
+                            budgetIdeasContainer.innerHTML = '<div class="alert alert-warning w-100">Could not find any recipes for your search.</div>';
+                        } else {
+                            data.meals.forEach((mealObj, idx) => {
+                                const mealName = mealObj.name  ? mealObj.name  : mealObj;
+                                const mealTime = mealObj.time  ? mealObj.time  : 'Quick';
+                                const mealIng  = mealObj.ingredients_range ? mealObj.ingredients_range : 'Few';
+                                const imgId    = 'meal-img-' + idx;
+                                const defaultImg = mealObj.image_url || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=250&fit=crop&q=10';
+
+                                const card = document.createElement('div');
+                                card.className = 'col';
+                                card.innerHTML = `
+                                  <div class="card idea-card h-100" onclick="fillAndSubmitRecipe('${mealName.replace(/'/g,"\\'")}','${mealTime}','${mealObj.price_estimation||''}','${imgId}')">
+                                    <img id="${imgId}" src="${defaultImg}" class="card-img-top" alt="${mealName}" style="height:180px;object-fit:cover;">
+                                    <div class="card-body p-3">
+                                      <h5 class="card-title fw-bold text-dark mb-2">${mealName}</h5>
+                                      <div class="d-flex align-items-center gap-2 mb-2 text-muted small fw-medium">
+                                        <span><i class="bi bi-clock me-1"></i>${mealTime}</span>
+                                        <span><i class="bi bi-basket me-1"></i>${mealIng} Ing.</span>
+                                      </div>
+                                      <p class="text-primary small mt-2 fw-bold m-0 d-flex align-items-center justify-content-between">
+                                        <span class="text-success fw-bold">${mealObj.price_estimation||''}</span>
+                                        Get Recipe <i class="bi bi-arrow-right"></i>
+                                      </p>
+                                    </div>
+                                  </div>`;
+                                budgetIdeasContainer.appendChild(card);
+
+                                if (!mealObj.image_url) {
+                                    fetch('/api/recipe/image?q=' + encodeURIComponent(mealName + ' food meal high quality'))
+                                        .then(r => r.json())
+                                        .then(rd => { if (rd.success && rd.url) document.getElementById(imgId).src = rd.url; })
+                                        .catch(() => {});
+                                }
+                            });
+                        }
+                    } else {
+                        /* ── Detailed recipe ── */
                         resultsContainer.classList.remove('d-none');
                         ingredientsList.innerHTML = '';
                         const additionalList = document.getElementById('additionalProductsList');
@@ -641,26 +688,21 @@ if (data.meals.length === 0) {
                         document.getElementById('additionalProductsSection').classList.add('d-none');
                         document.getElementById('instructionsList').innerHTML = '';
                         matchedProductsData = [];
-                        let matchedCount = 0, unmatchedCount = 0;
-                        let estTotal = 0.0;
+                        let matchedCount = 0, unmatchedCount = 0, estTotal = 0.0;
 
-                        // UPDATE HEADER METADATA
                         document.getElementById('detailedRecipeTitle').textContent = data.recipe || 'Generated Recipe';
-                        const metaTime = document.getElementById('smartForm').dataset.metaTime || '20 mins';
-                        const metaImg = document.getElementById('smartForm').dataset.metaImg;
-                        if(metaImg) document.getElementById('detailedRecipeImg').src = metaImg;
+                        const metaTime = smartForm.dataset.metaTime || '20 mins';
+                        const metaImg  = smartForm.dataset.metaImg;
+                        if (metaImg) document.getElementById('detailedRecipeImg').src = metaImg;
                         document.getElementById('detailedRecipeTime').innerHTML = `<i class="bi bi-clock me-2 text-primary"></i>${metaTime}`;
-                        const metaPrice = document.getElementById('smartForm').dataset.metaPrice || '';
 
                         if (data.instructions && data.instructions.length > 0) {
-                            data.instructions.forEach((step, index) => {
-                                const stepHtml = `
-                                    <div class="mb-3 position-relative">
-                                        <span class="position-absolute top-0 start-0 translate-middle badge rounded-pill bg-primary" style="left: -1rem !important;">${index + 1}</span>
-                                        <p class="mb-0 ps-3">${step}</p>
-                                    </div>
-                                `;
-                                document.getElementById('instructionsList').insertAdjacentHTML('beforeend', stepHtml);
+                            data.instructions.forEach((step, i) => {
+                                document.getElementById('instructionsList').insertAdjacentHTML('beforeend', `
+                                  <div class="mb-3 position-relative">
+                                    <span class="position-absolute top-0 start-0 translate-middle badge rounded-pill bg-primary" style="left:-1rem!important;">${i+1}</span>
+                                    <p class="mb-0 ps-3">${step}</p>
+                                  </div>`);
                             });
                         }
 
@@ -669,40 +711,37 @@ if (data.meals.length === 0) {
                             data.ingredients.forEach(item => {
                                 if (item.matches && item.matches.length > 0) {
                                     matchedCount++;
-                                    let cheapestProduct = item.matches[0];
-                                    item.matches.forEach(p => {
-                                        if(p.price < cheapestProduct.price) cheapestProduct = p;
-                                    });
-                                    estTotal += cheapestProduct.price;
-                                    matchedProductsData.push(cheapestProduct);
+                                    let cheapest = item.matches[0];
+                                    item.matches.forEach(p => { if (p.price < cheapest.price) cheapest = p; });
+                                    estTotal += cheapest.price;
+                                    matchedProductsData.push(cheapest);
 
                                     const card = document.createElement('div');
                                     card.className = 'ingredient-card matched-card';
                                     card.innerHTML = `
-                                        <div class="ingredient-header">
-                                            <span><i class="bi bi-check-circle-fill text-success me-2"></i> ${item.original_request}</span>
+                                      <div class="ingredient-header">
+                                        <span><i class="bi bi-check-circle-fill text-success me-2"></i>${item.original_request}</span>
+                                      </div>
+                                      <div class="ingredient-body">
+                                        <img src="${cheapest.image_url||'/static/images/placeholder.png'}" class="matched-product-img" alt="${cheapest.name}" onerror="this.src='/static/images/placeholder.png'">
+                                        <div class="flex-grow-1">
+                                          <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <strong class="fs-5" style="color:#1e293b;">${cheapest.name}</strong>
+                                            <span class="fs-4 fw-bold text-success">€${cheapest.price.toFixed(2)}</span>
+                                          </div>
+                                          <div class="d-flex align-items-center gap-2">
+                                            <span class="badge border bg-light text-dark badge-store shadow-sm"><i class="bi bi-shop text-muted me-1"></i>${cheapest.store}</span>
+                                            <span class="text-muted small"><i class="bi bi-tag me-1"></i>${cheapest.category||'Grocery'}</span>
+                                          </div>
                                         </div>
-                                        <div class="ingredient-body">
-                                            <img src="${cheapestProduct.image_url || '/static/images/placeholder.png'}" class="matched-product-img" alt="${cheapestProduct.name}" onerror="this.src='/static/images/placeholder.png'">
-                                            <div class="flex-grow-1">
-                                                <div class="d-flex justify-content-between align-items-center mb-1">
-                                                    <strong class="fs-5" style="color: #1e293b;">${cheapestProduct.name}</strong>
-                                                    <span class="fs-4 fw-bold text-success">€${cheapestProduct.price.toFixed(2)}</span>
-                                                </div>
-                                                <div class="d-flex align-items-center gap-2">
-                                                    <span class="badge border bg-light text-dark badge-store shadow-sm"><i class="bi bi-shop text-muted me-1"></i> ${cheapestProduct.store}</span>
-                                                    <span class="text-muted small"><i class="bi bi-tag me-1"></i>${cheapestProduct.category || 'Grocery'}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    `;
+                                      </div>`;
                                     ingredientsList.appendChild(card);
                                 } else {
                                     unmatchedCount++;
                                     document.getElementById('additionalProductsSection').classList.remove('d-none');
                                     const badge = document.createElement('span');
                                     badge.className = 'badge bg-light text-dark border p-2 px-3 shadow-sm';
-                                    badge.innerHTML = `<i class="bi bi-cart-x text-danger me-1"></i> ${item.original_request}`;
+                                    badge.innerHTML = `<i class="bi bi-cart-x text-danger me-1"></i>${item.original_request}`;
                                     additionalList.appendChild(badge);
                                 }
                             });
@@ -711,11 +750,8 @@ if (data.meals.length === 0) {
                         document.getElementById('summaryMatchedCount').textContent = matchedCount;
                         document.getElementById('summaryUnmatchedCount').textContent = unmatchedCount;
                         document.getElementById('summaryTotal').textContent = `€${estTotal.toFixed(2)}`;
-                        
-                        // Update Header Price and Items
                         document.getElementById('detailedRecipePrice').innerHTML = `<i class="bi bi-cash-coin me-2 text-success"></i>€${estTotal.toFixed(2)} Real Cost`;
-                        document.getElementById('detailedRecipeItems').innerHTML = `<i class="bi bi-basket me-2 text-warning"></i>${data.ingredients ? data.ingredients.length : 0} items`;
-                        
+                        document.getElementById('detailedRecipeItems').innerHTML  = `<i class="bi bi-basket me-2 text-warning"></i>${data.ingredients ? data.ingredients.length : 0} items`;
                     }
                 } else {
                     alert('Error: ' + data.error);
@@ -724,7 +760,7 @@ if (data.meals.length === 0) {
                 console.error(err);
                 alert('Network error communicating with the server.');
             } finally {
-                smartBtn.disabled = false;
+                smartBtn.disabled   = false;
                 smartInput.disabled = false;
                 loadingState.classList.add('d-none');
             }
@@ -733,23 +769,18 @@ if (data.meals.length === 0) {
 });
 
 function fillAndSubmitRecipe(recipeName, time, estPrice, imgId) {
-    document.getElementById('smartForm').dataset.exactRecipe = 'true';
-    document.getElementById('smartForm').dataset.recipeTarget = recipeName;
-    
-    // Save metadata for the detailed view
-    document.getElementById('smartForm').dataset.metaTime = time || '20 mins';
-    document.getElementById('smartForm').dataset.metaPrice = estPrice || '';
+    const form = document.getElementById('smartForm');
+    form.dataset.exactRecipe  = 'true';
+    form.dataset.recipeTarget = recipeName;
+    form.dataset.metaTime     = time || '20 mins';
+    form.dataset.metaPrice    = estPrice || '';
     const imgEl = document.getElementById(imgId);
-    if(imgEl) document.getElementById('smartForm').dataset.metaImg = imgEl.src;
-    
-    document.getElementById('smartForm').dispatchEvent(new SubmitEvent('submit', { cancelable: true }));
+    if (imgEl) form.dataset.metaImg = imgEl.src;
+    form.dispatchEvent(new SubmitEvent('submit', { cancelable: true }));
 }
 
 function saveCurrentRecipe() {
-    const rawData = localStorage.getItem('lastSmartResponse'); // Assuming backend could return raw response if needed
-    alert("Recipe Saving API call triggered (requires backend hookup for intelligent parsing).");
+    alert('Recipe Saving API call triggered (requires backend hookup for intelligent parsing).');
 }
 </script>
-
-
 {% endblock %}
