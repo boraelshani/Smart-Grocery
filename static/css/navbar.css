@@ -433,45 +433,158 @@ body.scrolled {
   background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgb(101, 56, 143)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2.5' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e") !important;
 }
 
-/* ═══ DROPDOWN MENUS ═══ */
+/* ═══ USER DROPDOWN MENU ═══ */
+
+.user-dropdown-menu {
+  border-radius: 18px !important;
+  overflow: hidden;
+  min-width: 270px;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.14);
+  animation: dropdownFade 0.18s ease-out;
+}
+
+/* ── Header ── */
 .dropdown-user-header {
-  background: linear-gradient(135deg, #65388f, #48236b);
-  padding: 20px 15px;
-  color: white;
+  background: #ffffff;
+  padding: 20px 18px 16px;
+  border-bottom: 1px solid #f0eaff;
 }
 
-.dropdown-menu {
-  border: 1px solid #e2e8f0;
-  border-radius: 16px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-  padding: 0;
-  margin-top: 0.5rem;
-  animation: dropdownFade 0.2s ease-out;
+.dd-avatar-ring {
+  padding: 3px;
+  border-radius: 50%;
+  border: 2px solid #65388f;
+  flex-shrink: 0;
 }
 
-.dropdown-item {
-  padding: 0.75rem 1.25rem;
-  color: #4a5568;
+.dd-user-name {
+  color: #1a1a2e;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.dd-user-email {
+  color: #7c6e8a;
+  font-size: 0.78rem;
+}
+
+/* ── Menu items ── */
+.dd-item {
+  display: flex !important;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px !important;
+  color: #374151 !important;
   font-weight: 500;
-  transition: all 0.2s ease;
+  font-size: 0.92rem;
+  border-radius: 10px;
+  margin: 1px 8px;
+  transition: background 0.15s ease, color 0.15s ease;
   text-decoration: none !important;
 }
 
-.dropdown-item:hover {
-  background: #f8f9fa;
-  color: #7c3aed;
-  text-decoration: none !important;
+.dd-item:hover {
+  background: #f3eeff !important;
+  color: #65388f !important;
 }
 
-.dropdown-item.active {
-  background: #f5f3ff;
-  color: #5b21b6;
+.dd-item.active {
+  background: #ede9ff !important;
+  color: #65388f !important;
+  font-weight: 600;
+}
+
+/* ── Icon containers — all same purple/lavender style ── */
+.dd-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.95rem;
+  flex-shrink: 0;
+  background: #f0eaff;
+  color: #65388f;
+}
+
+/* keep named variants pointing to the same neutral purple */
+.dd-icon-blue,
+.dd-icon-green,
+.dd-icon-red,
+.dd-icon-gray,
+.dd-icon-yellow,
+.dd-icon-purple { background: #f0eaff; color: #65388f; }
+
+/* ── Divider — full-width between every row ── */
+.dd-divider {
+  border: none;
+  border-top: 1px solid #f0f0f5;
+  margin: 0 0;
+}
+
+/* Add a divider line after every dd-item via the li wrapper */
+.user-dropdown-menu li + li > .dd-item,
+.mob-account-body .dd-item + .dd-item {
+  border-top: 1px solid #f0f0f5;
+}
+
+/* ── Sign Out — outlined purple pill ── */
+.dd-signout-wrap {
+  padding: 10px 14px 14px;
+  background: white;
+  border-top: 1px solid #f0f0f5;
+}
+
+.dd-signout-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 0;
+  background: white;
+  color: #65388f !important;
+  font-weight: 600;
+  font-size: 0.92rem;
+  border-radius: 999px;
+  border: 1.5px solid #65388f;
+  text-decoration: none !important;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.dd-signout-btn:hover {
+  background: #65388f;
+  color: white !important;
 }
 
 @keyframes dropdownFade {
-  0% { opacity: 0; transform: translateY(10px) scale(0.98); }
+  0%   { opacity: 0; transform: translateY(8px) scale(0.97); }
   100% { opacity: 1; transform: translateY(0) scale(1); }
 }
+
+/* ═══ MOBILE ACCOUNT PANEL (hamburger menu, < lg) ═══ */
+
+.mob-account {
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(101, 56, 143, 0.15);
+  margin-bottom: 0.5rem;
+}
+
+.mob-account-header {
+  background: #ffffff;
+  padding: 16px 16px 14px;
+  border-bottom: 1px solid #f0eaff;
+}
+
+.mob-account-body {
+  background: white;
+  padding: 8px 0 4px;
+}
+
+/* dd-item, dd-icon, dd-signout-* are shared with the desktop dropdown */
 
 /* 
 ═══════════════════════════════════════════════════════════════════════════

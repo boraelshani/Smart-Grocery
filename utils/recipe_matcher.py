@@ -69,6 +69,7 @@ GLOBAL_NEGATIVE_NAME_KEYWORDS = {
     "flavour", "flavored", "flavoured",
     "vodka", "whiskey", "gin", "rum", "tequila", "brandy", "schnapps", "liqueur",
     "cocktail", "cheeseburger", "sugarfree", "sugar-free", "zuckerfrei",
+    "smoothie", "energy",   # energy drinks, smoothies are never cooking ingredients
 }
 
 # Per-ingredient additional blocked substrings
@@ -102,6 +103,24 @@ INGREDIENT_NEGATIVE_KEYWORDS = {
                  "ricotta", "feta", "blue", "goat", "cottage", "mascarpone", "provolone",
                  "edam", "camembert", "pecorino", "havarti", "gruyere", "halloumi"],
 }
+
+# Single words that cannot identify a food product on their own.
+# Never use these as the sole term in a fallback search — they produce
+# nonsense matches (e.g. "Red" → "Red Bull", "Yellow" → "Yellow Smoothie").
+INGREDIENT_MODIFIER_WORDS = frozenset({
+    # Colours
+    "red", "green", "yellow", "orange", "purple", "blue", "white", "black",
+    "brown", "pink", "golden", "gold",
+    # Shade / intensity
+    "dark", "light", "bright", "pale", "deep",
+    # Temperature / flavour
+    "hot", "cold", "warm", "cool", "spicy", "mild", "sweet", "sour",
+    # Size
+    "big", "small", "large", "medium", "mini", "giant", "jumbo",
+    # Preparation states (overlap with fillers, but guard the fallback path too)
+    "sliced", "chopped", "diced", "minced", "grated",
+    "raw", "cooked", "baked", "fried", "grilled", "roasted",
+})
 
 # Ingredient words that ARE the snack/drink — don't filter their matching products
 INGREDIENT_IS_DRINK_OR_SNACK = {
@@ -161,6 +180,93 @@ INGREDIENT_TYPE_MAP = [
 
 # For these types, we allow some snack-category products (e.g. condiments can overlap)
 LENIENT_INGREDIENT_TYPES = {"condiment", "seasoning", "other_food"}
+
+# ── Category allowlist ────────────────────────────────────────────────────────
+# For each ingredient type, at least ONE of these substrings must appear in
+# the product's category slug + name_en + name_de string.
+# None = no restriction (any category is accepted).
+# Products with NO assigned category always pass (can't filter what isn't set).
+# Only applied to types with reliable category boundaries; condiment/seasoning/
+# other_food are left unrestricted to avoid false negatives with exotic slugs.
+INGREDIENT_TYPE_CATEGORY_ALLOWLIST: dict[str, frozenset | None] = {
+    # Produce & fresh items: must be in produce or frozen-veg branch
+    "fresh_produce": frozenset({
+        "cat_produce",          # cat_produce_fruits, cat_produce_vegetables …
+        "cat_frozen",           # frozen vegetables are valid cooking ingredients
+        "produce", "fruit", "vegetable", "frisch", "fresh",
+        "obst", "gemüse", "gemuse", "pilz", "salat", "kräuter",
+    }),
+    # Grains, pasta, flour, bread: must be in pantry or bakery branch
+    "grain_starch": frozenset({
+        "cat_pantry",           # cat_pantry_rice, cat_pantry_pasta, cat_pantry_flour …
+        "cat_bakery",           # bread, rolls, breadcrumbs
+        "pantry", "grain", "cereal", "bakery", "bread",
+        "reis", "pasta", "nudel", "mehl",
+    }),
+    # Meat, fish, eggs, tofu: must be in meat branch (covers poultry, seafood, deli)
+    # or frozen (frozen fish/meat), or dairy_eggs (eggs classified there)
+    "protein": frozenset({
+        "cat_meat",             # cat_meat_fresh-meat, cat_meat_poultry, cat_meat_seafood …
+        "cat_dairy_eggs",       # eggs
+        "cat_frozen",           # frozen fish / meat products OK as ingredients
+        "meat", "fleisch", "fish", "fisch", "seafood", "poultry",
+        "geflügel", "egg", "ei", "deli", "wurst", "tofu",
+    }),
+    # Dairy: must be in dairy branch
+    "dairy": frozenset({
+        "cat_dairy",            # cat_dairy_milk, cat_dairy_cheese, cat_dairy_butter …
+        "dairy", "milch", "milk", "käse", "kase", "cheese", "butter",
+        "yogurt", "joghurt", "sahne", "cream", "quark", "molkerei",
+    }),
+    # Condiments, seasonings, other: no allowlist (categories too varied across stores)
+    "condiment": None,
+    "seasoning":  None,
+    "other_food": None,
+}
+
+# ── Ingredient substitution rules ─────────────────────────────────────────────
+# Explicit swaps used as a fallback before calling Gemini for alternatives.
+# Key = canonical ingredient name (lower-cased), value = ordered list of
+# acceptable substitutes (most preferred first).
+INGREDIENT_SUBSTITUTIONS: dict[str, list[str]] = {
+    "sea salt":          ["table salt", "kosher salt", "rock salt"],
+    "table salt":        ["sea salt", "kosher salt"],
+    "kosher salt":       ["sea salt", "table salt"],
+    "all-purpose flour": ["plain flour", "wheat flour"],
+    "plain flour":       ["all-purpose flour", "wheat flour"],
+    "cake flour":        ["plain flour", "all-purpose flour"],
+    "heavy cream":       ["double cream", "whipping cream"],
+    "double cream":      ["heavy cream", "whipping cream"],
+    "whipping cream":    ["heavy cream", "double cream"],
+    "sour cream":        ["crème fraîche", "greek yogurt"],
+    "crème fraîche":     ["sour cream"],
+    "greek yogurt":      ["plain yogurt", "sour cream"],
+    "basmati rice":      ["jasmine rice", "long-grain rice"],
+    "jasmine rice":      ["basmati rice", "long-grain rice"],
+    "arborio rice":      ["risotto rice", "short-grain rice"],
+    "spring onion":      ["scallion", "green onion", "chive"],
+    "scallion":          ["spring onion", "green onion"],
+    "green onion":       ["spring onion", "scallion"],
+    "zucchini":          ["courgette"],
+    "courgette":         ["zucchini"],
+    "eggplant":          ["aubergine"],
+    "aubergine":         ["eggplant"],
+    "cilantro":          ["fresh coriander", "coriander"],
+    "coriander":         ["cilantro", "fresh coriander"],
+    "bell pepper":       ["capsicum", "sweet pepper"],
+    "capsicum":          ["bell pepper", "sweet pepper"],
+    "ground beef":       ["minced beef", "minced meat"],
+    "minced beef":       ["ground beef"],
+    "ground pork":       ["minced pork"],
+    "minced pork":       ["ground pork"],
+    "sunflower oil":     ["vegetable oil", "canola oil"],
+    "vegetable oil":     ["sunflower oil", "canola oil"],
+    "canola oil":        ["vegetable oil", "sunflower oil"],
+    "pine nuts":         ["walnuts", "cashews"],
+    "walnuts":           ["pine nuts", "pecans"],
+    "breadcrumbs":       ["panko"],
+    "panko":             ["breadcrumbs"],
+}
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -268,17 +374,42 @@ def _is_non_food_product(product_name_lower: str) -> bool:
     return False
 
 
-def _is_junk_category(product) -> bool:
+def _check_category(product, ing_type: str) -> tuple[bool, bool]:
+    """
+    Single DB fetch for both category checks.
+
+    Returns (is_junk, is_allowed):
+    - is_junk    : category is explicitly bad (snacks, beverages, household…)
+    - is_allowed : category is appropriate for ing_type per the allowlist
+                   (True by default when no category is set or no restriction applies)
+    """
     if not product.category_id:
-        return False
+        return False, True  # uncategorized: not junk, no restriction can be applied
+
     cat = Category.query.get(product.category_id)
     if not cat:
-        return False
-    slug = (cat.slug or "").lower()
-    if any(root in slug for root in JUNK_SLUG_ROOTS):
-        return True
-    name = ((cat.name_en or cat.name_de) or "").lower().strip()
-    return name in JUNK_CATEGORY_NAMES
+        return False, True
+
+    slug     = (cat.slug or "").lower()
+    name_en  = (cat.name_en or "").lower().strip()
+    name_de  = (cat.name_de or "").lower().strip()
+    combined = f"{slug} {name_en} {name_de}"
+
+    # ── Junk check (blocklist) ─────────────────────────────────────────────
+    is_junk = (
+        any(root in slug for root in JUNK_SLUG_ROOTS)
+        or name_en in JUNK_CATEGORY_NAMES
+        or name_de in JUNK_CATEGORY_NAMES
+    )
+
+    # ── Allowlist check ────────────────────────────────────────────────────
+    allowed_kws = INGREDIENT_TYPE_CATEGORY_ALLOWLIST.get(ing_type)
+    if allowed_kws is None:
+        is_allowed = True   # no restriction for this ingredient type
+    else:
+        is_allowed = any(kw in combined for kw in allowed_kws)
+
+    return is_junk, is_allowed
 
 
 def _is_flavor_descriptor(product_name_lower: str, search_term_lower: str) -> bool:
@@ -324,8 +455,19 @@ def _passes_all_filters(product, name_lower: str, search_term_lower: str,
         return False
     if require_whole_word and not _term_appears_as_whole_word(name_lower, search_term_lower):
         return False
-    if _is_junk_category(product) and ing_type not in LENIENT_INGREDIENT_TYPES:
+
+    is_junk, is_allowed = _check_category(product, ing_type)
+
+    # Junk categories (snacks, beverages, household…) are blocked except for
+    # lenient types where overlap is expected (condiment, seasoning, other_food).
+    if is_junk and ing_type not in LENIENT_INGREDIENT_TYPES:
         return False
+
+    # Category allowlist: for typed ingredients (produce, grain, protein, dairy)
+    # the product must be in an appropriate category family.
+    if not is_allowed:
+        return False
+
     if _is_junk_by_name(name_lower, search_term_lower, ing_type):
         return False
     return True
@@ -480,13 +622,32 @@ def match_ingredients_to_products(ingredients: list[str]) -> list[dict]:
             if len(matches) == 3:
                 break
 
-        # ── Phase 2: progressively shorter phrases ────────────────────────────
+        # ── Phase 2: last word (usually the noun / key food word) ────────────
+        # Try this BEFORE the progressive-drop-from-right so that "Red Pepper"
+        # searches for "Pepper" rather than first searching for "Red".
+        if not matches and ' ' in search_term:
+            last_word = search_term.split()[-1]
+            if (len(last_word) >= 4
+                    and last_word.lower() not in INGREDIENT_MODIFIER_WORDS):
+                scored = _search_and_filter(last_word, ing_type)
+                for _, p in scored:
+                    price = _get_product_price(p)
+                    store = _get_product_cheapest_store(p)
+                    matches.append(_build_match_dict(p, price, store))
+                    if len(matches) == 3:
+                        break
+
+        # ── Phase 3: progressively shorter phrases (drop from right) ─────────
+        # Skip any shortened term that is a lone modifier word (colour, size…)
+        # — searching for "Red" or "Yellow" alone causes nonsense matches.
         if not matches and ' ' in search_term:
             words = search_term.split()
             for drop in range(1, len(words)):
                 shorter = ' '.join(words[:-drop])
                 if len(shorter) < 3:
                     break
+                if shorter.lower() in INGREDIENT_MODIFIER_WORDS:
+                    continue  # e.g. "Red" from "Red Pepper" — skip it
                 scored = _search_and_filter(shorter, ing_type)
                 for _, p in scored:
                     price = _get_product_price(p)
@@ -496,18 +657,6 @@ def match_ingredients_to_products(ingredients: list[str]) -> list[dict]:
                         break
                 if matches:
                     break
-
-        # ── Phase 3: last word only ───────────────────────────────────────────
-        if not matches and ' ' in search_term:
-            last_word = search_term.split()[-1]
-            if len(last_word) >= 4:  # at least 4 chars to avoid garbage matches
-                scored = _search_and_filter(last_word, ing_type)
-                for _, p in scored:
-                    price = _get_product_price(p)
-                    store = _get_product_cheapest_store(p)
-                    matches.append(_build_match_dict(p, price, store))
-                    if len(matches) == 3:
-                        break
 
         # ── Proportional cost messages ────────────────────────────────────────
         for m in matches:

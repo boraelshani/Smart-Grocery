@@ -20,8 +20,8 @@
   <!-- Core Application Styles -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/global.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/enhanced-theme.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/navbar.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/navbar-fixes.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/navbar.css') }}?v=4">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/navbar-fixes.css') }}?v=4">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/hero.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/cards.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/product-cards-unified.css') }}">
@@ -130,63 +130,75 @@
                 {% endif %}
               </div>
             </a>
-            <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-3 p-0" aria-labelledby="navbarDropdown" style="border-radius: 16px; overflow: hidden; min-width: 260px; animation: dropdownFade 0.2s ease-out;">
+            <ul class="dropdown-menu dropdown-menu-end border-0 mt-3 p-0 user-dropdown-menu" aria-labelledby="navbarDropdown">
+              <!-- Header -->
               <li class="dropdown-user-header">
                 <div class="d-flex align-items-center gap-3">
-                  <div class="navbar-avatar navbar-avatar-lg navbar-avatar-surface shadow-sm">
-                    {% if account_avatar %}
-                    <img src="{{ account_avatar }}" alt="{{ account_name }} avatar">
-                    {% else %}
-                    <span>{{ account_initials }}</span>
-                    {% endif %}
+                  <div class="dd-avatar-ring">
+                    <div class="navbar-avatar navbar-avatar-lg navbar-avatar-surface">
+                      {% if account_avatar %}
+                      <img src="{{ account_avatar }}" alt="{{ account_name }} avatar">
+                      {% else %}
+                      <span>{{ account_initials }}</span>
+                      {% endif %}
+                    </div>
                   </div>
                   <div>
-                    <h6 class="mb-0 fw-bold">{{ account_name }}</h6>
-                    <small class="text-white-50 text-truncate d-inline-block" style="max-width: 150px;">{{ account_email }}</small>
+                    <h6 class="mb-0 fw-bold dd-user-name">{{ account_name }}</h6>
+                    <small class="dd-user-email text-truncate d-inline-block" style="max-width: 160px;">{{ account_email }}</small>
                   </div>
                 </div>
               </li>
+
+              <!-- Menu items -->
               <div class="py-2">
                 <li>
-                  <a class="dropdown-item py-2 px-3 fw-medium d-flex align-items-center gap-3 transition-all {% if request.endpoint == 'main.profile' %}active{% endif %}" href="{{ url_for('main.profile') }}" onmouseover="this.style.backgroundColor='#f8f9fa'" onmouseout="this.style.backgroundColor='transparent'">
-                    <div class="bg-light rounded p-2 text-primary d-flex align-items-center justify-content-center"><i class="bi bi-person-lines-fill"></i></div> Profile
+                  <a class="dropdown-item dd-item {% if request.endpoint == 'main.profile' %}active{% endif %}" href="{{ url_for('main.profile') }}">
+                    <span class="dd-icon dd-icon-blue"><i class="bi bi-person-lines-fill"></i></span>
+                    <span>Profile</span>
                   </a>
                 </li>
                 <li>
-                  <a class="dropdown-item py-2 px-3 fw-medium d-flex align-items-center gap-3 transition-all" href="{{ url_for('main.shopping_list') }}" onmouseover="this.style.backgroundColor='#f8f9fa'" onmouseout="this.style.backgroundColor='transparent'">
-                    <div class="bg-light rounded p-2 text-success d-flex align-items-center justify-content-center"><i class="bi bi-card-checklist"></i></div> My Shopping Lists
+                  <a class="dropdown-item dd-item" href="{{ url_for('main.shopping_list') }}">
+                    <span class="dd-icon dd-icon-green"><i class="bi bi-card-checklist"></i></span>
+                    <span>My Shopping Lists</span>
                   </a>
                 </li>
                 <li>
-                  <a class="dropdown-item py-2 px-3 fw-medium d-flex align-items-center gap-3 transition-all {% if request.endpoint == 'main.profile_favorites' %}active{% endif %}" href="{{ url_for('main.profile_favorites') }}" onmouseover="this.style.backgroundColor='#f8f9fa'" onmouseout="this.style.backgroundColor='transparent'">
-                    <div class="bg-light rounded p-2 text-danger d-flex align-items-center justify-content-center"><i class="bi bi-heart-fill"></i></div> Favorites
+                  <a class="dropdown-item dd-item {% if request.endpoint == 'main.profile_favorites' %}active{% endif %}" href="{{ url_for('main.profile_favorites') }}">
+                    <span class="dd-icon dd-icon-red"><i class="bi bi-heart-fill"></i></span>
+                    <span>Favorites</span>
                   </a>
                 </li>
-              </div>
-              <li class="border-top"><hr class="dropdown-divider m-0 border-0"></li>
-              <div class="py-2">
+
+                <li><hr class="dd-divider"></li>
+
                 <li>
-                  <a class="dropdown-item py-2 px-3 fw-medium d-flex align-items-center gap-3 transition-all {% if request.endpoint == 'main.profile_settings' %}active{% endif %}" href="{{ url_for('main.profile_settings') }}" onmouseover="this.style.backgroundColor='#f8f9fa'" onmouseout="this.style.backgroundColor='transparent'">
-                    <div class="bg-light rounded p-2 d-flex align-items-center justify-content-center"><i class="bi bi-gear-fill"></i></div> Settings
+                  <a class="dropdown-item dd-item {% if request.endpoint == 'main.profile_settings' %}active{% endif %}" href="{{ url_for('main.profile_settings') }}">
+                    <span class="dd-icon dd-icon-gray"><i class="bi bi-gear-fill"></i></span>
+                    <span>Settings</span>
                   </a>
                 </li>
                 <li>
-                  <a class="dropdown-item py-2 px-3 fw-medium d-flex align-items-center gap-3 transition-all {% if request.endpoint == 'main.profile_preferences' %}active{% endif %}" href="{{ url_for('main.profile_preferences') }}" onmouseover="this.style.backgroundColor='#f8f9fa'" onmouseout="this.style.backgroundColor='transparent'">
-                    <div class="bg-light rounded p-2 text-warning d-flex align-items-center justify-content-center"><i class="bi bi-sliders2"></i></div> Preferences
+                  <a class="dropdown-item dd-item {% if request.endpoint == 'main.profile_preferences' %}active{% endif %}" href="{{ url_for('main.profile_preferences') }}">
+                    <span class="dd-icon dd-icon-yellow"><i class="bi bi-sliders2"></i></span>
+                    <span>Preferences</span>
                   </a>
                 </li>
-                
+
                 {% if is_admin_nav %}
                 <li>
-                  <a class="dropdown-item py-2 px-3 fw-medium d-flex align-items-center gap-3 transition-all {% if request.endpoint and request.endpoint.startswith('admin.') %}active{% endif %}" href="{{ url_for('admin.admin_dashboard') }}" onmouseover="this.style.backgroundColor='#f8f9fa'" onmouseout="this.style.backgroundColor='transparent'">
-                    <div class="bg-light rounded p-2 text-dark d-flex align-items-center justify-content-center"><i class="bi bi-shield-lock"></i></div> Admin Dashboard
+                  <a class="dropdown-item dd-item {% if request.endpoint and request.endpoint.startswith('admin.') %}active{% endif %}" href="{{ url_for('admin.admin_dashboard') }}">
+                    <span class="dd-icon dd-icon-purple"><i class="bi bi-shield-lock"></i></span>
+                    <span>Admin Dashboard</span>
                   </a>
                 </li>
                 {% endif %}
               </div>
-              <li class="border-top bg-light"><hr class="dropdown-divider m-0 border-0"></li>
-              <li class="bg-light px-3 py-3">
-                <a class="btn btn-danger w-100 rounded-pill fw-bold text-white d-flex align-items-center justify-content-center gap-2" href="{{ url_for('auth.logout') }}" style="box-shadow: 0 4px 12px rgba(220, 53, 69, 0.2);">
+
+              <!-- Sign Out -->
+              <li class="dd-signout-wrap">
+                <a class="dd-signout-btn" href="{{ url_for('auth.logout') }}">
                   <i class="bi bi-box-arrow-right"></i> Sign Out
                 </a>
               </li>
@@ -407,7 +419,7 @@
                                       </div>
                                      <!-- Text Box -->
                                       <div class="p-2 d-flex flex-column" style="background: white;">
-                                         <a href="{{ url_for('main.compare_prices', category=l1) }}" class="fw-bold text-decoration-none mb-1" style="font-size: 0.75rem; color: #1e293b; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 2.4em;">
+                                         <a href="{{ url_for('main.compare_prices', category=l1) }}" class="fw-bold text-decoration-none mb-1" style="font-size: 0.75rem; color: #1e293b; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 2.4em;">
                                             {{ l1 }}
                                          </a>
                                          {% if l2_list %}
@@ -480,56 +492,51 @@
         
 
         {% if session.get('user') %}
-        <div class="navbar-mobile-account d-lg-none mt-3">
-          <div class="navbar-account-card">
+        <div class="mob-account d-lg-none mt-3">
+          <!-- Header -->
+          <div class="mob-account-header">
             <div class="d-flex align-items-center gap-3">
-              <div class="navbar-avatar navbar-avatar-lg navbar-avatar-surface">
-                {% if account_avatar %}
-                <img src="{{ account_avatar }}" alt="{{ account_name }} avatar">
-                {% else %}
-                <span>{{ account_initials }}</span>
-                {% endif %}
+              <div class="dd-avatar-ring">
+                <div class="navbar-avatar navbar-avatar-lg navbar-avatar-surface">
+                  {% if account_avatar %}
+                  <img src="{{ account_avatar }}" alt="{{ account_name }} avatar">
+                  {% else %}
+                  <span>{{ account_initials }}</span>
+                  {% endif %}
+                </div>
               </div>
               <div class="min-w-0">
-                <div class="fw-bold text-dark text-truncate">{{ account_name }}</div>
-                <div class="small text-muted text-truncate">{{ account_email }}</div>
+                <div class="dd-user-name fw-bold text-truncate">{{ account_name }}</div>
+                <div class="dd-user-email text-truncate">{{ account_email }}</div>
               </div>
             </div>
-            <div class="navbar-menu-grid mt-3">
-              <a class="navbar-menu-link {% if request.endpoint == 'main.profile' %}active{% endif %}" href="{{ url_for('main.profile') }}">
-                <i class="bi bi-person-lines-fill"></i>
-                <span>Profile</span>
-              </a>
-              <a class="navbar-menu-link {% if request.endpoint == 'main.profile_favorites' %}active{% endif %}" href="{{ url_for('main.profile_favorites') }}">
-                <i class="bi bi-heart-fill"></i>
-                <span>Favorites</span>
-              </a>
-              <a class="navbar-menu-link {% if request.endpoint == 'main.profile_settings' %}active{% endif %}" href="{{ url_for('main.profile_settings') }}">
-                <i class="bi bi-gear-fill"></i>
-                <span>Settings</span>
-              </a>
-              <a class="navbar-menu-link {% if request.endpoint == 'main.profile_preferences' %}active{% endif %}" href="{{ url_for('main.profile_preferences') }}">
-                <i class="bi bi-sliders2"></i>
-                <span>Preferences</span>
-              </a>
-              
-              <a class="navbar-menu-link" href="{{ url_for('main.notifications_page') }}">
-                <i class="bi bi-bell-fill"></i>
-                <span>Notifications</span>
-              </a>
-              <a class="navbar-menu-link {% if request.endpoint == 'main.barcode_scanner' %}active{% endif %}" href="{{ url_for('main.barcode_scanner') }}">
-                <i class="bi bi-upc-scan"></i>
-                <span>Scanner</span>
-              </a>
-              {% if is_admin_nav %}
-              <a class="navbar-menu-link {% if request.endpoint and request.endpoint.startswith('admin.') %}active{% endif %}" href="{{ url_for('admin.admin_dashboard') }}">
-                <i class="bi bi-shield-lock"></i>
-                <span>Admin</span>
-              </a>
-              {% endif %}
-              <a class="navbar-menu-link" href="{{ url_for('auth.logout') }}">
-                <i class="bi bi-box-arrow-right"></i>
-                <span>Sign Out</span>
+          </div>
+          <!-- Menu -->
+          <div class="mob-account-body">
+            <a class="dd-item {% if request.endpoint == 'main.profile' %}active{% endif %}" href="{{ url_for('main.profile') }}">
+              <span class="dd-icon dd-icon-blue"><i class="bi bi-person-lines-fill"></i></span><span>Profile</span>
+            </a>
+            <a class="dd-item" href="{{ url_for('main.shopping_list') }}">
+              <span class="dd-icon dd-icon-green"><i class="bi bi-card-checklist"></i></span><span>My Shopping Lists</span>
+            </a>
+            <a class="dd-item {% if request.endpoint == 'main.profile_favorites' %}active{% endif %}" href="{{ url_for('main.profile_favorites') }}">
+              <span class="dd-icon dd-icon-red"><i class="bi bi-heart-fill"></i></span><span>Favorites</span>
+            </a>
+            <hr class="dd-divider">
+            <a class="dd-item {% if request.endpoint == 'main.profile_settings' %}active{% endif %}" href="{{ url_for('main.profile_settings') }}">
+              <span class="dd-icon dd-icon-gray"><i class="bi bi-gear-fill"></i></span><span>Settings</span>
+            </a>
+            <a class="dd-item {% if request.endpoint == 'main.profile_preferences' %}active{% endif %}" href="{{ url_for('main.profile_preferences') }}">
+              <span class="dd-icon dd-icon-yellow"><i class="bi bi-sliders2"></i></span><span>Preferences</span>
+            </a>
+            {% if is_admin_nav %}
+            <a class="dd-item {% if request.endpoint and request.endpoint.startswith('admin.') %}active{% endif %}" href="{{ url_for('admin.admin_dashboard') }}">
+              <span class="dd-icon dd-icon-purple"><i class="bi bi-shield-lock"></i></span><span>Admin Dashboard</span>
+            </a>
+            {% endif %}
+            <div class="dd-signout-wrap mt-1">
+              <a class="dd-signout-btn" href="{{ url_for('auth.logout') }}">
+                <i class="bi bi-box-arrow-right"></i> Sign Out
               </a>
             </div>
           </div>
