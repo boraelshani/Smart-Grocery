@@ -16,18 +16,277 @@
       min-height: 100vh;
     }
 
-    /* Flat editorial page header — matches home page purple sections */
-    .profile-header {
-      background: #65388f;
-      color: white;
-      padding: 3rem 0 5.5rem;
-      margin-bottom: -3.5rem;
-      position: relative;
+    /* ── Profile Hero ── */
+    .ph-hero {
+      background: #f5efe6;
+      padding: 1.5rem 0;
+    }
+    .ph-hero-card {
+      background: #ede8de;
+      border-radius: 20px;
       overflow: hidden;
-      z-index: 10;
+      border: 1px solid #d9d0c4;
+    }
+    .ph-hero-grid {
+      display: grid;
+      grid-template-columns: minmax(220px, 1fr) 1fr 1.2fr;
+      column-gap: 1.5rem;
+      align-items: stretch;
+      min-height: 260px;
+      padding-left: 2.5rem;
+      padding-top: 2rem;
+      padding-bottom: 2rem;
+      padding-right: 0;
+    }
+    .ph-welcome-label { font-size: 1rem; color: #7c6e8a; margin-bottom: 0.25rem; }
+    .ph-welcome-name {
+      font-family: 'Cabinet Grotesk', sans-serif;
+      font-size: 2.8rem; font-weight: 700;
+      color: #3b1a6e; line-height: 1.1; margin-bottom: 0.6rem;
+    }
+    .ph-welcome-sub { color: #7c6e8a; font-size: 0.92rem; line-height: 1.6; margin-bottom: 1.5rem; }
+    .ph-stats-row { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+    .ph-stat-chip {
+      display: flex; align-items: center; gap: 10px;
+      background: white; border: 1.5px solid #eee8f8;
+      border-radius: 14px; padding: 10px 16px;
+    }
+    .ph-stat-chip strong { display: block; font-size: 1.1rem; color: #3b1a6e; line-height: 1; }
+    .ph-stat-chip span  { font-size: 0.75rem; color: #9b8aaa; }
+    .ph-hero-left { display: flex; flex-direction: column; justify-content: center; }
+    .ph-hero-center { display: flex; justify-content: center; align-items: center; }
+    .ph-avatar-card { text-align: center; }
+    .ph-avatar-circle {
+      width: 110px; height: 110px; border-radius: 50%;
+      background: #ede9ff; display: flex; align-items: center; justify-content: center;
+      margin: 0 auto; overflow: hidden;
+      border: 4px solid white; box-shadow: 0 8px 24px rgba(101,56,143,0.15);
+    }
+    .ph-pro-badge {
+      position: absolute; top: -6px; right: -14px;
+      background: #f5c842; color: #1a1a2e;
+      font-size: 0.68rem; font-weight: 800;
+      border-radius: 999px; padding: 4px 10px;
+      border: 2px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+      white-space: nowrap;
+    }
+    .ph-avatar-name { font-weight: 700; color: #3b1a6e; font-size: 1.1rem; margin-top: 0.9rem; margin-bottom: 0.25rem; }
+    .ph-avatar-email { color: #7c6e8a; font-size: 0.82rem; margin: 0; }
+    .ph-hero-center { display: flex; align-items: center; }
+    .ph-hero-right { height: 100%; overflow: hidden; border-radius: 0; }
+    .ph-hero-img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 0; }
+
+    /* ── Content grid ── */
+    .ph-content-grid {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 1.5rem;
+      align-items: start;
+    }
+    .ph-sidebar { position: sticky; top: 90px; }
+
+    /* ── Cards ── */
+    .ph-card {
+      background: white; border-radius: 16px;
+      border: 1.5px solid #eee8f8; overflow: hidden; margin-bottom: 1.5rem;
+    }
+    .ph-card-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1.1rem 1.4rem; border-bottom: 1px solid #f0eaff;
+    }
+    .ph-card-title { font-size: 1rem; font-weight: 700; color: #3b1a6e; margin: 0; display: flex; align-items: center; gap: 8px; }
+    .ph-card-title i { color: #65388f; }
+    .ph-edit-btn {
+      background: #65388f; color: white; border: none; border-radius: 999px;
+      padding: 7px 18px; font-size: 0.82rem; font-weight: 600;
+      display: flex; align-items: center; gap: 6px; cursor: pointer; transition: background 0.15s;
+    }
+    .ph-edit-btn:hover { background: #48236b; }
+
+    /* Field rows */
+    .ph-field-row {
+      display: flex; align-items: center; gap: 14px;
+      padding: 0.95rem 1.4rem; border-bottom: 1px solid #f5f0ff; transition: background 0.15s;
+    }
+    .ph-field-row:last-child { border-bottom: none; }
+    .ph-field-row:hover { background: #faf8ff; }
+    .ph-field-icon {
+      width: 38px; height: 38px; background: #f0eaff; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center; color: #65388f; flex-shrink: 0;
+    }
+    .ph-field-body { flex: 1; display: flex; flex-direction: column; }
+    .ph-field-label { font-size: 0.72rem; color: #9b8aaa; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+    .ph-field-value { font-size: 0.95rem; color: #1a1a2e; font-weight: 600; margin-top: 2px; }
+    .ph-field-arrow { color: #c4b5d9; font-size: 0.8rem; }
+
+    /* Quick links */
+    .ph-link-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 0.85rem 1.4rem; border-bottom: 1px solid #f5f0ff;
+      color: #374151 !important; text-decoration: none !important;
+      font-size: 0.9rem; font-weight: 500; transition: background 0.15s;
+    }
+    .ph-link-row:last-child { border-bottom: none; }
+    .ph-link-row:hover { background: #faf8ff; color: #65388f !important; }
+    .ph-link-row i:first-child { color: #65388f; font-size: 1rem; flex-shrink: 0; }
+    .ph-link-row span { flex: 1; }
+
+    /* Empty state */
+    .ph-empty-state { padding: 1.8rem; text-align: center; }
+    .ph-empty-icon {
+      width: 52px; height: 52px; background: #f0eaff; border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem; color: #65388f; margin: 0 auto 1rem;
+    }
+    .ph-empty-title { font-weight: 700; color: #3b1a6e; margin-bottom: 0.25rem; }
+    .ph-empty-sub { font-size: 0.85rem; color: #9b8aaa; margin: 0; }
+
+    @media (max-width: 991px) {
+      .ph-hero-grid { grid-template-columns: 1fr; padding-left: 1.5rem; padding-right: 1.5rem; }
+      .ph-hero-right { display: none; }
+      .ph-hero-center { order: -1; }
+      .ph-content-grid { grid-template-columns: 1fr; }
+      .ph-sidebar { position: static; }
+      .pa-layout { grid-template-columns: 1fr; }
+      .pa-sidebar-nav { position: static; }
+      .pa-banner { flex-direction: column; align-items: flex-start; gap: 1rem; }
+      .pa-banner-stats { width: 100%; }
     }
 
-    /* Shapes hidden — no animation on content pages */
+    /* ── New purple profile layout ── */
+    body { background: #f0edf7; }
+
+    .pa-layout {
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      gap: 1.5rem;
+      align-items: start;
+    }
+
+    /* Left sidebar nav */
+    .pa-sidebar-nav {
+      background: white;
+      border-radius: 18px;
+      padding: 1.5rem 1rem;
+      border: 1px solid #eee8f8;
+      position: sticky;
+      top: 90px;
+    }
+    .pa-sidebar-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: #9b8aaa;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      padding: 0 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+    .pa-nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0.7rem 0.85rem;
+      border-radius: 12px;
+      color: #4b4060;
+      text-decoration: none !important;
+      font-weight: 500;
+      font-size: 0.95rem;
+      transition: all 0.15s;
+      margin-bottom: 2px;
+    }
+    .pa-nav-item i { color: #65388f; font-size: 1rem; width: 20px; text-align: center; }
+    .pa-nav-item:hover { background: #f3eeff; color: #65388f; }
+    .pa-nav-item.active { background: #f0eaff; color: #65388f; font-weight: 600; }
+
+    /* Purple banner */
+    .pa-banner {
+      background: linear-gradient(135deg, #1a0d3b 0%, #3b1a6e 45%, #65388f 80%, #7c4dab 100%);
+      border-radius: 20px;
+      padding: 2rem 2.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .pa-banner-avatar {
+      width: 72px; height: 72px; border-radius: 50%;
+      background: white;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.9rem; font-weight: 800; color: #3b1a6e;
+      flex-shrink: 0; overflow: hidden;
+      border: 3px solid rgba(255,255,255,0.3);
+    }
+    .pa-banner-info { flex: 1; min-width: 0; }
+    .pa-banner-label {
+      font-size: 0.68rem; font-weight: 700;
+      color: rgba(255,255,255,0.55);
+      text-transform: uppercase; letter-spacing: 0.12em;
+      margin-bottom: 0.2rem;
+    }
+    .pa-banner-name {
+      font-size: 1.5rem; font-weight: 700;
+      color: #c4a8ff; margin-bottom: 0.2rem; line-height: 1.2;
+    }
+    .pa-banner-email { color: rgba(255,255,255,0.65); font-size: 0.88rem; margin: 0; }
+    .pa-banner-stats { display: flex; gap: 0.6rem; flex-wrap: wrap; flex-shrink: 0; }
+    .pa-stat-pill {
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.22);
+      border-radius: 999px;
+      padding: 7px 15px;
+      color: white; font-size: 0.82rem; font-weight: 600;
+      display: flex; align-items: center; gap: 7px;
+      white-space: nowrap;
+    }
+    .pa-stat-pill i { font-size: 0.8rem; opacity: 0.85; }
+
+    /* Favorites grid */
+    .pa-fav-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1rem;
+      padding: 1.2rem 1.4rem;
+    }
+    .pa-fav-card {
+      position: relative;
+      border: 1.5px solid #eee8f8;
+      border-radius: 14px;
+      overflow: hidden;
+      transition: box-shadow 0.15s, border-color 0.15s;
+      background: white;
+    }
+    .pa-fav-card:hover { border-color: #c4a8ff; box-shadow: 0 4px 18px rgba(101,56,143,0.1); }
+    .pa-fav-remove {
+      position: absolute; top: 8px; right: 8px; z-index: 2;
+      width: 28px; height: 28px; border-radius: 50%;
+      background: rgba(255,255,255,0.9); border: 1px solid #eee;
+      display: flex; align-items: center; justify-content: center;
+      color: #9b8aaa; font-size: 0.9rem; cursor: pointer;
+      transition: all 0.15s;
+    }
+    .pa-fav-remove:hover { background: #fee2e2; color: #dc2626; border-color: #fca5a5; }
+    .pa-fav-inner { display: flex; align-items: center; gap: 12px; padding: 1rem; color: inherit; }
+    .pa-fav-img {
+      width: 64px; height: 64px; flex-shrink: 0;
+      border-radius: 10px; background: #f5f3ff;
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden; border: 1px solid #eee8f8;
+    }
+    .pa-fav-img img { width: 100%; height: 100%; object-fit: contain; padding: 4px; }
+    .pa-fav-body { flex: 1; min-width: 0; }
+    .pa-fav-name { font-weight: 700; color: #1a1a2e; font-size: 0.92rem; margin: 0 0 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .pa-fav-meta { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 5px; }
+    .pa-fav-store { font-size: 0.75rem; color: #65388f; background: #f0eaff; border-radius: 999px; padding: 2px 9px; }
+    .pa-fav-cat { font-size: 0.75rem; color: #9b8aaa; background: #f5f0ff; border-radius: 999px; padding: 2px 9px; }
+    .pa-fav-price { font-size: 1rem; font-weight: 800; color: #3b1a6e; margin: 0; }
+    .pa-fav-empty { padding: 2rem 1.4rem; }
+    .pa-fav-empty-box {
+      border: 2px dashed #ddd5f0; border-radius: 16px;
+      padding: 3rem 2rem; text-align: center;
+    }
+
+    /* ── Legacy ── */
+    .premium-hero { display: none; }
     .bg-shape { display: none; }
     
     .shape-1 { top: 20%; left: 10%; width: 100px; height: 100px; animation-delay: 0s; } /* Position and size for shape 1 */
@@ -891,298 +1150,267 @@
   <!-- Navigation --> <!-- Navigation section of the website -->
   
 
-  {% if session.get('user') %} <!-- Check if user session data is available to display the header -->
-  <!-- Premium Profile Header --> <!-- High-end header for the user profile -->
-  <header class="premium-hero"> <!-- Styled container for the user's hero section -->
-    <div class="bg-shape shape-1"></div> <!-- Background decorative element 1 -->
-    <div class="bg-shape shape-2"></div> <!-- Background decorative element 2 -->
-    <div class="bg-shape shape-3"></div> <!-- Background decorative element 3 -->
-    
-    <div class="container position-relative" style="z-index: 2; text-align: center;"> <!-- Main content area of the hero header -->
-      <div class="d-inline-block position-relative mb-3"> <!-- Inline wrapper for positioning the avatar and badge -->
-         <div class="mx-auto d-flex align-items-center justify-content-center bg-white rounded-circle profile-avatar-xl text-primary overflow-hidden shadow-lg border-4 border-white"> <!-- Circle container for user avatar image or icon -->
-             {% if user_data.avatar %} <!-- Condition to check if an avatar image is set -->
-                <img src="{{ user_data.avatar }}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover;"> <!-- The user's uploaded profile picture -->
-             {% else %}
-                <i class="bi bi-person-fill" style="font-size: 4rem; color: #65388f;"></i> <!-- Default profile icon if no image is present -->
-             {% endif %}
-         </div>
-         <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark border border-2 border-white shadow-sm p-2"> <!-- Floating status badge -->
-            <i class="bi bi-star-fill"></i> PRO <!-- Premium status label for the user -->
-         </span>
-      </div>
-      
-      <h1 class="fw-bold mb-1 display-5 text-white text-shadow">{{ user_data.name if user_data and user_data.get('name') else 'Valued Shopper' }}</h1> <!-- Name of the user with fallback text -->
-      <p class="text-white-50 fs-5 mb-0"><i class="bi bi-envelope-fill me-2"></i>{{ user_data.email }}</p> <!-- User's email displayed as a subheader -->
-      
-      <div class="d-flex justify-content-center gap-3 mt-4"> <!-- Flexbox container for user statistics pills -->
-        <div class="badge bg-white bg-opacity-25 backdrop-blur px-3 py-2 rounded-pill"> <!-- Pill displaying number of favorited items -->
-            <i class="bi bi-heart-fill text-danger me-1"></i> {{ user_data.favorites|length if user_data.favorites else 0 }} Favorites <!-- Calculated length of the favorites list -->
-        </div>
-        <div class="badge bg-white bg-opacity-25 backdrop-blur px-3 py-2 rounded-pill"> <!-- Pill displaying number of preferred stores -->
-            <i class="bi bi-shop text-info me-1"></i> {{ user_data.get('preferred_stores', [])|length }} Stores <!-- Calculated length of preferred stores list -->
-        </div>
-      </div>
-    </div>
-  </header>
-  {% endif %}
-
-  <!-- Profile Content --> <!-- Main body content area for the profile view -->
-  <section class="container py-5"> <!-- Section with vertical padding for content clarity -->
-    {% if not session.get('user') %} <!-- Check if a user session is active -->
-      <div class="row justify-content-center"> <!-- Center the row content in the screen -->
-        <div class="col-lg-6"> <!-- Column spanning 6 grid units on large screens -->
-          <div class="identity-card p-5"> <!-- Identity block for unauthenticated users -->
-            <div class="modal-icon-circle bg-light text-primary mb-4"> <!-- Graphic element icon wrapper -->
-              <i class="bi bi-shield-lock-fill"></i> <!-- Lock icon representing secure private space -->
-            </div>
-            <h3 class="mb-3 fw-bold">Sign in to your space</h3> <!-- Main heading for guest view -->
-            <p class="text-muted mb-4">Access your favorites, personalized preferences, and smart shopping features.</p> <!-- Feature description for guests -->
-            <div class="d-flex gap-3 justify-content-center"> <!-- Container for authentication buttons -->
-              <a href="{{ url_for('auth.login') }}" class="btn btn-premium btn-premium-primary">Login Now</a> <!-- Primary action button to login -->
-              <a href="{{ url_for('auth.signup') }}" class="btn btn-premium btn-light border">Create Account</a> <!-- Secondary action button to signup -->
+  <section class="container py-4">
+    {% if not session.get('user') %}
+      <div class="row justify-content-center">
+        <div class="col-lg-6">
+          <div class="identity-card p-5 text-center">
+            <div class="modal-icon-circle bg-light text-primary mb-4"><i class="bi bi-shield-lock-fill"></i></div>
+            <h3 class="mb-3 fw-bold">Sign in to your space</h3>
+            <p class="text-muted mb-4">Access your favorites, personalized preferences, and smart shopping features.</p>
+            <div class="d-flex gap-3 justify-content-center">
+              <a href="{{ url_for('auth.login') }}" class="btn btn-premium btn-premium-primary">Login Now</a>
+              <a href="{{ url_for('auth.signup') }}" class="btn btn-premium btn-light border">Create Account</a>
             </div>
           </div>
         </div>
       </div>
-    {% else %} <!-- Display personal user data if logged in -->
-      <div class="profile-shell"> <!-- Wrapper for personal dashboard elements -->
-        
-        <!-- Account Settings Card --> <!-- Card containing basic user account info -->
-        <div class="fun-card"> <!-- Individual dashboard module -->
-            <div class="fun-card-header"> <!-- Header block for the dashboard module -->
-                <h4 class="fun-card-title"> <!-- Title of the dashboard section -->
-                    <i class="bi bi-gear-fill text-primary"></i> Account Settings <!-- Heading with settings icon -->
-                </h4>
-                <button class="btn btn-premium-primary rounded-pill py-2 px-4 shadow-sm" data-bs-toggle="modal" data-bs-target="#profileModal" style="font-size: 0.9rem;"> <!-- Trigger for the profile edit modal -->
-                  <i class="bi bi-pencil-square me-2"></i>Edit Profile <!-- Action text to edit details -->
+    {% else %}
+      <div class="pa-layout">
+
+        <!-- Left sidebar nav -->
+        <div class="pa-sidebar-nav">
+          <p class="pa-sidebar-label">Account</p>
+          <a href="#" class="pa-nav-item active" onclick="showPanel('overview', this); return false;">
+            <i class="bi bi-grid-fill"></i> Overview
+          </a>
+          <a href="#" class="pa-nav-item" onclick="showPanel('favorites', this); return false;">
+            <i class="bi bi-heart-fill"></i> Favorites
+          </a>
+          <a href="#" class="pa-nav-item" onclick="showPanel('settings', this); return false;">
+            <i class="bi bi-gear-fill"></i> Settings
+          </a>
+          <a href="#" class="pa-nav-item" onclick="showPanel('preferences', this); return false;">
+            <i class="bi bi-sliders"></i> Preferences
+          </a>
+        </div>
+
+        <!-- Right content -->
+        <div>
+
+          <!-- Purple gradient banner (always visible) -->
+          <div class="pa-banner">
+            <div class="pa-banner-avatar">
+              {% if user_data.avatar %}
+                <img src="{{ user_data.avatar }}" alt="Avatar" style="width:100%;height:100%;object-fit:cover;">
+              {% else %}
+                {{ (user_data.name[0] | upper) if user_data.name else 'U' }}
+              {% endif %}
+            </div>
+            <div class="pa-banner-info">
+              <p class="pa-banner-label">My Account</p>
+              <h2 class="pa-banner-name">{{ user_data.name if user_data and user_data.get('name') else 'Shopper' }}</h2>
+              <p class="pa-banner-email">{{ user_data.email }}</p>
+            </div>
+            <div class="pa-banner-stats">
+              <div class="pa-stat-pill">
+                <i class="bi bi-heart-fill"></i>
+                {{ user_data.favorites|length if user_data.favorites else 0 }} favorites
+              </div>
+              <div class="pa-stat-pill">
+                <i class="bi bi-shop"></i>
+                {{ user_data.get('preferred_stores', [])|length }} stores
+              </div>
+              <div class="pa-stat-pill">
+                <i class="bi bi-tag-fill"></i>
+                0 categories
+              </div>
+            </div>
+          </div>
+
+          <!-- ── OVERVIEW PANEL ── -->
+          <div id="pa-panel-overview" class="pa-panel">
+
+            <!-- Account Settings -->
+            <div class="ph-card">
+              <div class="ph-card-head">
+                <h4 class="ph-card-title"><i class="bi bi-gear-fill"></i> Account Settings</h4>
+                <button class="ph-edit-btn" data-bs-toggle="modal" data-bs-target="#profileModal">
+                  <i class="bi bi-pencil-square"></i> Edit Profile
                 </button>
-            </div>
-            <div class="fun-card-body"> <!-- Main body for account details -->
-                <div class="row g-4"> <!-- Grid row with spacing for child elements -->
-                    <div class="col-md-6"> <!-- Half-width column on medium+ devices -->
-                        <div class="info-field-glass"> <!-- Glassmorphism wrapper for a data field -->
-                            <div class="icon-wrapper"><i class="bi bi-person-fill"></i></div> <!-- Icon identifying the name field -->
-                            <div class="text-content"> <!-- Wrapper for the actual data -->
-                                <span class="label">Full Name</span> <!-- Description of the data field -->
-                                <span class="value">{{ user_data.name }}</span> <!-- Value rendered from the Python dictionary -->
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6"> <!-- Half-width column for email field -->
-                        <div class="info-field-glass"> <!-- Glassmorphism wrapper for email data -->
-                            <div class="icon-wrapper"><i class="bi bi-envelope-fill"></i></div> <!-- Icon identifying the email field -->
-                            <div class="text-content"> <!-- Wrapper for email content -->
-                                <span class="label">Email Address</span> <!-- Description of data field -->
-                                <span class="value">{{ user_data.email }}</span> <!-- Actual user email string -->
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6"> <!-- Half-width column for phone field -->
-                        <div class="info-field-glass"> <!-- Glassmorphism wrapper for phone data -->
-                             <div class="icon-wrapper"><i class="bi bi-telephone-fill"></i></div> <!-- Icon identifying the phone field -->
-                             <div class="text-content"> <!-- Wrapper for phone content -->
-                                 <span class="label">Phone Number</span> <!-- Description of phone field -->
-                                 {% if user_data.phone %} <!-- Check if user has provided a phone number -->
-                                    <span class="value">{{ user_data.phone }}</span> <!-- Show provided number -->
-                                 {% else %}
-                                    <span class="value empty">No phone number set</span> <!-- Fallback placeholder if missing -->
-                                 {% endif %}
-                             </div>
-                        </div>
-                    </div>
-                     <div class="col-md-6"> <!-- Half-width column for address field -->
-                        <div class="info-field-glass"> <!-- Glassmorphism wrapper for address -->
-                             <div class="icon-wrapper"><i class="bi bi-geo-alt-fill"></i></div> <!-- Icon identifying the address field -->
-                             <div class="text-content"> <!-- Wrapper for address content -->
-                                 <span class="label">Delivery Address</span> <!-- Description of location field -->
-                                 {% if user_data.address %} <!-- Check if user has provided an address -->
-                                    <span class="value">{{ user_data.address }}</span> <!-- Show provided address string -->
-                                 {% else %}
-                                    <span class="value empty">No address set</span> <!-- Fallback placeholder if missing -->
-                                 {% endif %}
-                             </div>
-                        </div>
-                    </div>
+              </div>
+              <div class="ph-field-row" data-bs-toggle="modal" data-bs-target="#profileModal" style="cursor:pointer;">
+                <div class="ph-field-icon"><i class="bi bi-person-fill"></i></div>
+                <div class="ph-field-body">
+                  <span class="ph-field-label">Full Name</span>
+                  <span class="ph-field-value">{{ user_data.name }}</span>
                 </div>
+                <i class="bi bi-chevron-right ph-field-arrow"></i>
+              </div>
+              <div class="ph-field-row" data-bs-toggle="modal" data-bs-target="#profileModal" style="cursor:pointer;">
+                <div class="ph-field-icon"><i class="bi bi-envelope-fill"></i></div>
+                <div class="ph-field-body">
+                  <span class="ph-field-label">Email Address</span>
+                  <span class="ph-field-value">{{ user_data.email }}</span>
+                </div>
+                <i class="bi bi-chevron-right ph-field-arrow"></i>
+              </div>
+              <div class="ph-field-row" data-bs-toggle="modal" data-bs-target="#profileModal" style="cursor:pointer;">
+                <div class="ph-field-icon"><i class="bi bi-lock-fill"></i></div>
+                <div class="ph-field-body">
+                  <span class="ph-field-label">Password</span>
+                  <span class="ph-field-value">••••••••••</span>
+                </div>
+                <i class="bi bi-chevron-right ph-field-arrow"></i>
+              </div>
             </div>
-        </div>
 
-        <!-- Favorites Section Card --> <!-- Card containing user's favorite products -->
-        <div class="fun-card mt-4"> <!-- Dashboard module for favorites with top margin -->
-             <div class="fun-card-header"> <!-- Header for favorites section -->
-                <h4 class="fun-card-title"> <!-- Title with favorite icon -->
-                    <i class="bi bi-heart-fill text-danger"></i> My Favorites <!-- Section heading text -->
-                </h4>
-                <span class="badge bg-danger rounded-pill">{{ user_data.favorites|length if user_data.favorites else 0 }} Items</span> <!-- Count badge for items -->
-            </div>
-            <div class="fun-card-body"> <!-- Section for scrolling through favorite products -->
-                {% if user_data.favorites %} <!-- Only render favorites if they exist -->
-                    <div class="row row-cols-1 row-cols-md-2 g-4"> <!-- Create a responsive grid for items -->
-                        {% for fav in user_data.favorites %} <!-- Loop through each item in the favorites list -->
-                            <div class="col"> <!-- Individual grid column for the favorite item -->
-                                <div class="position-relative h-100 group"> <!-- Styled wrapper for item card -->
-                                    {% set view_url = url_for('main.product_detail', product_id=fav.id, store_name=fav.store, store_price=fav.best_price or fav.price) %} <!-- Construct product link URL -->
-                                    
-                                    <!-- Delete Button (Top Right) --> <!-- Control to remove item from list -->
-                                    <button class="btn btn-light shadow-sm position-absolute top-0 end-0 m-3 z-3 border-0 delete-fav-btn" 
-                                            onclick="removeProfileFavorite(event, '{{ fav.id }}', this)"
-                                            title="Remove from favorites"> <!-- Button triggering asynchronous removal -->
-                                        <i class="bi bi-trash-fill"></i> <!-- Trash bin icon -->
-                                    </button>
-                                    
-                                    <a href="{{ view_url }}" class="info-field-glass p-3 h-100 align-items-center text-decoration-none"> <!-- Link to view details -->
-                                        <div class="icon-wrapper" style="width: 80px; height: 80px; padding: 10px;"> <!-- Image wrapper for product thumb -->
-                                            <img src="{{ fav.image or url_for('static', filename='placeholder.svg') }}" 
-                                                 alt="{{ fav.name }}" 
-                                                 style="width: 100%; height: 100%; object-fit: contain;"> <!-- Product image or generic icon -->
-                                        </div>
-                                        <div class="text-content flex-grow-1 ps-2 overflow-hidden pe-4"> <!-- Description container of the product -->
-                                            <div class="d-flex justify-content-between align-items-start mb-1"> <!-- Row for product name title -->
-                                                 <h6 class="fw-bold text-dark text-truncate mb-0" style="font-size: 1.1rem; max-width: 90%;" title="{{ fav.name }}">{{ fav.name }}</h6> <!-- Truncated product name -->
-                                            </div>
-                                            
-                                            <div class="d-flex flex-wrap align-items-center gap-2 mb-1"> <!-- Metadata row for product attributes -->
-                                                {% if fav.category %} <!-- Display category if it exists -->
-                                                    <span class="badge bg-light text-muted border" style="font-size: 0.6rem;">{{ fav.category }}</span> <!-- Category label -->
-                                                {% endif %}
-                                                {% if fav.store %} <!-- Display origin store if it exists -->
-                                                    <span class="badge bg-white text-primary border shadow-sm d-flex align-items-center gap-1 rounded-pill px-2">
-                                                        <i class="bi bi-shop"></i> {{ fav.store }} <!-- Store name text -->
-                                                    </span>
-                                                {% endif %}
-                                            </div>
 
-                                            <div class="mt-1"> <!-- Price section for the favorited item -->
-                                                {% if fav.best_price %} <!-- Prefer 'best_price' metric -->
-                                                    <span class="fw-bold text-primary fs-5">€{{ fav.best_price }}</span> <!-- Formatted best price -->
-                                                {% elif fav.price %} <!-- Fallback to generic price -->
-                                                     <span class="fw-bold text-primary fs-5">€{{ fav.price }}</span> <!-- Formatted price -->
-                                                {% endif %}
-                                            </div>
-                                        </div>
-                                    </a>
-                                </div>
-                            </div>
-                        {% endfor %} <!-- Ends the loop for favorite elements -->
-                    </div>
-                {% else %} <!-- Display fallback if favorites list empty -->
-                    <div class="text-center py-5"> <!-- Centered message section -->
-                        <div class="mb-3"> <!-- Wrapper for empty state graphic -->
-                            <i class="bi bi-heart text-muted display-4"></i> <!-- Grayed out heart icon -->
-                        </div>
-                        <h5 class="text-muted">No favorites yet</h5> <!-- Messaging for no content -->
-                        <p class="small text-muted mb-4">Save products you love to see them here.</p> <!-- Instructional subtext -->
-                        <a href="{{ url_for('main.home') }}" class="btn btn-sm btn-outline-primary rounded-pill px-4">Browse Products</a> <!-- Actionable link to find items -->
-                    </div>
-                {% endif %} <!-- End of favorites length condition -->
-            </div>
-        </div>
+          </div><!-- /overview panel -->
 
-        <!-- Store Preferences Card --> <!-- Section where users pick favorite retailers -->
-        <div class="fun-card"> <!-- Individual dashboard module -->
-             <div class="fun-card-header"> <!-- Header block for store preferences -->
-                <h4 class="fun-card-title"> <!-- Title for the retailer list -->
-                    <i class="bi bi-shop text-success"></i> My Stores <!-- Title with shop icon -->
-                </h4>
-                <span class="badge bg-success rounded-pill">{{ user_data.get('preferred_stores', [])|length }} Selected</span> <!-- Total selected stores count -->
-            </div>
-            <div class="fun-card-body"> <!-- Main body for selecting store tiles -->
-                <p class="text-muted mb-4">Select the stores you shop at to see relevant deals.</p> <!-- Instructional guidance text -->
-                <form id="storesForm" class="stores-masonry"> <!-- Form to handle store preference submission -->
-                  {% if stores %} <!-- Check if general store database is populated -->
-                    {% for store in stores %} <!-- Iterating through available retailers -->
-                    <label class="store-tile {{ 'selected' if store.name in user_data.get('preferred_stores', []) else '' }}"> <!-- Clickable tile with conditional selection state -->
-                      <input type="checkbox" name="stores" value="{{ store.name }}" 
-                             {{ 'checked' if store.name in user_data.get('preferred_stores', []) else '' }} 
-                             hidden onchange="toggleStore(this)"> <!-- Hidden checkbox for selection logic -->
-                      <div class="store-check"><i class="bi bi-check"></i></div> <!-- Visual indicator when checked -->
-                      <div class="store-inner"> <!-- Inner container for retailer branding -->
-                        <div class="store-logo-box"> <!-- Square container for store image logo -->
-                           {% if store.image %} <!-- Use uploaded retailer image if available -->
-                              <img src="{{ store.image }}" alt="{{ store.name }}" style="max-width: 100%; max-height: 100%; object-fit: contain;"> <!-- Retailer logo graphics -->
-                           {% else %}
-                              <span class="fw-bold text-primary">{{ store.name[0] }}</span> <!-- Initial letter fallback -->
-                           {% endif %}
-                        </div>
-<span class="fw-bold">{{ store.name }}</span> <!-- Display the retailer's brand name in bold font -->
+          <!-- ── FAVORITES PANEL ── -->
+          <div id="pa-panel-favorites" class="pa-panel" style="display:none;">
+            <div class="ph-card">
+              <div class="ph-card-head">
+                <h4 class="ph-card-title"><i class="bi bi-heart-fill text-danger"></i> Favorites</h4>
+                <span class="badge rounded-pill" style="background:#f0eaff;color:#65388f;font-size:0.82rem;padding:6px 14px;">
+                  <i class="bi bi-heart-fill me-1"></i>{{ user_data.favorites|length if user_data.favorites else 0 }} items
+                </span>
+              </div>
+
+              {% if user_data.favorites %}
+                <div class="pa-fav-grid">
+                  {% for fav in user_data.favorites %}
+                  {% set view_url = url_for('main.product_detail', product_id=fav.id, store_name=fav.store, store_price=fav.best_price or fav.price) %}
+                  <div class="pa-fav-card" id="fav-card-{{ fav.id }}">
+                    <button class="pa-fav-remove" onclick="removeProfileFavorite(event, '{{ fav.id }}', this)" title="Remove">
+                      <i class="bi bi-x"></i>
+                    </button>
+                    <a href="{{ view_url }}" class="pa-fav-inner text-decoration-none">
+                      <div class="pa-fav-img">
+                        <img src="{{ fav.image or url_for('static', filename='placeholder.svg') }}" alt="{{ fav.name }}">
                       </div>
-                    </label>
-                    {% endfor %} <!-- Exit the loop after rendering all retrieved store locations -->
-                  {% else %}
-                    <p class="text-center text-muted w-100 py-4">
-                      <i class="bi bi-shop me-2"></i>No stores found in database.
-                    </p>
-                  {% endif %}
-                </form> <!-- Close the retailer preference form -->
-            </div>
-        </div>
-
-        <!-- Category Preferences Card --> <!-- Dashboard section for product category selection -->
-        <div class="fun-card"> <!-- Decorative card wrapper for category interests -->
-             <div class="fun-card-header"> <!-- Header block for the category module -->
-                <h4 class="fun-card-title"> <!-- Module title with descriptive icon -->
-                    <i class="bi bi-tags text-warning"></i> My Categories <!-- Label for the category preferences -->
-                </h4>
-                <span class="badge bg-warning text-dark rounded-pill">{{ user_data.get('preferred_categories', [])|length }} Selected</span> <!-- Badge indicating total selected categories -->
-            </div>
-            <div class="fun-card-body"> <!-- Main interaction area for product categories -->
-                <p class="text-muted mb-4">Select the categories you're interested in for personalized recommendations.</p> <!-- Instructional subtext -->
-                <form id="categoriesForm" class="categories-masonry"> <!-- Form layout for category selection using grid/masonry -->
-                  {% set category_icons = { 
-                    'dairy': 'bi-egg-fried', 
-                    'dairy & eggs': 'bi-egg-fried',
-                    'produce': 'bi-apple',
-                    'fresh produce': 'bi-apple',
-                    'fruits': 'bi-apple',
-                    'vegetables': 'bi-egg-fill',
-                    'meat': 'bi-egg-fill',
-                    'meat & seafood': 'bi-egg-fill',
-                    'bakery': 'bi-cake2',
-                    'snacks': 'bi-bag-fill',
-                    'baby food': 'bi-balloon-heart',
-                    'fast food': 'bi-lightning',
-                    'beverages': 'bi-cup-straw',
-                    'drinks': 'bi-cup-straw',
-                    'frozen': 'bi-snow',
-                    'frozen foods': 'bi-snow',
-                    'pantry': 'bi-archive',
-                    'pantry staples': 'bi-archive',
-                    'household': 'bi-house-heart',
-                    'personal care': 'bi-sparkles'
-                  } %} <!-- Dictionary mapping category keys to Bootstrap ICON classes -->
-                  
-                  {% if category_options %} <!-- Check if a list of category options was passed to the template -->
-                    {% for category in category_options %} <!-- Loop through each available product category -->
-                    <label class="store-tile {{ 'selected' if category in user_data.get('preferred_categories', []) else '' }}" style="min-height: 100px;"> <!-- Interactive tile for a single category -->
-                      <input type="checkbox" name="categories" value="{{ category }}" 
-                             {{ 'checked' if category in user_data.get('preferred_categories', []) else '' }} 
-                             hidden onchange="toggleCategory(this)"> <!-- Input to handle selection logic -->
-                      <div class="store-check"><i class="bi bi-check"></i></div> <!-- Checkmark icon for active state -->
-                      <div class="store-inner text-center"> <!-- Internal content for the category tile -->
-                        <div class="fs-2 mb-2"> <!-- Sizing container for the category icon -->
-                           <i class="{{ category_icons.get(category|lower, 'bi-tag') }} text-primary"></i> <!-- Dynamically load icon class from dictionary -->
+                      <div class="pa-fav-body">
+                        <p class="pa-fav-name" title="{{ fav.name }}">{{ fav.name }}</p>
+                        <div class="pa-fav-meta">
+                          {% if fav.store %}
+                          <span class="pa-fav-store"><i class="bi bi-shop"></i> {{ fav.store }}</span>
+                          {% endif %}
+                          {% if fav.category %}
+                          <span class="pa-fav-cat">{{ fav.category }}</span>
+                          {% endif %}
                         </div>
-                        <span class="fw-bold small">{{ category }}</span> <!-- Display category name text -->
+                        <p class="pa-fav-price">
+                          {% if fav.best_price %}€{{ fav.best_price }}
+                          {% elif fav.price %}€{{ fav.price }}
+                          {% endif %}
+                        </p>
                       </div>
-                    </label>
-                    {% endfor %} <!-- Close category iteration loop -->
-                  {% else %} <!-- Fallback displayed if no categories exist in database -->
-                     <p class="text-center text-muted my-4 w-100" style="grid-column: 1/-1;">No categories found in database.</p> <!-- Empty state message -->
-                  {% endif %} <!-- End of category availability check -->
-                </form> <!-- Close category selection form -->
+                    </a>
+                  </div>
+                  {% endfor %}
+                </div>
+              {% else %}
+                <div class="pa-fav-empty">
+                  <div class="pa-fav-empty-box">
+                    <i class="bi bi-heart" style="font-size:2.2rem;color:#c4b5d9;"></i>
+                    <h5 style="font-weight:700;color:#3b1a6e;margin:1rem 0 0.4rem;">No favorites yet</h5>
+                    <p style="color:#9b8aaa;font-size:0.9rem;margin-bottom:1.5rem;">Save products from any store page and they'll appear here automatically.</p>
+                    <a href="{{ url_for('main.home') }}" class="btn rounded-pill px-4 py-2 fw-600" style="background:#65388f;color:white;font-weight:600;">
+                      Explore products
+                    </a>
+                  </div>
+                </div>
+              {% endif %}
             </div>
-        </div>
+          </div><!-- /favorites panel -->
 
-        <!-- Danger Zone --> <!-- Section for critical account actions like logging out -->
-        <div class="text-center mt-5 mb-5 pt-4"> <!-- Centered container with significant spacing -->
-             <button type="button" class="btn btn-lg btn-logout-premium rounded-pill shadow-lg" data-bs-toggle="modal" data-bs-target="#logoutConfirmModal"> <!-- Main logout button -->
-                 <i class="bi bi-box-arrow-right me-2"></i> <span>Log Out From Account</span> <!-- Icon and text for the logout action -->
-             </button>
-        </div>
+          <!-- ── SETTINGS PANEL ── -->
+          <div id="pa-panel-settings" class="pa-panel" style="display:none;">
+            <div class="ph-card">
+              <div class="ph-card-head">
+                <h4 class="ph-card-title"><i class="bi bi-gear-fill"></i> Settings</h4>
+                <button class="ph-edit-btn" data-bs-toggle="modal" data-bs-target="#profileModal">
+                  <i class="bi bi-pencil-square"></i> Edit Profile
+                </button>
+              </div>
+              <div class="ph-field-row" data-bs-toggle="modal" data-bs-target="#profileModal" style="cursor:pointer;">
+                <div class="ph-field-icon"><i class="bi bi-person-fill"></i></div>
+                <div class="ph-field-body">
+                  <span class="ph-field-label">Full Name</span>
+                  <span class="ph-field-value">{{ user_data.name }}</span>
+                </div>
+                <i class="bi bi-chevron-right ph-field-arrow"></i>
+              </div>
+              <div class="ph-field-row" data-bs-toggle="modal" data-bs-target="#profileModal" style="cursor:pointer;">
+                <div class="ph-field-icon"><i class="bi bi-envelope-fill"></i></div>
+                <div class="ph-field-body">
+                  <span class="ph-field-label">Email Address</span>
+                  <span class="ph-field-value">{{ user_data.email }}</span>
+                </div>
+                <i class="bi bi-chevron-right ph-field-arrow"></i>
+              </div>
+              <div class="ph-field-row" data-bs-toggle="modal" data-bs-target="#profileModal" style="cursor:pointer;">
+                <div class="ph-field-icon"><i class="bi bi-telephone-fill"></i></div>
+                <div class="ph-field-body">
+                  <span class="ph-field-label">Phone Number</span>
+                  <span class="ph-field-value">{{ user_data.phone if user_data.phone else '—' }}</span>
+                </div>
+                <i class="bi bi-chevron-right ph-field-arrow"></i>
+              </div>
+              <div class="ph-field-row" data-bs-toggle="modal" data-bs-target="#profileModal" style="cursor:pointer;">
+                <div class="ph-field-icon"><i class="bi bi-geo-alt-fill"></i></div>
+                <div class="ph-field-body">
+                  <span class="ph-field-label">Delivery Address</span>
+                  <span class="ph-field-value">{{ user_data.address if user_data.address else '—' }}</span>
+                </div>
+                <i class="bi bi-chevron-right ph-field-arrow"></i>
+              </div>
+              <div class="ph-field-row" data-bs-toggle="modal" data-bs-target="#profileModal" style="cursor:pointer;">
+                <div class="ph-field-icon"><i class="bi bi-lock-fill"></i></div>
+                <div class="ph-field-body">
+                  <span class="ph-field-label">Password</span>
+                  <span class="ph-field-value">••••••••••</span>
+                </div>
+                <i class="bi bi-chevron-right ph-field-arrow"></i>
+              </div>
+            </div>
+            <div class="text-center mt-3 mb-5">
+              <button type="button" class="btn btn-lg btn-logout-premium rounded-pill shadow-lg" data-bs-toggle="modal" data-bs-target="#logoutConfirmModal">
+                <i class="bi bi-box-arrow-right me-2"></i> <span>Log Out From Account</span>
+              </button>
+            </div>
+          </div><!-- /settings panel -->
 
-      </div>
-    {% endif %} <!-- Close original authenticated user content block -->
+          <!-- ── PREFERENCES PANEL ── -->
+          <div id="pa-panel-preferences" class="pa-panel" style="display:none;">
+            <div class="ph-card">
+              <div class="ph-card-head">
+                <h4 class="ph-card-title"><i class="bi bi-sliders"></i> Preferences</h4>
+              </div>
+              <div class="ph-field-row">
+                <div class="ph-field-icon"><i class="bi bi-bell-fill"></i></div>
+                <div class="ph-field-body">
+                  <span class="ph-field-label">Notifications</span>
+                  <span class="ph-field-value">Deal alerts &amp; price drops</span>
+                </div>
+                <div class="form-check form-switch mb-0">
+                  <input class="form-check-input" type="checkbox" checked style="width:2.4em;height:1.3em;cursor:pointer;accent-color:#65388f;">
+                </div>
+              </div>
+              <div class="ph-field-row">
+                <div class="ph-field-icon"><i class="bi bi-translate"></i></div>
+                <div class="ph-field-body">
+                  <span class="ph-field-label">Language</span>
+                  <span class="ph-field-value">English</span>
+                </div>
+                <i class="bi bi-chevron-right ph-field-arrow"></i>
+              </div>
+              <div class="ph-field-row" style="border-bottom:none;">
+                <div class="ph-field-icon"><i class="bi bi-currency-euro"></i></div>
+                <div class="ph-field-body">
+                  <span class="ph-field-label">Currency</span>
+                  <span class="ph-field-value">EUR (€)</span>
+                </div>
+                <i class="bi bi-chevron-right ph-field-arrow"></i>
+              </div>
+            </div>
+          </div><!-- /preferences panel -->
+
+        </div><!-- /right content -->
+
+      </div><!-- /pa-layout -->
+    {% endif %}
   </section>
 
   <!-- Logout Confirmation Modal --> <!-- Pop-up dialogue to prevent accidental logout -->
@@ -1222,7 +1450,8 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button> <!-- Close button for modal -->
         </div>
         <div class="modal-body p-4 pt-3"> <!-- Interactive area of the edit modal -->
-          <form action="{{ url_for('main.profile') }}" method="POST"> <!-- POST form to update profile data -->
+          <form action="{{ url_for('main.profile') }}" method="POST" id="profileEditForm">
+            <input type="hidden" name="tab" id="formTabInput" value="overview">
             
             <!-- Avatar Section --> <!-- Area of the modal dedicated to changing the profile picture -->
             <div class="text-center mb-4"> <!-- Centered container for avatar preview -->
@@ -1323,7 +1552,33 @@
 {% endblock %}
 
 {% block scripts %}
-<script> // Begins JavaScript logic for interactive page features
+<script>
+    // Panel switching
+    function showPanel(name, clickedEl) {
+      document.querySelectorAll('.pa-panel').forEach(p => p.style.display = 'none');
+      const panel = document.getElementById('pa-panel-' + name);
+      if (panel) panel.style.display = 'block';
+      document.querySelectorAll('.pa-nav-item').forEach(el => el.classList.remove('active'));
+      if (clickedEl) {
+        clickedEl.classList.add('active');
+      } else {
+        document.querySelectorAll('.pa-nav-item').forEach(el => {
+          if (el.getAttribute('onclick') && el.getAttribute('onclick').includes("'" + name + "'")) {
+            el.classList.add('active');
+          }
+        });
+      }
+      // Keep form aware of current tab so save redirects back correctly
+      const tabInput = document.getElementById('formTabInput');
+      if (tabInput) tabInput.value = name;
+    }
+
+    // Auto-switch panel from URL ?tab= param
+    document.addEventListener('DOMContentLoaded', () => {
+      const tab = new URLSearchParams(window.location.search).get('tab');
+      if (tab) showPanel(tab, null);
+    });
+
     // Global variable to persist selection across modal toggles
     let globalSelectedAvatar = "{{ user_data.avatar if user_data.avatar else '' }}"; // Initialize with current user avatar from Python session
 
@@ -1444,14 +1699,14 @@
             if (response.ok && (data.action === 'removed' || data.success)) { // Verify logical success
                 
                 // Animate removal
-                const col = btn.closest('.col'); // Locate the parent grid column for removal animation
-                if (col) { // If column exists
-                    col.style.transition = 'all 0.3s ease'; // Apply smooth transition properties
-                    col.style.opacity = '0'; // Change opacity to hidden
-                    col.style.transform = 'scale(0.9)'; // Apply shrinking effect
-                    
-                    setTimeout(() => { // Wait for animation to finish
-                        col.remove(); // Delete the element from the DOM entirely
+                const col = btn.closest('.pa-fav-card') || btn.closest('.col');
+                if (col) {
+                    col.style.transition = 'all 0.3s ease';
+                    col.style.opacity = '0';
+                    col.style.transform = 'scale(0.9)';
+
+                    setTimeout(() => {
+                        col.remove();
                         // Update the Favorites count badge
                         const badge = document.querySelector('.fun-card .bg-danger.rounded-pill'); // Find count badge
                         if (badge) { // If container exists

@@ -42,11 +42,21 @@ def shopping_list():
                          all_lists=helpers.sanitize_mongo_doc(all_lists), 
                          active_list=helpers.sanitize_mongo_doc(active_list))
 
-@main_bp.route('/profile')
+@main_bp.route('/profile', methods=['GET', 'POST'])
 def profile():
     user_email = helpers.get_user_email()
     if not user_email: return redirect(url_for('auth.login'))
-    
+    if request.method == 'POST':
+        update_data = {
+            'name': request.form.get('name'),
+            'phone': request.form.get('phone_number'),
+            'address': request.form.get('address'),
+            'avatar': request.form.get('avatar')
+        }
+        update_data = {k: v for k, v in update_data.items() if v is not None}
+        update_user(user_email, update_data)
+        tab = request.form.get('tab', 'overview')
+        return redirect(url_for('main.profile') + f'?tab={tab}')
     user_data = get_user_by_email(user_email)
     stores = stores_model.list_stores()
     category_options = helpers.get_category_options()
@@ -56,21 +66,12 @@ def profile():
 def profile_favorites():
     user_email = helpers.get_user_email()
     if not user_email: return redirect(url_for('auth.login'))
-    
-    
-    user_data = get_user_by_email(user_email)
-    
-    
-    favs = favorites_model.get_user_favorites(user_email)
-    return render_template('account_favorites.html', user_data=helpers.sanitize_mongo_doc(user_data), favorites=helpers.sanitize_mongo_doc(favs), account_section='favorites')
+    return redirect(url_for('main.profile') + '?tab=favorites')
 
 @main_bp.route('/profile/settings', methods=['GET', 'POST'])
 def profile_settings():
     user_email = helpers.get_user_email()
     if not user_email: return redirect(url_for('auth.login'))
-    
-    
-    
     if request.method == 'POST':
         update_data = {
             'name': request.form.get('name'),
@@ -78,23 +79,15 @@ def profile_settings():
             'address': request.form.get('address'),
             'avatar': request.form.get('avatar')
         }
-        # Remove empty fields
         update_data = {k: v for k, v in update_data.items() if v is not None}
         update_user(user_email, update_data)
-        return redirect(url_for('main.profile_settings'))
-        
-    user_data = get_user_by_email(user_email)
-    return render_template('account_settings.html', user_data=helpers.sanitize_mongo_doc(user_data), account_section='settings')
+    return redirect(url_for('main.profile') + '?tab=settings')
 
 @main_bp.route('/profile/preferences')
 def profile_preferences():
     user_email = helpers.get_user_email()
     if not user_email: return redirect(url_for('auth.login'))
-    
-    
-    user_data = get_user_by_email(user_email)
-    
-    return render_template('account_preferences.html', user_data=helpers.sanitize_mongo_doc(user_data), account_section='preferences')
+    return redirect(url_for('main.profile') + '?tab=preferences')
 
 @main_bp.route('/update-stores', methods=['POST'])
 def update_stores():

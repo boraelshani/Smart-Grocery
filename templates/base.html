@@ -20,8 +20,8 @@
   <!-- Core Application Styles -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/global.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/enhanced-theme.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/navbar.css') }}?v=4">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/navbar-fixes.css') }}?v=4">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/navbar.css') }}?v=5">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/navbar-fixes.css') }}?v=5">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/hero.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/cards.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/product-cards-unified.css') }}">
@@ -118,17 +118,15 @@
           
           <!-- User Dropdown Menu -->
           <li class="nav-item dropdown ms-2 position-relative">
-            <a class="nav-link d-flex align-items-center gap-2 dropdown-toggle py-1 px-3 rounded-pill profile-dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="border: 1px solid rgba(255,255,255,0.2); transition: all 0.2s;">
-              <span class="profile-toggle-copy d-none d-xl-block">
-                <strong class="profile-toggle-name">{{ account_name }}</strong>
-              </span>
-              <div class="navbar-avatar navbar-avatar-sm">
+            <a class="nav-link profile-dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <div class="navbar-avatar navbar-avatar-sm navbar-avatar-surface">
                 {% if account_avatar %}
                 <img src="{{ account_avatar }}" alt="{{ account_name }} avatar">
                 {% else %}
                 <span>{{ account_initials }}</span>
                 {% endif %}
               </div>
+              <i class="bi bi-chevron-down profile-caret"></i>
             </a>
             <ul class="dropdown-menu dropdown-menu-end border-0 mt-3 p-0 user-dropdown-menu" aria-labelledby="navbarDropdown">
               <!-- Header -->

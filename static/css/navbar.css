@@ -194,47 +194,29 @@ body {
   border-color: #65388f !important;
 }
 
-/* Profile dropdown */
+/* Profile toggle — bare avatar + caret, no pill wrapper */
 .profile-dropdown-toggle {
-  background: white;
-  border: 1px solid #e9e3de !important;
-  color: #65388f !important;
-  min-height: 48px;
-  text-decoration: none !important;
-  border-radius: 999px;
-  padding: 0.5rem 1rem;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  transition: all 0.2s ease;
+  gap: 4px;
+  text-decoration: none !important;
+  transition: opacity 0.15s ease;
 }
 
 .profile-dropdown-toggle:hover {
-  background: #65388f;
-  color: white !important;
-  text-decoration: none !important;
-  transform: scale(1.05);
-  box-shadow: 0 4px 12px rgba(101, 56, 143, 0.3);
-  border-color: #65388f !important;
+  opacity: 0.85;
 }
 
-.profile-dropdown-toggle:hover .profile-toggle-name {
-  color: white !important;
-}
+/* Hide Bootstrap's default caret; we use our own icon */
+.profile-dropdown-toggle::after { display: none !important; }
 
-.profile-dropdown-toggle:hover .navbar-avatar {
-  border-color: white !important;
-}
-
-.profile-toggle-name {
-  font-size: 0.95rem;
-  font-weight: 700;
-  max-width: 150px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  text-decoration: none !important;
-  color: #65388f !important;
+.profile-caret {
+  font-size: 0.65rem;
+  color: #65388f;
+  margin-top: 1px;
 }
 
 .navbar-avatar {
