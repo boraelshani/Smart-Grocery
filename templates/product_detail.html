@@ -13,9 +13,7 @@
     .product-detail-hero {
       background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #8b5cf6 100%);
       color: white;
-      padding: 9rem 0 4rem;
-      border-bottom-left-radius: 0;
-      border-bottom-right-radius: 0;
+      padding: 1rem 0;
       position: relative;
       overflow: hidden;
       margin-bottom: 2rem;
@@ -512,66 +510,35 @@
       
 
 
-      <h1 class="display-5 fw-bold text-white mb-2">{{ product.name }}</h1> <!-- Prominent Product Heading -->
-      {% if product.category or (product.category_path and product.category_path|length) %} <!-- Visibility check for metadata badge -->
-      <span class="category-badge mt-1"><i class="bi bi-tag-fill me-1"></i>{{ (product.category_path and
-        product.category_path[-1]) or product.category }}</span> <!-- Badge showing specific product categorization -->
-      {% endif %}
     </div>
   </section>
 
   <!-- Product Content --> <!-- Main layout section for product imagery and data -->
   <section class="container py-5"> <!-- Grid container with vertical spacing -->
     <div class="row g-4"> <!-- Responsive grid row with gutters -->
-      <!-- Product Image Column --> <!-- Left side area for visual components -->
-      <div class="col-lg-5"> <!-- Spans 5 columns on desktop -->
-        <div class="image-card position-relative mb-3"> <!-- Styled wrapper for product image -->
+      <!-- Product Image + Price Column -->
+      <div class="col-lg-5">
+        <!-- Image -->
+        <div class="image-card position-relative mb-3">
           <img id="product-main-img"
             src="{{ prefer_processed(product.image or (product.images and product.images[0]) or url_for('static', filename='placeholder.svg')) }}"
             data-default-src="{{ prefer_processed(product.image or (product.images and product.images[0]) or url_for('static', filename='placeholder.svg')) }}"
-            alt="{{ product.name }}" class="product-image-large"> <!-- Dynamic source image with fallback placeholder support -->
+            alt="{{ product.name }}" class="product-image-large">
         </div>
-        <!-- Best Price card OUTSIDE the white image card --> <!-- Banner for best found deal -->
-        <div class="price-display-card mt-3"> <!-- Highlighted price module -->
-          <div class="price-display-content"> <!-- Text content wrapper -->
-            <div class="price-label"> <!-- Sub-heading for the value -->
-              <i class="bi bi-lightning-charge-fill"></i> Best Price <!-- Icon indicating deal strength -->
+        <!-- Compact horizontal price bar -->
+        <div style="background:linear-gradient(135deg,#4f46e5 0%,#7c3aed 100%);border-radius:12px;padding:0.75rem 1.25rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;">
+          <div>
+            <div style="font-size:0.65rem;font-weight:700;color:rgba(255,255,255,0.7);text-transform:uppercase;letter-spacing:0.05em;"><i class="bi bi-lightning-charge-fill me-1"></i>Best Price</div>
+            <div id="selected-price" style="font-size:1.4rem;font-weight:800;color:white;line-height:1.1;">
+              {% if best_price_value is not none %}€{{ best_price_value }}
+              {% elif product.price %}€{{ product.price }}
+              {% else %}—{% endif %}
             </div>
-            <div class="price" id="selected-price"> <!-- Target ID for JavaScript price updates -->
-              {% if best_price_value is not none %} <!-- Logic to render numeric value -->
-              €{{ best_price_value }} <!-- Displays the numeric value passed from the Flask route -->
-              {% elif product.price %} <!-- Fallback to the default product price if specific "best price" logic isn't triggered -->
-              €{{ product.price }} <!-- Standard price display -->
-              {% else %} <!-- Catch-all for data that lacks pricing entirely -->
-              Select a Store <!-- User prompt to interact with the store selection module -->
-              {% endif %}
+            <div id="selected-store" style="font-size:0.72rem;color:rgba(255,255,255,0.75);">
+              {% if best_price_stores and best_price_stores|length > 0 %}at <strong>{{ best_price_stores | join(', ') }}</strong>
+              {% elif product.store or product.source %}at <strong>{{ product.store or product.source }}</strong>
+              {% else %}Choose a store{% endif %}
             </div>
-            <div class="store-name" id="selected-store"> <!-- Descriptive sub-label for the price -->
-              {% if best_price_stores and best_price_stores|length > 0 %} <!-- Display the specific retailer(s) offering the best rate -->
-              at <strong>{{ best_price_stores | join(', ') }}</strong> <!-- Joins multiple stores with commas if a tie exists -->
-              {% elif product.store or product.source %} <!-- Single store fallback -->
-              at <strong>{{ product.store or product.source }}</strong> <!-- Highlighted store name -->
-              {% else %} <!-- Prompt if no selection active -->
-              Choose a store below <!-- Instructions for the user -->
-              {% endif %}
-            </div>
-
-            <!-- Add to List Button (inside Price Card) --> <!-- The primary CTA for adding this item to the user's shopping list -->
-            <button id="add-to-list-btn" class="btn w-100 mt-3 d-flex align-items-center justify-content-center fw-bold"
-              style="background: rgba(255, 255, 255, 0.2); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.4); color: white; padding: 0.8rem; border-radius: 0; transition: all 0.2s;"
-              onmouseover="this.style.background='rgba(255, 255, 255, 0.3)'; this.style.transform='translateY(-2px)'"
-              onmouseout="this.style.background='rgba(255, 255, 255, 0.2)'; this.style.transform='translateY(0)'"
-              data-name="{{ product.name }}" data-id="{{ product._id or product.id }}" data-price="{{ best_price_value or '' }}" data-store="{{ best_price_stores[0] if best_price_stores and best_price_stores|length > 0 else '' }}"
-              data-original-price="{{ product.get('original_price', '') }}"
-              data-offer-json='{{ product.offer|tojson|forceescape if product.offer else "" }}'
-              data-tier-json='{{ product.discount_tiers|tojson|forceescape if product.discount_tiers else "" }}'
-              data-special-offer="{{ product.special_offer_type or product.offer_type or '' }}"
-              data-offer-type="{{ product.offer_type or '' }}"
-              data-offer-x="{{ product.offer_x or '' }}"
-              data-offer-y="{{ product.offer_y or '' }}"> <!-- Complex data-attributes housing all details needed for the cart/list logic in JavaScript -->
-              <i class="bi bi-cart-plus-fill me-2 fs-5"></i> <!-- Semi-transparent cart icon -->
-              Add to List <!-- Button label -->
-            </button>
           </div>
         </div>
       </div>
@@ -581,6 +548,27 @@
 
         <!-- Product Details Card --> <!-- Section containing product narrative and metadata chips -->
         <div class="info-card"> <!-- Premium container with shadow/glass effects -->
+          <h1 class="fw-bold mb-1" style="font-size:1.5rem;color:#1e1b4b;">{{ product.name }}</h1>
+          {% if product.category or (product.category_path and product.category_path|length) %}
+          <span class="category-badge mb-3 d-inline-block"><i class="bi bi-tag-fill me-1"></i>{{ (product.category_path and product.category_path[-1]) or product.category }}</span>
+          {% endif %}
+
+          <!-- Add to List Button -->
+          <button id="add-to-list-btn" class="btn w-100 mb-3 d-flex align-items-center justify-content-center fw-bold"
+            style="background:linear-gradient(135deg,#4f46e5,#7c3aed);color:white;padding:0.75rem;border-radius:12px;border:none;font-size:0.95rem;transition:all 0.2s;"
+            onmouseover="this.style.opacity='0.9';this.style.transform='translateY(-2px)'"
+            onmouseout="this.style.opacity='1';this.style.transform='translateY(0)'"
+            data-name="{{ product.name }}" data-id="{{ product._id or product.id }}" data-price="{{ best_price_value or '' }}" data-store="{{ best_price_stores[0] if best_price_stores and best_price_stores|length > 0 else '' }}"
+            data-original-price="{{ product.get('original_price', '') }}"
+            data-offer-json='{{ product.offer|tojson|forceescape if product.offer else "" }}'
+            data-tier-json='{{ product.discount_tiers|tojson|forceescape if product.discount_tiers else "" }}'
+            data-special-offer="{{ product.special_offer_type or product.offer_type or '' }}"
+            data-offer-type="{{ product.offer_type or '' }}"
+            data-offer-x="{{ product.offer_x or '' }}"
+            data-offer-y="{{ product.offer_y or '' }}">
+            <i class="bi bi-cart-plus-fill me-2"></i> Add to List
+          </button>
+
           {% if product.description %} <!-- Logic for showing description only if present -->
           <div class="mb-3"> <!-- Bottom margin for separation -->
             <div class="section-title"> <!-- Module Header -->
