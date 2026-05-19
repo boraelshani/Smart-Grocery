@@ -681,9 +681,9 @@
                   <div class="card-price mb-2">€{{ store.price }}</div> <!-- Retailer-specific product price -->
 
                   {% if store.get('has_deal') %}
-                  <div class="offer-badge mb-2 d-flex flex-column align-items-center justify-content-center" style="border: 2px dashed #60a5fa; border-radius: 0; padding: 4px; background: #eff6ff;">
+                  <div class="offer-badge mb-2 d-flex flex-column align-items-center justify-content-center" style="border: 2px dashed #ef4444; border-radius: 0; padding: 4px; background: #fff5f5;">
                     <div class="d-flex align-items-center gap-2">
-                        <span class="badge px-2 py-1" style="background: linear-gradient(135deg, #60a5fa 0%, #2563eb 100%); border-radius: 0;"><i class="bi bi-fire"></i> {{ store.get('discount_label', 'Hot Deal!') }}</span>
+                        <span class="badge px-2 py-1" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); border-radius: 0;"><i class="bi bi-fire"></i> {{ store.get('discount_label', 'Hot Deal!') }}</span>
                         {% if store.get('original_price') %}
                         <span class="text-muted text-decoration-line-through fw-bold" style="font-size:0.8rem">€{{ "%.2f"|format(store.original_price|float) }}</span>
                         {% endif %}

@@ -880,76 +880,76 @@
 
     /* ═══ MODERN COMPACT FILTERS ═══ */
     .filters-container {
-      background: linear-gradient(135deg, #ffffff 0%, #fafafa 100%);
-      border: 1px solid #e5e7eb;
-      border-radius: 16px;
-      padding: 0;
+      position: relative;
+      display: inline-block;
       margin-bottom: 1.5rem;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-      overflow: hidden;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    
-    .filters-container:hover {
-      box-shadow: 0 4px 12px rgba(101, 56, 143, 0.08);
-    }
-    
+
     .filters-header {
-      display: flex;
+      display: inline-flex;
       align-items: center;
-      justify-content: space-between;
-      padding: 0.85rem 1.25rem;
+      gap: 0.5rem;
+      padding: 0.45rem 0.9rem;
       background: white;
-      border-bottom: 1px solid #f3f4f6;
+      border: 1.5px solid #e5e7eb;
+      border-radius: 10px;
       cursor: pointer;
       transition: all 0.2s ease;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      user-select: none;
     }
-    
+
     .filters-header:hover {
-      background: #fafafa;
+      border-color: #c4a8ff;
+      box-shadow: 0 2px 8px rgba(101, 56, 143, 0.1);
     }
-    
+
     .filters-title {
-      font-size: 0.9rem;
+      font-size: 0.82rem;
       font-weight: 700;
       color: #374151;
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: 0.4rem;
       letter-spacing: -0.01em;
     }
-    
+
     .filters-title i {
       color: #65388f;
-      font-size: 1rem;
+      font-size: 0.82rem;
     }
-    
+
     .filters-toggle {
       background: none;
       border: none;
       color: #9ca3af;
-      font-weight: 600;
-      font-size: 1.1rem;
+      font-size: 0.75rem;
       cursor: pointer;
-      padding: 0.25rem;
+      padding: 0;
       transition: all 0.2s ease;
       display: flex;
       align-items: center;
+      line-height: 1;
     }
-    
-    .filters-toggle:hover {
-      color: #65388f;
-      transform: scale(1.1);
-    }
-    
+
+    .filters-toggle:hover { color: #65388f; }
+
     .filters-body {
-      padding: 1.25rem;
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 1rem;
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0;
+      z-index: 200;
       background: white;
+      border: 1.5px solid #e5e7eb;
+      border-radius: 14px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      min-width: 220px;
     }
-    
+
     .filters-body.collapsed {
       display: none;
     }
@@ -1170,9 +1170,8 @@
     
     .filters-actions {
       display: flex;
-      gap: 0.75rem;
-      grid-column: 1 / -1;
-      margin-top: 0.5rem;
+      gap: 0.5rem;
+      margin-top: 0.25rem;
     }
     
     .btn-apply-filters {
@@ -1180,17 +1179,17 @@
       background: linear-gradient(135deg, #65388f 0%, #7c3aed 100%);
       color: white;
       border: none;
-      padding: 0.7rem 1.5rem;
-      border-radius: 10px;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
       font-weight: 700;
-      font-size: 0.875rem;
+      font-size: 0.8rem;
       cursor: pointer;
       transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       box-shadow: 0 2px 8px rgba(101, 56, 143, 0.2);
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 0.5rem;
+      gap: 0.4rem;
     }
     
     .btn-apply-filters:hover {
@@ -1206,15 +1205,15 @@
       background: white;
       color: #6b7280;
       border: 1.5px solid #e5e7eb;
-      padding: 0.7rem 1.25rem;
-      border-radius: 10px;
+      padding: 0.5rem 0.85rem;
+      border-radius: 8px;
       font-weight: 600;
-      font-size: 0.875rem;
+      font-size: 0.8rem;
       cursor: pointer;
       transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: 0.4rem;
     }
     
     .btn-clear-filters:hover {
@@ -1916,15 +1915,20 @@
         function toggleFilters() {
           const filtersBody = document.getElementById('filtersBody');
           const toggleIcon = document.getElementById('filterToggleIcon');
-          
           filtersBody.classList.toggle('collapsed');
-          
-          if (filtersBody.classList.contains('collapsed')) {
-            toggleIcon.className = 'bi bi-chevron-down';
-          } else {
-            toggleIcon.className = 'bi bi-chevron-up';
-          }
+          toggleIcon.className = filtersBody.classList.contains('collapsed') ? 'bi bi-chevron-down' : 'bi bi-chevron-up';
         }
+
+        // Close filters dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+          const container = document.getElementById('filtersContainer');
+          const body = document.getElementById('filtersBody');
+          if (container && body && !container.contains(e.target) && !body.classList.contains('collapsed')) {
+            body.classList.add('collapsed');
+            const icon = document.getElementById('filterToggleIcon');
+            if (icon) icon.className = 'bi bi-chevron-down';
+          }
+        });
 
         // Apply filters
         function applyFilters() {
