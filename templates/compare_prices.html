@@ -889,10 +889,10 @@
       display: inline-flex;
       align-items: center;
       gap: 0.5rem;
-      padding: 0.45rem 0.9rem;
+      padding: 0.5rem 1rem;
       background: white;
-      border: 1.5px solid #e5e7eb;
-      border-radius: 10px;
+      border: 2px solid #e5e7eb;
+      border-radius: 12px;
       cursor: pointer;
       transition: all 0.2s ease;
       box-shadow: 0 1px 3px rgba(0,0,0,0.05);
@@ -900,58 +900,152 @@
     }
 
     .filters-header:hover {
-      border-color: #c4a8ff;
-      box-shadow: 0 2px 8px rgba(101, 56, 143, 0.1);
+      border-color: #65388f;
+      box-shadow: 0 2px 8px rgba(101, 56, 143, 0.15);
+      transform: translateY(-1px);
     }
 
     .filters-title {
-      font-size: 0.82rem;
+      font-size: 0.875rem;
       font-weight: 700;
-      color: #374151;
+      color: #65388f;
       display: flex;
       align-items: center;
-      gap: 0.4rem;
+      gap: 0.5rem;
       letter-spacing: -0.01em;
     }
 
     .filters-title i {
       color: #65388f;
-      font-size: 0.82rem;
+      font-size: 0.875rem;
     }
 
     .filters-toggle {
       background: none;
       border: none;
-      color: #9ca3af;
-      font-size: 0.75rem;
+      color: #65388f;
+      font-size: 0.7rem;
       cursor: pointer;
       padding: 0;
       transition: all 0.2s ease;
       display: flex;
       align-items: center;
       line-height: 1;
+      margin-left: 0.25rem;
     }
 
-    .filters-toggle:hover { color: #65388f; }
+    .filters-toggle:hover { 
+      color: #48236b;
+      transform: scale(1.1);
+    }
+
+    /* Sort Button - Unified Styling */
+    .sort-button {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem !important;
+      background: white !important;
+      border: 2px solid #e5e7eb !important;
+      border-radius: 12px !important;
+      font-size: 0.875rem !important;
+      font-weight: 700 !important;
+      color: #65388f !important;
+      transition: all 0.2s ease !important;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important;
+      cursor: pointer;
+    }
+
+    .sort-button:hover {
+      border-color: #65388f !important;
+      box-shadow: 0 2px 8px rgba(101, 56, 143, 0.15) !important;
+      transform: translateY(-1px) !important;
+      background: white !important;
+      color: #65388f !important;
+    }
+
+    .sort-button:active,
+    .sort-button:focus {
+      background: white !important;
+      color: #65388f !important;
+      box-shadow: 0 2px 8px rgba(101, 56, 143, 0.15) !important;
+    }
+
+    .sort-button i:first-child {
+      font-size: 0.875rem;
+    }
+
+    .sort-button i:last-child {
+      font-size: 0.7rem;
+      margin-left: 0.25rem;
+    }
+
+    /* Sort Dropdown Menu */
+    .sort-dropdown-menu {
+      border: 1.5px solid #e5e7eb !important;
+      border-radius: 12px !important;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.1) !important;
+      padding: 0.5rem !important;
+      min-width: 220px !important;
+      margin-top: 0.5rem !important;
+    }
+
+    .sort-dropdown-item {
+      padding: 0.65rem 1rem !important;
+      border-radius: 8px !important;
+      font-size: 0.875rem !important;
+      font-weight: 600 !important;
+      color: #374151 !important;
+      transition: all 0.15s ease !important;
+      display: flex !important;
+      align-items: center !important;
+    }
+
+    .sort-dropdown-item i {
+      color: #65388f;
+      font-size: 0.875rem;
+    }
+
+    .sort-dropdown-item:hover {
+      background: linear-gradient(135deg, #f3e8ff 0%, #ede9fe 100%) !important;
+      color: #65388f !important;
+      transform: translateX(4px);
+    }
+
+    .sort-dropdown-item:active {
+      background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%) !important;
+    }
 
     .filters-body {
       position: absolute;
       top: calc(100% + 6px);
-      left: 0;
+      right: 0;
       z-index: 200;
       background: white;
       border: 1.5px solid #e5e7eb;
       border-radius: 14px;
       box-shadow: 0 8px 24px rgba(0,0,0,0.1);
-      padding: 1rem;
+      padding: 1.25rem;
       display: flex;
       flex-direction: column;
-      gap: 0.75rem;
-      min-width: 220px;
+      gap: 1rem;
+      min-width: 280px;
+      max-width: 340px;
     }
 
     .filters-body.collapsed {
       display: none;
+    }
+    
+    /* Sort dropdown improvements */
+    .dropdown-item {
+      transition: all 0.2s ease;
+    }
+    
+    .dropdown-item:hover {
+      background: #f3e8ff !important;
+      color: #65388f !important;
+      transform: translateX(4px);
     }
     
     .filter-group {
@@ -1155,11 +1249,125 @@
       display: block;
     }
     
+    /* Range Slider Styles */
+    .price-range-slider {
+      padding: 0.5rem 0;
+    }
+    
+    .range-slider-container {
+      position: relative;
+      height: 5px;
+      background: #e5e7eb;
+      border-radius: 5px;
+      margin: 1.5rem 0.5rem 1rem;
+    }
+    
+    .range-slider-track {
+      position: absolute;
+      height: 100%;
+      background: linear-gradient(135deg, #65388f 0%, #7c3aed 100%);
+      border-radius: 5px;
+      pointer-events: none;
+    }
+    
+    .range-slider-input {
+      position: absolute;
+      width: 100%;
+      height: 5px;
+      top: -7px;
+      left: 0;
+      background: transparent;
+      cursor: pointer;
+      pointer-events: all;
+      -webkit-appearance: none;
+      appearance: none;
+      z-index: 10;
+    }
+    
+    .range-slider-input::-webkit-slider-runnable-track {
+      width: 100%;
+      height: 5px;
+      background: transparent;
+    }
+    
+    .range-slider-input::-moz-range-track {
+      width: 100%;
+      height: 5px;
+      background: transparent;
+    }
+    
+    .range-slider-input::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 3px solid #65388f;
+      background: white;
+      cursor: grab;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      transition: all 0.2s ease;
+    }
+    
+    .range-slider-input::-webkit-slider-thumb:hover {
+      transform: scale(1.15);
+      box-shadow: 0 3px 12px rgba(101, 56, 143, 0.4);
+    }
+    
+    .range-slider-input::-webkit-slider-thumb:active {
+      cursor: grabbing;
+      transform: scale(1.25);
+      box-shadow: 0 4px 16px rgba(101, 56, 143, 0.5);
+    }
+    
+    .range-slider-input::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 3px solid #65388f;
+      background: white;
+      cursor: grab;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      transition: all 0.2s ease;
+    }
+    
+    .range-slider-input::-moz-range-thumb:hover {
+      transform: scale(1.15);
+      box-shadow: 0 3px 12px rgba(101, 56, 143, 0.4);
+    }
+    
+    .range-slider-input::-moz-range-thumb:active {
+      cursor: grabbing;
+      transform: scale(1.25);
+      box-shadow: 0 4px 16px rgba(101, 56, 143, 0.5);
+    }
+    
+    .range-values {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 0.75rem;
+      font-size: 0.8rem;
+      color: #6b7280;
+      font-weight: 600;
+    }
+    
+    .range-value {
+      background: #f3f4f6;
+      padding: 0.25rem 0.6rem;
+      border-radius: 6px;
+      color: #65388f;
+    }
+    
     .price-range-inputs {
       display: grid;
       grid-template-columns: 1fr auto 1fr;
       gap: 0.5rem;
       align-items: center;
+    }
+    
+    .price-range-inputs .filter-input {
+      min-width: 0;
+      width: 100%;
     }
     
     .price-separator {
@@ -1464,64 +1672,6 @@
         </div>
       </div>
 
-      <!-- Filters Section -->
-      <div class="filters-container" id="filtersContainer">
-        <div class="filters-header" onclick="toggleFilters()">
-          <div class="filters-title">
-            <i class="bi bi-funnel-fill"></i>
-            Filters
-          </div>
-          <button class="filters-toggle" type="button">
-            <i class="bi bi-chevron-down" id="filterToggleIcon"></i>
-          </button>
-        </div>
-        <div class="filters-body collapsed" id="filtersBody">
-          <div class="filter-group">
-            <label class="filter-label">Price Range</label>
-            <div class="price-range-inputs">
-              <input type="number" class="filter-input" id="minPrice" placeholder="Min €" min="0" step="0.01">
-              <span class="price-separator">—</span>
-              <input type="number" class="filter-input" id="maxPrice" placeholder="Max €" min="0" step="0.01">
-            </div>
-          </div>
-          
-          <div class="filter-group">
-            <label class="filter-label" for="storeFilter">Store</label>
-            <select class="filter-select" id="storeFilter">
-              <option value="">All Stores</option>
-            </select>
-          </div>
-          
-          <div class="filter-group">
-            <label class="filter-label" for="brandFilter">Brand</label>
-            <select class="filter-select" id="brandFilter">
-              <option value="">All Brands</option>
-            </select>
-          </div>
-          
-          <div class="filter-group">
-            <label class="filter-label" for="availabilityFilter">Availability</label>
-            <select class="filter-select" id="availabilityFilter">
-              <option value="">All Products</option>
-              <option value="in-stock">In Stock Only</option>
-              <option value="on-sale">On Sale</option>
-              <option value="new">New Arrivals</option>
-            </select>
-          </div>
-          
-          <div class="filters-actions">
-            <button class="btn-apply-filters" onclick="applyFilters()">
-              <i class="bi bi-check-circle-fill"></i>
-              Apply Filters
-            </button>
-            <button class="btn-clear-filters" onclick="clearFilters()">
-              <i class="bi bi-x-circle-fill"></i>
-              Clear
-            </button>
-          </div>
-        </div>
-      </div>
-
       <!-- Active Filters Display -->
       <div class="active-filters" id="activeFilters" style="display: none;"></div>
 
@@ -1534,15 +1684,100 @@
           {% endif %}
         </div>
         <div class="d-flex align-items-center gap-2 flex-wrap">
+          <!-- Filters Button -->
+          <div class="filters-container" id="filtersContainer" style="margin-bottom: 0;">
+            <div class="filters-header" onclick="toggleFilters()">
+              <div class="filters-title">
+                <i class="bi bi-funnel-fill"></i>
+                Filter
+              </div>
+              <button class="filters-toggle" type="button">
+                <i class="bi bi-chevron-down" id="filterToggleIcon2"></i>
+              </button>
+            </div>
+            <div class="filters-body collapsed" id="filtersBody2">
+              <!-- Price Range Slider -->
+              <div class="filter-group">
+                <label class="filter-label">Price Range</label>
+                <div class="price-range-slider">
+                  <div class="range-slider-container">
+                    <div class="range-slider-track" id="rangeTrack"></div>
+                    <input type="range" class="range-slider-input" id="minPriceRange" min="0" max="100" value="0" step="0.5">
+                    <input type="range" class="range-slider-input" id="maxPriceRange" min="0" max="100" value="100" step="0.5">
+                  </div>
+                  <div class="range-values">
+                    <span class="range-value">€<span id="minPriceValue">0</span></span>
+                    <span class="range-value">€<span id="maxPriceValue">100</span></span>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Store Multi-Select -->
+              <div class="filter-group">
+                <label class="filter-label">Store</label>
+                <div class="custom-multiselect" id="storeMultiselect">
+                  <div class="multiselect-trigger" onclick="toggleMultiselect('storeMultiselect')">
+                    <div class="multiselect-selected" id="storeSelected">
+                      <span class="multiselect-placeholder">All Stores</span>
+                    </div>
+                    <i class="bi bi-chevron-down multiselect-arrow"></i>
+                  </div>
+                  <div class="multiselect-dropdown" id="storeDropdown">
+                    <div class="multiselect-option" data-value="billa" onclick="toggleOption('store', 'billa', 'Billa', event)">
+                      <div class="multiselect-checkbox"><i class="bi bi-check"></i></div>
+                      <span>Billa</span>
+                    </div>
+                    <div class="multiselect-option" data-value="spar" onclick="toggleOption('store', 'spar', 'Spar', event)">
+                      <div class="multiselect-checkbox"><i class="bi bi-check"></i></div>
+                      <span>Spar</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Brand Multi-Select -->
+              <div class="filter-group">
+                <label class="filter-label">Brand</label>
+                <div class="custom-multiselect" id="brandMultiselect">
+                  <div class="multiselect-trigger" onclick="toggleMultiselect('brandMultiselect')">
+                    <div class="multiselect-selected" id="brandSelected">
+                      <span class="multiselect-placeholder">All Brands</span>
+                    </div>
+                    <i class="bi bi-chevron-down multiselect-arrow"></i>
+                  </div>
+                  <div class="multiselect-dropdown" id="brandDropdown">
+                    <div class="multiselect-option disabled" style="color: #9ca3af; cursor: not-allowed;">
+                      <span>No brands available yet</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="filters-actions">
+                <button class="btn-apply-filters" onclick="applyFilters()">
+                  <i class="bi bi-check-circle-fill"></i>
+                  Apply Filters
+                </button>
+                <button class="btn-clear-filters" onclick="clearFilters()">
+                  <i class="bi bi-x-circle-fill"></i>
+                  Clear
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Sort Dropdown -->
           <div class="dropdown">
-            <button class="btn bg-white dropdown-toggle fw-600" style="border: 1.5px solid var(--bg-beige); color: #5a5a5a; padding: 7px 16px; border-radius: 6px; font-size: 0.85rem; font-weight: 600;" type="button" id="sortDropdownLabel" data-bs-toggle="dropdown" aria-expanded="false">
-              <i class="bi bi-sort-down me-1"></i>Sort
+            <button class="btn sort-button" type="button" id="sortDropdownLabel" data-bs-toggle="dropdown" aria-expanded="false">
+              <i class="bi bi-sort-down-alt"></i>
+              Sort
+              <i class="bi bi-chevron-down ms-1" style="font-size: 0.7rem;"></i>
             </button>
-            <ul class="dropdown-menu border-0 shadow-sm" aria-labelledby="sortDropdownLabel" style="border-radius: 8px; border: 1px solid var(--bg-beige) !important; min-width: 180px;">
-              <li><a class="dropdown-item fw-medium py-2" href="#" onclick="document.getElementById('sort-filter').value='default'; document.getElementById('searchMenuBtn').click(); return false;"><i class="bi bi-star-fill text-warning me-2"></i>Relevance</a></li>
-              <li><a class="dropdown-item fw-medium py-2" href="#" onclick="document.getElementById('sort-filter').value='price_asc'; document.getElementById('searchMenuBtn').click(); return false;"><i class="bi bi-sort-numeric-down text-success me-2"></i>Price: Low to High</a></li>
-              <li><a class="dropdown-item fw-medium py-2" href="#" onclick="document.getElementById('sort-filter').value='price_desc'; document.getElementById('searchMenuBtn').click(); return false;"><i class="bi bi-sort-numeric-up text-danger me-2"></i>Price: High to Low</a></li>
-              <li><a class="dropdown-item fw-medium py-2" href="#" onclick="document.getElementById('sort-filter').value='name_asc'; document.getElementById('searchMenuBtn').click(); return false;"><i class="bi bi-sort-alpha-down me-2" style="color:#65388f;"></i>A – Z</a></li>
+            <ul class="dropdown-menu sort-dropdown-menu" aria-labelledby="sortDropdownLabel">
+              <li><a class="dropdown-item sort-dropdown-item" href="#" onclick="document.getElementById('sort-filter').value='default'; document.getElementById('searchMenuBtn').click(); return false;"><i class="bi bi-star-fill me-2"></i>Relevance</a></li>
+              <li><a class="dropdown-item sort-dropdown-item" href="#" onclick="document.getElementById('sort-filter').value='price_asc'; document.getElementById('searchMenuBtn').click(); return false;"><i class="bi bi-arrow-up me-2"></i>Price: Low to High</a></li>
+              <li><a class="dropdown-item sort-dropdown-item" href="#" onclick="document.getElementById('sort-filter').value='price_desc'; document.getElementById('searchMenuBtn').click(); return false;"><i class="bi bi-arrow-down me-2"></i>Price: High to Low</a></li>
+              <li><a class="dropdown-item sort-dropdown-item" href="#" onclick="document.getElementById('sort-filter').value='name_asc'; document.getElementById('searchMenuBtn').click(); return false;"><i class="bi bi-sort-alpha-down me-2"></i>A – Z</a></li>
             </ul>
           </div>
           {% if total_products %}
@@ -1677,7 +1912,7 @@
         <ul class="pagination-pills"> <!-- Modern "Pill" style navigation buttons -->
           <li class="page-item {{ 'disabled' if page <= 1 }}"> <!-- Navigation toggle: Back -->
             <a class="page-link nav-link"
-              href="{% if page > 1 %}{{ url_for('main.compare_prices', page=page-1, category=category_filter, search=search_query, sort=sort_filter) }}{% else %}#{% endif %}">
+              href="{% if page > 1 %}{{ url_for('main.compare_prices', page=page-1, category=category_filter, search=search_query, sort=sort_filter, min_price=request.args.get('min_price'), max_price=request.args.get('max_price'), store=request.args.get('store'), brand=request.args.get('brand')) }}{% else %}#{% endif %}">
               <i class="bi bi-arrow-left"></i> <span>Prev</span>
             </a>
           </li>
@@ -1690,14 +1925,14 @@
           {% for pnum in range(start_page, end_page + 1) %} <!-- Loops through active page range -->
           <li class="page-item {{ 'active' if pnum == page }}"> <!-- Highlight current location -->
             <a class="page-link"
-              href="{{ url_for('main.compare_prices', page=pnum, category=category_filter, search=search_query, sort=sort_filter) }}">{{
+              href="{{ url_for('main.compare_prices', page=pnum, category=category_filter, search=search_query, sort=sort_filter, min_price=request.args.get('min_price'), max_price=request.args.get('max_price'), store=request.args.get('store'), brand=request.args.get('brand')) }}">{{
               pnum }}</a>
           </li>
           {% endfor %}
 
           <li class="page-item {{ 'disabled' if page >= total_pages }}"> <!-- Navigation toggle: Forward -->
             <a class="page-link nav-link"
-              href="{% if page < total_pages %}{{ url_for('main.compare_prices', page=page+1, category=category_filter, search=search_query, sort=sort_filter) }}{% else %}#{% endif %}">
+              href="{% if page < total_pages %}{{ url_for('main.compare_prices', page=page+1, category=category_filter, search=search_query, sort=sort_filter, min_price=request.args.get('min_price'), max_price=request.args.get('max_price'), store=request.args.get('store'), brand=request.args.get('brand')) }}{% else %}#{% endif %}">
               <span>Next</span> <i class="bi bi-arrow-right"></i>
             </a>
           </li>
@@ -1913,48 +2148,178 @@
 
         // Filter toggle functionality
         function toggleFilters() {
-          const filtersBody = document.getElementById('filtersBody');
-          const toggleIcon = document.getElementById('filterToggleIcon');
-          filtersBody.classList.toggle('collapsed');
-          toggleIcon.className = filtersBody.classList.contains('collapsed') ? 'bi bi-chevron-down' : 'bi bi-chevron-up';
+          const filtersBody2 = document.getElementById('filtersBody2');
+          const toggleIcon2 = document.getElementById('filterToggleIcon2');
+          if (filtersBody2 && toggleIcon2) {
+            filtersBody2.classList.toggle('collapsed');
+            toggleIcon2.className = filtersBody2.classList.contains('collapsed') ? 'bi bi-chevron-down' : 'bi bi-chevron-up';
+          }
         }
 
         // Close filters dropdown when clicking outside
         document.addEventListener('click', function(e) {
           const container = document.getElementById('filtersContainer');
-          const body = document.getElementById('filtersBody');
-          if (container && body && !container.contains(e.target) && !body.classList.contains('collapsed')) {
-            body.classList.add('collapsed');
-            const icon = document.getElementById('filterToggleIcon');
-            if (icon) icon.className = 'bi bi-chevron-down';
+          const body2 = document.getElementById('filtersBody2');
+          if (container && body2 && !container.contains(e.target) && !body2.classList.contains('collapsed')) {
+            body2.classList.add('collapsed');
+            const icon2 = document.getElementById('filterToggleIcon2');
+            if (icon2) icon2.className = 'bi bi-chevron-down';
           }
         });
 
+        // Multi-select state
+        const selectedStores = new Set();
+        const selectedBrands = new Set();
+
+        // Toggle multi-select dropdown
+        function toggleMultiselect(id) {
+          const multiselect = document.getElementById(id);
+          const trigger = multiselect.querySelector('.multiselect-trigger');
+          const dropdown = multiselect.querySelector('.multiselect-dropdown');
+          
+          // Close other dropdowns
+          document.querySelectorAll('.multiselect-dropdown.active').forEach(d => {
+            if (d !== dropdown) {
+              d.classList.remove('active');
+              d.parentElement.querySelector('.multiselect-trigger').classList.remove('active');
+            }
+          });
+          
+          trigger.classList.toggle('active');
+          dropdown.classList.toggle('active');
+          event.stopPropagation();
+        }
+
+        // Toggle option in multi-select
+        function toggleOption(type, value, label, event) {
+          event.stopPropagation();
+          
+          const option = event.currentTarget;
+          const selectedSet = type === 'store' ? selectedStores : selectedBrands;
+          const selectedContainer = document.getElementById(type + 'Selected');
+          
+          if (selectedSet.has(value)) {
+            selectedSet.delete(value);
+            option.classList.remove('selected');
+          } else {
+            selectedSet.add(value);
+            option.classList.add('selected');
+          }
+          
+          updateSelectedDisplay(type, selectedSet, selectedContainer);
+        }
+
+        // Update the display of selected items
+        function updateSelectedDisplay(type, selectedSet, container) {
+          container.innerHTML = '';
+          
+          if (selectedSet.size === 0) {
+            const placeholder = document.createElement('span');
+            placeholder.className = 'multiselect-placeholder';
+            placeholder.textContent = type === 'store' ? 'All Stores' : 'All Brands';
+            container.appendChild(placeholder);
+          } else {
+            selectedSet.forEach(value => {
+              const tag = document.createElement('span');
+              tag.className = 'multiselect-tag';
+              tag.innerHTML = `
+                ${value.charAt(0).toUpperCase() + value.slice(1)}
+                <button class="multiselect-tag-remove" onclick="removeTag('${type}', '${value}', event)">
+                  <i class="bi bi-x"></i>
+                </button>
+              `;
+              container.appendChild(tag);
+            });
+          }
+        }
+
+        // Remove tag from multi-select
+        function removeTag(type, value, event) {
+          event.stopPropagation();
+          
+          const selectedSet = type === 'store' ? selectedStores : selectedBrands;
+          const selectedContainer = document.getElementById(type + 'Selected');
+          const dropdown = document.getElementById(type + 'Dropdown');
+          const option = dropdown.querySelector(`[data-value="${value}"]`);
+          
+          selectedSet.delete(value);
+          if (option) option.classList.remove('selected');
+          updateSelectedDisplay(type, selectedSet, selectedContainer);
+        }
+
+        // Close multi-select dropdowns when clicking outside
+        document.addEventListener('click', function(e) {
+          if (!e.target.closest('.custom-multiselect')) {
+            document.querySelectorAll('.multiselect-dropdown.active').forEach(dropdown => {
+              dropdown.classList.remove('active');
+              dropdown.parentElement.querySelector('.multiselect-trigger').classList.remove('active');
+            });
+          }
+        });
+
+        // Range slider functionality
+        const minPriceRange = document.getElementById('minPriceRange');
+        const maxPriceRange = document.getElementById('maxPriceRange');
+        const minPriceValue = document.getElementById('minPriceValue');
+        const maxPriceValue = document.getElementById('maxPriceValue');
+        const rangeTrack = document.getElementById('rangeTrack');
+
+        function updateRangeSlider() {
+          let minVal = parseFloat(minPriceRange.value);
+          let maxVal = parseFloat(maxPriceRange.value);
+          
+          // Prevent overlap
+          if (maxVal - minVal < 1) {
+            if (event.target === minPriceRange) {
+              minVal = maxVal - 1;
+              minPriceRange.value = minVal;
+            } else {
+              maxVal = minVal + 1;
+              maxPriceRange.value = maxVal;
+            }
+          }
+          
+          // Update display values
+          minPriceValue.textContent = minVal.toFixed(0);
+          maxPriceValue.textContent = maxVal.toFixed(0);
+          
+          // Update track highlight
+          const min = parseFloat(minPriceRange.min);
+          const max = parseFloat(minPriceRange.max);
+          const percentMin = ((minVal - min) / (max - min)) * 100;
+          const percentMax = ((maxVal - min) / (max - min)) * 100;
+          
+          rangeTrack.style.left = percentMin + '%';
+          rangeTrack.style.width = (percentMax - percentMin) + '%';
+        }
+
+        minPriceRange.addEventListener('input', updateRangeSlider);
+        maxPriceRange.addEventListener('input', updateRangeSlider);
+
+        // Initialize range slider
+        updateRangeSlider();
+
         // Apply filters
         function applyFilters() {
-          const minPrice = document.getElementById('minPrice').value;
-          const maxPrice = document.getElementById('maxPrice').value;
-          const store = document.getElementById('storeFilter').value;
-          const brand = document.getElementById('brandFilter').value;
-          const availability = document.getElementById('availabilityFilter').value;
+          const minPrice = minPriceRange.value;
+          const maxPrice = maxPriceRange.value;
+          const stores = Array.from(selectedStores).join(',');
+          const brands = Array.from(selectedBrands).join(',');
           
           const params = new URLSearchParams(window.location.search);
           
           // Update URL parameters
-          if (minPrice) params.set('min_price', minPrice);
+          if (minPrice && minPrice > 0) params.set('min_price', minPrice);
           else params.delete('min_price');
           
-          if (maxPrice) params.set('max_price', maxPrice);
+          if (maxPrice && maxPrice < 100) params.set('max_price', maxPrice);
           else params.delete('max_price');
           
-          if (store) params.set('store', store);
+          if (stores) params.set('store', stores);
           else params.delete('store');
           
-          if (brand) params.set('brand', brand);
+          if (brands) params.set('brand', brands);
           else params.delete('brand');
-          
-          if (availability) params.set('availability', availability);
-          else params.delete('availability');
           
           // Reload page with new filters
           window.location.href = window.location.pathname + '?' + params.toString();
@@ -1962,11 +2327,22 @@
 
         // Clear all filters
         function clearFilters() {
-          document.getElementById('minPrice').value = '';
-          document.getElementById('maxPrice').value = '';
-          document.getElementById('storeFilter').value = '';
-          document.getElementById('brandFilter').value = '';
-          document.getElementById('availabilityFilter').value = '';
+          // Reset range slider
+          minPriceRange.value = 0;
+          maxPriceRange.value = 100;
+          updateRangeSlider();
+          
+          // Clear multi-selects
+          selectedStores.clear();
+          selectedBrands.clear();
+          document.querySelectorAll('.multiselect-option.selected').forEach(opt => {
+            opt.classList.remove('selected');
+          });
+          updateSelectedDisplay('store', selectedStores, document.getElementById('storeSelected'));
+          updateSelectedDisplay('brand', selectedBrands, document.getElementById('brandSelected'));
+          
+          // Clear other filters
+          document.getElementById('availabilityFilter2').value = '';
           
           // Keep only category and search params
           const params = new URLSearchParams(window.location.search);
@@ -1985,12 +2361,40 @@
         document.addEventListener('DOMContentLoaded', function() {
           const params = new URLSearchParams(window.location.search);
           
-          // Populate filter values from URL
-          if (params.get('min_price')) document.getElementById('minPrice').value = params.get('min_price');
-          if (params.get('max_price')) document.getElementById('maxPrice').value = params.get('max_price');
-          if (params.get('store')) document.getElementById('storeFilter').value = params.get('store');
-          if (params.get('brand')) document.getElementById('brandFilter').value = params.get('brand');
-          if (params.get('availability')) document.getElementById('availabilityFilter').value = params.get('availability');
+          // Populate range slider from URL
+          if (params.get('min_price')) {
+            minPriceRange.value = params.get('min_price');
+          }
+          if (params.get('max_price')) {
+            maxPriceRange.value = params.get('max_price');
+          }
+          updateRangeSlider();
+          
+          // Populate multi-selects from URL
+          if (params.get('store')) {
+            const stores = params.get('store').split(',');
+            stores.forEach(store => {
+              selectedStores.add(store);
+              const option = document.querySelector(`#storeDropdown [data-value="${store}"]`);
+              if (option) option.classList.add('selected');
+            });
+            updateSelectedDisplay('store', selectedStores, document.getElementById('storeSelected'));
+          }
+          
+          if (params.get('brand')) {
+            const brands = params.get('brand').split(',');
+            brands.forEach(brand => {
+              selectedBrands.add(brand);
+              const option = document.querySelector(`#brandDropdown [data-value="${brand}"]`);
+              if (option) option.classList.add('selected');
+            });
+            updateSelectedDisplay('brand', selectedBrands, document.getElementById('brandSelected'));
+          }
+          
+          // Populate other filters
+          if (params.get('availability')) {
+            document.getElementById('availabilityFilter2').value = params.get('availability');
+          }
           
           // Show active filters
           updateActiveFilters();

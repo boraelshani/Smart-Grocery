@@ -21,8 +21,8 @@
       <!-- Left: Headline + CTA + Search -->
       <div class="col-lg-5 hero-text-col">
         <h1 class="modern-headline">
-          Groceries,<br>
-          thoughtfully.
+          Shop Smarter<br>
+          Save Bigger
         </h1>
         <p class="modern-subline">
           Compare prices, build your list, and find recipes that make everyday meals simpler, healthier, and more sustainable.
@@ -154,53 +154,70 @@
 
 
 <!-- ═══════════════════════════════════════════════
-     CATEGORIES
+     CATEGORIES - Circular Carousel Design
      ═══════════════════════════════════════════════ -->
-<section class="home-section">
+<section class="home-section" style="background: linear-gradient(135deg, #65388f 0%, #7c3aed 100%); padding: 4rem 0; position: relative; overflow: hidden;">
   <div class="container">
-    <div class="section-header">
-      <div>
-        <h2 class="section-title">Shop by Category</h2>
-        <p class="section-subtitle">Discover essentials across our verified departments</p>
+    <div class="section-header" style="margin-bottom: 3rem;">
+      <div style="text-align: center; width: 100%;">
+        <h2 class="section-title" style="color: white; font-size: 2.5rem; margin-bottom: 0.5rem;">Shop by Category</h2>
+        <p class="section-subtitle" style="color: rgba(255,255,255,0.9); font-size: 1.1rem;">Discover essentials across our verified departments</p>
       </div>
-      <a href="{{ url_for('main.compare_prices') }}" class="view-all-btn">
-        Browse All <i class="bi bi-arrow-right ms-1"></i>
-      </a>
     </div>
 
-    <div class="scroll-container">
-      <button class="scroll-arrow left" onclick="scrollSection('categories', 'left')" aria-label="Scroll left">
+    <div class="circular-carousel-wrapper">
+      <button class="circular-carousel-arrow left" onclick="scrollCircularCategories('left')" aria-label="Scroll left">
         <i class="bi bi-chevron-left"></i>
       </button>
-      <div class="scroll-wrapper" id="categories-scroll">
+      
+      <div class="circular-categories-carousel" id="circularCategoriesCarousel">
         {% if categories and categories|length > 0 %}
           {% for category in categories %}
-          <a href="{{ url_for('main.compare_prices') }}?category={{ category.id }}" class="category-card">
-            <div class="category-image-wrapper" style="position:relative;">
-              <img src="{{ category.image }}"
-                   alt="{{ category.name }}"
-                   loading="lazy"
-                   onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-              <div class="category-fallback-icon" style="display:none; align-items:center; justify-content:center; width:100%; height:100%;">
-                <i class="bi bi-grid-fill" style="font-size:2rem; color:#7c3aed;"></i>
+          <a href="{{ url_for('main.compare_prices') }}?category={{ category.id }}" class="circular-category-card">
+            <div class="circular-category-image">
+              <div class="circular-image-inner">
+                <img src="{{ category.image }}"
+                     alt="{{ category.name }}"
+                     loading="lazy"
+                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <div class="category-fallback-icon" style="display:none; align-items:center; justify-content:center; width:100%; height:100%;">
+                  <i class="bi bi-grid-fill" style="font-size:3rem; color:#65388f;"></i>
+                </div>
+              </div>
+              <div class="circular-category-overlay">
+                <span class="discover-text">Discover</span>
               </div>
             </div>
-            <div class="category-name">{{ category.name }}</div>
+            <div class="circular-category-name">{{ category.name }}</div>
           </a>
           {% endfor %}
         {% else %}
-          <div class="d-flex align-items-center justify-content-center w-100 py-4 text-muted">
+          <div class="d-flex align-items-center justify-content-center w-100 py-4" style="color: white;">
             <i class="bi bi-folder2-open me-2"></i>
             <span>No categories available</span>
           </div>
         {% endif %}
       </div>
-      <button class="scroll-arrow right" onclick="scrollSection('categories', 'right')" aria-label="Scroll right">
+      
+      <button class="circular-carousel-arrow right" onclick="scrollCircularCategories('right')" aria-label="Scroll right">
         <i class="bi bi-chevron-right"></i>
       </button>
     </div>
   </div>
 </section>
+
+<script>
+function scrollCircularCategories(direction) {
+  const carousel = document.getElementById('circularCategoriesCarousel');
+  const scrollAmount = 300;
+  
+  if (direction === 'left') {
+    carousel.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+  } else {
+    carousel.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+  }
+}
+</script>
 
 
 <!-- ═══════════════════════════════════════════════

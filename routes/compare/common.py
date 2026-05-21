@@ -35,8 +35,8 @@ def compare_product(product_id):
 
 @compare_bp.route('/list')
 def compare_list():
-    try: per_page = max(1, min(int(request.args.get('per_page', 30)), 100))
-    except: per_page = 30
+    try: per_page = max(1, min(int(request.args.get('per_page', 32)), 100))
+    except: per_page = 32
     try: page = max(1, int(request.args.get('page', 1)))
     except: page = 1
     category_filter = (request.args.get('category') or '').strip()

@@ -78,6 +78,13 @@ def product_detail(product_id):
     payload = build_compare_product_payload(helpers.sanitize_mongo_doc(product), store_meta_map=store_meta)
     best_price_value, best_price_stores = build_best_price_summary(payload)
     
+    # Convert best_price_value from string to float for template calculations
+    if best_price_value is not None:
+        try:
+            best_price_value = float(best_price_value)
+        except (ValueError, TypeError):
+            best_price_value = None
+    
     return render_template('product_detail.html', 
                          product=payload, 
                          best_price_value=best_price_value,
@@ -89,7 +96,7 @@ def product_detail(product_id):
 @main_bp.route('/compare-prices')
 def compare_prices():
     """Price Comparison Engine - Search and Categories."""
-    per_page = 30
+    per_page = 32
     page = int(request.args.get('page', 1))
     category_filter = (request.args.get('category') or '').strip()
     search_query = (request.args.get('search') or '').strip()

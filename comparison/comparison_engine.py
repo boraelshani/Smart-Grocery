@@ -67,6 +67,22 @@ def build_compare_product_payload(
         normalized_unit_price = cheapest.get('normalized_unit_price')
     if not normalized_unit_label:
         normalized_unit_label = cheapest.get('normalized_unit_label')
+    
+    # Calculate price per unit if not available but we have size and unit
+    if normalized_unit_price is None:
+        size_value = to_float(product.get('sizeNormalized') or product.get('size_normalized'))
+        unit = product.get('unitSize') or product.get('unit_normalized')
+        price = cheapest.get('price')
+        if size_value and size_value > 0 and price and unit:
+            # Calculate price per base unit (e.g., per 100g, per 1l)
+            if unit in ['g', 'ml']:
+                # Price per 100g or 100ml
+                normalized_unit_price = (float(price) / float(size_value)) * 100
+                normalized_unit_label = f'100{unit}'
+            elif unit in ['kg', 'l']:
+                # Price per kg or l
+                normalized_unit_price = float(price) / float(size_value)
+                normalized_unit_label = unit
 
     # Ensure fast reads can consume a complete cheapest node directly.
     cheapest_node = {
@@ -81,11 +97,30 @@ def build_compare_product_payload(
     except Exception:
         deal_eval = None
 
+    # Build unit size string (e.g., "200g", "3kg", "500ml")
+    unit_size = product.get('unitSize') or product.get('unit_normalized')
+    size_value = product.get('sizeNormalized') or product.get('size_normalized')
+    if size_value and unit_size:
+        # Combine size and unit (e.g., 200 + "g" = "200g")
+        try:
+            size_num = float(size_value)
+            # Format nicely - remove .0 for whole numbers
+            if size_num == int(size_num):
+                unit_size = f"{int(size_num)}{unit_size}"
+            else:
+                unit_size = f"{size_num}{unit_size}"
+        except (ValueError, TypeError):
+            pass
+    
     payload = {
         'id': product_id,
         'name': product.get('name') or product.get('title') or 'Product',
+        'brand': product.get('brand'),
         'category': product.get('category'),
-        'image': product.get('image') or (product.get('images') or [None])[0],
+        'image': product.get('image') or product.get('default_image_url') or (product.get('images') or [None])[0],
+        'defaultImageUrl': product.get('default_image_url') or product.get('image'),
+        'unitSize': unit_size,
+        'barcode': product.get('barcode'),
         'stores': stores,
         'cheapest': cheapest_node,
         'deal_eval': deal_eval,

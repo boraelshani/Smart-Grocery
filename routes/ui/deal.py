@@ -39,7 +39,7 @@ def load_featured_deals_fallback():
 @main_bp.route('/featured-deals')
 def featured_deals_page():
     """Deals & Offers Page."""
-    per_page = 30
+    per_page = 32
     page = int(request.args.get('page', 1))
     category_filter = (request.args.get('category') or '').strip()
     search_query = (request.args.get('search') or '').strip()

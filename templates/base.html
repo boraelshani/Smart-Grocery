@@ -231,44 +231,35 @@
               <i class="bi bi-grid-3x3-gap-fill me-2"></i>Browse
             </a>
             
-            <div class="mega-menu-content" style="position: absolute; left: 0; right: 0; width: 100vw; margin-left: calc(-50vw + 50%); border-radius: 0 0 1.5rem 1.5rem; background: white; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);">
+            <div class="mega-menu-content" style="position: absolute; left: 0; right: 0; width: 100vw; margin-left: calc(-50vw + 50%); border-radius: 0 0 1.5rem 1.5rem; background: #f4f0ec; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);">
               <div class="mega-menu-content-bridge"></div>
               
               <!-- Tab Navigation Bar -->
-              <div class="pt-4 pb-3 px-4 d-flex justify-content-center" style="background: white; border-bottom: 1px solid #f1f5f9;">
-                 <nav>
-                   <div class="nav custom-pill-nav" id="browse-tabs" role="tablist">
-                     <button class="nav-link active fw-bold px-4" id="tab-categories-btn" data-bs-toggle="tab" data-bs-target="#tab-categories" type="button" role="tab"><i class="bi bi-grid-fill me-2"></i>Categories</button>
-                     <button class="nav-link fw-bold px-4" id="tab-brands-btn" data-bs-toggle="tab" data-bs-target="#tab-brands" type="button" role="tab"><i class="bi bi-tags-fill me-2"></i>Brands</button>
-                   </div>
-                 </nav>
+              <div class="pt-4 pb-3 px-4 d-flex justify-content-center gap-2" style="background: #f4f0ec; border-bottom: 1px solid #f1f5f9;">
+                     <button class="nav-link active fw-bold px-4 custom-tab-btn" id="tab-categories-btn" data-bs-toggle="tab" data-bs-target="#tab-categories" type="button" role="tab" aria-controls="tab-categories" aria-selected="true"><i class="bi bi-grid-fill me-2"></i>Categories</button>
+                     <button class="nav-link fw-bold px-4 custom-tab-btn" id="tab-brands-btn" data-bs-toggle="tab" data-bs-target="#tab-brands" type="button" role="tab" aria-controls="tab-brands" aria-selected="false"><i class="bi bi-tags-fill me-2"></i>Brands</button>
               </div>
 
               <style>
-              /* Custom Segmented Control - Purple Theme */
-              .custom-pill-nav {
-                  border-radius: 50px;
-                  padding: 4px;
-                  display: inline-flex;
-                  background: linear-gradient(135deg, #7c3aed 0%, #6366f1 100%);
-                  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.2);
-              }
-              .custom-pill-nav .nav-link {
+              /* Custom Tab Buttons - Purple Theme */
+              .custom-tab-btn {
                   border-radius: 50px;
                   font-weight: 600;
                   padding: 10px 28px;
-                  margin: 0 2px;
                   transition: all 0.25s ease;
                   border: none;
-                  background: transparent;
+                  background: linear-gradient(135deg, #7c3aed 0%, #6366f1 100%);
                   font-size: 0.95rem;
                   color: rgba(255, 255, 255, 0.85);
+                  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.2);
               }
-              .custom-pill-nav .nav-link:hover { 
-                  background: rgba(255, 255, 255, 0.15);
+              .custom-tab-btn:hover { 
+                  background: linear-gradient(135deg, #6d28d9 0%, #5b21b6 100%);
                   color: white;
+                  transform: translateY(-2px);
+                  box-shadow: 0 6px 16px rgba(124, 58, 237, 0.3);
               }
-              .custom-pill-nav .nav-link.active { 
+              .custom-tab-btn.active { 
                   background: white;
                   color: #7c3aed !important; 
                   font-weight: 700; 
@@ -288,7 +279,7 @@
                   color: #475569;
               }
               .mega-cat-item:hover {
-                  background: #f8fafc;
+                  background: #e9e3de;
                   transform: translateX(3px);
                   color: #7c3aed;
               }
@@ -377,9 +368,9 @@
                  
                  <!-- Categories Tab -->
                  <div class="tab-pane fade show active" id="tab-categories" role="tabpanel" tabindex="0">
-                     <div class="mega-menu-wrapper" style="display: flex; min-height: 500px; max-height: 600px;">
+                     <div class="mega-menu-wrapper" style="display: flex; min-height: 500px; max-height: 600px; background: #f4f0ec;">
                         <!-- Left: Categories - Very Compact List -->
-                        <div class="mega-col-left" id="mega-categories-list" style="width: 22%; background: #fafbfc; border-right: 1px solid #f1f5f9; overflow-y: auto; padding: 10px 0;">
+                        <div class="mega-col-left" id="mega-categories-list" style="width: 22%; background: #f4f0ec; border-right: 1px solid #e9e3de; overflow-y: auto; padding: 10px 0;">
                           <ul class="mega-cat-list" style="list-style: none; padding: 0; margin: 0;">
                             {% for cat, info in mega_menu.categories.items() %}
                             <li class="mega-cat-item {% if loop.first %}active{% endif %}" data-target="cat-{{ cat|replace(' ', '-')|lower|replace('&', 'and') }}" onclick="window.location.href='{{ url_for('main.compare_prices', category=cat) }}'">
@@ -393,7 +384,7 @@
                         </div>
                         
                         <!-- Right: Subcategories - Smaller Cards -->
-                        <div class="mega-col-mid bg-white p-4" style="width: 78%; overflow-y: auto;">
+                        <div class="mega-col-mid p-4" style="width: 78%; overflow-y: auto; background: #f4f0ec;">
                           {% for cat, info in mega_menu.categories.items() %}
                           <div class="mega-subcat-panel {% if loop.first %}active{% endif %}" id="cat-{{ cat|replace(' ', '-')|lower|replace('&', 'and') }}">
                             <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
@@ -410,27 +401,29 @@
                             <div class="row g-2">
                               {% for l1, l2_list in info.subcats.items() %}
                               <div class="col-6 col-sm-4 col-lg-2">
-                                  <div class="subcat-card h-100 shadow-sm rounded-3 overflow-hidden subcat-hover-card d-flex flex-column">
-                                     <!-- Square Image Box -->
-                                      <div class="subcat-img-wrapper">
-                                         <img src="{{ mega_menu.images.get(l1, mega_menu.images.get(cat, info.image or mega_menu.fallback_image)) }}" alt="{{ l1 }}" onerror="this.src='{{ mega_menu.fallback_image }}'">
+                                  <a href="{{ url_for('main.compare_prices', category=l1) }}" class="text-decoration-none">
+                                      <div class="subcat-card h-100 shadow-sm rounded-3 overflow-hidden subcat-hover-card d-flex flex-column">
+                                         <!-- Square Image Box -->
+                                          <div class="subcat-img-wrapper">
+                                             <img src="{{ mega_menu.images.get(l1, mega_menu.images.get(cat, info.image or mega_menu.fallback_image)) }}" alt="{{ l1 }}" onerror="this.src='{{ mega_menu.fallback_image }}'">
+                                          </div>
+                                         <!-- Text Box -->
+                                          <div class="p-2 d-flex flex-column" style="background: white;">
+                                             <div class="fw-bold mb-1" style="font-size: 0.75rem; color: #1e293b; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 2.4em;">
+                                                {{ l1 }}
+                                             </div>
+                                             {% if l2_list %}
+                                             <div class="d-flex flex-wrap gap-1" onclick="event.stopPropagation();">
+                                                {% for l2 in l2_list %}
+                                                   <a href="{{ url_for('main.compare_prices', category=l2) }}" class="sub-subcat-badge badge text-decoration-none" style="font-size: 0.65rem; padding: 3px 6px; white-space: nowrap;" onclick="event.stopPropagation();">
+                                                      {{ l2 }}
+                                                   </a>
+                                                {% endfor %}
+                                             </div>
+                                             {% endif %}
+                                          </div>
                                       </div>
-                                     <!-- Text Box -->
-                                      <div class="p-2 d-flex flex-column" style="background: white;">
-                                         <a href="{{ url_for('main.compare_prices', category=l1) }}" class="fw-bold text-decoration-none mb-1" style="font-size: 0.75rem; color: #1e293b; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 2.4em;">
-                                            {{ l1 }}
-                                         </a>
-                                         {% if l2_list %}
-                                         <div class="d-flex flex-wrap gap-1">
-                                            {% for l2 in l2_list %}
-                                               <a href="{{ url_for('main.compare_prices', category=l2) }}" class="sub-subcat-badge badge text-decoration-none" style="font-size: 0.65rem; padding: 3px 6px; white-space: nowrap;">
-                                                  {{ l2 }}
-                                               </a>
-                                            {% endfor %}
-                                         </div>
-                                         {% endif %}
-                                      </div>
-                                  </div>
+                                  </a>
                               </div>
                               {% endfor %}
                               {% if not info.subcats %}
@@ -445,11 +438,11 @@
                  
                  <!-- Brands Tab -->
                  <div class="tab-pane fade" id="tab-brands" role="tabpanel" tabindex="0">
-                     <div class="mega-menu-wrapper bg-white py-4 px-5">
+                     <div class="mega-menu-wrapper py-4 px-5" style="background: #f4f0ec;">
                        <div class="w-100">
-                          <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom w-100">
-                            <h5 class="fw-bold m-0"><i class="bi bi-tags-fill text-primary me-2"></i>Top Brands</h5>
-                            <a href="{{ url_for('main.compare_prices') }}" class="btn btn-sm text-decoration-none fw-bold text-primary">Explore All Brands <i class="bi bi-arrow-right"></i></a>
+                          <div class="d-flex justify-content-between align-items-center mb-4 pb-2 w-100" style="border-bottom: 1px solid #e9e3de;">
+                            <h5 class="fw-bold m-0" style="color: #65388f;"><i class="bi bi-tags-fill me-2"></i>Top Brands</h5>
+                            <a href="{{ url_for('main.compare_prices') }}" class="btn btn-sm text-decoration-none fw-bold" style="color: #65388f;">Explore All Brands <i class="bi bi-arrow-right"></i></a>
                           </div>
                           <div class="brands-grid d-grid gap-3" style="grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); width: 100%;">
                             {% for brand in mega_menu.brands %}
@@ -543,6 +536,36 @@
       </div>
     </div>
   </nav>
+  
+  <script>
+  // Handle tab switching for browse menu
+  document.addEventListener('DOMContentLoaded', function() {
+    const tabButtons = document.querySelectorAll('[data-bs-toggle="tab"]');
+    tabButtons.forEach(button => {
+      button.addEventListener('click', function(e) {
+        e.preventDefault();
+        const targetId = this.getAttribute('data-bs-target');
+        const targetPane = document.querySelector(targetId);
+        
+        // Remove active from all buttons and panes
+        tabButtons.forEach(btn => {
+          btn.classList.remove('active');
+          btn.setAttribute('aria-selected', 'false');
+        });
+        document.querySelectorAll('.tab-pane').forEach(pane => {
+          pane.classList.remove('show', 'active');
+        });
+        
+        // Add active to clicked button and target pane
+        this.classList.add('active');
+        this.setAttribute('aria-selected', 'true');
+        if (targetPane) {
+          targetPane.classList.add('show', 'active');
+        }
+      });
+    });
+  });
+  </script>
   {% endblock %}
 
   <!-- ========================================== -->
@@ -791,6 +814,8 @@ document.addEventListener('DOMContentLoaded', () => {
     .navbar-scrolled .navbar-brand { font-size: 1.1rem; display: none !important; width: 0; padding: 0; margin: 0; overflow: hidden; }
     .navbar-scrolled .navbar-nav .nav-link { color: #555 !important; }
     .navbar-scrolled .navbar-nav .nav-link:hover { color: #8b5cf6 !important; }
+    /* Fix: Active tab should keep white text on hover when scrolled */
+    .navbar-scrolled .navbar-nav .nav-link.active:hover { color: white !important; }
     .navbar-scrolled .navbar-toggler-icon { filter: invert(1); }
   </style>
 
@@ -829,6 +854,8 @@ document.addEventListener('DOMContentLoaded', () => {
     .navbar-scrolled .navbar-brand { font-size: 1.1rem; display: none !important; width: 0; padding: 0; margin: 0; overflow: hidden; }
     .navbar-scrolled .navbar-nav .nav-link { color: #555 !important; }
     .navbar-scrolled .navbar-nav .nav-link:hover { color: #8b5cf6 !important; }
+    /* Fix: Active tab should keep white text on hover when scrolled */
+    .navbar-scrolled .navbar-nav .nav-link.active:hover { color: white !important; }
     .navbar-scrolled .navbar-toggler-icon { filter: invert(1); }
     
     /* Make search & tabs collapse into one row on large screens */

@@ -1,934 +1,660 @@
 {% extends "base.html" %}
 
+{% block title %}{{ product.name }} - Smart Grocery{% endblock %}
+
+{% block body_class %}{% endblock %}
+
 {% block styles %}
-<style> /* Page-specific internal styling for custom layouts */
-    body {
-      background: #ffffff; /* Sets the default document background to clean white */
+<style>
+  /* Force cream background everywhere */
+  body {
+    background-color: #f4f0ec !important;
+  }
+  
+  .container, main, .bg-light {
+    background-color: #f4f0ec !important;
+  }
+
+  /* Hero Section with Breadcrumb */
+  .product-hero {
+    background: #f4f0ec !important;
+    padding: 2rem 0 1rem;
+  }
+
+  .breadcrumb-modern {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.9375rem;
+    color: #6b7280;
+  }
+
+  .breadcrumb-modern a {
+    color: #65388f;
+    text-decoration: none;
+    transition: all 0.2s;
+    font-weight: 500;
+  }
+
+  .breadcrumb-modern a:hover {
+    text-decoration: underline;
+  }
+
+  .breadcrumb-separator {
+    color: #d1d5db;
+  }
+
+  /* Main Product Grid */
+  .product-detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    gap: 2rem;
+    margin-top: 2rem;
+  }
+
+  /* Product Image Section */
+  .product-image-section {
+    background: white;
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+    height: fit-content;
+    overflow: visible;
+  }
+
+  .product-image-main {
+    width: 100%;
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f9fafb;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 1rem;
+  }
+
+  .product-image-main img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+  }
+
+  /* Product Info Section */
+  .product-info-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  /* Product Header with Details - White Container */
+  .product-header-container {
+    background: white;
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+  }
+
+  .product-brand {
+    color: #65388f;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+  }
+
+  .product-title {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #1e293b;
+    line-height: 1.2;
+    margin-bottom: 1.5rem;
+  }
+
+  .product-details-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e5e7eb;
+  }
+
+  .detail-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .detail-row i {
+    color: #65388f;
+    font-size: 1.125rem;
+    width: 24px;
+  }
+
+  .detail-row .detail-label {
+    font-weight: 600;
+    color: #6b7280;
+    min-width: 120px;
+  }
+
+  .detail-row .detail-value {
+    color: #1e293b;
+    font-weight: 500;
+  }
+
+  /* Price Comparison - NO CONTAINER */
+  .price-comparison-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .price-comparison-title i {
+    color: #65388f;
+  }
+
+  .store-price-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .store-price-card {
+    background: white;
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  }
+
+  .store-price-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(101, 56, 143, 0.15);
+    border-color: #65388f;
+  }
+
+  .store-price-card.best-price {
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+    border-color: #22c55e;
+  }
+
+  .best-price-badge {
+    position: absolute;
+    top: 0;
+    right: 0;
+    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-bottom-left-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .store-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex: 1;
+  }
+
+  .store-name {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #1e293b;
+  }
+
+  .store-price-info {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+  }
+
+  .price-display {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #65388f;
+  }
+
+  .store-price-card.best-price .price-display {
+    color: #16a34a;
+  }
+
+  .price-difference {
+    font-size: 0.875rem;
+    color: #ef4444;
+    font-weight: 600;
+  }
+
+  .store-price-card.best-price .price-difference {
+    color: #16a34a;
+  }
+
+  .price-per-unit {
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin-top: 0.25rem;
+  }
+
+  /* Product Details Section */
+  .product-details-section {
+    background: white;
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+  }
+
+  .detail-item {
+    display: flex;
+    padding: 1rem 0;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .detail-item:last-child {
+    border-bottom: none;
+  }
+
+  .detail-label {
+    font-weight: 600;
+    color: #6b7280;
+    min-width: 150px;
+  }
+
+  .detail-value {
+    color: #1e293b;
+    font-weight: 500;
+  }
+
+  /* Action Buttons */
+  .action-buttons {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+    width: 100%;
+    align-items: stretch;
+  }
+
+  .btn-action {
+    padding: 0.875rem 1.5rem;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 0.9375rem;
+    border: 2px solid;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    text-decoration: none;
+  }
+
+  .btn-primary-action {
+    background: linear-gradient(135deg, #65388f 0%, #7c3aed 100%);
+    border-color: #65388f;
+    color: white;
+    flex: 1;
+  }
+
+  .btn-primary-action:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(101, 56, 143, 0.3);
+    color: white;
+  }
+
+  .btn-favorite {
+    background: white;
+    border-color: #e5e7eb;
+    color: #65388f;
+    padding: 0.875rem 1rem;
+    min-width: 52px;
+    width: 52px;
+    flex: 0 0 52px;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .btn-favorite:hover {
+    background: #f9fafb;
+    border-color: #65388f;
+    transform: translateY(-2px);
+  }
+
+  .btn-favorite.favorited {
+    background: white !important;
+    border-color: #dc2626 !important;
+    color: #dc2626 !important;
+  }
+
+  .btn-favorite.favorited:hover {
+    background: #fef2f2 !important;
+    border-color: #dc2626 !important;
+  }
+
+  .btn-favorite i {
+    font-size: 1.25rem;
+  }
+
+  /* Responsive Design */
+  @media (max-width: 1024px) {
+    .product-detail-grid {
+      grid-template-columns: 1fr;
     }
 
-    /* 
-     * HERO SECTION
-     * Specialized Hero for Product Detail with rounded bottom pattern.
-     */
-    .product-detail-hero {
-      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #8b5cf6 100%);
-      color: white;
-      padding: 1rem 0;
+    .product-image-section {
       position: relative;
-      overflow: hidden;
-      margin-bottom: 2rem;
+      top: 0;
     }
 
-    /* Background pattern dots overlay */
-    .product-detail-hero::after {
-      content: ''; /* Required pseudo-element content property */
-      position: absolute; /* Place relative to the hero container */
-      inset: 0; /* Align to all four edges (top, bottom, left, right) */
-      /* Radial gradients creating soft glowing purple and white orbs */
-      background: 
-        radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.1), transparent 40%),
-        radial-gradient(circle at 80% 70%, rgba(255, 255, 255, 0.1), transparent 40%);
-      pointer-events: none; /* Ensures the decoration doesn't block clicks on buttons below */
-    }
-    
-    /* 
-     * GLASSMORPHISM BACK BUTTON
-     * Semi-transparent button that blurs the background behind it.
-     */
-    .btn-glass-back {
-      background: rgba(255, 255, 255, 0.15);
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(255, 255, 255, 0.3);
-      color: white;
-      font-weight: 600;
-      padding: 0.6rem 1.2rem;
-      border-radius: 0;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* High-performance smooth animation curve */
-      display: inline-flex; /* Align icon and text horizontally */
-      align-items: center; /* Center icon and text vertically */
-      gap: 0.5rem; /* Space between the arrow icon and the 'Back' label */
-      text-decoration: none; /* Removes standard anchor underline */
-    }
-    
-    .btn-glass-back:hover {
-      background: rgba(255, 255, 255, 0.25); /* Lift opacity to indicate interactivity */
-      color: white; /* Maintain white text on darker hover state */
-      transform: translateX(-4px); /* Interactive nudge effect moving button left */
+    .store-price-card {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1rem;
     }
 
-    /* 
-     * DYNAMIC NAVBAR
-     * The navbar on this page is initially transparent/absolute.
-     */
-    .navbar {
-      position: fixed !important; /* Locks navbar to the top of the viewport during scrolling */
-      top: 0; /* Align to the very top edge */
-      left: 0; /* Align to the left edge */
-      right: 0; /* Align to the right edge */
-      z-index: 1000; /* High priority layering to stay above all content */
-      background: transparent !important; /* Initially transparent to blend with Hero gradient */
-      border-bottom: none !important; /* Removes default Bootstrap border line */
-      box-shadow: none !important; /* Removes default shadow for a seamless Hero look */
-      transition: all 0.3s ease; /* Smooth transition when background appears on scroll */
-    }
-
-    /* 
-     * SCROLLED NAVBAR STATE
-     * Applied via JS when user scrolls down.
-     */
-    .navbar.scrolled {
-      background: rgba(124, 58, 237, 0.95) !important; /* Opaque purple background for legibility over white sections */
-      backdrop-filter: blur(10px); /* Secondary blur effect for a premium feel when sticky */
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1) !important; /* Adds depth when the header is sticky */
-    }
-    
-    /* 
-     * FORCE WHITE TEXT
-     * When scrolled, ensuring contrast against purple background.
-     */
-    .navbar.scrolled .navbar-brand,
-    .navbar.scrolled .navbar-brand span,
-    .navbar.scrolled .brand-grocery-text,
-    .navbar.scrolled .nav-link,
-    .navbar.scrolled .nav-link i {
-      color: #ffffff !important; /* Hard-coded white to override theme defaults on scroll */
-    }
-
-    /* Fix hover disappearing text */
-    .navbar.scrolled .nav-link:hover,
-    .navbar.scrolled .nav-link:hover i {
-      color: #ffffff !important; /* Keeps labels white during hover interactions */
-      opacity: 0.8 !important; /* Softens label color on hover for visual feedback */
-    }
-
-    .navbar-brand, .navbar-brand i, .nav-link, .nav-link i {
-      color: rgba(255, 255, 255, 0.95) !important; /* Initial slightly transparent white for hero blending */
-    }
-
-    .nav-link.active {
-      color: white !important; /* Highlighted color for the current page link */
-      font-weight: 700; /* Extra bold text for the active navigation item */
-    }
-
-    .nav-link:hover {
-      color: white !important; /* Brightens text when cursor is over the link */
-    }
-
-    .navbar-toggler-icon {
-      filter: invert(1); /* Flips icon color to white for better visibility on dark purple */
-    }
-    
-    .navbar .badge {
-      border-color: transparent !important; /* Removes border from notification/cart badges in header */
-    }
-
-    /* Fixed Go To Store Button State */
-    .btn-go-store-main.disabled {
-      opacity: 0.6; /* Dulls button to indicate it cannot be clicked */
-      pointer-events: none; /* Mathematically prevents click events from being processed */
-      background: #e2e8f0; /* Gray background for inactive state */
-      border-color: #e2e8f0; /* Gray border for inactive state */
-      color: #94a3b8; /* Faded text color */
-    }
-
-    /* Breadcrumb Hover */
-    .breadcrumb a:hover {
-      text-decoration: underline !important; /* Visual indicator that the breadcrumb path is clickable */
-    }
-
-    /* Breadcrumb Styling */
-    .breadcrumb {
-      margin-bottom: 0.75rem; /* Space between breadcrumb path and the product title */
-    }
-
-    .breadcrumb a {
-      color: white; /* Initial white state to match Hero styling */
-      text-decoration: none; /* No underline by default for a cleaner UI */
-    }
-
-    .breadcrumb-item+.breadcrumb-item::before {
-      color: rgba(255, 255, 255, 0.7); /* Custom separator color (usually a slash /) */
-    }
-
-    /* Category Badge */
-    .category-badge {
-      display: inline-block;
-      background: rgba(255, 255, 255, 0.15);
-      color: white;
-      padding: 6px 12px;
-      border-radius: 0;
-      font-weight: 700;
-      border: 1px solid rgba(255, 255, 255, 0.25);
-    }
-
-    /* Glass Card for Image */
-    .glass-card {
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid rgba(255, 255, 255, 0.25);
-      border-radius: 0;
-      box-shadow: 0 14px 36px rgba(0, 0, 0, 0.18);
-      backdrop-filter: blur(6px);
-    }
-
-    /* Image Container */
-    .image-card {
-      background: #ffffff;
-      border-radius: 0;
-      padding: 1.25rem;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-      position: relative;
-      border: 1px solid #e9ecef;
-    }
-
-    .product-image-large {
+    .store-price-info {
       width: 100%;
-      height: 420px;
-      object-fit: contain;
-      background: #fff;
-      border-radius: 0;
-      padding: 18px;
+      justify-content: space-between;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .product-title {
+      font-size: 1.5rem;
     }
 
-    /* Favorite Button */
-    .favorite-btn {
-      position: absolute; /* Floating button positioned inside image card */
-      top: 1.5rem; /* Offset from top edge */
-      right: 1.5rem; /* Offset from right edge */
-      width: 50px; /* Perfect circle width */
-      height: 50px; /* Perfect circle height */
-      border-radius: 50%; /* Makes the button round */
-      background: white; /* Solid white background for visibility on images */
-      border: none; /* Clean edges without stroke */
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); /* Soft drop shadow for elevation */
-      display: flex; /* Flex center items horizontally */
-      align-items: center; /* Flex center items vertically */
-      justify-content: center; /* Mathematical centering of the heart icon */
-      font-size: 1.4rem; /* Icon scale */
-      color: #7c3aed; /* Theme color for the heart outline */
-      cursor: pointer; /* Change mouse pointer to hand */
-      transition: all 0.3s; /* Smooth hover transition duration */
-      z-index: 10; /* Ensures button stays on top of the image */
+    .price-display {
+      font-size: 1.75rem;
     }
 
-    .favorite-btn:hover {
-      transform: scale(1.1); /* Subtle grow effect for tactile user feedback */
-      box-shadow: 0 6px 20px rgba(124, 58, 237, 0.3); /* Glowing purple shadow on hover */
+    .store-price-info {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.5rem;
     }
+  }
 
-    .favorite-btn.active {
-      background: #fce7f3;
-      color: #db2777;
-      border: 2px solid #fbcfe8;
-    }
+  /* Empty State */
+  .empty-state {
+    text-align: center;
+    padding: 3rem 2rem;
+    color: #6b7280;
+  }
 
-    /* Price Display */
-    .price-display-card {
-      background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
-      border-radius: 0;
-      padding: 1.75rem;
-      color: white;
-      margin-bottom: 1.5rem;
-      box-shadow: 0 8px 24px rgba(124, 58, 237, 0.25);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .price-display-card::before {
-      content: ''; /* Empty content for decorative orb */
-      position: absolute; /* Independent positioning */
-      inset: 0; /* Cover whole card */
-      background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.15), transparent 60%); /* Floating light spot */
-    }
-
-    .price-display-content {
-      position: relative; /* Stacks text content above the ::before decorative layer */
-      z-index: 1; /* Priority layer */
-    }
-
-    .price-label {
-      font-size: 0.85rem; /* Tiny secondary text for categorization */
-      text-transform: uppercase; /* Styled caps for clean professional look */
-      letter-spacing: 1px; /* Improved readability for uppercase fonts */
-      opacity: 0.9; /* Slightly faded white for visual hierarchy */
-      font-weight: 600; /* Bold sub-label */
-      margin-bottom: 0.5rem; /* Vertical flow space */
-    }
-
-    .price {
-      font-size: 2.4rem; /* Extra large font for the most important data point */
-      font-weight: 900; /* Maximum bold weight for emphasis */
-      line-height: 1; /* Compact vertical height for the number */
-      margin-bottom: 0.5rem; /* Space between value and store name */
-    }
-
-    .store-name {
-      font-size: 1.05rem; /* Secondary emphasis for store location */
-      opacity: 0.92; /* High contrast but secondary to price */
-    }
-
-    /* Info Card */
-    .info-card {
-      background: white;
-      border-radius: 0;
-      padding: 1.75rem;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-      margin-bottom: 1.25rem;
-      border: 1px solid #e9ecef;
-    }
-
-    /* Section Titles */
-    .section-title {
-      font-size: 1.2rem; /* Medium-large font for module headers */
-      font-weight: 700; /* Bold weight for section separation */
-      color: #2d3748; /* Dark slate gray for professional contrast */
-      margin-bottom: 1rem; /* Space before section content starts */
-      display: flex; /* Horizontal alignment for icon and text */
-      align-items: center; /* Vertical alignment centered */
-      gap: 0.5rem; /* Gap between the icon and heading text */
-    }
-
-    .section-title i {
-      color: #7c3aed; /* Theme purple color for icon decorators in titles */
-    }
-
-    /* Meta Badges */
-    .meta-chips .badge {
-      font-weight: 700;
-      padding: 0.5rem 1rem;
-      border-radius: 0;
-      margin-right: 0.5rem;
-      margin-bottom: 0.5rem;
-    }
-
-    /* Store Selection Grid */
-    .store-grid {
-      display: grid; /* Modern CSS Grid layout engine */
-      grid-template-columns: repeat(2, 1fr); /* Two equal columns on desktop screens */
-      gap: 1rem; /* Uniform spacing between grid items */
-      margin-bottom: 1.5rem; /* Bottom margin of the store selector block */
-    }
-
-    @media (max-width: 576px) {
-      .store-grid {
-        grid-template-columns: 1fr; /* Switch to single column on mobile for touch usability */
-      }
-    }
-
-    /* Store Cards */
-    .store-card {
-      background: white;
-      border: 2px solid #e9ecef;
-      border-radius: 0;
-      padding: 1.25rem;
-      cursor: pointer;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .store-card:hover {
-      border-color: #7c3aed; /* Outline highlights with theme color on hover */
-      box-shadow: 0 8px 25px rgba(102, 126, 234, 0.15); /* Soft shadow indicating elevation */
-      transform: translateY(-3px); /* Interactive lift effect */
-    }
-
-    .store-card.selected:not(.btn-go-store) {
-      border-color: #7c3aed; /* Purple border for the active store */
-      background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); /* Purple gradient for active selection */
-      color: white; /* Text becomes white on dark purple background */
-      box-shadow: 0 12px 35px rgba(102, 126, 234, 0.4); /* Stronger shadow for the active choice */
-    }
-
-    .store-card.selected .card-store-name,
-    .store-card.selected .card-price {
-      color: white !important; /* Forces child text to white when card is selected */
-    }
-
-    .store-card-content {
-      position: relative; /* Positioning context for text */
-      z-index: 1; /* Ensures text stays above any background decorations */
-      text-align: center; /* Centers retailer branding and price */
-    }
-
-    .store-card .store-logo {
-      width: 60px;
-      height: 60px;
-      border-radius: 0;
-      object-fit: contain;
-      background: #f8f9fa;
-      padding: 8px;
-      margin: 0 auto 0.75rem;
-      display: block;
-      border: 2px solid #e9ecef;
-    }
-
-    .store-card.selected .store-logo {
-      border-color: rgba(255, 255, 255, 0.3); /* Subtle white border for logo on blue/purple background */
-      background: rgba(255, 255, 255, 0.15); /* Translucent background for logo in active state */
-    }
-
-    .store-card .card-store-name {
-      font-weight: 700; /* Bold retailer name */
-      font-size: 1.05rem; /* Readable font size for store names */
-      margin-bottom: 0.5rem; /* Space before the price appears */
-      white-space: nowrap; /* Prevents names from breaking to new lines */
-      overflow: hidden; /* Clips extremely long store names */
-      text-overflow: ellipsis; /* Adds ... for long text clipping */
-      padding: 0 0.25rem; /* Side padding for text safety */
-    }
-
-    .store-card.selected .card-store-name {
-      color: white; /* Ensures readability on selected card */
-    }
-
-    .store-card .card-price {
-      font-size: 1.6rem; /* Large font for store-specific price */
-      font-weight: 900; /* Maximum impact weight */
-      color: #7c3aed; /* Purple price text in inactive state */
-    }
-
-    .store-card.selected .card-price {
-      color: white; /* White price text on active purple card */
-    }
-
-    .store-card .check-icon {
-      position: absolute; /* Floating icon top right */
-      top: 0.75rem; /* Offset from top */
-      right: 0.75rem; /* Offset from right */
-      width: 30px; /* Icon container width */
-      height: 30px; /* Icon container height */
-      border-radius: 50%; /* Circle shape for checkmark */
-      background: rgba(255, 255, 255, 0.3); /* Glassy background for checkmark */
-      display: none; /* Hidden by default */
-      align-items: center; /* Centers checkmark horizontally */
-      justify-content: center; /* Centers checkmark vertically */
-      color: white; /* Checkmark color */
-    }
-
-    .store-card.selected .check-icon {
-      display: flex; /* Revealer when card is active */
-      animation: checkPop 0.3s ease; /* Trigger for the entry animation */
-    }
-
-    @keyframes checkPop {
-      0% {
-        transform: scale(0); /* Start at size 0 (invisible) */
-      }
-
-      50% {
-        transform: scale(1.2); /* Grow slightly larger than normal for "pop" effect */
-      }
-
-      100% {
-        transform: scale(1); /* Settle at final size */
-      }
-    }
-
-    /* Add to List Button */
-    .add-to-list-btn {
-      width: 100%;
-      background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
-      border: none;
-      color: white;
-      padding: 1.1rem;
-      border-radius: 0;
-      font-weight: 700;
-      font-size: 1.05rem;
-      cursor: pointer; /* Interaction pointer */
-      transition: all 0.3s; /* Smooth hover transition */
-      box-shadow: 0 8px 25px rgba(124, 58, 237, 0.3); /* Elevated appearance */
-      display: flex; /* Flexbox for icon/text layout */
-      align-items: center; /* Vertical alignment */
-      justify-content: center; /* Horizontal alignment */
-      gap: 0.6rem; /* Space between plus icon and text */
-    }
-
-    .add-to-list-btn:hover {
-      transform: translateY(-2px); /* Lift feedback */
-      box-shadow: 0 12px 35px rgba(124, 58, 237, 0.4); /* Deeper shadow on hover */
-      color: white; /* Maintain white label */
-      filter: brightness(1.1); /* Subtle color brightening effect */
-    }
-
-    .price-history-card {
-      background: linear-gradient(180deg, #ffffff 0%, #f8f7ff 100%);
-      border: 1px solid #ece7ff;
-      border-radius: 0;
-      padding: 1.5rem;
-      box-shadow: none;
-    }
-
-    .price-history-item {
-      border-left: 3px solid #7c3aed;
-      padding: 0.9rem 0 0.9rem 1rem;
-      position: relative;
-    }
-
-    .price-history-item::before {
-      content: '';
-      position: absolute;
-      left: -7px;
-      top: 1.25rem;
-      width: 11px;
-      height: 11px;
-      border-radius: 50%;
-      background: #7c3aed;
-      box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.12);
-    }
-
-    .price-history-price {
-      font-weight: 800;
-      color: #2d3748;
-    }
-
-    .price-history-delta-up {
-      color: #dc2626;
-      font-weight: 700;
-    }
-
-    .price-history-delta-down {
-      color: #16a34a;
-      font-weight: 700;
-    }
-  </style>
+  .empty-state i {
+    font-size: 3rem;
+    color: #d1d5db;
+    margin-bottom: 1rem;
+  }
+</style>
 {% endblock %}
 
 {% block content %}
-<!-- Main visible document body -->
-  <!-- Navigation --> <!-- Global navigation section -->
-  
-
-  <!-- Hero Section --> <!-- Premium header for the product detail view -->
-  <section class="product-detail-hero"> <!-- Container for product overview and navigation pathways -->
-    <div class="container position-relative" style="z-index: 1;"> <!-- Content centered and stacked above background shapes -->
-      <div class="d-flex justify-content-start mb-3"> <!-- Grouping for back navigation -->
-        <a href="{{ url_for('main.compare_prices') }}" class="btn-glass-back"> <!-- Button to exit detail view and return to search -->
-          <i class="bi bi-arrow-left"></i> Back to Products <!-- Arrow and label for "Go Back" action -->
-        </a>
-      </div>
-
-      
-
-
-    </div>
-  </section>
-
-  <!-- Product Content --> <!-- Main layout section for product imagery and data -->
-  <section class="container py-5"> <!-- Grid container with vertical spacing -->
-    <div class="row g-4"> <!-- Responsive grid row with gutters -->
-      <!-- Product Image + Price Column -->
-      <div class="col-lg-5">
-        <!-- Image -->
-        <div class="image-card position-relative mb-3">
-          <img id="product-main-img"
-            src="{{ prefer_processed(product.image or (product.images and product.images[0]) or url_for('static', filename='placeholder.svg')) }}"
-            data-default-src="{{ prefer_processed(product.image or (product.images and product.images[0]) or url_for('static', filename='placeholder.svg')) }}"
-            alt="{{ product.name }}" class="product-image-large">
-        </div>
-        <!-- Compact horizontal price bar -->
-        <div style="background:linear-gradient(135deg,#4f46e5 0%,#7c3aed 100%);border-radius:12px;padding:0.75rem 1.25rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;">
-          <div>
-            <div style="font-size:0.65rem;font-weight:700;color:rgba(255,255,255,0.7);text-transform:uppercase;letter-spacing:0.05em;"><i class="bi bi-lightning-charge-fill me-1"></i>Best Price</div>
-            <div id="selected-price" style="font-size:1.4rem;font-weight:800;color:white;line-height:1.1;">
-              {% if best_price_value is not none %}€{{ best_price_value }}
-              {% elif product.price %}€{{ product.price }}
-              {% else %}—{% endif %}
-            </div>
-            <div id="selected-store" style="font-size:0.72rem;color:rgba(255,255,255,0.75);">
-              {% if best_price_stores and best_price_stores|length > 0 %}at <strong>{{ best_price_stores | join(', ') }}</strong>
-              {% elif product.store or product.source %}at <strong>{{ product.store or product.source }}</strong>
-              {% else %}Choose a store{% endif %}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Product Info Column --> <!-- Right side column for textual meta-data -->
-      <div class="col-lg-7"> <!-- Spans 7 columns on desktop -->
-
-        <!-- Product Details Card --> <!-- Section containing product narrative and metadata chips -->
-        <div class="info-card"> <!-- Premium container with shadow/glass effects -->
-          <h1 class="fw-bold mb-1" style="font-size:1.5rem;color:#1e1b4b;">{{ product.name }}</h1>
-          {% if product.category or (product.category_path and product.category_path|length) %}
-          <span class="category-badge mb-3 d-inline-block"><i class="bi bi-tag-fill me-1"></i>{{ (product.category_path and product.category_path[-1]) or product.category }}</span>
-          {% endif %}
-
-          <!-- Add to List Button -->
-          <button id="add-to-list-btn" class="btn w-100 mb-3 d-flex align-items-center justify-content-center fw-bold"
-            style="background:linear-gradient(135deg,#4f46e5,#7c3aed);color:white;padding:0.75rem;border-radius:12px;border:none;font-size:0.95rem;transition:all 0.2s;"
-            onmouseover="this.style.opacity='0.9';this.style.transform='translateY(-2px)'"
-            onmouseout="this.style.opacity='1';this.style.transform='translateY(0)'"
-            data-name="{{ product.name }}" data-id="{{ product._id or product.id }}" data-price="{{ best_price_value or '' }}" data-store="{{ best_price_stores[0] if best_price_stores and best_price_stores|length > 0 else '' }}"
-            data-original-price="{{ product.get('original_price', '') }}"
-            data-offer-json='{{ product.offer|tojson|forceescape if product.offer else "" }}'
-            data-tier-json='{{ product.discount_tiers|tojson|forceescape if product.discount_tiers else "" }}'
-            data-special-offer="{{ product.special_offer_type or product.offer_type or '' }}"
-            data-offer-type="{{ product.offer_type or '' }}"
-            data-offer-x="{{ product.offer_x or '' }}"
-            data-offer-y="{{ product.offer_y or '' }}">
-            <i class="bi bi-cart-plus-fill me-2"></i> Add to List
-          </button>
-
-          {% if product.description %} <!-- Logic for showing description only if present -->
-          <div class="mb-3"> <!-- Bottom margin for separation -->
-            <div class="section-title"> <!-- Module Header -->
-              <i class="bi bi-file-text-fill"></i> <!-- Paper icon -->
-              Description <!-- Heading text -->
-            </div>
-            <p class="text-muted mb-0">{{ product.description }}</p> <!-- Sanitized text from MongoDB via Jinja -->
-          </div>
-          {% endif %}
-
-          <!-- Product Meta --> <!-- Secondary attributes of the item -->
-          <div class="mb-3"> <!-- Margin for grouping -->
-            <div class="section-title"> <!-- Module Header -->
-              <i class="bi bi-info-circle-fill"></i> <!-- Information "i" icon -->
-              Product Information <!-- Info label -->
-            </div>
-            <div class="meta-chips"> <!-- Container for utility badges -->
-              {% if product.category %} <!-- Check for category -->
-              <span class="badge bg-light text-primary"><i class="bi bi-tag"></i>&nbsp;{{ product.category }}</span> <!-- Category badge with tag icon -->
-              {% endif %}
-              {% if product.unit %} <!-- Check for unit (e.g., 500g, 1kg) -->
-              <span class="badge bg-light text-primary"><i class="bi bi-box"></i>&nbsp;{{ product.unit }}</span> <!-- Unit badge with package icon -->
-              {% endif %}
-              {% if product.stores %} <!-- Display available store count -->
-              <span class="badge bg-light text-primary"><i class="bi bi-shop"></i>&nbsp;{{ product.stores|length }}
-                Store{{ 's' if product.stores|length != 1 }}</span> <!-- Pluralized retailer count badge -->
-              {% endif %}
-            </div>
-          </div>
-
-          <!-- Store Selection --> <!-- Interactive grid where users choose a specific retailer -->
-          {% if price_history and price_history|length > 0 %}
-          <div class="mb-3 mt-4">
-            <div class="section-title">
-              <i class="bi bi-graph-up-arrow"></i>
-              Price History
-            </div>
-            <div class="price-history-card">
-              {% for row in price_history %}
-              <div class="price-history-item {% if not loop.last %}mb-2{% endif %}">
-                <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
-                  <div>
-                    <div class="fw-bold text-dark">{{ row.store }}</div>
-                    <small class="text-muted">{{ row.date_text or 'Recent update' }}</small>
-                  </div>
-                  <div class="text-end">
-                    <div class="price-history-price">€{{ "%.2f"|format(row.price|float) if row.price is not none else 'N/A' }}</div>
-                    {% if row.delta_text %}
-                    <small class="{% if row.delta is not none and row.delta < 0 %}price-history-delta-down{% else %}price-history-delta-up{% endif %}">
-                      {% if row.delta is not none and row.delta < 0 %}<i class="bi bi-arrow-down"></i>{% elif row.delta is not none and row.delta > 0 %}<i class="bi bi-arrow-up"></i>{% endif %}
-                      {{ row.delta_text }}
-                    </small>
-                    {% endif %}
-                  </div>
-                </div>
-              </div>
-              {% endfor %}
-            </div>
-          </div>
-          {% endif %}
-
-          {% if product.stores and product.stores|length > 0 %} <!-- Display only if multiple price points exist -->
-          <div class="mb-3"> <!-- Spacing from surrounding cards -->
-            <div class="section-title"> <!-- Module Header -->
-              <i class="bi bi-shop-window"></i> <!-- Storefront icon -->
-              Select Your Store <!-- Direct user action prompt -->
-            </div>
-            
-            {# 
-               STORE GRID: AVAILABLE OPTIONS
-               Displays a grid of cards, one for each store selling this item.
-               Clicking a card:
-               1. Updates the visual selection (purple border)
-               2. Updates the "Add to List" button data (price, store name)
-               3. Updates the Main Product Image (if store-specific image exists)
-            #}
-            <div class="store-grid"> <!-- CSS grid container for retailer cards -->
-              {% for store in product.stores %} <!-- Iterate through price options in MongoDB document -->
-              <div class="store-card" 
-                   data-store="{{ store.store or store.name }}" 
-                   data-price="{{ store.price }}"
-                   data-image="{{ prefer_processed(store.image if (store.image and 'logo' not in store.image|lower and 'brand' not in store.image|lower) else product.image or url_for('static', filename='placeholder.svg')) }}"> <!-- Card with data-attributes for JS event listener -->
-                
-                {# Checkmark Icon: visible only when .selected class is added via JS #}
-                <div class="check-icon"> <!-- Floating selection indicator -->
-                  <i class="bi bi-check-lg"></i> <!-- Bold checkmark -->
-                </div>
-                
-                <div class="store-card-content"> <!-- Content wrapper within the interaction area -->
-                  {# Store Logo #}
-                  <img
-                    src="{{ prefer_processed(store.logo or store.store_display_image or url_for('static', filename='placeholder.svg')) }}"
-                    alt="{{ store.store or store.name }}" class="store-logo"
-                    data-fallback="{{ url_for('static', filename='placeholder.svg') }}"
-                    onerror="this.src=this.dataset.fallback;"> <!-- Store branding image with error fallback -->
-                  
-                  <div class="card-store-name" title="{{ store.store or store.name }}">{{ store.store or store.name }}</div> <!-- Retailer name label -->
-                  <div class="card-price mb-2">€{{ store.price }}</div> <!-- Retailer-specific product price -->
-
-                  {% if store.get('has_deal') %}
-                  <div class="offer-badge mb-2 d-flex flex-column align-items-center justify-content-center" style="border: 2px dashed #ef4444; border-radius: 0; padding: 4px; background: #fff5f5;">
-                    <div class="d-flex align-items-center gap-2">
-                        <span class="badge px-2 py-1" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); border-radius: 0;"><i class="bi bi-fire"></i> {{ store.get('discount_label', 'Hot Deal!') }}</span>
-                        {% if store.get('original_price') %}
-                        <span class="text-muted text-decoration-line-through fw-bold" style="font-size:0.8rem">€{{ "%.2f"|format(store.original_price|float) }}</span>
-                        {% endif %}
-                    </div>
-                    {% if store.get('valid_until') %}
-                    <small class="fw-bold mt-1" style="font-size: 0.75rem; color: #2563eb;"><i class="bi bi-clock-history"></i> Ends: {{ store.valid_until }}</small>
-                    {% endif %}
-                  </div>
-                  {% endif %}
-
-                  {# External Link to Store Website (if available) #}
-                  {% if store.get('url') %} <!-- Optional link to grocery website -->
-                  <a href="{{ store.get('url') }}" target="_blank" rel="noopener noreferrer"
-                    class="btn btn-sm btn-go-store w-100 py-2 d-flex align-items-center justify-content-center gap-2"
-                    style="background: #f0f0ff; border-radius: 0; color: #7c3aed; border: 1px solid #dadaff; font-weight: 600; font-size: 0.85rem;">
-                    <i class="bi bi-box-arrow-up-right"></i> Visit Store <!-- External redirect button -->
-                  </a>
-                  {% endif %}
-                </div>
-              </div>
-              {% endfor %}
-            </div>
-          </div>
-          {% endif %}
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Footer --> <!-- Standard page conclusion section -->
-  <footer class="text-center py-4 bg-light border-top"> <!-- Centered text footer with light background -->
-    <p class="mb-0 text-muted">&copy; 2025 Smart Grocery Team</p> <!-- Copyright notice -->
-  </footer>
-
-   <!-- Bootstrap JS for navigation and modals -->
-   <!-- Global application logic including list management -->
-  
-  <!-- No custom Add to List handler: rely on global JS handler from script.js -->
-
-   <!-- UI element used when adding items to specific shopping lists -->
-  
+<div style="background-color: #f4f0ec; min-height: 100vh;">
+<div class="product-hero">
+  <div class="container">
+    <!-- Breadcrumb -->
+    <nav class="breadcrumb-modern">
+      <a href="{{ url_for('main.home') }}">Home</a>
+      <span class="breadcrumb-separator">/</span>
+      <a href="{{ url_for('main.compare_prices') }}">Products</a>
+      <span class="breadcrumb-separator">/</span>
+      <span>{{ product.name }}</span>
+    </nav>
   </div>
-{% endblock %}
+</div>
 
-{% block scripts %}
-<script>
-    // ==========================================
-    // PAGE SPECIFIC JAVASCRIPT: PRODUCT DETAIL
-    // Handles the unique store selection UI and image swapping logic on this page.
-    // ==========================================
-    
-    // Store selector variables
-    let selectedStoreData = {}; // Global-within-script object to track the active retailer selection
-
-    document.addEventListener('DOMContentLoaded', function () { // Wait for the DOM tree to be fully loaded
-      // Navbar scroll behavior (Specific to this page's transparent-to-solid header)
-      const navbar = document.querySelector('.navbar'); // References the navigation bar element
-      if(navbar) {
-        window.addEventListener('scroll', () => { // Track vertical scrolling pixels
-          if (window.scrollY > 50) { // If scrolled more than 50 pixels
-            navbar.classList.add('scrolled'); // Apply solid color/shadow class
-          } else {
-            navbar.classList.remove('scrolled'); // Revert to transparent state
-          }
-        });
-      }
-
-      // Element References for UI Manipulation
-      // storeCards: The selectable cards representing each store's offering
-      const storeCards = document.querySelectorAll('.store-card');
-      // selectedPriceEl: Displays the current price based on selection
-      const selectedPriceEl = document.getElementById('selected-price');
-      // selectedStoreEl: Displays name of selected store
-      const selectedStoreEl = document.getElementById('selected-store');
-      // addToListBtn: The primary CTA, needs its data-attributes updated on selection
-      const addToListBtn = document.getElementById('add-to-list-btn');
-      const productName = addToListBtn ? addToListBtn.dataset.name : ''; // Cache name from button data attribute
-      const productId = addToListBtn ? addToListBtn.dataset.id : ''; // Cache ID from button data attribute
-      const mainImg = document.getElementById('product-main-img'); // Reference to the big product image
+<div class="container" style="padding: 2rem 0 4rem; background-color: #f4f0ec !important;">
+  <div class="product-detail-grid">
+    <!-- Left Column: Product Image -->
+    <div class="product-image-section">
+      <div class="product-image-main">
+        <img src="{{ product.image or product.defaultImageUrl or url_for('static', filename='placeholder.svg') }}" 
+             alt="{{ product.name }}"
+             onerror="this.src='{{ url_for('static', filename='placeholder.svg') }}'">
+      </div>
       
-      // Use the product image as the default, but allow switching to store image on selection
-      let defaultImgSrc = mainImg ? mainImg.getAttribute('data-default-src') : ''; // Save original image path
-      if (mainImg && defaultImgSrc) mainImg.src = defaultImgSrc; // Initialize image if source is available
-      const favoriteBtn = document.getElementById('favorite-btn'); // Reference to heart button (if present)
+      <!-- Quick Actions -->
+      <div style="display: flex; gap: 1rem; margin-top: 1.5rem; width: 100%; align-items: center;">
+        <button style="flex: 1; height: 52px; background: linear-gradient(135deg, #65388f 0%, #7c3aed 100%); color: white; border: 2px solid #65388f; border-radius: 10px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-size: 0.9375rem;" onclick="addToShoppingList('{{ product.id }}', '{{ product.name }}', '{{ best_price_value }}', '{{ product.image or product.defaultImageUrl }}')">
+          <i class="bi bi-cart-plus"></i>
+          Add to List
+        </button>
+        <button id="fav-btn-{{ product.id }}" style="width: 52px; height: 52px; background: white; border: 2px solid {% if is_favorited %}#dc2626{% else %}#e5e7eb{% endif %}; color: {% if is_favorited %}#dc2626{% else %}#65388f{% endif %}; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0;" onclick="toggleProductFavorite('{{ product.id }}', this)" title="{% if is_favorited %}Remove from{% else %}Add to{% endif %} favorites">
+          <i class="bi bi-heart{% if is_favorited %}-fill{% endif %}" style="font-size: 1.25rem;"></i>
+        </button>
+      </div>
+    </div>
 
-      const hydrateProductFromApi = async () => {
-        const pageParams = new URLSearchParams(window.location.search);
-        if (pageParams.get('legacyCompare') === '1') return;
-        if (!productId) return;
-        try {
-          const res = await fetch(`/api/compare/product/${encodeURIComponent(productId)}`, { credentials: 'same-origin' });
-          if (!res.ok) return;
-          const data = await res.json();
-          const payload = data && data.product ? data.product : null;
-          if (!payload) return;
-
-          const bestPrice = payload.best_price_value;
-          const bestStores = Array.isArray(payload.best_price_stores) ? payload.best_price_stores : [];
-
-          if (selectedPriceEl) {
-            selectedPriceEl.textContent = bestPrice ? `EUR ${bestPrice}` : 'Select a Store';
-          }
-          if (selectedStoreEl) {
-            selectedStoreEl.innerHTML = bestStores.length ? `at <strong>${bestStores.join(', ')}</strong>` : 'Choose a store below';
-          }
-
-          if (addToListBtn) {
-            addToListBtn.dataset.price = bestPrice || '';
-            addToListBtn.dataset.store = bestStores.length ? bestStores[0] : '';
-          }
-
-          const storeMap = new Map((payload.stores || []).map((s) => [String((s.store || s.name || '')).trim().toLowerCase(), s]));
-          storeCards.forEach((card) => {
-            const key = String(card.dataset.store || '').trim().toLowerCase();
-            if (!key || !storeMap.has(key)) return;
-            const storePayload = storeMap.get(key) || {};
-            if (storePayload.price !== null && storePayload.price !== undefined) {
-              card.dataset.price = String(storePayload.price);
-              const priceNode = card.querySelector('.card-price');
-              if (priceNode) priceNode.textContent = `EUR ${Number(storePayload.price).toFixed(2)}`;
-            }
-            if (storePayload.image) {
-              card.dataset.image = storePayload.image;
-            }
-          });
-        } catch (_) {
-          // Silent fallback to server-rendered fields.
-        }
-      };
-
-      // Start with no preselected store
-      selectedStoreData.store = ''; // Clear retailer tracker
-      selectedStoreData.price = ''; // Clear price tracker
-      selectedStoreData.image = defaultImgSrc; // Default to main product image
-      storeCards.forEach(c => c.classList.remove('selected')); // Remove selection marks from all cards
-      if (addToListBtn) {
-        addToListBtn.dataset.price = addToListBtn.dataset.price || ''; // Reset price on button for validation
-        addToListBtn.dataset.store = addToListBtn.dataset.store || ''; // Reset store on button for validation
-      }
-
-      hydrateProductFromApi();
-
-      // Handle store card clicks
-      storeCards.forEach(card => {
-        card.addEventListener('click', function (e) {
-          // If clicking the redirection button (Visit Store), don't trigger internal selection logic
-          if (e.target.closest('.btn-go-store')) {
-            return;
-          }
-          const isSelected = this.classList.contains('selected'); // Check if already selected
-          if (isSelected) {
-            // Deselect the current card if clicked again
-            this.classList.remove('selected');
-            selectedStoreData.store = '';
-            selectedStoreData.price = '';
-            selectedStoreData.image = defaultImgSrc;
-            if (addToListBtn) {
-              addToListBtn.dataset.price = '';
-              addToListBtn.dataset.store = '';
-            }
-            if (mainImg && defaultImgSrc) mainImg.src = defaultImgSrc; // Revert image to generic product photo
-            return;
-          }
-          // Exclusive selection: Clear others before selecting new one
-          storeCards.forEach(c => c.classList.remove('selected'));
-          // Add visual selection class to the target card
-          this.classList.add('selected');
-          const store = this.dataset.store; // Pull store name from data attribute
-          const price = this.dataset.price; // Pull specific price from data attribute
-          // When a store is selected, attempt to show a store-specific product shot
-          let imgSrc = defaultImgSrc;
-          // Logic to verify if a store-specific image exists beyond a placeholder
-          if (this.dataset.image && !this.dataset.image.includes('placeholder.svg')) {
-            imgSrc = this.dataset.image;
-          } else {
-            imgSrc = defaultImgSrc;
-          }
-          // Update the global state object
-          selectedStoreData.store = store;
-          selectedStoreData.price = price;
-          selectedStoreData.image = imgSrc;
-
-          // Update main "Go to Store" button link dynamically (not present in current HTML, but scaffolded here)
-          const goToStoreBtn = document.getElementById('go-to-store-btn');
-          const storeUrlBtn = this.querySelector('.btn-go-store'); 
+    <!-- Right Column: Product Info & Prices -->
+    <div class="product-info-section">
+      <!-- Product Header with Details in ONE Container -->
+      <div class="product-header-container">
+        {% if product.brand %}
+        <div class="product-brand">{{ product.brand }}</div>
+        {% endif %}
+        <h1 class="product-title">{{ product.name }}</h1>
+        
+        <!-- DEBUG: Show all product fields -->
+        <!-- Available fields: {{ product.keys() | list }} -->
+        
+        <!-- Product Details -->
+        <div class="product-details-list">
+          {% if product.unitSize %}
+          <div class="detail-row">
+            <i class="bi bi-box-seam"></i>
+            <span class="detail-label">Size:</span>
+            <span class="detail-value">{{ product.unitSize }}</span>
+          </div>
+          {% endif %}
           
-          if (goToStoreBtn) {
-             if (storeUrlBtn && storeUrlBtn.href) {
-                goToStoreBtn.href = storeUrlBtn.href;
-                goToStoreBtn.classList.remove('disabled');
-                goToStoreBtn.classList.remove('btn-outline-secondary'); // Fallback style removal
-                goToStoreBtn.classList.add('btn-outline-primary');
-             } else {
-                goToStoreBtn.href = '#';
-                goToStoreBtn.classList.add('disabled');
-             }
-          }
+          {% if product.category %}
+          <div class="detail-row">
+            <i class="bi bi-grid"></i>
+            <span class="detail-label">Category:</span>
+            <span class="detail-value">{{ product.category }}</span>
+          </div>
+          {% endif %}
+          
+          {% if product.brand %}
+          <div class="detail-row">
+            <i class="bi bi-award"></i>
+            <span class="detail-label">Brand:</span>
+            <span class="detail-value">{{ product.brand }}</span>
+          </div>
+          {% endif %}
+          
+          {% if product.barcode %}
+          <div class="detail-row">
+            <i class="bi bi-upc-scan"></i>
+            <span class="detail-label">Barcode:</span>
+            <span class="detail-value">{{ product.barcode }}</span>
+          </div>
+          {% endif %}
+          
+          {% if best_price_value %}
+          <div class="detail-row">
+            <i class="bi bi-star-fill"></i>
+            <span class="detail-label">Best Price:</span>
+            <span class="detail-value" style="color: #16a34a; font-weight: 700;">€{{ "%.2f"|format(best_price_value) }}</span>
+          </div>
+          {% endif %}
+        </div>
+      </div>
 
-          // Update the main Add to List button's metadata for backend submission
-          if (addToListBtn) {
-            addToListBtn.dataset.price = price;
-            addToListBtn.dataset.store = store;
-          }
-          // Real-time image swap on the page
-          if (mainImg && imgSrc) {
-            mainImg.src = imgSrc;
-          }
-        });
-      });
+      <!-- Price Comparison - NO CONTAINER, just title and cards -->
+      <div>
+        <h2 class="price-comparison-title">
+          <i class="bi bi-shop"></i>
+          Price Comparison
+        </h2>
 
-      // Add to shopping list listener
-      if (addToListBtn) {
-        addToListBtn.addEventListener('click', async function (e) {
-          e.preventDefault(); // Stop standard browser action
-          e.stopPropagation(); // Stop event bubbling to parent containers
+        {% if product.stores and product.stores|length > 0 %}
+        <div class="store-price-grid">
+          {% for store_data in product.stores %}
+          <div class="store-price-card {% if store_data.price == best_price_value %}best-price{% endif %}">
+            {% if store_data.price == best_price_value %}
+            <div class="best-price-badge">
+              <i class="bi bi-star-fill"></i>
+              Best Price
+            </div>
+            {% endif %}
 
-          // Check if user has picked a retailer choice
-          if (!selectedStoreData.store || !selectedStoreData.price) {
-            showNotification('Please select a store first', 'warning'); // User-friendly alert box
-            return;
-          }
+            <div class="store-header">
+              <div class="store-name">{{ store_data.store }}</div>
+            </div>
 
-          const price = selectedStoreData.price;
-          const store = selectedStoreData.store;
+            <div class="store-price-info">
+              <div>
+                <div class="price-display">€{{ "%.2f"|format(store_data.price) }}</div>
+                {% if product.normalized_unit_price and product.normalized_unit_label %}
+                <div class="price-per-unit">€{{ "%.2f"|format(product.normalized_unit_price) }}/{{ product.normalized_unit_label }}</div>
+                {% endif %}
+              </div>
 
-          // Logical validation to ensure we aren't adding items with missing/zero price
-          if (!price || price === '0' || price === '0.00') {
-            showNotification('Invalid price for selected store', 'danger');
-            return;
-          }
+              {% if store_data.price != best_price_value and best_price_value %}
+              <div class="price-difference">
+                +€{{ "%.2f"|format(store_data.price - best_price_value) }} more
+              </div>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+          <i class="bi bi-shop"></i>
+          <p>No store prices available for this product yet.</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+</div>
 
-          // Create a structured item object compatible with the global shopping list logic
-          const item = {
-            name: productName,
-            price: price,
-            price_val: parseFloat(price.replace(/[^0-9.]/g, '')), // Strip currency symbols and parse as Number
-            store: store,
-            qty: 1, // Default quantity
-            id: productId, // Internal MongoDB ID
-            image: selectedStoreData.image
-          };
+<script>
+function addToShoppingList(productId, productName, price, image, store) {
+  console.log('Adding to list:', { productId, productName, price, image, store });
+}
 
-          // Trigger the global list selector logic (defined in script.js)
-          try {
-            const result = await window.addItemToShoppingList(item); // Call the main async helper
-            if (result && result.error) {
-              showNotification('Error adding item to list', 'danger');
-            }
-          } catch (error) {
-            console.error('Error adding to list:', error);
-            showNotification('Error adding item to list', 'danger');
-          }
-        });
+function toggleProductFavorite(productId, button) {
+  console.log('toggleProductFavorite called for product:', productId);
+  const icon = button.querySelector('i');
+  
+  button.disabled = true;
+  button.style.opacity = '0.6';
+  
+  fetch('/api/toggle-favorite', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ product_id: productId })
+  })
+  .then(response => response.json())
+  .then(data => {
+    console.log('API response:', data);
+    button.disabled = false;
+    button.style.opacity = '1';
+    
+    if (data.success) {
+      if (data.is_favorite) {
+        // Added to favorites
+        icon.classList.remove('bi-heart');
+        icon.classList.add('bi-heart-fill');
+        button.style.borderColor = '#dc2626';
+        button.style.color = '#dc2626';
+        showMessage('Added to favorites! ❤️', 'success');
+      } else {
+        // Removed from favorites
+        icon.classList.remove('bi-heart-fill');
+        icon.classList.add('bi-heart');
+        button.style.borderColor = '#e5e7eb';
+        button.style.color = '#65388f';
+        showMessage('Removed from favorites', 'info');
       }
+    } else if (data.error === 'unauthorized') {
+      showMessage('Please log in to add favorites', 'error');
+      setTimeout(() => window.location.href = '/login', 1500);
+    } else {
+      showMessage('Failed to update favorites', 'error');
+    }
+  })
+  .catch(err => {
+    console.error('Error:', err);
+    button.disabled = false;
+    button.style.opacity = '1';
+    showMessage('Failed to update favorites. Please try again.', 'error');
+  });
+}
 
-      // Favorite button
-      // Handled by global toggleFavorite function in script.js - no local listeners needed here.
-    });
-  </script>
+function showMessage(message, type) {
+  const messageDiv = document.createElement('div');
+  messageDiv.textContent = message;
+  messageDiv.style.cssText = `
+    position: fixed;
+    top: 100px;
+    right: 20px;
+    padding: 1rem 1.5rem;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.9375rem;
+    z-index: 9999;
+    animation: slideIn 0.3s ease-out;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  `;
+  
+  if (type === 'success') {
+    messageDiv.style.background = '#dcfce7';
+    messageDiv.style.color = '#16a34a';
+    messageDiv.style.border = '2px solid #22c55e';
+  } else if (type === 'error') {
+    messageDiv.style.background = '#fee2e2';
+    messageDiv.style.color = '#dc2626';
+    messageDiv.style.border = '2px solid #ef4444';
+  } else {
+    messageDiv.style.background = '#e0e7ff';
+    messageDiv.style.color = '#4f46e5';
+    messageDiv.style.border = '2px solid #6366f1';
+  }
+  
+  document.body.appendChild(messageDiv);
+  
+  setTimeout(() => {
+    messageDiv.style.animation = 'slideOut 0.3s ease-out';
+    setTimeout(() => {
+      if (messageDiv.parentNode) {
+        document.body.removeChild(messageDiv);
+      }
+    }, 300);
+  }, 3000);
+}
+
+const style = document.createElement('style');
+style.textContent = `
+  @keyframes slideIn {
+    from { transform: translateX(400px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+  @keyframes slideOut {
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(400px); opacity: 0; }
+  }
+`;
+document.head.appendChild(style);
+</script>
 {% endblock %}
