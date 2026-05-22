@@ -57,14 +57,8 @@ def compare_list():
             {'stores.store': search_regex}, {'stores.name': search_regex}, {'barcode': search_query},
             {'gtin': search_query}, {'ean': search_query}, {'upc': search_query}
         ]
-        import bson
-        try:
-            if bson.ObjectId.is_valid(search_query):
-                or_list.append({'_id': bson.ObjectId(search_query)})
-        except: pass
         product_query[''] = or_list
 
-        from utils.db import mongo
         try:
             # Atlas search not available with PostgreSQL - fallback to regex search
             raise Exception('Fallback to regex')

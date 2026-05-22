@@ -50,7 +50,11 @@ class Store(db.Model):
 
 class Category(db.Model):
     __tablename__ = 'categories'
-    __table_args__ = {'extend_existing': True}
+    __table_args__ = (
+        db.Index('ix_categories_parent_id', 'parent_id'),
+        db.Index('ix_categories_slug', 'slug'),
+        {'extend_existing': True},
+    )
     
     id = db.Column(db.Integer, primary_key=True)
     slug = db.Column(db.Text)
@@ -82,7 +86,12 @@ class Category(db.Model):
 
 class Product(db.Model):
     __tablename__ = 'products'
-    __table_args__ = {'extend_existing': True}
+    __table_args__ = (
+        db.Index('ix_products_category_id', 'category_id'),
+        db.Index('ix_products_brand', 'brand'),
+        db.Index('ix_products_created_at', 'created_at'),
+        {'extend_existing': True},
+    )
     
     id = db.Column(db.Integer, primary_key=True)
     fingerprint = db.Column(db.Text, unique=True, index=True)
@@ -136,7 +145,11 @@ class Product(db.Model):
 
 class ProductStore(db.Model):
     __tablename__ = 'product_store'
-    __table_args__ = {'extend_existing': True}
+    __table_args__ = (
+        db.Index('ix_product_store_store_available', 'store_id', 'is_available'),
+        db.Index('ix_product_store_product_available_seen', 'product_id', 'is_available', 'last_seen'),
+        {'extend_existing': True},
+    )
     
     product_id = db.Column(db.Integer, db.ForeignKey('products.id', ondelete='CASCADE'), primary_key=True)
     store_id = db.Column(db.Text, db.ForeignKey('stores.store_id', ondelete='CASCADE'), primary_key=True)
@@ -305,7 +318,11 @@ class PromotionTarget(db.Model):
 
 class PriceHistory(db.Model):
     __tablename__ = 'price_history'
-    __table_args__ = {'extend_existing': True}
+    __table_args__ = (
+        db.Index('ix_price_history_product_changed', 'product_id', 'changed_at'),
+        db.Index('ix_price_history_store_changed', 'store_id', 'changed_at'),
+        {'extend_existing': True},
+    )
     
     id = db.Column(db.Integer, primary_key=True)
     product_id = db.Column(db.Integer)
@@ -583,7 +600,11 @@ class CommunityPriceReport(db.Model):
 
 class PendingProduct(db.Model):
     __tablename__ = 'pending_products'
-    __table_args__ = {'extend_existing': True}
+    __table_args__ = (
+        db.Index('ix_pending_products_status_created', 'status', 'created_at'),
+        db.Index('ix_pending_products_submitted_by', 'submitted_by'),
+        {'extend_existing': True},
+    )
     
     id = db.Column(db.Integer, primary_key=True)
     barcode = db.Column(db.Text, unique=True, index=True)

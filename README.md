@@ -16,7 +16,7 @@
 ## Technologies Used
 
 - **Backend:** Python (Flask)
-- **Database:** MongoDB Atlas (NoSQL)
+- **Database:** PostgreSQL (via SQLAlchemy) — MongoDB references are legacy
 - **Frontend:** HTML5, CSS3, Bootstrap 5, Jinja2 Templates
 - **Scripting:** JavaScript (Vanilla JS & Async Fetch API)
 - **Security:** Bcrypt (hashing), JWT (JSON Web Tokens)
@@ -51,9 +51,13 @@ pip install -r requirements.txt
 ```
 
 ### Step 5: Configure Environment
-Create a `.env` file in the root directory with your secrets:
+Create a `.env` file in the root directory with your secrets. This project now uses PostgreSQL (via `DATABASE_URL` / `SQLALCHEMY_DATABASE_URI`). If you still rely on legacy MongoDB scripts, keep a `MONGO_URI` entry but it's optional.
 ```env
-MONGO_URI="mongodb+srv://<your-connection-string>"
+# PostgreSQL (preferred)
+DATABASE_URL=postgresql://<user>:<pw>@<host>/<db>
+
+# Optional legacy MongoDB (only used by deprecated scripts)
+# MONGO_URI="mongodb+srv://<your-connection-string>"
 SECRET_KEY="your-secret-key"
 JWT_SECRET_KEY="your-jwt-secret"
 ```
@@ -68,7 +72,7 @@ Open your browser and navigate to `http://127.0.0.1:5000`.
 
 ## Project Structure (For Professor/Grading)
 
-*   **`app.py`**: The entry point. Initializes Flask, connects to MongoDB, and registers Blueprints.
+*   **`app.py`**: The entry point. Initializes Flask, connects to the configured database (PostgreSQL via SQLAlchemy), and registers Blueprints.
 *   **`routes/`**: Contains the controllers (logic) for different parts of the app (`main`, `auth`, `admin`).
 *   **`models/`**: Handles all Database interactions. We use the **DAO (Data Access Object)** pattern here.
 *   **`templates/`**: HTML files using Jinja2 syntax to inject dynamic data.

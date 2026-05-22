@@ -5,7 +5,7 @@ HELPER FUNCTIONS MODULE
 Shared utilities used by routes and models for:
 - Price formatting
 - Product searching
-- MongoDB document sanitization (serialization)
+- Document sanitization (serialization)
 - JWT token generation
 ═══════════════════════════════════════════════════════════════════════════
 """
@@ -13,7 +13,6 @@ import os
 import jwt
 from flask import session, request, current_app
 from datetime import datetime, timedelta
-from bson import ObjectId, Decimal128
 from models import models as m
 
 # 
@@ -128,13 +127,11 @@ def search_products(query, products):
 
 def sanitize_mongo_doc(doc):
     """
-    Recursively convert MongoDB-specific data types into standard JSON-friendly types.
+    Recursively convert special data types into standard JSON-friendly types.
     
     Why this is needed:
-    MongoDB drivers return data using special BSON types:
-    - `ObjectId("...")`: Not valid JSON.
-    - `Decimal128("10.99")`: Not valid JSON.
-    Flask's `jsonify` serializer will crash if fed these types directly.
+    Some code paths may still carry non-JSON-native objects (IDs, decimals, datetimes).
+    Flask's `jsonify` serializer can fail on these unless normalized.
     
     Supported Conversions:
     - ObjectId -> str
@@ -142,7 +139,7 @@ def sanitize_mongo_doc(doc):
     - Recursive traversal of nested lists and dicts.
     
     Args:
-        doc (dict, list, or val): The MongoDB document or field.
+        doc (dict, list, or val): The document or field.
         
     Returns:
         The sanitized structure, safe to send to the frontend.
@@ -164,7 +161,7 @@ def sanitize_mongo_doc(doc):
                 id_str = str(v)
                 new_doc["id"] = id_str
                 new_doc["_id"] = id_str
-            elif isinstance(v, Decimal128):
+            elif type(v).__name__ == "Decimal128" and hasattr(v, "to_decimal"):
                 # Extract the Python decimal, then convert to float
                 new_doc[k] = float(v.to_decimal())
             else:
@@ -173,11 +170,11 @@ def sanitize_mongo_doc(doc):
         return new_doc
         
     # 3. Handle Primitive BSON Types (Leaf Nodes)
-    if isinstance(doc, ObjectId):
+    if type(doc).__name__ == "ObjectId":
         return str(doc)
-    if isinstance(doc, Decimal128):
+    if type(doc).__name__ == "Decimal128" and hasattr(doc, "to_decimal"):
         # Convert to string first to avoid precision issues, then float
-        return float(str(doc))
+        return float(doc.to_decimal())
     if isinstance(doc, datetime):
         return doc.isoformat()
         

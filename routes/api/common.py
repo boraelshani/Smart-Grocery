@@ -16,6 +16,9 @@ import re
 import uuid
 from datetime import datetime, timezone, timedelta
 from comparison.cheapest_finder import get_cheapest_from_product
+from services.scraper_preview import compare_scraped_to_db, generate_fingerprint, apply_scraped_products
+from models.postgres_models import db as sa_db
+from routes.admin.common import _require_admin
 
 STANDARD_CATEGORIES = ["Produce", "Pantry", "Dairy", "Meat", "Frozen", "Bakery", "Baby food", "Snacks", "Fast Food & To Go", "Household", "Beverages"]
 
@@ -148,10 +151,11 @@ def submit_pending_product():
         if not barcode:
             return jsonify({'success': False, 'error': 'Missing barcode'}), 400
             
-        from models.postgres_models import db as sa_db, PendingProduct
+        from models.postgres_models import db as sa_db
+        from services.pending_product_service import PendingProductService
         
         # Check if it already exists to avoid dupes
-        existing = PendingProduct.query.filter_by(barcode=barcode).first()
+        existing = PendingProductService.get_by_barcode(barcode)
         if existing:
             return jsonify({'success': True, 'message': 'Already pending'})
             
@@ -167,3 +171,38 @@ def submit_pending_product():
         return jsonify({'success': True})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@api_bp.route('/admin/scrape/preview', methods=['POST'])
+def api_scrape_preview():
+    ok, resp = _require_admin()
+    if not ok:
+        return resp
+    try:
+        data = request.get_json() or {}
+        products = data.get('products') or []
+        store = (data.get('store') or '').lower() or 'unknown'
+        preview = compare_scraped_to_db(products, sa_db.session, store)
+        return jsonify({'preview': preview})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@api_bp.route('/admin/scrape/apply', methods=['POST'])
+def api_scrape_apply():
+    ok, resp = _require_admin()
+    if not ok:
+        return resp
+    try:
+        data = request.get_json() or {}
+        products = data.get('products') or []
+        store = (data.get('store') or '').lower() or 'unknown'
+        confirm = data.get('confirm') is True
+        if not confirm:
+            return jsonify({'error': 'confirm_required'}), 400
+
+        stats = apply_scraped_products(products, sa_db.session, store)
+        return jsonify(stats)
+    except Exception as e:
+        sa_db.session.rollback()
+        return jsonify({'error': str(e)}), 500

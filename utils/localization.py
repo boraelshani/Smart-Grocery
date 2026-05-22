@@ -1,4 +1,4 @@
-"""Localization helpers for multilingual Mongo documents."""
+"""Localization helpers for multilingual documents."""
 
 
 def normalize_language(lang, default="en"):

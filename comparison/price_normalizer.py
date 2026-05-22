@@ -10,13 +10,11 @@ def to_float(value: Any) -> Optional[float]:
     if isinstance(value, (int, float)):
         return float(value)
 
-    try:
-        from bson.decimal128 import Decimal128  # type: ignore
-
-        if isinstance(value, Decimal128):
+    if type(value).__name__ == "Decimal128" and hasattr(value, "to_decimal"):
+        try:
             return float(value.to_decimal())
-    except Exception:
-        pass
+        except Exception:
+            pass
 
     text = str(value).strip()
     if not text:

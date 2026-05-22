@@ -3,7 +3,6 @@
 DATABASE UTILITIES – PostgreSQL via SQLAlchemy
 ═══════════════════════════════════════════════════════════════════════════
 Provides centralized database access for the entire application.
-Replaces the old PyMongo-based connection with SQLAlchemy/PostgreSQL.
 ═══════════════════════════════════════════════════════════════════════════
 """
 
@@ -14,11 +13,6 @@ load_dotenv()
 
 # Re-export the shared SQLAlchemy instance from postgres_models
 from models.postgres_models import db
-
-# Legacy alias — many old files did `from utils.db import mongo`
-# This stub keeps those imports from crashing during the transition.
-mongo = None
-
 
 def init_db(app):
     """
@@ -55,9 +49,7 @@ def init_db(app):
 
 def get_db():
     """
-    Legacy helper — previously returned a PyMongo database handle.
-    Now returns the SQLAlchemy `db.session` for direct querying,
-    or None if SQLAlchemy is not initialized yet.
+    Return the SQLAlchemy session.
     """
     try:
         return db.session

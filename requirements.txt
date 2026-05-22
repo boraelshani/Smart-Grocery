@@ -11,9 +11,6 @@ blinker==1.9.0
 Flask-SQLAlchemy==3.1.1
 SQLAlchemy==2.0.49
 psycopg2-binary>=2.9.9
-Flask-PyMongo==3.0.1
-pymongo==4.15.4
-dnspython==2.8.0
 
 # ─── Auth & Security ─────────────────────────────────────────────────────────
 bcrypt==4.2.1

@@ -1,14 +1,13 @@
 from flask import render_template, request, flash, redirect, url_for, jsonify
 from . import admin_bp
 from core.auth import require_admin
-from utils.db import get_db
+from models.postgres_models import Category
 from core.utils import now_utc, prettify_slug
 
 @admin_bp.route("/products/smart-import", methods=["GET"])
 def admin_smart_import_page():
     require_admin()
-    db = get_db()
-    categories = list(db.categories.find().sort("name_en", 1)) if db is not None else []
+    categories = Category.query.order_by(Category.name_en.asc()).all()
     return render_template("admin_smart_import.html", categories=categories)
 
 @admin_bp.route("/api/products/smart-extract", methods=["POST"])

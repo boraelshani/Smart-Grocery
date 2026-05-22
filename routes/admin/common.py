@@ -1,11 +1,11 @@
 import json
-import re
-import uuid
+import time
 from datetime import datetime, timedelta, timezone
 
 import requests
 from flask import (
     current_app,
+    g,
     flash,
     jsonify,
     redirect,
@@ -16,8 +16,8 @@ from flask import (
 )
 
 from models.users_model import get_user_by_email
+from core.utils import prettify_slug, to_bool as _to_bool, now_utc as _now_utc, generate_id as _id, slugify as _slugify
 from utils.category_mapper import CategoryMapper
-from utils.mongo_mock import MockDb
 
 from . import admin_bp
 
@@ -28,41 +28,14 @@ except Exception:  # pragma: no cover - optional dependency in some environments
 
 # Helper constants and utilities
 _TRANSLATION_CACHE = {}
-
-
-def prettify_slug(t):
-    if not t:
-        return t
-    t = (
-        str(t)
-        .replace("cat_", "")
-        .replace("brand_", "")
-        .replace("-", " ")
-        .replace("_", " ")
-    )
-    return " ".join([w.capitalize() for w in t.split()])
-
-
-def _to_bool(value, default=False):
-    if value is None:
-        return default
-    if isinstance(value, bool):
-        return value
-    return str(value).strip().lower() in {"1", "true", "yes", "on"}
-
-
-def _now_utc():
-    return datetime.now(timezone.utc)
+_DASHBOARD_CACHE = {}
+_DASHBOARD_CACHE_TTL_SEC = 30
 
 
 def _to_aware_utc(value):
     if not isinstance(value, datetime):
         return None
     return value if value.tzinfo is not None else value.replace(tzinfo=timezone.utc)
-
-
-def _id(prefix):
-    return f"{prefix}_{uuid.uuid4().hex[:12]}"
 
 
 def _parse_positive_int(value, default):
@@ -78,12 +51,6 @@ def _parse_int(value, default=0):
         return int(value)
     except:
         return default
-
-
-def _slugify(value):
-    text = (value or "").strip().lower()
-    text = re.sub(r"[^a-z0-9]+", "-", text)
-    return text.strip("-")
 
 
 def _unique_category_slug(base_slug, exclude_category_id=None):
@@ -251,12 +218,27 @@ def _build_category_tree(rows):
     return roots
 
 
-def _build_category_path(cid):
+def _get_category_cached(category_id):
     from models.postgres_models import Category
 
+    parsed_id = _parse_int(category_id, 0)
+    if not parsed_id:
+        return None
+
+    cache = getattr(g, "_admin_category_cache", None)
+    if cache is None:
+        cache = {}
+        g._admin_category_cache = cache
+
+    if parsed_id not in cache:
+        cache[parsed_id] = Category.query.get(parsed_id)
+    return cache[parsed_id]
+
+
+def _build_category_path(cid):
     category = None
     try:
-        category = Category.query.get(_parse_int(cid, 0))
+        category = _get_category_cached(cid)
     except Exception:
         category = None
     if not category:
@@ -281,86 +263,32 @@ def _build_category_path(cid):
         )
         if not cursor.parent_id:
             break
-        cursor = Category.query.get(cursor.parent_id)
+        cursor = _get_category_cached(cursor.parent_id)
     return path, full
 
 
 def _recompute_product_state(db, pid):
-    prod = db.products.find_one({"productId": pid})
-    if not prod:
+    from models.postgres_models import Product
+
+    product = Product.query.filter_by(id=_parse_int(pid, 0)).first()
+    if not product:
         return
-    offers = list(db.store_products.find({"productId": pid, "isAvailable": True}))
-    cheapest = None
-    for o in offers:
-        p = _effective_price(o)
-        if p is None:
-            continue
-        if cheapest is None or float(p) < float(cheapest["price"]):
-            cheapest = {"price": float(p), "storeProductId": o.get("storeProductId")}
-    labels = set(prod.get("labels") or [])
-    ca = _to_aware_utc(prod.get("createdAt"))
-    if ca and ca >= (_now_utc() - timedelta(days=30)):
-        labels.add("new")
-    else:
-        labels.discard("new")
-    if any(o.get("promoPrice") is not None for o in offers):
-        labels.add("on_sale")
-    else:
-        labels.discard("on_sale")
-    db.products.update_one(
-        {"productId": pid},
-        {
-            "$set": {
-                "labels": sorted(labels),
-                "cheapestPrice": cheapest["price"] if cheapest else None,
-                "cheapestStoreProductId": cheapest["storeProductId"]
-                if cheapest
-                else None,
-                "updatedAt": _now_utc(),
-            }
-        },
-    )
+    product.updated_at = _now_utc()
+    db.session.flush()
 
 
 def _recompute_lists_for_product(db, pid):
-    lists = list(db.lists.find({"items.productId": pid}))
-    if not lists:
+    from models.postgres_models import ListItem, Product
+
+    product = Product.query.filter_by(id=_parse_int(pid, 0)).first()
+    if not product:
         return 0
-    u = 0
-    for row in lists:
-        total = 0.0
-        items = row.get("items") or []
-        for item in items:
-            cs = item.get("storeId")
-            q = {"productId": item.get("productId"), "isAvailable": True}
-            if cs:
-                q["storeId"] = cs
-            offer = db.store_products.find_one(
-                q, sort=[("promoPrice", 1), ("basePrice", 1), ("lastPriceUpdate", -1)]
-            )
-            if not offer and cs:
-                offer = db.store_products.find_one(
-                    {"productId": item.get("productId"), "isAvailable": True},
-                    sort=[("promoPrice", 1), ("basePrice", 1), ("lastPriceUpdate", -1)],
-                )
-            up = float(_effective_price(offer) or 0)
-            qty = float(item.get("quantity") or 1)
-            lt = round(up * qty, 2)
-            item["unitPrice"] = up
-            item["lineTotal"] = lt
-            total += lt
-        db.lists.update_one(
-            {"_id": row.get("_id")},
-            {
-                "$set": {
-                    "items": items,
-                    "totalPrice": round(total, 2),
-                    "updatedAt": _now_utc(),
-                }
-            },
-        )
-        u += 1
-    return u
+    updated = ListItem.query.filter_by(product_id=product.id).update(
+        {"product_name": (product.name_de or product.name or "")},
+        synchronize_session=False,
+    )
+    db.session.flush()
+    return updated
 
 
 def _dashboard_payload(db=None):
@@ -418,6 +346,17 @@ def _dashboard_payload(db=None):
     return {"stats": stats, "recent_feedback": rf, "counts": counts}
 
 
+def _cached_dashboard_payload():
+    now = time.time()
+    cached = _DASHBOARD_CACHE.get("value")
+    if cached and cached.get("expires_at", 0) > now:
+        return cached["data"]
+
+    data = _dashboard_payload()
+    _DASHBOARD_CACHE["value"] = {"data": data, "expires_at": now + _DASHBOARD_CACHE_TTL_SEC}
+    return data
+
+
 def _redirect_admin(default, **kwargs):
     rt = (request.form.get("redirectTo") or "").strip().lower()
     m = {
@@ -437,7 +376,7 @@ def admin_dashboard():
     if not ok:
         return res
     return render_template(
-        "admin_dashboard.html", data=_dashboard_payload(), user_email=res
+        "admin_dashboard.html", data=_cached_dashboard_payload(), user_email=res
     )
 
 
@@ -844,7 +783,7 @@ def admin_overview_api():
     pass
     if db is None:
         return jsonify({"status": "error"}), 500
-    return jsonify({"status": "ok", "data": _dashboard_payload()})
+    return jsonify({"status": "ok", "data": _cached_dashboard_payload()})
 
 
 @admin_bp.route("/stores/save", methods=["POST"])
@@ -969,7 +908,7 @@ def admin_save_category():
     en, de = _localized_pair(request.form.get("name_en"), request.form.get("name_de"))
     parent_id_raw = (request.form.get("parentId") or "").strip()
     parent_id = _parse_int(parent_id_raw, 0) if parent_id_raw else None
-    parent = Category.query.get(parent_id) if parent_id else None
+    parent = _get_category_cached(parent_id) if parent_id else None
     payload = {
         "name_en": en,
         "name_de": de,
@@ -983,7 +922,7 @@ def admin_save_category():
         flash("Name required", "error")
         return _redirect_admin("admin.admin_categories_page")
 
-    category = Category.query.get(_parse_int(cid, 0)) if cid.isdigit() else None
+    category = _get_category_cached(cid) if cid.isdigit() else None
     if category is None:
         payload["slug"] = _unique_category_slug(payload["slug"])
         category = Category(
@@ -1202,35 +1141,51 @@ def admin_merge_products():
         flash("Invalid merge parameters.", "error")
         return _redirect_admin("admin.admin_products_page")
 
-    target_prod = db.products.find_one({"productId": target_id})
-    source_prod = db.products.find_one({"productId": source_id})
+    target_prod = Product.query.filter(
+        (Product.id == _parse_int(target_id, 0)) | (Product.fingerprint == target_id)
+    ).first()
+    source_prod = Product.query.filter(
+        (Product.id == _parse_int(source_id, 0)) | (Product.fingerprint == source_id)
+    ).first()
 
     if not target_prod or not source_prod:
         flash("One or both products not found.", "error")
         return _redirect_admin("admin.admin_products_page")
 
-    # Move all store_products from source to target
-    db.store_products.update_many(
-        {"productId": source_id},
-        {"$set": {"productId": target_id, "updatedAt": _now_utc()}},
+    from models.postgres_models import ListItem, ProductStore
+
+    source_offers = ProductStore.query.filter_by(product_id=source_prod.id).all()
+    for src_offer in source_offers:
+        tgt_offer = ProductStore.query.filter_by(
+            product_id=target_prod.id, store_id=src_offer.store_id
+        ).first()
+        if tgt_offer:
+            if (
+                tgt_offer.base_price is None
+                or (
+                    src_offer.base_price is not None
+                    and float(src_offer.base_price) < float(tgt_offer.base_price)
+                )
+            ):
+                tgt_offer.base_price = src_offer.base_price
+                if src_offer.product_url:
+                    tgt_offer.product_url = src_offer.product_url
+                tgt_offer.last_seen = src_offer.last_seen or tgt_offer.last_seen
+            db.session.delete(src_offer)
+        else:
+            src_offer.product_id = target_prod.id
+
+    ListItem.query.filter_by(product_id=source_prod.id).update(
+        {"product_id": target_prod.id}, synchronize_session=False
     )
+    db.session.delete(source_prod)
 
-    # Update user shopping lists
-    db.lists.update_many(
-        {"items.productId": source_id},
-        {"$set": {"items.$[elem].productId": target_id}},
-        array_filters=[{"elem.productId": source_id}],
-    )
-
-    # Delete the source product
-    db.products.delete_one({"productId": source_id})
-
-    # Recompute state for target
-    _recompute_product_state(db, target_id)
-    _recompute_lists_for_product(db, target_id)
+    _recompute_product_state(db, target_prod.id)
+    _recompute_lists_for_product(db, target_prod.id)
+    db.session.commit()
 
     flash(
-        f"Successfully merged {source_prod.get('name_en')} into {target_prod.get('name_en')}.",
+        f"Successfully merged {source_prod.name_de or source_prod.name} into {target_prod.name_de or target_prod.name}.",
         "success",
     )
     return _redirect_admin("admin.admin_products_page")
@@ -1327,11 +1282,24 @@ def admin_save_product():
     if not payload["name_en"]:
         flash("Name required", "error")
         return _redirect_admin("admin.admin_dashboard")
-    db.products.update_one(
-        {"productId": pid},
-        {"$set": payload, "$setOnInsert": {"createdAt": _now_utc()}},
-        upsert=True,
-    )
+    from models.postgres_models import PriceHistory, ProductStore
+
+    product = Product.query.filter_by(id=_parse_int(pid, 0)).first() if str(pid).isdigit() else None
+    if product is None:
+        product = Product()
+        db.session.add(product)
+
+    product.name = payload["name_en"]
+    product.name_de = payload["name_de"]
+    product.brand = payload["brandId"]
+    product.category_id = _parse_int(payload["categoryId"], None) if payload["categoryId"] else None
+    product.unit_normalized = payload["unitSize"] or None
+    product.barcode = payload["barcode"] or None
+    product.default_image_url = payload["defaultImageUrl"] or None
+    product.updated_at = _now_utc()
+    db.session.flush()
+
+    pid_int = product.id
 
     for i in range(len(new_store_ids)):
         store_id = (new_store_ids[i] or "").strip()
@@ -1345,30 +1313,38 @@ def admin_save_product():
             base_price = 0.0
 
         if url and base_price > 0:
-            spid = _id("sp")
-            store_payload = {
-                "storeProductId": spid,
-                "productId": pid,
-                "storeId": store_id,
-                "productPageUrl": url,
-                "basePrice": base_price,
-                "promoPrice": None,
-                "isAvailable": True,
-                "lastPriceUpdate": _now_utc(),
-                "updatedAt": _now_utc(),
-            }
-            db.store_products.insert_one(store_payload)
-            db.price_history.insert_one(
-                {
-                    "historyId": _id("hist"),
-                    "storeProductId": spid,
-                    "oldPrice": None,
-                    "newPrice": base_price,
-                    "timestamp": _now_utc(),
-                }
+            existing_offer = ProductStore.query.filter_by(
+                product_id=pid_int, store_id=store_id
+            ).first()
+            old_price = (
+                float(existing_offer.base_price)
+                if existing_offer and existing_offer.base_price is not None
+                else None
             )
+            if not existing_offer:
+                existing_offer = ProductStore(product_id=pid_int, store_id=store_id)
+                db.session.add(existing_offer)
 
-    _recompute_product_state(db, pid)
+            existing_offer.product_url = url
+            existing_offer.base_price = base_price
+            existing_offer.is_available = True
+            existing_offer.last_seen = _now_utc()
+
+            if old_price is None or abs(old_price - base_price) > 0.005:
+                db.session.add(
+                    PriceHistory(
+                        product_id=pid_int,
+                        store_id=store_id,
+                        old_price=old_price,
+                        new_price=base_price,
+                        changed_at=_now_utc(),
+                        source="admin",
+                    )
+                )
+
+    _recompute_product_state(db, pid_int)
+    _recompute_lists_for_product(db, pid_int)
+    db.session.commit()
     flash("Product saved", "success")
     return _redirect_admin("admin.admin_dashboard")
 
@@ -1413,26 +1389,51 @@ def admin_save_store_product():
     if not payload["productId"] or not payload["storeId"]:
         flash("IDs required", "error")
         return _redirect_admin("admin.admin_dashboard")
-    exist = db.store_products.find_one({"storeProductId": spid})
-    old_p = _effective_price(exist) if exist else None
-    db.store_products.update_one(
-        {"storeProductId": spid},
-        {"$set": payload, "$setOnInsert": {"createdAt": _now_utc()}},
-        upsert=True,
-    )
-    new_p = _effective_price(payload)
-    if old_p != new_p:
-        db.price_history.insert_one(
-            {
-                "historyId": _id("hist"),
-                "storeProductId": spid,
-                "oldPrice": old_p,
-                "newPrice": new_p,
-                "timestamp": _now_utc(),
-            }
+    from models.postgres_models import PriceHistory, ProductStore
+
+    product_id_int = _parse_int(payload["productId"], 0)
+    if not product_id_int:
+        flash("Invalid product ID", "error")
+        return _redirect_admin("admin.admin_dashboard")
+
+    existing = None
+    if spid and "_" in spid:
+        sp_pid, sp_store = spid.split("_", 1)
+        if sp_pid.isdigit():
+            existing = ProductStore.query.filter_by(
+                product_id=int(sp_pid), store_id=sp_store
+            ).first()
+    if existing is None:
+        existing = ProductStore.query.filter_by(
+            product_id=product_id_int, store_id=payload["storeId"]
+        ).first()
+
+    old_p = float(existing.base_price) if existing and existing.base_price is not None else None
+    if existing is None:
+        existing = ProductStore(product_id=product_id_int, store_id=payload["storeId"])
+        db.session.add(existing)
+
+    existing.product_url = payload["productPageUrl"] or None
+    existing.base_price = payload["basePrice"]
+    existing.is_available = payload["isAvailable"]
+    existing.last_seen = _now_utc()
+
+    new_p = float(payload["promoPrice"] if payload["promoPrice"] is not None else payload["basePrice"])
+    if old_p is None or abs(old_p - new_p) > 0.005:
+        db.session.add(
+            PriceHistory(
+                product_id=product_id_int,
+                store_id=payload["storeId"],
+                old_price=old_p,
+                new_price=new_p,
+                changed_at=_now_utc(),
+                source="admin",
+            )
         )
-    _recompute_product_state(db, pid)
-    _recompute_lists_for_product(db, pid)
+
+    _recompute_product_state(db, product_id_int)
+    _recompute_lists_for_product(db, product_id_int)
+    db.session.commit()
     flash("Store product saved", "success")
     return _redirect_admin("admin.admin_dashboard")
 
@@ -1454,11 +1455,19 @@ def admin_delete_product(pid):
     )
 
     pass
-    db.products.delete_one({"productId": pid})
-    db.store_products.delete_many({"productId": pid})
-    db.lists.update_many(
-        {"items.productId": pid}, {"$pull": {"items": {"productId": pid}}}
-    )
+    from models.postgres_models import ListItem, ProductStore
+
+    product = Product.query.filter(
+        (Product.id == _parse_int(pid, 0)) | (Product.fingerprint == pid)
+    ).first()
+    if not product:
+        flash("Product not found", "error")
+        return redirect(url_for("admin.admin_products_page"))
+
+    ListItem.query.filter_by(product_id=product.id).delete(synchronize_session=False)
+    ProductStore.query.filter_by(product_id=product.id).delete(synchronize_session=False)
+    db.session.delete(product)
+    db.session.commit()
     flash(f"Deleted {pid}", "success")
     return redirect(url_for("admin.admin_products_page"))
 
@@ -1481,7 +1490,7 @@ def admin_delete_category(cid):
 
     pass
 
-    category = Category.query.get(_parse_int(cid, 0))
+    category = _get_category_cached(cid)
     if not category:
         flash("Category not found", "error")
         return redirect(url_for("admin.admin_categories_page"))
@@ -1552,13 +1561,23 @@ def admin_delete_store_product(spid):
     )
 
     pass
-    offer = db.store_products.find_one({"storeProductId": spid})
+    from models.postgres_models import PriceHistory, ProductStore
+
+    if "_" not in spid:
+        return jsonify({"success": False, "error": "Invalid ID"}), 400
+    pid_raw, store_id = spid.split("_", 1)
+    pid_int = _parse_int(pid_raw, 0)
+    offer = ProductStore.query.filter_by(product_id=pid_int, store_id=store_id).first()
     if not offer:
         return jsonify({"success": False, "error": "Not found"}), 404
-    db.store_products.delete_one({"storeProductId": spid})
-    db.price_history.delete_many({"storeProductId": spid})
-    _recompute_product_state(db, offer["productId"])
-    _recompute_lists_for_product(db, offer["productId"])
+
+    db.session.delete(offer)
+    PriceHistory.query.filter_by(product_id=pid_int, store_id=store_id).delete(
+        synchronize_session=False
+    )
+    _recompute_product_state(db, pid_int)
+    _recompute_lists_for_product(db, pid_int)
+    db.session.commit()
     return jsonify({"success": True})
 
 
@@ -1687,6 +1706,7 @@ def approve_scan(barcode):
         return jsonify({"success": False, "error": "Unauthorized"})
     
     from models.postgres_models import PendingProduct, Product, Offer, Category, db
+    from services.pending_product_service import PendingProductService
     import uuid
 
     try:
@@ -1697,7 +1717,7 @@ def approve_scan(barcode):
         store = data.get("store")
 
         # Update pending product status
-        pending = PendingProduct.query.filter_by(barcode=barcode).first()
+        pending = PendingProductService.get_by_barcode(barcode)
         if not pending:
             return jsonify({"success": False, "error": "Pending product not found"})
         
@@ -1755,9 +1775,10 @@ def reject_scan(barcode):
         return jsonify({"success": False, "error": "Unauthorized"})
     
     from models.postgres_models import PendingProduct, db
+    from services.pending_product_service import PendingProductService
 
     try:
-        pending = PendingProduct.query.filter_by(barcode=barcode).first()
+        pending = PendingProductService.get_by_barcode(barcode)
         if not pending:
             return jsonify({"success": False, "error": "Pending product not found"})
         
@@ -1772,10 +1793,8 @@ def reject_scan(barcode):
 
 @admin_bp.route("/api/products/bulk-delete", methods=["POST"])
 def bulk_delete_products():
-    from bson import ObjectId
+    from sqlalchemy import or_
     from flask import jsonify, request
-
-    from utils.mongo_mock import MockDb
 
     try:
         data = request.get_json()
@@ -1799,26 +1818,42 @@ def bulk_delete_products():
             db,
         )
 
-        object_ids = []
+        int_ids = []
+        fp_ids = []
         for id_str in ids:
-            try:
-                object_ids.append(ObjectId(id_str))
-            except Exception:
-                object_ids.append(id_str)
+            s = str(id_str).strip()
+            if not s:
+                continue
+            if s.isdigit():
+                int_ids.append(int(s))
+            else:
+                fp_ids.append(s)
 
-        if not object_ids:
+        if not int_ids and not fp_ids:
             return jsonify({"error": "No valid IDs provided"}), 400
 
-        query = {
-            "$or": [{"_id": {"$in": object_ids}}, {"productId": {"$in": object_ids}}]
-        }
-        result = db.products.delete_many(query)
-        db.store_products.delete_many({"productId": {"$in": object_ids}})
+        product_rows = Product.query.filter(
+            or_(Product.id.in_(int_ids or [-1]), Product.fingerprint.in_(fp_ids or [""]))
+        ).all()
+        product_ids = [p.id for p in product_rows]
+        if not product_ids:
+            return jsonify({"message": "No matching products.", "deleted_count": 0})
+
+        from models.postgres_models import ListItem, ProductStore
+
+        ListItem.query.filter(ListItem.product_id.in_(product_ids)).delete(
+            synchronize_session=False
+        )
+        ProductStore.query.filter(ProductStore.product_id.in_(product_ids)).delete(
+            synchronize_session=False
+        )
+        Product.query.filter(Product.id.in_(product_ids)).delete(synchronize_session=False)
+        db.session.commit()
 
         return jsonify(
             {
-                "message": f"Successfully deleted {result.deleted_count} products.",
-                "deleted_count": result.deleted_count,
+                "message": f"Successfully deleted {len(product_ids)} products.",
+                "deleted_count": len(product_ids),
             }
         )
     except Exception as e:

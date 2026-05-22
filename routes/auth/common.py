@@ -20,18 +20,25 @@ def login():
                 return jsonify({'token': token, 'email': email}), 200
             session['user'] = email
             notifs = notifications_model.get_user_notifications(email, unread_only=True)
+            toast_ids = []
             for n in notifs:
                 if n.get('type') == 'list_share' and not n.get('is_toasted'):
                     flash(n.get('message', 'A new list was shared!'), 'info')
-                    # Mark as toasted
-                    try:
-                        from models.postgres_models import Notification, db as sa_db
-                        notif_row = Notification.query.filter_by(id=int(n['id'])).first()
-                        if notif_row:
-                            notif_row.is_toasted = True
-                            sa_db.session.commit()
-                    except Exception:
-                        pass
+                    toast_ids.append(n.get('id'))
+            if toast_ids:
+                try:
+                    from models.postgres_models import Notification, db as sa_db
+
+                    notif_rows = (
+                        Notification.query.filter(Notification.id.in_([int(i) for i in toast_ids if str(i).isdigit()]))
+                        .all()
+                    )
+                    for notif_row in notif_rows:
+                        notif_row.is_toasted = True
+                    if notif_rows:
+                        sa_db.session.commit()
+                except Exception:
+                    pass
             resp = redirect(url_for('main.home'))
             resp.set_cookie('auth_token', token, httponly=True, samesite='Lax', secure=bool(os.environ.get('COOKIE_SECURE')))
             return resp

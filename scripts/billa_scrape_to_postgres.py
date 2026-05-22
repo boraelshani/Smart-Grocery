@@ -31,8 +31,15 @@ if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
 from scrapers.real_billa_scraper import RealBillaScraper
-# Use existing categoriser to map product names to our category taxonomy
-from scripts.pipeline.categoriser import classify_product
+# Use existing categoriser to map product names to our category taxonomy when available
+try:
+    import importlib
+
+    _cat_mod = importlib.import_module("scripts.pipeline.categoriser")
+    classify_product = getattr(_cat_mod, "classify_product", lambda name: None)
+except Exception:
+    def classify_product(name: str):
+        return None
 
 
 SEARCH_URL = "https://www.billa.at/suche/%20"
