@@ -1001,12 +1001,16 @@ function setupCompareExperience() {
     }
 
     triggered.forEach((t) => {
-      const div = document.createElement('div');
-      div.className = 'toast align-items-center text-bg-success border-0';
-      div.setAttribute('role', 'status');
-      div.innerHTML = `<div class="d-flex"><div class="toast-body"><strong>${t.name}</strong> reached your alert target.</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button></div>`;
-      holder.appendChild(div);
-      bootstrap.Toast.getOrCreateInstance(div, { delay: 4500 }).show();
+      if (typeof showNotification === 'function') {
+        showNotification(`${t.name} reached your alert target.`, 'success');
+      } else {
+        const div = document.createElement('div');
+        div.className = 'toast align-items-center text-bg-success border-0';
+        div.setAttribute('role', 'status');
+        div.innerHTML = `<div class="d-flex"><div class="toast-body"><strong>${t.name}</strong> reached your alert target.</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button></div>`;
+        holder.appendChild(div);
+        bootstrap.Toast.getOrCreateInstance(div, { delay: 4500 }).show();
+      }
     });
   };
 

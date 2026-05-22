@@ -11,7 +11,7 @@ def _is_admin_user(email):
     if email.lower() in _admin_emails():
         return True
     user = get_user_by_email(email) or {}
-    return bool(user.get("is_admin"))
+    return bool(user.get("is_admin") or user.get("isAdmin"))
 
 def require_admin():
     email = session.get("user")

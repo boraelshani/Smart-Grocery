@@ -16,6 +16,13 @@ from utils import helpers
 _PAGE_CACHE_TTL_SEC = 120
 _page_cache = {}
 
+
+def invalidate_home_cache(user_email=None):
+    if user_email:
+        _page_cache.pop(f"home:{user_email}", None)
+    else:
+        _page_cache.clear()
+
 def load_featured_deals_fallback():
     import os
     import json

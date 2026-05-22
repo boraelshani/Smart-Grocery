@@ -86,6 +86,23 @@ def _slugify(value):
     return text.strip("-")
 
 
+def _unique_category_slug(base_slug, exclude_category_id=None):
+    from models.postgres_models import Category
+
+    root_slug = _slugify(base_slug) or "category"
+    slug = root_slug
+    suffix = 2
+
+    while True:
+        q = Category.query.filter(Category.slug == slug)
+        if exclude_category_id is not None:
+            q = q.filter(Category.id != exclude_category_id)
+        if not q.first():
+            return slug
+        slug = f"{root_slug}-{suffix}"
+        suffix += 1
+
+
 def _translate_text(text, source_lang="en", target_lang="de"):
     val = (text or "").strip()
     if not val or source_lang == target_lang:
@@ -234,32 +251,37 @@ def _build_category_tree(rows):
     return roots
 
 
-def _build_category_path(db, cid):
-    cat = db.categories.find_one({"categoryId": cid})
-    if not cat:
+def _build_category_path(cid):
+    from models.postgres_models import Category
+
+    category = None
+    try:
+        category = Category.query.get(_parse_int(cid, 0))
+    except Exception:
+        category = None
+    if not category:
         return [], []
+
     path = []
     full = []
-    cursor = cat
+    cursor = category
     visited = set()
-    while (
-        cursor and cursor.get("categoryId") and cursor.get("categoryId") not in visited
-    ):
-        visited.add(cursor.get("categoryId"))
-        path.insert(0, cursor.get("categoryId"))
+    while cursor and cursor.id and cursor.id not in visited:
+        visited.add(cursor.id)
+        category_id = str(cursor.id)
+        path.insert(0, category_id)
         full.insert(
             0,
             {
-                "categoryId": cursor.get("categoryId"),
-                "name_en": cursor.get("name_en") or "",
-                "name_de": cursor.get("name_de") or "",
-                "slug": cursor.get("slug") or "",
+                "categoryId": category_id,
+                "name_en": cursor.name_en or "",
+                "name_de": cursor.name_de or "",
+                "slug": cursor.slug or "",
             },
         )
-        pid = cursor.get("parentId")
-        if not pid:
+        if not cursor.parent_id:
             break
-        cursor = db.categories.find_one({"categoryId": pid})
+        cursor = Category.query.get(cursor.parent_id)
     return path, full
 
 
@@ -426,7 +448,7 @@ def admin_products_page():
         return res
     from sqlalchemy import String, cast, or_
 
-    from models.postgres_models import Brand, Category, Offer, Product, Store, User
+    from models.postgres_models import Brand, Category, Offer, Product, ProductStore, Store, User
 
     try:
         qt = (request.args.get("q") or "").strip()
@@ -500,19 +522,26 @@ def admin_products_page():
             pid_int = _parse_int(prod.get("id") or prod.get("productId"), 0)
             if pid_int:
                 offer_rows = (
-                    Offer.query.filter_by(product_id=pid_int)
-                    .order_by(Offer.updated_at.desc())
+                    ProductStore.query.filter_by(product_id=pid_int, is_available=True)
+                    .order_by(ProductStore.last_seen.desc())
                     .limit(40)
                     .all()
                 )
                 offs = []
                 for o in offer_rows:
-                    od = o.to_dict()
-                    od["storeName"] = (
-                        store_map.get(o.store_id) or o.store_id or "Unknown"
+                    offs.append(
+                        {
+                            "storeProductId": f"{o.product_id}_{o.store_id}",
+                            "productId": str(o.product_id),
+                            "storeId": o.store_id,
+                            "storeName": store_map.get(o.store_id) or o.store_id or "Unknown",
+                            "basePrice": float(o.base_price) if o.base_price is not None else None,
+                            "isAvailable": bool(o.is_available),
+                            "productPageUrl": o.product_url,
+                            "lastSeen": o.last_seen,
+                            "lastPriceUpdateDisplay": _format_admin_dt(o.last_seen),
+                        }
                     )
-                    od["lastPriceUpdateDisplay"] = _format_admin_dt(o.updated_at)
-                    offs.append(od)
                 p_offers[prod.get("productId")] = offs
 
         sel_id = (request.args.get("edit") or "").strip()
@@ -632,7 +661,7 @@ def admin_brands_page():
     ok, res = _require_admin()
     if not ok:
         return res
-    from sqlalchemy import or_
+    from sqlalchemy import String, cast, or_
 
     from models.postgres_models import Brand
 
@@ -892,11 +921,29 @@ def admin_save_brand():
     if not payload["name_en"]:
         flash("Name required", "error")
         return _redirect_admin("admin.admin_brands_page")
-    db.brands.update_one(
-        {"brandId": bid},
-        {"$set": payload, "$setOnInsert": {"createdAt": _now_utc()}},
-        upsert=True,
-    )
+
+    brand = Brand.query.filter_by(brand_id=bid).first()
+    if brand is None:
+        brand = Brand(
+            brand_id=bid,
+            name=payload["name"],
+            name_en=payload["name_en"],
+            name_de=payload["name_de"],
+            image_url=payload["image_url"],
+            website=payload["website"],
+            created_at=_now_utc(),
+            updated_at=payload["updatedAt"],
+        )
+        db.session.add(brand)
+    else:
+        brand.name = payload["name"]
+        brand.name_en = payload["name_en"]
+        brand.name_de = payload["name_de"]
+        brand.image_url = payload["image_url"]
+        brand.website = payload["website"]
+        brand.updated_at = payload["updatedAt"]
+
+    db.session.commit()
     flash("Brand saved", "success")
     return _redirect_admin("admin.admin_brands_page", edit=bid)
 
@@ -920,13 +967,14 @@ def admin_save_category():
     pass
     cid = (request.form.get("categoryId") or "").strip() or _id("cat")
     en, de = _localized_pair(request.form.get("name_en"), request.form.get("name_de"))
+    parent_id_raw = (request.form.get("parentId") or "").strip()
+    parent_id = _parse_int(parent_id_raw, 0) if parent_id_raw else None
+    parent = Category.query.get(parent_id) if parent_id else None
     payload = {
-        "categoryId": cid,
         "name_en": en,
         "name_de": de,
         "slug": (request.form.get("slug") or "").strip(),
         "image_url": (request.form.get("image_url") or "").strip(),
-        "parentId": (request.form.get("parentId") or "").strip() or None,
         "updatedAt": _now_utc(),
     }
     if not payload["slug"]:
@@ -934,16 +982,33 @@ def admin_save_category():
     if not payload["name_en"]:
         flash("Name required", "error")
         return _redirect_admin("admin.admin_categories_page")
-    db.categories.update_one(
-        {"categoryId": cid},
-        {"$set": payload, "$setOnInsert": {"createdAt": _now_utc()}},
-        upsert=True,
-    )
-    path, full = _build_category_path(db, cid)
-    db.categories.update_one(
-        {"categoryId": cid},
-        {"$set": {"path": path, "fullPathNames": full, "updatedAt": _now_utc()}},
-    )
+
+    category = Category.query.get(_parse_int(cid, 0)) if cid.isdigit() else None
+    if category is None:
+        payload["slug"] = _unique_category_slug(payload["slug"])
+        category = Category(
+            slug=payload["slug"],
+            name_en=payload["name_en"],
+            name_de=payload["name_de"],
+            image_url=payload["image_url"],
+            parent_id=parent.id if parent else None,
+            level=(parent.level + 1) if parent and parent.level is not None else (1 if parent else 0),
+        )
+        db.session.add(category)
+        db.session.flush()
+    else:
+        payload["slug"] = _unique_category_slug(payload["slug"], exclude_category_id=category.id)
+        category.slug = payload["slug"]
+        category.name_en = payload["name_en"]
+        category.name_de = payload["name_de"]
+        category.image_url = payload["image_url"]
+        category.parent_id = parent.id if parent else None
+        category.level = (parent.level + 1) if parent and parent.level is not None else (1 if parent else 0)
+
+    db.session.commit()
+
+    cid = str(category.id)
+    path, full = _build_category_path(cid)
     flash("Category saved", "success")
     return _redirect_admin("admin.admin_categories_page", edit=cid)
 
@@ -1190,7 +1255,7 @@ def admin_save_product():
     pass
     pid = (request.form.get("productId") or "").strip() or _id("prod")
     cid = (request.form.get("categoryId") or "").strip()
-    path, _ = _build_category_path(db, cid)
+    path, _ = _build_category_path(cid)
     roots = {
         "cat_produce",
         "cat_pantry",
@@ -1217,7 +1282,7 @@ def admin_save_product():
         inf_leaf = inf.get("categoryId")
         if inf_leaf:
             cid = inf_leaf
-            path, _ = _build_category_path(db, cid)
+            path, _ = _build_category_path(cid)
     en, de = _localized_pair(request.form.get("name_en"), request.form.get("name_de"))
     den, dde = _localized_optional_pair(
         request.form.get("description_en"), request.form.get("description_de")
@@ -1415,12 +1480,18 @@ def admin_delete_category(cid):
     )
 
     pass
-    if db.categories.find_one({"parentId": cid}) or db.products.find_one(
-        {"categoryId": cid}
-    ):
+
+    category = Category.query.get(_parse_int(cid, 0))
+    if not category:
+        flash("Category not found", "error")
+        return redirect(url_for("admin.admin_categories_page"))
+
+    if Category.query.filter_by(parent_id=category.id).first() or Product.query.filter_by(category_id=category.id).first():
         flash("In use", "error")
         return redirect(url_for("admin.admin_categories_page"))
-    db.categories.delete_one({"categoryId": cid})
+
+    db.session.delete(category)
+    db.session.commit()
     flash(f"Deleted {cid}", "success")
     return redirect(url_for("admin.admin_categories_page"))
 
@@ -1428,6 +1499,8 @@ def admin_delete_category(cid):
 @admin_bp.route("/brands/delete/<bid>", methods=["POST"])
 def admin_delete_brand(bid):
     ok, res = _require_admin()
+    from sqlalchemy import String, cast
+
     from models.postgres_models import (
         Brand,
         Category,
@@ -1442,10 +1515,18 @@ def admin_delete_brand(bid):
     )
 
     pass
-    if db.products.find_one({"brandId": bid}):
+    brand = Brand.query.filter((Brand.brand_id == bid) | (cast(Brand.id, String) == bid)).first()
+    brand_keys = {bid}
+    if brand:
+        brand_keys.update(filter(None, {brand.brand_id, brand.name, brand.name_en}))
+
+    if Product.query.filter(Product.brand.in_(brand_keys)).first():
         flash("In use", "error")
         return redirect(url_for("admin.admin_brands_page"))
-    db.brands.delete_one({"brandId": bid})
+
+    if brand:
+        db.session.delete(brand)
+        db.session.commit()
     flash(f"Deleted {bid}", "success")
     return redirect(url_for("admin.admin_brands_page"))
 

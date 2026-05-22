@@ -603,58 +603,49 @@ function toggleProductFavorite(productId, button) {
 }
 
 function showMessage(message, type) {
-  const messageDiv = document.createElement('div');
-  messageDiv.textContent = message;
-  messageDiv.style.cssText = `
-    position: fixed;
-    top: 100px;
-    right: 20px;
-    padding: 1rem 1.5rem;
-    border-radius: 10px;
-    font-weight: 600;
-    font-size: 0.9375rem;
-    z-index: 9999;
-    animation: slideIn 0.3s ease-out;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  `;
-  
-  if (type === 'success') {
-    messageDiv.style.background = '#dcfce7';
-    messageDiv.style.color = '#16a34a';
-    messageDiv.style.border = '2px solid #22c55e';
-  } else if (type === 'error') {
-    messageDiv.style.background = '#fee2e2';
-    messageDiv.style.color = '#dc2626';
-    messageDiv.style.border = '2px solid #ef4444';
-  } else {
-    messageDiv.style.background = '#e0e7ff';
-    messageDiv.style.color = '#4f46e5';
-    messageDiv.style.border = '2px solid #6366f1';
+  if (typeof showNotification === 'function') {
+    showNotification(message, type === 'error' ? 'danger' : type);
+    return;
   }
-  
+
+  const messageDiv = document.createElement('div');
+  const normalizedType = type === 'error' ? 'danger' : (type || 'info');
+  const variants = {
+    success: { icon: 'bi-check2-circle', title: 'Success' },
+    danger: { icon: 'bi-exclamation-octagon-fill', title: 'Error' },
+    info: { icon: 'bi-info-circle-fill', title: 'Info' },
+    warning: { icon: 'bi-exclamation-triangle-fill', title: 'Warning' }
+  };
+  const variant = variants[normalizedType] || variants.info;
+
+  messageDiv.className = `sg-toast sg-toast--${normalizedType} is-visible`;
+  messageDiv.style.position = 'fixed';
+  messageDiv.style.top = '100px';
+  messageDiv.style.right = '20px';
+  messageDiv.style.maxWidth = '380px';
+  messageDiv.style.zIndex = '9999';
+  messageDiv.style.setProperty('--toast-duration', '3000ms');
+  messageDiv.innerHTML = `
+    <div class="sg-toast__icon"><i class="bi ${variant.icon}"></i></div>
+    <div class="sg-toast__content">
+      <div class="sg-toast__label">${variant.title}</div>
+      <div class="sg-toast__title"></div>
+    </div>
+    <button type="button" class="sg-toast__close" aria-label="Close notification"><i class="bi bi-x-lg"></i></button>
+    <span class="sg-toast__progress"></span>
+  `;
+  messageDiv.querySelector('.sg-toast__title').textContent = message;
+  messageDiv.querySelector('.sg-toast__close').addEventListener('click', () => messageDiv.remove());
   document.body.appendChild(messageDiv);
-  
+
   setTimeout(() => {
-    messageDiv.style.animation = 'slideOut 0.3s ease-out';
+    messageDiv.classList.add('is-leaving');
     setTimeout(() => {
       if (messageDiv.parentNode) {
         document.body.removeChild(messageDiv);
       }
-    }, 300);
+    }, 220);
   }, 3000);
 }
-
-const style = document.createElement('style');
-style.textContent = `
-  @keyframes slideIn {
-    from { transform: translateX(400px); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
-  }
-  @keyframes slideOut {
-    from { transform: translateX(0); opacity: 1; }
-    to { transform: translateX(400px); opacity: 0; }
-  }
-`;
-document.head.appendChild(style);
 </script>
 {% endblock %}

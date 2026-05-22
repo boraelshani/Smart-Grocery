@@ -169,10 +169,16 @@
 
       <!-- Flash Messages - Error notifications from Flask -->
 	{% if error %} <!-- If Python passes an 'error' variable -->
-	<div class="alert alert-danger border-0 shadow-sm rounded-3 mb-4 d-flex align-items-center" role="alert"> <!-- Bootstrap red alert -->
-		<i class="bi bi-exclamation-circle-fill me-2 fs-5"></i> <!-- Error symbol -->
-		{{ error }} <!-- Prints the ACTUAL error message -->
-	</div>
+  <div class="sg-inline-message sg-inline-message--danger mb-4" role="alert">
+    <div class="sg-inline-message__icon">
+      <i class="bi bi-exclamation-octagon-fill"></i>
+    </div>
+    <div class="sg-inline-message__body">
+      <div class="sg-inline-message__label">error</div>
+      <div class="sg-inline-message__title">We couldn’t sign you in</div>
+      <div class="sg-inline-message__message">{{ error }}</div>
+    </div>
+  </div>
 	{% endif %}
       
 

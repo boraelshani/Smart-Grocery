@@ -1,147 +1,343 @@
 {% extends "admin_layout.html" %}
 
-{% block admin_title %}Categories Structure{% endblock %}
-{% block admin_subtitle %}Manage taxonomy and global grocery catalog{% endblock %}
+{% block admin_title %}Categories{% endblock %}
+{% block admin_subtitle %}Organize the taxonomy, shape the hierarchy, and keep every node easy to edit.{% endblock %}
+
+{% block admin_actions %}
+<button class="btn-primary btn-sm category-action-pill" onclick="prepareCategoryModal('new');" data-bs-toggle="modal" data-bs-target="#categoryModal">
+    <span class="category-action-icon"><i class="bi bi-plus-lg"></i></span>
+    <span>New Category</span>
+</button>
+{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .category-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.45rem 0.8rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+    }
+    .category-hero-badge {
+        background: #ecfeff;
+        border: 1px solid #cffafe;
+        color: #0f766e;
+    }
+    .category-chip {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        color: #475569;
+    }
+    .category-edit-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.55rem 0.85rem;
+        border-radius: 9999px;
+        border: 1px solid #dbe4f0;
+        background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+        color: #334155;
+        font-weight: 700;
+        box-shadow: 0 6px 16px rgba(15, 23, 42, 0.04);
+        transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+    }
+    .category-edit-pill:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 10px 22px rgba(15, 23, 42, 0.08);
+        border-color: #cbd5e1;
+        color: #1e293b;
+    }
+    .category-toggle-pill {
+        background: #f8fafc;
+        border-color: #e2e8f0;
+        color: #334155;
+        box-shadow: 0 6px 16px rgba(15, 23, 42, 0.04);
+        transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+    }
+    .category-toggle-pill:hover {
+        transform: translateY(-1px);
+        background: #eef2ff;
+        border-color: #cbd5e1;
+        color: #1e293b;
+    }
+    .category-toggle-pill[aria-expanded="true"] .collapse-icon {
+        transform: rotate(180deg);
+    }
+    .category-children {
+        overflow: hidden;
+    }
+    .category-action-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.5rem;
+        height: 1.5rem;
+        border-radius: 9999px;
+        background: rgba(255, 255, 255, 0.18);
+        color: #fff;
+        flex-shrink: 0;
+    }
+    .tree-node {
+        position: relative;
+        transition:
+            transform 0.18s ease,
+            box-shadow 0.18s ease,
+            border-color 0.18s ease;
+    }
+    .tree-node:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
+        border-color: #cbd5e1;
+    }
+    .tree-node-wrap {
+        position: relative;
+    }
+    .tree-branch {
+        border-left: 1px solid #e2e8f0;
+        margin-left: 1rem;
+        padding-left: 1rem;
+    }
+    .tree-icon {
+        width: 2.75rem;
+        height: 2.75rem;
+        border-radius: 0.9rem;
+        border: 1px solid #e2e8f0;
+        background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        flex-shrink: 0;
+    }
+    .tree-icon img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        padding: 0.3rem;
+    }
+    .collapse-icon {
+        transition: transform 0.25s ease;
+        font-size: 0.7rem;
+    }
+    [aria-expanded="true"] .collapse-icon {
+        transform: rotate(180deg);
+    }
+    .node-action {
+        white-space: nowrap;
+    }
+    .category-action-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        border-radius: 9999px;
+        padding: 0.48rem 0.85rem;
+        background: linear-gradient(135deg, #0f766e 0%, #14b8a6 100%);
+        border: none;
+        color: #fff;
+        font-weight: 700;
+        box-shadow: 0 10px 24px rgba(15, 118, 110, 0.24);
+        transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+    .category-action-pill:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 14px 30px rgba(15, 118, 110, 0.28);
+        color: #fff;
+    }
+    .category-save-pill,
+    .category-delete-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        border-radius: 9999px;
+        padding: 0.58rem 1rem;
+        border: 0;
+        font-weight: 700;
+        transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+    .category-save-pill {
+        background: linear-gradient(135deg, #0f766e 0%, #14b8a6 100%);
+        color: #fff;
+        box-shadow: 0 10px 24px rgba(15, 118, 110, 0.24);
+    }
+    .category-delete-pill {
+        background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+        color: #fff;
+        box-shadow: 0 10px 24px rgba(220, 38, 38, 0.2);
+    }
+    .category-save-pill:hover,
+    .category-delete-pill:hover {
+        transform: translateY(-1px);
+        color: #fff;
+    }
+</style>
+{% endblock %}
 
 {% block admin_content %}
-<div class="row mb-4 align-items-center">
-    <div class="col-md-8">
-    </div>
-    <div class="col-md-4 text-md-end">
-        <button class="btn btn-primary rounded-pill px-4 shadow-sm fw-bold" onclick="prepareCategoryModal('new');" data-bs-toggle="modal" data-bs-target="#categoryModal">
-            <i class="fas fa-plus me-1"></i> New Category
-        </button>
-    </div>
-</div>
+{% set total_categories = data.categories|length if data.categories else 0 %}
+{% set root_categories = data.category_tree|length if data.category_tree else 0 %}
+{% set nested_categories = total_categories - root_categories if total_categories >= root_categories else 0 %}
 
-<div class="card shadow-sm border-0 rounded-4 overflow-hidden mb-4">
-    <div class="card-body p-0">
-        
-        <div class="list-group list-group-flush" id="categoryTree">
-        {% macro render_category(cat, depth) %}
-            {% set children = cat.children %}
-            {% set safe_id = cat.categoryId|replace(' ', '-')|replace('_', '-')|replace('&', '')|replace('/', '-') %}
-            {% set style_attr = 'style="padding-left: ' ~ (1.5 + depth * 2) ~ 'rem !important; border-left: ' ~ ('2px solid #e9ecef' if depth > 0 else 'none') ~ ';"' %}
-            
-            <div class="list-group-item border-bottom-0 py-3" {{ style_attr | safe }}>
-                <div class="d-flex align-items-center justify-content-between">
-                    <div class="d-flex align-items-center flex-grow-1 cursor-pointer" {% if children %}data-bs-toggle="collapse" data-bs-target="#collapse-{{ safe_id }}" aria-expanded="false"{% endif %}>
-                        <div class="me-3 bg-light rounded d-flex justify-content-center align-items-center overflow-hidden border shadow-sm" style="width: 48px; height: 48px;">
-                            {% if cat.image_url %}
-                            <img src="{{ cat.image_url }}" alt="..." style="width: 100%; height: 100%; object-fit: contain;">
-                            {% else %}
-                            <i class="fas fa-tags text-primary text-opacity-50 fs-5"></i>
-                            {% endif %}
-                        </div>
-                        <div>
-                            <h6 class="mb-0 fw-bold text-dark d-flex align-items-center">
-                                {{ cat.name_en or cat.categoryId }}
-                                {% if children %}
-                                <i class="fas fa-chevron-down ms-2 fs-7 text-muted transition-transform collapse-icon"></i>
-                                {% endif %}
-                            </h6>
-                            <span class="text-muted small">{% if children %}{{ children|length }} subcategories{% else %}No subcategories{% endif %}</span>
-                        </div>
-                    </div>
-                    <div class="text-end ps-3">
-                        <button class="btn btn-sm btn-light border shadow-sm rounded-pill text-primary fw-bold px-3 hover-primary" onclick='prepareCategoryModal("edit", {"categoryId":"{{ cat.categoryId }}", "name_en":"{{ cat.name_en }}", "name_de":"{{ cat.name_de }}", "image_url": "{{ cat.image_url }}", "parentId":"{{ cat.parentId }}"});' data-bs-toggle="modal" data-bs-target="#categoryModal">
-                            <i class="fas fa-pen"></i> Edit
-                        </button>
-                    </div>
-                </div>
-            </div>
-            {% if children %}
-            <div class="collapse" id="collapse-{{ safe_id }}">
-                <div class="list-group list-group-flush rounded-0 bg-light bg-opacity-50">
-                    {% for child in children %}
-                        {{ render_category(child, depth + 1) }}
-                    {% endfor %}
-                </div>
-            </div>
-            {% endif %}
-        {% endmacro %}
-        
-        {% for top in data.category_tree %}
-            {{ render_category(top, 0) }}
-        {% else %}
-            <div class="text-center py-5 text-muted">
-                <div class="mb-3"><i class="fas fa-tags fs-1 text-muted text-opacity-50"></i></div>
-                <h6 class="fw-bold">No categories found.</h6>
-            </div>
-        {% endfor %}
+<div class="admin-card p-4 mb-4">
+    <form method="get" action="{{ url_for('admin.admin_categories_page') }}" class="flex flex-col lg:flex-row lg:items-center gap-3">
+        <div class="relative flex-1" style="min-width: 16rem;">
+            <i class="bi bi-search" style="position:absolute; left:0.9rem; top:50%; transform:translateY(-50%); color:#94a3b8; pointer-events:none;"></i>
+            <input type="text" name="q" value="{{ data.q or '' }}" placeholder="Search categories by name or ID…" class="adm-input" style="padding-left:2.35rem;">
         </div>
+        {% if data.q %}
+        <a href="{{ url_for('admin.admin_categories_page') }}" class="btn-secondary btn-sm no-underline justify-center">
+            <i class="bi bi-x-lg"></i> Clear
+        </a>
+        {% endif %}
+        <button type="submit" class="btn-primary btn-sm">
+            <i class="bi bi-search"></i> Search
+        </button>
+    </form>
+</div>
+
+<div class="admin-card overflow-hidden mb-4">
+    <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between gap-3">
+        <div>
+            <h3 class="text-sm font-semibold text-slate-800 mb-1">Category tree</h3>
+            <p class="text-xs text-slate-500 mb-0">Click through branches, inspect parents, and edit fast.</p>
+        </div>
+        <span class="category-chip"><i class="bi bi-layers"></i> {{ root_categories }} roots</span>
+    </div>
+
+    <div class="p-4">
+        {% macro render_category(cat, depth) %}
+            {% set children = cat.children or [] %}
+            {% set safe_id = cat.categoryId|replace(' ', '-')|replace('_', '-')|replace('&', '')|replace('/', '-') %}
+            {% set has_children = children|length > 0 %}
+            <div class="tree-node-wrap {% if depth > 0 %}tree-branch{% endif %}" style="margin-top: {% if depth == 0 %}0{% else %}.65{% endif %}rem;">
+                <div class="tree-node admin-card p-4 {% if depth == 0 %}bg-white{% else %}bg-slate-50{% endif %}">
+                    <div class="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
+                        <div class="flex items-start gap-3 min-w-0">
+                            <div class="tree-icon">
+                                {% if cat.image_url %}
+                                <img src="{{ cat.image_url }}" alt="{{ cat.name_en or cat.categoryId }} image">
+                                {% else %}
+                                <i class="bi bi-tags text-indigo-300" style="font-size: 1.1rem;"></i>
+                                {% endif %}
+                            </div>
+                            <div class="min-w-0">
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <h4 class="text-sm font-semibold text-slate-800 mb-0 truncate">{{ cat.name_en or cat.categoryId }}</h4>
+                                    {% if has_children %}
+                                    <button type="button" class="category-chip py-1 px-2 border-0 category-toggle-pill" data-category-toggle data-category-target="children-{{ safe_id }}" aria-expanded="false" aria-controls="children-{{ safe_id }}">
+                                        <i class="bi bi-chevron-down collapse-icon"></i>
+                                        {{ children|length }} subcategories
+                                    </button>
+                                    {% else %}
+                                    <span class="category-chip py-1 px-2">
+                                        <i class="bi bi-dot"></i> Leaf node
+                                    </span>
+                                    {% endif %}
+                                </div>
+                                <div class="text-xs text-slate-500 mt-1 flex flex-wrap gap-2">
+                                    <span class="category-chip py-1 px-2">ID: {{ cat.categoryId }}</span>
+                                    {% if cat.parentId %}
+                                    <span class="category-chip py-1 px-2">Parent: {{ cat.parentId }}</span>
+                                    {% else %}
+                                    <span class="category-chip py-1 px-2">Top level</span>
+                                    {% endif %}
+                                    <span class="category-chip py-1 px-2">Level: {{ cat.level | default(0) }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-2 node-action">
+                            <button type="button" class="category-edit-pill" onclick='prepareCategoryModal("edit", {"categoryId":"{{ cat.categoryId | e }}", "name_en":"{{ (cat.name_en or "") | e }}", "name_de":"{{ (cat.name_de or "") | e }}", "image_url":"{{ (cat.image_url or "") | e }}", "parentId":"{{ (cat.parentId or "") | e }}"});' data-bs-toggle="modal" data-bs-target="#categoryModal">
+                                <i class="bi bi-pencil-square"></i>
+                                <span>Edit</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% if has_children %}
+                <div class="category-children hidden" id="children-{{ safe_id }}">
+                    <div class="pt-3">
+                        {% for child in children %}
+                            {{ render_category(child, depth + 1) }}
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        {% endmacro %}
+
+        {% if data.category_tree %}
+            <div class="space-y-3">
+                {% for top in data.category_tree %}
+                    {{ render_category(top, 0) }}
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center py-5 px-4">
+                <div class="tree-icon mx-auto mb-3">
+                    <i class="bi bi-tags text-slate-300" style="font-size: 1.25rem;"></i>
+                </div>
+                <h3 class="text-base font-semibold text-slate-800 mb-1">No categories found</h3>
+                <p class="text-sm text-slate-500 mb-4">Create the first top-level category or clear the search filter.</p>
+                <button class="btn-primary btn-sm" onclick="prepareCategoryModal('new');" data-bs-toggle="modal" data-bs-target="#categoryModal">
+                    <i class="bi bi-plus-lg"></i> New Category
+                </button>
+            </div>
+        {% endif %}
     </div>
 </div>
 
-<style>
-.collapse-icon {
-    transition: transform 0.3s ease;
-    font-size: 0.7rem;
-}
-[aria-expanded="true"] .collapse-icon {
-    transform: rotate(180deg);
-}
-.hover-primary:hover {
-    background-color: var(--bs-primary) !important;
-    color: white !important;
-}
-.cursor-pointer {
-    cursor: pointer;
-}
-</style>
-
-<!-- Modal: Category Editor -->
 <div class="modal fade" id="categoryModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content border-0 rounded-4 shadow-lg">
-      <div class="modal-header bg-light border-bottom-0 pb-0 pt-4 px-4">
-        <h5 class="modal-title fw-bold text-dark d-flex align-items-center" id="categoryModalLabel">
-            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2 shadow-sm" style="width: 32px; height: 32px; font-size: 0.9rem;"><i class="fas fa-tags"></i></div>
-            <span>Category Details</span>
-        </h5>
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content border-0 rounded-4 shadow-lg overflow-hidden">
+      <div class="modal-header border-0 px-4 pt-4 pb-0">
+        <div>
+            <div class="category-chip mb-2"><i class="bi bi-diagram-3"></i> Category editor</div>
+            <h5 class="modal-title fw-bold text-dark mb-0" id="categoryModalLabel"><span>Category details</span></h5>
+        </div>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <form method="post" action="{{ url_for('admin.admin_save_category') }}">
-        <div class="modal-body p-4">
-           <input type="hidden" name="categoryId" id="field_categoryId_hidden">
-           
-           <div class="mb-3 d-none">
-              <label class="form-label small fw-bold text-muted text-uppercase mb-1">Category Slug / ID <span class="text-danger">*</span></label>
-              <input type="text" class="form-control form-control-lg bg-light border" name="categoryId_new" id="field_categoryId" placeholder="e.g. dairy-eggs" required>
+        <div class="modal-body px-4 pb-4 pt-3">
+           <div class="mb-3">
+              <label class="form-label small fw-bold text-muted text-uppercase mb-1">Category ID / slug</label>
+              <input type="text" class="adm-input" name="categoryId" id="field_categoryId" placeholder="e.g. dairy-eggs" required>
+              <small class="text-slate-400 d-block mt-1">This is auto-generated from the English name until you override it.</small>
            </div>
-           
+
            <div class="row g-3 mb-3">
               <div class="col-md-6">
                  <label class="form-label small fw-bold text-muted text-uppercase mb-1">Name (EN)</label>
-                 <input type="text" class="form-control form-control-lg bg-light border" name="name_en" id="field_cat_name_en">
+                 <input type="text" class="adm-input" name="name_en" id="field_cat_name_en" placeholder="Category name">
               </div>
               <div class="col-md-6">
                  <label class="form-label small fw-bold text-muted text-uppercase mb-1">Name (DE)</label>
-                 <input type="text" class="form-control form-control-lg bg-light border" name="name_de" id="field_cat_name_de">
+                 <input type="text" class="adm-input" name="name_de" id="field_cat_name_de" placeholder="Deutsche Bezeichnung">
               </div>
            </div>
 
-           <div class="mb-3">
-              <label class="form-label small fw-bold text-muted text-uppercase mb-1">Image URL</label>
-              <input type="text" class="form-control form-control-lg bg-light border" name="image_url" id="field_cat_image_url" placeholder="https://...">
-           </div>
-
-           <div class="mb-2">
-              <label class="form-label small fw-bold text-muted text-uppercase mb-1">Parent Category</label>
-              <select class="form-select form-control-lg bg-light border" name="parentId" id="field_cat_parentId">
-                 <option value="">(None - Top Level)</option>
-                 {% for c in data.categories or [] %}
-                 <option value="{{ c.categoryId }}">{{ c.name_en or c.categoryId }}</option>
-                 {% endfor %}
-              </select>
+           <div class="row g-3">
+              <div class="col-md-6">
+                 <label class="form-label small fw-bold text-muted text-uppercase mb-1">Image URL</label>
+                 <input type="url" class="adm-input" name="image_url" id="field_cat_image_url" placeholder="https://...">
+              </div>
+              <div class="col-md-6">
+                 <label class="form-label small fw-bold text-muted text-uppercase mb-1">Parent Category</label>
+                 <select class="adm-input" name="parentId" id="field_cat_parentId">
+                    <option value="">(None - Top level)</option>
+                    {% for c in data.categories or [] %}
+                    <option value="{{ c.categoryId }}">{{ c.name_en or c.categoryId }}</option>
+                    {% endfor %}
+                 </select>
+              </div>
            </div>
         </div>
-        <div class="modal-footer border-top-0 px-4 pb-4 pt-0 justify-content-between">
-           <button type="button" class="btn btn-light rounded-pill px-4 fw-bold shadow-sm" data-bs-dismiss="modal">Cancel</button>
-           <div class="d-flex gap-2">
-              <button type="submit" formaction="" class="btn btn-outline-danger rounded-pill px-4 fw-bold shadow-sm d-none" id="btn_delete_cat" onclick="return confirm('Delete this category?');"><i class="fas fa-trash-alt me-1"></i> Delete</button>
-              <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm"><i class="fas fa-save me-1"></i> Save Category</button>
-           </div>
+          <div class="modal-footer border-top border-slate-100 px-4 py-4 justify-content-end gap-2">
+              <button type="submit" formaction="" class="category-delete-pill d-none" id="btn_delete_cat" onclick="return confirm('Delete this category?');"><i class="bi bi-trash3"></i> Delete</button>
+              <button type="submit" class="category-save-pill"><i class="bi bi-save2"></i> Save Category</button>
         </div>
       </form>
     </div>
@@ -152,12 +348,12 @@
 function prepareCategoryModal(mode, category) {
    const label = document.getElementById('categoryModalLabel').querySelector('span');
    const delBtn = document.getElementById('btn_delete_cat');
-   
+   const idField = document.getElementById('field_categoryId');
+
    if (mode === 'new' || !category) {
-      label.innerText = "Create New Category";
-      document.getElementById('field_categoryId_hidden').value = '';
-      document.getElementById('field_categoryId').value = '';
-      document.getElementById('field_categoryId').readOnly = false;
+      label.innerText = 'Create new category';
+      idField.value = '';
+      idField.readOnly = false;
       document.getElementById('field_cat_name_en').value = '';
       document.getElementById('field_cat_name_de').value = '';
       document.getElementById('field_cat_image_url').value = '';
@@ -165,10 +361,9 @@ function prepareCategoryModal(mode, category) {
       delBtn.classList.add('d-none');
       delBtn.removeAttribute('formaction');
    } else {
-      label.innerText = `Edit: ${category.name_en || category.categoryId}`;
-      document.getElementById('field_categoryId_hidden').value = category.categoryId || '';
-      document.getElementById('field_categoryId').value = category.categoryId || '';
-      document.getElementById('field_categoryId').readOnly = true;
+      label.innerText = `Edit category: ${category.name_en || category.categoryId}`;
+      idField.value = category.categoryId || '';
+      idField.readOnly = true;
       document.getElementById('field_cat_name_en').value = category.name_en || '';
       document.getElementById('field_cat_name_de').value = category.name_de || '';
       document.getElementById('field_cat_image_url').value = category.image_url || '';
@@ -179,9 +374,22 @@ function prepareCategoryModal(mode, category) {
 }
 
 document.getElementById('field_cat_name_en').addEventListener('input', function(e) {
-    if (!document.getElementById('field_categoryId').readOnly) {
-        document.getElementById('field_categoryId').value = e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    const idField = document.getElementById('field_categoryId');
+    if (!idField.readOnly) {
+        idField.value = e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
     }
+});
+
+document.querySelectorAll('[data-category-toggle]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+        const targetId = btn.getAttribute('data-category-target');
+        const target = targetId ? document.getElementById(targetId) : null;
+        if (!target) return;
+
+        const willOpen = target.classList.contains('hidden');
+        target.classList.toggle('hidden');
+        btn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+    });
 });
 </script>
 {% endblock %}

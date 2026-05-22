@@ -489,6 +489,17 @@ body.scrolled {
   flex-shrink: 0;
   background: #f0eaff;
   color: #65388f;
+  box-sizing: border-box;
+}
+
+.dd-icon i {
+  display: block;
+  line-height: 1;
+}
+
+.dd-item > span:last-child {
+  flex: 1;
+  min-width: 0;
 }
 
 /* keep named variants pointing to the same neutral purple */
@@ -859,35 +870,99 @@ body.scrolled .mega-menu-content {
 /* Brands grid */
 .brands-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 10px;
   width: 100%;
 }
 
 .brand-card {
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 14px;
-  padding: 12px;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 6px 0 2px;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
-  font-weight: 800;
-  color: #475569;
+  font-weight: 700;
+  color: #3f2a63;
   text-decoration: none !important;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  height: 60px;
+  min-height: 112px;
   font-size: 0.9rem;
+  gap: 8px;
+  box-shadow: none;
+}
+
+.brand-card-visual {
+  width: 100%;
+  height: 74px;
+  border-radius: 0;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+.brand-card-visual img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+  padding: 0;
+}
+
+.brand-card-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  font-weight: 900;
+  color: #7c3aed;
+  letter-spacing: 0.05em;
+}
+
+.brand-card-label {
+  max-width: 100%;
+  font-size: 0.88rem;
+  line-height: 1.15;
+  color: #3f2a63;
 }
 
 .brand-card:hover {
-  border-color: #7c3aed;
   color: #7c3aed;
-  background: #f5f3ff;
-  box-shadow: 0 4px 10px rgba(124,58,237,0.1);
-  transform: translateY(-2px);
+  transform: translateY(-1px);
   text-decoration: none !important;
+}
+
+.brand-card:hover .brand-card-visual {
+  transform: scale(1.01);
+}
+
+.brand-empty-state {
+  grid-column: 1 / -1;
+  background: rgba(255, 255, 255, 0.76);
+  border: 1px dashed #d8c9f0;
+  border-radius: 20px;
+}
+
+.brand-empty-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+  color: #7c3aed;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  margin: 0 auto;
 }
 
 /* ═══ MOBILE RESPONSIVENESS ═══ */

@@ -25,7 +25,7 @@ class FavoritesModel:
             product_image=details.get('image') or details.get('product_image'),
             category=details.get('category'),
             best_price=details.get('best_price') or details.get('price'),
-            store=details.get('store'),
+            store=None,
             discount_tiers=details.get('discount_tiers'),
             offer=details.get('offer'),
         )

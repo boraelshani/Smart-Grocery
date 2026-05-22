@@ -278,16 +278,20 @@ def get_list_items_api(list_id):
             if isinstance(entry, dict):
                 name = entry.get('name') or ''
                 img_val = entry.get('image') or ''
+                product_id = entry.get('product_id') or entry.get('productId')
                 stored_price = entry.get('price_val') or entry.get('price') or 0
                 stored_store = entry.get('store') or ''
             else:
                 name = str(entry)
                 img_val = ''
+                product_id = None
                 stored_price = 0
                 stored_store = ''
             product = find_product_by_name(name)
             if not img_val and product:
                 img_val = product.get('image') or ''
+            if not product_id and product:
+                product_id = product.get('id') or product.get('_id')
             if not img_val:
                 img_val = placeholder_url
             # Fill in price and store from DB when missing
@@ -301,9 +305,15 @@ def get_list_items_api(list_id):
                 enriched['price_val'] = final_price
                 enriched['price'] = final_price
                 enriched['store'] = final_store
+                if product_id:
+                    enriched['product_id'] = str(product_id)
+                    enriched['productId'] = str(product_id)
             else:
                 enriched = {'name': name, 'qty': 1, 'image': img_val,
                             'price_val': final_price, 'price': final_price, 'store': final_store}
+                if product_id:
+                    enriched['product_id'] = str(product_id)
+                    enriched['productId'] = str(product_id)
             enriched_items.append(enriched)
         return jsonify({
             'success': True, 'list_id': list_id, 'name': target_list.get('name'),

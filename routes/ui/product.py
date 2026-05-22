@@ -8,6 +8,7 @@ from models.favorites_model import favorites_model
 from models.stores_model import stores_model
 from comparison.comparison_engine import build_compare_product_payload, build_best_price_summary
 from comparison.store_matcher import build_store_meta_map
+from utils.menu_data import get_mega_menu
 from utils import helpers
 
 def attach_deals_to_product(product_doc):
@@ -101,6 +102,14 @@ def compare_prices():
     category_filter = (request.args.get('category') or '').strip()
     search_query = (request.args.get('search') or '').strip()
     sort_filter = (request.args.get('sort') or 'default').strip()
+    store_filters = {s.strip().lower() for s in (request.args.get('store') or '').split(',') if s.strip()}
+    brand_filters = {b.strip().lower() for b in (request.args.get('brand') or '').split(',') if b.strip()}
+
+    def _parse_price(value):
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return None
 
     import re
     query = {'is_placeholder': {'$ne': True}}
@@ -123,23 +132,58 @@ def compare_prices():
     if and_clauses:
         query['$and'] = and_clauses
 
-    sort_config = None
-    if sort_filter == 'price_asc':
-        sort_config = [('price', 1)]
-    elif sort_filter == 'price_desc':
-        sort_config = [('price', -1)]
-    elif sort_filter == 'name_asc':
-        sort_config = [('name', 1)]
-    elif sort_filter == 'name_desc':
-        sort_config = [('name', -1)]
-
     total_products = products_model.count_products(query)
+    raw_products = products_model.list_products(query=query, skip=0, limit=total_products or 0)
+
+    min_price = _parse_price(request.args.get('min_price'))
+    max_price = _parse_price(request.args.get('max_price'))
+
+    def _matches_store(product):
+        if not store_filters:
+            return True
+        values = {str(product.get('store') or '').strip().lower()}
+        for store in product.get('stores') or []:
+            store_name = str(store.get('store') or store.get('name') or '').strip().lower()
+            if store_name:
+                values.add(store_name)
+        return bool(values & store_filters)
+
+    def _matches_brand(product):
+        if not brand_filters:
+            return True
+        brand_value = str(product.get('brand') or product.get('brandId') or '').strip().lower()
+        if not brand_value:
+            return False
+        return any(brand_value == brand or brand in brand_value or brand_value in brand for brand in brand_filters)
+
+    def _matches_price(product):
+        if min_price is None and max_price is None:
+            return True
+        price = _parse_price(product.get('price') or (product.get('cheapest') or {}).get('price'))
+        if price is None:
+            return False
+        if min_price is not None and price < min_price:
+            return False
+        if max_price is not None and price > max_price:
+            return False
+        return True
+
+    products = [p for p in raw_products if _matches_store(p) and _matches_brand(p) and _matches_price(p)]
+
+    if sort_filter == 'price_asc':
+        products.sort(key=lambda x: _parse_price(x.get('price')) if _parse_price(x.get('price')) is not None else float('inf'))
+    elif sort_filter == 'price_desc':
+        products.sort(key=lambda x: _parse_price(x.get('price')) if _parse_price(x.get('price')) is not None else float('-inf'), reverse=True)
+    elif sort_filter == 'name_asc':
+        products.sort(key=lambda x: str(x.get('name') or x.get('title') or '').lower())
+    elif sort_filter == 'name_desc':
+        products.sort(key=lambda x: str(x.get('name') or x.get('title') or '').lower(), reverse=True)
+
+    total_products = len(products)
     total_pages = (total_products + per_page - 1) // per_page if total_products else 1
     page = max(1, min(page, total_pages))
-    
-    products = products_model.list_products(query=query, skip=(page - 1) * per_page, limit=per_page, sort=sort_config)
+    products = products[(page - 1) * per_page: page * per_page]
 
-    
     # Favorites mark
     user_email = session.get('user')
     fav_ids = set()
@@ -148,11 +192,14 @@ def compare_prices():
             user_favs = favorites_model.get_user_favorites(user_email)
             fav_ids = {str(f.get('product_id')) for f in user_favs}
         except: pass
-    
+
     for p in products:
         p['is_favorited'] = str(p.get('id') or p.get('_id', '')) in fav_ids
 
+    price_max_limit = products_model.get_max_product_price_ceiling()
+
     category_options = helpers.get_category_options()
+    brand_options = get_mega_menu().get('brands', [])
 
     # Calculate breadcrumb path and visual categories based on the full tree
     breadcrumb_path = []
@@ -201,9 +248,11 @@ def compare_prices():
                          page=page,
                          total_pages=total_pages,
                          total_products=total_products,
+                         price_max_limit=price_max_limit,
                          category_filter=category_filter,
                          search_query=search_query,
                          sort_filter=sort_filter,
                          category_options=category_options,
+                         brand_options=brand_options,
                          breadcrumb_path=breadcrumb_path,
                          visual_categories=visual_categories)

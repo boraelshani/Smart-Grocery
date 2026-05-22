@@ -104,6 +104,17 @@ def update_user_profile(email, data):
 def _get_user_obj(email):
     return User.query.filter_by(email=email).first()
 
+def _normalize_product_id(value):
+    if value is None:
+        return None
+    text = str(value).strip()
+    if not text:
+        return None
+    try:
+        return int(text)
+    except (TypeError, ValueError):
+        return None
+
 def get_user_lists(email: str) -> dict:
     user = _get_user_obj(email)
     if not user:
@@ -155,7 +166,9 @@ def update_list_items(email: str, list_id: str, items: list) -> bool:
     ListItem.query.filter_by(list_id=lst.id).delete()
     for item in items:
         if isinstance(item, dict):
+            product_id = _normalize_product_id(item.get('product_id') or item.get('productId') or item.get('id') or item.get('deal_id') or item.get('dealId'))
             li = ListItem(list_id=lst.id,
+                         product_id=product_id,
                          product_name=item.get('name') or item.get('product_name') or '',
                          quantity=int(item.get('qty') or item.get('quantity') or 1),
                          checked=bool(item.get('purchased') or item.get('checked')))
@@ -171,7 +184,9 @@ def add_item_to_list(email: str, list_id: str, item) -> bool:
     if not lst:
         return False
     if isinstance(item, dict):
+        product_id = _normalize_product_id(item.get('product_id') or item.get('productId') or item.get('id') or item.get('deal_id') or item.get('dealId'))
         li = ListItem(list_id=lst.id,
+                     product_id=product_id,
                      product_name=item.get('name') or item.get('product_name') or '',
                      quantity=int(item.get('qty') or item.get('quantity') or 1))
     else:

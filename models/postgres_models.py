@@ -264,6 +264,10 @@ class Promotion(db.Model):
         
         return True
 
+
+# Backwards compatibility for legacy imports in admin routes.
+FeaturedDeal = Promotion
+
 # ══════════════════════════════════════════════════════════════════════════════
 # PROMOTION_TARGETS - Links promotions to specific product-store combinations
 # ══════════════════════════════════════════════════════════════════════════════
@@ -354,6 +358,7 @@ class User(db.Model):
             'email': self.email,
             'name': self.name,
             'avatar': self.avatar,
+            'is_admin': bool(self.is_admin),
             'isAdmin': bool(self.is_admin),
             'createdAt': self.created_at,
             'updatedAt': self.updated_at
@@ -496,9 +501,12 @@ class Favorite(db.Model):
             'user_email': self.user_email,
             'product_id': self.product_id,
             'product_name': self.product_name,
+            'name': self.product_name,
             'product_image': self.product_image,
+            'image': self.product_image,
             'category': self.category,
             'best_price': float(self.best_price) if self.best_price else None,
+            'price': float(self.best_price) if self.best_price else None,
             'store': self.store,
             'added_at': self.added_at
         }

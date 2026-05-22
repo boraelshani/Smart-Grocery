@@ -2,12 +2,27 @@
 PRODUCTS MODEL — PostgreSQL / SQLAlchemy (updated for normalized schema)
 """
 from __future__ import annotations
+import math
 from typing import List, Optional, Dict, Any
 from sqlalchemy import or_, func, desc, asc
 from models.postgres_models import db, Product, ProductStore, Store, Category, PriceHistory
 
 
 class ProductsModel:
+
+    def get_max_product_price_ceiling(self):
+        """Return the rounded-up ceiling for the highest cheapest product price."""
+        cheapest_prices = db.session.query(
+            ProductStore.product_id.label('product_id'),
+            func.min(ProductStore.base_price).label('cheapest_price')
+        ).filter(
+            ProductStore.is_available == True
+        ).group_by(ProductStore.product_id).subquery()
+
+        max_price = db.session.query(func.max(cheapest_prices.c.cheapest_price)).scalar()
+        if max_price is None:
+            return 0
+        return int(math.ceil(float(max_price)))
 
     def list_products(self, query=None, skip=0, limit=20, sort=None):
         q = Product.query

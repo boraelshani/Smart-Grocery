@@ -52,6 +52,7 @@ CATEGORY_ORDER = [
 def get_mega_menu():
     import flask
     cache_key = '_mega_menu_data'
+    app = None
     try:
         app = flask.current_app._get_current_object()
         cached = app.config.get(cache_key)
@@ -73,7 +74,6 @@ def get_mega_menu():
             ORDER BY level ASC, name_de ASC
         ''')
         rows = cur.fetchall()
-        conn.close()
 
         # Build lookup maps
         cat_by_id = {}
@@ -99,6 +99,43 @@ def get_mega_menu():
             
             if display_name and image_url:
                 images[display_name] = image_url
+
+        # Fetch brands separately so the Browse > Brands tab can reflect saved brand rows.
+        cur.execute('''
+            SELECT id, brand_id, name, name_en, name_de, image_url, website
+            FROM brands
+            ORDER BY COALESCE(name, name_en, name_de, brand_id, id::text) ASC
+        ''')
+        brand_rows = cur.fetchall()
+
+        def _brand_display_name(name, name_en, name_de, brand_id, row_id):
+            for value in (name, name_en, name_de, brand_id, str(row_id) if row_id is not None else ''):
+                if value and str(value).strip():
+                    return str(value).strip()
+            return 'Unknown'
+
+        def _brand_initials(label):
+            parts = [part for part in re.split(r'\s+', label.strip()) if part]
+            if not parts:
+                return 'BR'
+            if len(parts) == 1:
+                token = parts[0][:2].upper()
+                return token if len(token) == 2 else (token + 'R')[:2]
+            return ''.join(part[0] for part in parts[:2]).upper()
+
+        brands = []
+        for row_id, brand_id, name, name_en, name_de, image_url, website in brand_rows:
+            display_name = _brand_display_name(name, name_en, name_de, brand_id, row_id)
+            brands.append({
+                'brandId': brand_id or str(row_id),
+                'name': name or display_name,
+                'display_name': display_name,
+                'image': image_url or '',
+                'website': website or '',
+                'initials': _brand_initials(display_name),
+            })
+
+        conn.close()
 
         # Get root categories (level 1, parent_id is NULL)
         roots = [cat_by_id[cid] for cid in cat_by_id if cat_by_id[cid]['parent_id'] is None and cat_by_id[cid]['level'] == 1]
@@ -163,14 +200,17 @@ def get_mega_menu():
 
         data = {
             "categories": sorted_categories,
-            "brands": [],
+            "brands": brands,
             "images": images,
             "fallback_image": DEFAULT_SUBCAT_IMAGE
         }
         
-        try:
-            app.config[cache_key] = {'_data': data, '_ts': time.time()}
-        except RuntimeError:
+        if app is not None:
+            try:
+                app.config[cache_key] = {'_data': data, '_ts': time.time()}
+            except RuntimeError:
+                globals()['_module_menu_cache'] = {'_data': data, '_ts': time.time()}
+        else:
             globals()['_module_menu_cache'] = {'_data': data, '_ts': time.time()}
         
         return data

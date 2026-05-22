@@ -16,13 +16,178 @@
 
 {% block admin_actions %}
 <a href="{{ url_for('admin.admin_smart_import_page') }}"
-   class="btn-secondary btn-sm no-underline">
-    <i class="bi bi-stars"></i> AI Import
+   class="btn-secondary btn-sm no-underline admin-hero-btn admin-hero-btn-soft admin-hero-btn-spacious">
+    <span class="admin-hero-icon admin-hero-icon-soft"><i class="bi bi-stars"></i></span>
+    <span>AI Import</span>
 </a>
-<button class="btn-primary btn-sm"
-        onclick="prepareProductModal('new'); openModal('modal-product')">
-    <i class="bi bi-plus-lg"></i> Add Product
+<button class="btn-primary btn-sm admin-hero-btn-spacious admin-hero-btn-strong"
+        onclick="prepareProductModal('new'); openModal('modal-product')"
+        style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); color:#fff !important; box-shadow: 0 10px 24px rgba(79, 70, 229, 0.24); border: none; border-radius: 9999px; white-space: nowrap;">
+    <span class="admin-hero-icon admin-hero-icon-strong"><i class="bi bi-plus-lg"></i></span>
+    <span>Add Product</span>
 </button>
+{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .admin-hero-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        border-radius: 9999px;
+        font-weight: 700;
+        white-space: nowrap;
+        transition:
+            transform 0.18s ease,
+            box-shadow 0.18s ease,
+            background 0.18s ease,
+            border-color 0.18s ease;
+    }
+    .admin-hero-btn-spacious {
+        min-height: 2.9rem;
+        padding: 0.72rem 1.2rem !important;
+        font-size: 0.9rem;
+        line-height: 1;
+        box-sizing: border-box;
+    }
+    .admin-hero-btn:hover {
+        transform: translateY(-1px);
+    }
+    .admin-hero-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.7rem;
+        height: 1.7rem;
+        border-radius: 9999px;
+        flex-shrink: 0;
+    }
+    .admin-hero-icon-soft {
+        background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+        color: #4338ca;
+    }
+    .admin-hero-icon-strong {
+        background: rgba(255, 255, 255, 0.16);
+        color: #fff;
+    }
+    .admin-hero-btn-soft {
+        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+        border: 1px solid #dbe4f0;
+        color: #334155;
+        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+    }
+    .admin-hero-btn-soft:hover {
+        background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
+        border-color: #cbd5e1;
+        color: #1e293b;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+    }
+    .admin-hero-btn-soft span:last-child {
+        color: #334155;
+    }
+    .admin-hero-btn-strong {
+        border-radius: 9999px;
+    }
+    .product-action-group {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        justify-content: flex-end;
+        flex-wrap: nowrap;
+    }
+    .product-action-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.38rem;
+        width: 2.35rem;
+        height: 2.35rem;
+        padding: 0;
+        border-radius: 9999px;
+        border: 1px solid #dbe4f0;
+        background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+        color: #334155;
+        font-size: 0.78rem;
+        font-weight: 700;
+        line-height: 1;
+        text-decoration: none;
+        transition:
+            transform 0.18s ease,
+            box-shadow 0.18s ease,
+            border-color 0.18s ease,
+            color 0.18s ease,
+            background 0.18s ease;
+        box-shadow: 0 6px 16px rgba(15, 23, 42, 0.04);
+    }
+    .product-action-btn:hover {
+        transform: translateY(-1px);
+        border-color: #cbd5e1;
+        box-shadow: 0 10px 22px rgba(15, 23, 42, 0.08);
+        color: #0f172a;
+    }
+    .product-action-btn.primary {
+        background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+        border-color: #c7d2fe;
+        color: #4338ca;
+    }
+    .product-action-btn.warning {
+        background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+        border-color: #fde68a;
+        color: #b45309;
+    }
+    .product-action-btn.danger {
+        background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+        border-color: #fecaca;
+        color: #b91c1c;
+    }
+    .product-action-btn i {
+        font-size: 0.9rem;
+    }
+    .product-action-btn span {
+        display: none;
+    }
+    .modal-action-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        border-radius: 9999px;
+        padding: 0.55rem 0.95rem;
+        border: 0;
+        font-weight: 700;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+        transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+    }
+    .modal-action-pill:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 14px 30px rgba(15, 23, 42, 0.12);
+    }
+    .modal-action-pill.primary {
+        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+        color: #fff;
+    }
+    .modal-action-pill.danger {
+        background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+        color: #fff;
+    }
+    .modal-close-pill {
+        width: 2.25rem;
+        height: 2.25rem;
+        border-radius: 9999px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #e2e8f0;
+        background: #fff;
+        color: #475569;
+        box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
+        transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+    }
+    .modal-close-pill:hover {
+        transform: translateY(-1px);
+        background: #f8fafc;
+        box-shadow: 0 12px 24px rgba(15, 23, 42, 0.1);
+    }
+</style>
 {% endblock %}
 
 
@@ -35,7 +200,7 @@
 <div class="admin-card p-4 mb-4">
     <form method="get"
           action="{{ url_for('admin.admin_products_page') }}"
-          class="flex items-center gap-3 flex-wrap">
+                    class="flex items-center gap-3 flex-wrap">
         <div class="relative flex-1" style="min-width:16rem;">
             <i class="bi bi-search"
                style="position:absolute; left:0.75rem; top:50%; transform:translateY(-50%);
@@ -163,19 +328,31 @@
 
                 {# ── Actions ────────────────────────────────────────────── #}
                 <td style="text-align:right; padding-right:0.75rem;">
-                    <div style="display:flex; align-items:center; gap:4px; justify-content:flex-end;">
+                    <div class="product-action-group">
 
                         {# Edit — navigates to ?edit=productId for server-side pre-fill #}
-                        <a href="{{ url_for('admin.admin_products_page', edit=p.productId, q=data.q or '') }}"
-                           class="btn-icon" title="Edit product">
-                            <i class="bi bi-pencil"></i>
-                        </a>
-
-                        {# Merge #}
                         <button type="button"
-                                class="btn-icon"
-                                title="Merge into another product"
-                                style="color:#f59e0b; border-color:#fde68a;"
+                                class="product-action-btn primary"
+                                title="Edit product"
+                                aria-label="Edit product"
+                                onclick='prepareProductModal("edit", {{ {
+                                    "productId": p.productId,
+                                    "name_en": p.name_en or p.name_de or "",
+                                    "name_de": p.name_de or "",
+                                    "unitSize": p.unitSize or "",
+                                    "brandId": p.brandId or "",
+                                    "categoryId": p.categoryId or "",
+                                    "barcode": p.barcode or "",
+                                    "defaultImageUrl": p.defaultImageUrl or ""
+                                } | tojson }}); openModal("modal-product")'>
+                            <i class="bi bi-pencil-square"></i>
+                        </button>
+
+                        {# Merge duplicate product records #}
+                        <button type="button"
+                                class="product-action-btn warning"
+                                title="Merge duplicate product records"
+                                aria-label="Merge duplicate product records"
                                 onclick="prepareMergeModal('{{ p.productId | e }}', '{{ (p.name_en or p.name_de or '') | replace("'", "\\'") | e }}'); openModal('modal-merge')">
                             <i class="bi bi-intersect"></i>
                         </button>
@@ -186,9 +363,9 @@
                               id="del-form-{{ p.productId }}"
                               style="display:inline; margin:0;">
                             <button type="button"
-                                    class="btn-icon"
+                                    class="product-action-btn danger"
                                     title="Delete product"
-                                    style="color:#f87171; border-color:#fecaca;"
+                                    aria-label="Delete product"
                                     onclick="confirmDelete(
                                         'Delete \u201c{{ (p.name_en or p.name_de or 'this product') | e }}\u201d and all its store offers? This cannot be undone.',
                                         document.getElementById('del-form-{{ p.productId }}')
@@ -276,7 +453,7 @@
                     {% if data.selected_product %}Edit Product{% else %}Add Product{% endif %}
                 </h2>
             </div>
-            <button type="button" onclick="closeModal('modal-product')" class="btn-icon">
+            <button type="button" onclick="closeModal('modal-product')" class="modal-close-pill" aria-label="Close product dialog">
                 <i class="bi bi-x-lg"></i>
             </button>
         </div>
@@ -401,37 +578,26 @@
             </div>{# /adm-modal-body #}
 
             {# Footer #}
-            <div class="adm-modal-footer" style="justify-content:space-between;">
-
-                {# Delete (edit mode only — hidden/shown by JS on mode switch) #}
-                <div id="mp-delete-wrap"
-                     style="display:{% if data.selected_product %}inline{% else %}none{% endif %};">
-                    {% if data.selected_product %}
+            <div class="adm-modal-footer" style="justify-content:space-between; align-items:center;">
+                <div id="mp-delete-wrap" style="display:none;">
                     <form method="post"
-                          action="{{ url_for('admin.admin_delete_product', pid=data.selected_product.productId) }}"
+                          action=""
                           id="form-modal-delete"
                           style="display:inline;">
                         <button type="button"
-                                class="btn-danger btn-sm"
+                                class="modal-action-pill danger"
                                 onclick="confirmDelete(
                                     'Delete this product and all its store offers? This cannot be undone.',
                                     document.getElementById('form-modal-delete')
                                 )">
-                            <i class="bi bi-trash3"></i> Delete
+                            <i class="bi bi-trash3"></i> Delete Product
                         </button>
                     </form>
-                    {% endif %}
                 </div>
 
-                {# Cancel + Save #}
-                <div style="display:flex; gap:0.5rem;">
-                    <button type="button"
-                            onclick="closeModal('modal-product')"
-                            class="btn-secondary btn-sm">Cancel</button>
-                    <button type="submit" class="btn-primary btn-sm">
-                        <i class="bi bi-check-lg"></i> Save Product
-                    </button>
-                </div>
+                <button type="submit" class="modal-action-pill primary">
+                    <i class="bi bi-check-lg"></i> Save Product
+                </button>
             </div>
         </form>
 
@@ -457,7 +623,7 @@
                     <p class="text-xs text-slate-400 mt-0" id="mo-subtitle">—</p>
                 </div>
             </div>
-            <button type="button" onclick="closeModal('modal-offer')" class="btn-icon">
+            <button type="button" onclick="closeModal('modal-offer')" class="modal-close-pill" aria-label="Close offer dialog">
                 <i class="bi bi-x-lg"></i>
             </button>
         </div>
@@ -540,12 +706,9 @@
                 </label>
 
                 <div style="display:flex; justify-content:flex-end; gap:0.5rem; margin-top:1.25rem;">
-                    <button type="button"
-                            onclick="closeModal('modal-offer')"
-                            class="btn-secondary btn-sm">Cancel</button>
                     <button type="submit"
-                            class="btn-primary btn-sm"
-                            style="background:#059669;">
+                            class="modal-action-pill primary"
+                            style="background: linear-gradient(135deg, #059669 0%, #10b981 100%);">
                         <i class="bi bi-check-lg"></i> Save Offer
                     </button>
                 </div>
@@ -560,7 +723,7 @@
 {#  MODAL · Merge Products                                                 #}
 {# ════════════════════════════════════════════════════════════════════════ #}
 <div class="adm-modal-backdrop" id="modal-merge">
-    <div class="adm-modal" style="width:min(520px, calc(100vw - 2rem));">
+    <div class="adm-modal" style="width:min(560px, calc(100vw - 2rem));">
 
         <div class="adm-modal-header">
             <div style="display:flex; align-items:center; gap:0.625rem;">
@@ -570,11 +733,11 @@
                     <i class="bi bi-intersect"></i>
                 </div>
                 <div>
-                    <h2 class="text-base font-bold text-slate-800">Merge Products</h2>
-                    <p class="text-xs text-slate-400 mt-0">Transfer store offers from source → target, then delete source</p>
+                    <h2 class="text-base font-bold text-slate-800">Merge duplicate products</h2>
+                    <p class="text-xs text-slate-400 mt-0">Move store offers and list references from the duplicate into the keeper.</p>
                 </div>
             </div>
-            <button type="button" onclick="closeModal('modal-merge')" class="btn-icon">
+            <button type="button" onclick="closeModal('modal-merge')" class="modal-close-pill" aria-label="Close merge dialog">
                 <i class="bi bi-x-lg"></i>
             </button>
         </div>
@@ -595,14 +758,14 @@
                     <input type="hidden" name="targetProductId" id="mm_targetId">
                     <p class="text-xs text-slate-400 mt-1.5">
                         <i class="bi bi-info-circle"></i>
-                        This product retains its ID, name and image.
+                        This product keeps the final catalog entry and all transferred offers.
                     </p>
                 </div>
 
                 {# Source — live AJAX search #}
                 <div style="margin-bottom:1rem;">
                     <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">
-                        Source Product &nbsp;<span class="badge badge-red">Will be deleted</span>
+                        Source Product &nbsp;<span class="badge badge-red">Duplicate</span>
                     </label>
                     <div style="position:relative;">
                         <i class="bi bi-search"
@@ -625,7 +788,7 @@
                     <input type="hidden" name="sourceProductId" id="mm_sourceId" required>
                     <p class="text-xs text-slate-400 mt-1.5">
                         <i class="bi bi-info-circle"></i>
-                        Its store offers are transferred. The source is permanently deleted.
+                        Its store offers and shopping-list references are transferred, then the duplicate is deleted.
                     </p>
                 </div>
 
@@ -650,15 +813,13 @@
 
             </div>
 
-            <div class="adm-modal-footer">
-                <button type="button"
-                        onclick="closeModal('modal-merge')"
-                        class="btn-secondary btn-sm">Cancel</button>
+            <div class="adm-modal-footer" style="justify-content:flex-end;">
                 <button type="submit"
                         id="mm_submit"
-                        class="btn-danger btn-sm"
+                        class="modal-action-pill primary"
+                        style="background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);"
                         disabled
-                        onclick="return confirm('Merge products? The source will be permanently deleted after its offers are transferred. This cannot be undone.')">
+                        onclick="return confirm('Merge duplicate products? The duplicate will be permanently deleted after its offers are transferred. This cannot be undone.')">
                     <i class="bi bi-intersect"></i> Merge Products
                 </button>
             </div>
@@ -681,11 +842,12 @@ const _URL_DELETE_OFFER   = '{{ url_for("admin.admin_delete_store_product", spid
 /* =========================================================================
    PRODUCT MODAL
    ========================================================================= */
-function prepareProductModal(mode) {
+function prepareProductModal(mode, product) {
     const title   = document.getElementById('mp-title');
     const delWrap = document.getElementById('mp-delete-wrap');
+    const delForm = document.getElementById('form-modal-delete');
 
-    if (mode === 'new') {
+    if (mode === 'new' || !product) {
         title.textContent = 'Add Product';
 
         // Clear all form fields
@@ -703,8 +865,23 @@ function prepareProductModal(mode) {
 
         // Hide delete button (only relevant when editing)
         if (delWrap) delWrap.style.display = 'none';
+        if (delForm) delForm.action = '';
+    } else {
+        title.textContent = 'Edit Product';
+        document.getElementById('mp_productId').value   = product.productId || '';
+        document.getElementById('mp_name_en').value     = product.name_en || '';
+        document.getElementById('mp_name_de').value     = product.name_de || '';
+        document.getElementById('mp_unitSize').value    = product.unitSize || '';
+        document.getElementById('mp_brandId').value     = product.brandId || '';
+        document.getElementById('mp_categoryId').value  = product.categoryId || '';
+        document.getElementById('mp_barcode').value     = product.barcode || '';
+        document.getElementById('mp_imageUrl').value    = product.defaultImageUrl || '';
+        _updateImagePreview(product.defaultImageUrl || '');
+        if (delWrap) delWrap.style.display = 'inline';
+        if (delForm && product.productId) {
+            delForm.action = _URL_DELETE_PRODUCT.replace('__PID__', product.productId);
+        }
     }
-    // 'edit' mode: fields are pre-filled server-side via data.selected_product
 }
 
 // Live image preview when URL field changes

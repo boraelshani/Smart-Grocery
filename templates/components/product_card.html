@@ -99,6 +99,11 @@ Reusable Jinja2 macro for consistent product display across all pages
     {# Favorite Button #}
     <button class="btn-favorite {{ 'active' if product.get('is_favorited') else '' }}"
             data-product-id="{{ pid }}"
+          data-name="{{ product_name }}"
+          data-image="{{ product_image }}"
+          data-price="{{ cheapest_price or product.get('price') or '' }}"
+          data-store="{{ sorted_stores[0].get('store') if sorted_stores else product.get('store') or '' }}"
+          data-category="{{ product_category }}"
             onclick="event.stopPropagation(); toggleFavorite(event, '{{ pid }}', this)"
             aria-label="Add to favorites">
       <i class="bi {{ 'bi-heart-fill' if product.get('is_favorited') else 'bi-heart' }}"></i>

@@ -326,6 +326,7 @@ body { background: #f5efe6; }
   border-bottom: 1px solid #f8f6fc;
   transition: background 0.15s, opacity 0.2s;
   background: white;
+  cursor: pointer;
 }
 .item-row:hover { background: #faf7ff; }
 .item-row:last-child { border-bottom: none; }
@@ -611,6 +612,7 @@ body { background: #f5efe6; }
         {% for it in items %}
         {% set name = (it.name if it.name is defined else it) %}
         {% set item_id = (it.id if it.id is defined else (it if it is string else '')) %}
+        {% set product_id = (it.product_id if it.product_id is defined else (it.productId if it.productId is defined else (it.deal_id if it.deal_id is defined else (it.dealId if it.dealId is defined else (it.id if it.id is defined else ''))))) %}
         {% set store = (it.store if it.store is defined else 'Other') %}
         {% set purchased = (it.purchased if it.purchased is defined else false) %}
         {% set img = (it.image if it.image is defined else '') %}
@@ -634,11 +636,12 @@ body { background: #f5efe6; }
 
         <div class="item-row {{ 'completed' if purchased }}" draggable="true"
              data-item-id="{{ item_id }}" data-name="{{ name }}" data-price="{{ raw_price }}"
+             data-product-id="{{ product_id }}"
              data-qty="{{ qty }}" data-store="{{ store }}" data-image="{{ img }}"
              data-offer-json='{{ offer_obj|tojson|forceescape if offer_obj is not none else "" }}'
              data-tier-json='{{ it.get("discount_tiers")|tojson|forceescape if it is mapping and it.get("discount_tiers") else "" }}'
              data-offer-type="{{ offer_type }}" data-offer-x="{{ offer_x }}" data-offer-y="{{ offer_y }}"
-             {% if item_id %}ondblclick="window.location.href='{{ url_for('main.product_detail', product_id=item_id) }}'"{% endif %}>
+             {% if product_id %}onclick="openProductDetailFromList(event, this.dataset.productId)"{% endif %}>
 
           <div class="form-check p-0 m-0">
             <input class="form-check-input item-checkbox d-none" type="checkbox"
@@ -1108,21 +1111,31 @@ function mergeItemsByName(items) {
     const key = `${name.toLowerCase().trim()}__${store.toLowerCase().trim()}`;
     const inQty = parseInt(item.qty || item.quantity || 1) || 1;
     const inPrice = parseFloat(item.price_val !== undefined ? item.price_val : item.price || 0) || 0;
+    const productId = item.product_id || item.productId || item.id || item.deal_id || item.dealId || '';
     if (merged[key]) {
       merged[key].qty = parseInt(merged[key].qty || 1) + inQty;
       if (!merged[key].price_val && inPrice) merged[key].price_val = inPrice;
       if (!merged[key].price && inPrice) merged[key].price = inPrice;
       if (!merged[key].image && item.image) merged[key].image = item.image;
       if (!merged[key].store && store) merged[key].store = store;
+      if (!merged[key].product_id && productId) merged[key].product_id = productId;
     } else {
       const base = (typeof item === 'object' && item !== null) ? item : {};
-      merged[key] = { ...base, name, store, qty: inQty, id: item.id || name, purchased: item.purchased || false, image: item.image || '', price_val: inPrice, price: inPrice };
+      merged[key] = { ...base, name, store, qty: inQty, id: item.id || name, product_id: productId, purchased: item.purchased || false, image: item.image || '', price_val: inPrice, price: inPrice };
     }
   });
   return Object.values(merged);
 }
 
 const PLACEHOLDER_IMG = "{{ url_for('static', filename='placeholder.svg') }}";
+
+function openProductDetailFromList(event, productId) {
+  if (event && event.target && event.target.closest('button, input, label, a, select, textarea, .qty-container, .form-check')) {
+    return;
+  }
+  if (!productId) return;
+  window.location.href = '/product/' + encodeURIComponent(productId);
+}
 
 // ── DISPLAY LIST ITEMS ────────────────────────────────────────────────────────
 function displayListItems(data) {
@@ -1190,6 +1203,7 @@ function displayListItems(data) {
     groupedByStore[store].forEach((it, idx) => {
       const name = (typeof it === 'string') ? it : (it.name || 'Unknown');
       const item_id = it.id || name;
+      const product_id = it.product_id || it.productId || it.deal_id || it.dealId || '';
       const purchased = it.purchased || false;
       const img = (it.image || it.images?.[0] || PLACEHOLDER_IMG);
       const unit = parseFloat(it.price_val !== undefined ? it.price_val : it.price || 0) || 0;
@@ -1205,10 +1219,12 @@ function displayListItems(data) {
       html += `
         <div class="item-row ${purchased ? 'completed' : ''}" draggable="true"
              data-item-id="${item_id}" data-name="${name}" data-price="${unit}"
+             data-product-id="${product_id}"
              data-qty="${qty}" data-store="${store}" data-image="${img}"
              data-offer-json='${offerJson}' data-offer-type="${offerType}"
              data-offer-x="${offerX}" data-offer-y="${offerY}"
              data-tier-json='${tierJson}'
+             ${product_id ? 'onclick="openProductDetailFromList(event, this.dataset.productId)"' : ''}
              style="${hiddenByFilter ? 'display:none;' : ''}">
           <div class="form-check p-0 m-0">
             <input class="form-check-input item-checkbox d-none" type="checkbox"
@@ -1450,6 +1466,7 @@ function saveListState() {
       name: row.getAttribute('data-name'), qty: parseInt(row.getAttribute('data-qty')||1),
       purchased: row.classList.contains('completed'), price: parseFloat(row.getAttribute('data-price')||0),
       store: row.getAttribute('data-store')||'', image: row.getAttribute('data-image')||'',
+      id: row.getAttribute('data-product-id') || row.getAttribute('data-item-id') || '',
       offer, discount_tiers: discountTiers, special_offer: row.getAttribute('data-special-offer')||''
     };
   });

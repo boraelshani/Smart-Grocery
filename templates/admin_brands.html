@@ -1,132 +1,286 @@
 {% extends "admin_layout.html" %}
 
-{% block admin_title %}Brands Directory
-<script>
-document.getElementById('field_brand_name_en').addEventListener('input', function(e) {
-    if (!document.getElementById('field_brandId').readOnly) {
-        document.getElementById('field_brandId').value = e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-    }
-});
-</script>
+{% block admin_title %}Brands{% endblock %}
+{% block admin_subtitle %}Curate the brand directory, keep logos current, and jump straight into editing.{% endblock %}
+
+{% block admin_actions %}
+<button class="btn-primary btn-sm brand-action-pill" onclick="prepareBrandModal('new');" data-bs-toggle="modal" data-bs-target="#brandModal">
+    <span class="brand-action-icon"><i class="bi bi-plus-lg"></i></span>
+    <span>New Brand</span>
+</button>
 {% endblock %}
-{% block admin_subtitle %}Manage all available brands for the catalog
-<script>
-document.getElementById('field_brand_name_en').addEventListener('input', function(e) {
-    if (!document.getElementById('field_brandId').readOnly) {
-        document.getElementById('field_brandId').value = e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+
+{% block extra_styles %}
+<style>
+    .brand-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.45rem 0.8rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
     }
-});
-</script>
+    .brand-chip {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        color: #475569;
+    }
+    .brand-action-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.5rem;
+        height: 1.5rem;
+        border-radius: 9999px;
+        background: rgba(255, 255, 255, 0.18);
+        color: #fff;
+        flex-shrink: 0;
+    }
+    .brand-logo,
+    .brand-preview {
+        width: 3rem;
+        height: 3rem;
+        border-radius: 0.9rem;
+        border: 1px solid #e2e8f0;
+        background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        flex-shrink: 0;
+    }
+    .brand-preview {
+        width: 4.5rem;
+        height: 4.5rem;
+        border-radius: 1rem;
+    }
+    .brand-logo img,
+    .brand-preview img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        padding: 0.35rem;
+    }
+    .brand-row {
+        transition:
+            transform 0.18s ease,
+            box-shadow 0.18s ease,
+            border-color 0.18s ease;
+    }
+    .brand-row:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
+        border-color: #cbd5e1;
+    }
+    .brand-action-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        border-radius: 9999px;
+        padding: 0.48rem 0.85rem;
+        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+        border: none;
+        color: #fff;
+        font-weight: 700;
+        box-shadow: 0 10px 24px rgba(79, 70, 229, 0.24);
+        transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+    .brand-action-pill:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 14px 30px rgba(79, 70, 229, 0.28);
+        color: #fff;
+    }
+    .brand-save-pill,
+    .brand-delete-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        border-radius: 9999px;
+        padding: 0.58rem 1rem;
+        border: 0;
+        font-weight: 700;
+        transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+    .brand-save-pill {
+        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+        color: #fff;
+        box-shadow: 0 10px 24px rgba(79, 70, 229, 0.24);
+    }
+    .brand-delete-pill {
+        background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+        color: #fff;
+        box-shadow: 0 10px 24px rgba(220, 38, 38, 0.2);
+    }
+    .brand-save-pill:hover,
+    .brand-delete-pill:hover {
+        transform: translateY(-1px);
+        color: #fff;
+    }
+</style>
 {% endblock %}
 
 {% block admin_content %}
-<div class="row mb-4 align-items-center">
-    <div class="col-md-8">
-        <!-- Optional search or filters could go here in the future -->
-    </div>
-    <div class="col-md-4 text-md-end">
-        <button class="btn btn-primary rounded-pill px-4 shadow-sm fw-bold" onclick="prepareBrandModal('new')" data-bs-toggle="modal" data-bs-target="#brandModal">
-            <i class="fas fa-plus me-1"></i> New Brand
+{% set total_brands = data.brands|length if data.brands else 0 %}
+<div class="admin-card p-4 mb-4">
+    <form method="get" action="{{ url_for('admin.admin_brands_page') }}" class="flex flex-col lg:flex-row lg:items-center gap-3">
+        <div class="relative flex-1" style="min-width: 16rem;">
+            <i class="bi bi-search" style="position:absolute; left:0.9rem; top:50%; transform:translateY(-50%); color:#94a3b8; pointer-events:none;"></i>
+            <input type="text" name="q" value="{{ data.q or '' }}" placeholder="Search brands by name, slug, or logo URL…" class="adm-input" style="padding-left:2.35rem;">
+        </div>
+        {% if data.q %}
+        <a href="{{ url_for('admin.admin_brands_page') }}" class="btn-secondary btn-sm no-underline justify-center">
+            <i class="bi bi-x-lg"></i> Clear
+        </a>
+        {% endif %}
+        <button type="submit" class="btn-primary btn-sm">
+            <i class="bi bi-search"></i> Search
         </button>
-    </div>
+    </form>
 </div>
 
-<div class="card shadow-sm border-0 rounded-4 overflow-hidden mb-4">
-    <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0 bg-white">
-            <thead class="bg-light">
+<div class="admin-card overflow-hidden mb-4">
+    <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between gap-3">
+        <div>
+            <h3 class="text-sm font-semibold text-slate-800 mb-1">Brands directory</h3>
+            <p class="text-xs text-slate-500 mb-0">Fast edits with logo previews and direct updates.</p>
+        </div>
+        <span class="brand-chip">
+            <i class="bi bi-list-check"></i> {{ total_brands }} entries
+        </span>
+    </div>
+
+    {% if data.brands %}
+    <div class="overflow-x-auto">
+        <table class="admin-table">
+            <thead>
                 <tr>
-                    <th class="text-uppercase text-muted text-xs fw-bold py-3 ps-4">Brand Information</th>
-                    
-                    <th class="text-uppercase text-muted text-xs fw-bold py-3 text-end pe-4">Actions</th>
+                    <th>Brand</th>
+                    <th>Website</th>
+                    <th>Updated</th>
+                    <th style="text-align:right;">Actions</th>
                 </tr>
             </thead>
             <tbody>
                 {% for b in data.brands or [] %}
-                <tr>
-                    <td class="ps-4">
-                        <div class="d-flex align-items-center">
-                            <div class="me-3 bg-light rounded d-flex justify-content-center align-items-center overflow-hidden border" style="width: 48px; height: 48px;">
+                <tr class="brand-row">
+                    <td>
+                        <div class="flex items-center gap-3">
+                            <div class="brand-logo">
                                 {% if b.image_url %}
-                                <img src="{{ b.image_url }}" alt="..." style="width: 100%; height: 100%; object-fit: contain;">
+                                <img src="{{ b.image_url }}" alt="{{ b.name_en or b.brandId }} logo">
                                 {% else %}
-                                <i class="fas fa-copyright text-muted text-opacity-50 fs-4"></i>
+                                <i class="bi bi-building text-slate-300" style="font-size: 1.15rem;"></i>
                                 {% endif %}
                             </div>
                             <div>
-                                <h6 class="mb-0 fw-bold text-dark">{{ b.name_en or b.brandId }}</h6>
-                                {% if b.name_de %}
-                                <span class="text-muted small">{{ b.name_de }}</span>
-                                {% endif %}
+                                <div class="font-semibold text-slate-800 leading-tight">{{ b.name_en or b.brandId }}</div>
+                                <div class="text-xs text-slate-500 mt-0.5 flex items-center gap-2 flex-wrap">
+                                    <span class="brand-chip">{{ b.brandId }}</span>
+                                    {% if b.name_de %}
+                                    <span>{{ b.name_de }}</span>
+                                    {% endif %}
+                                </div>
                             </div>
                         </div>
                     </td>
-
-                    <td class="text-end pe-4">
-                        <button class="btn btn-sm btn-light border shadow-sm rounded-pill text-primary fw-bold px-3" onclick='prepareBrandModal("edit", {"brandId":"{{b.brandId}}", "name_en":"{{b.name_en}}", "name_de":"{{b.name_de}}", "image_url":"{{b.image_url}}"})' data-bs-toggle="modal" data-bs-target="#brandModal">
-                            <i class="fas fa-pen"></i> Edit
-                        </button>
+                    <td>
+                        {% if b.website %}
+                        <a href="{{ b.website }}" target="_blank" rel="noreferrer" class="text-sm text-indigo-600 no-underline hover:underline">
+                            {{ b.website }}
+                        </a>
+                        {% else %}
+                        <span class="text-xs text-slate-400">No website added</span>
+                        {% endif %}
                     </td>
-                </tr>
-                {% else %}
-                <tr>
-                    <td colspan="3" class="text-center py-5 text-muted">
-                        <div class="mb-3"><i class="fas fa-copyright fs-1 text-muted text-opacity-50"></i></div>
-                        <h6 class="fw-bold">No brands found.</h6>
+                    <td>
+                        <span class="badge badge-gray">{{ b.updatedAtDisplay | default('—') }}</span>
+                    </td>
+                    <td style="text-align:right;">
+                        <button class="btn-secondary btn-sm" onclick='prepareBrandModal("edit", {"brandId":"{{ b.brandId | e }}", "name_en":"{{ (b.name_en or "") | e }}", "name_de":"{{ (b.name_de or "") | e }}", "image_url":"{{ (b.image_url or "") | e }}", "website":"{{ (b.website or "") | e }}"})' data-bs-toggle="modal" data-bs-target="#brandModal">
+                            <i class="bi bi-pencil-square"></i> Edit
+                        </button>
                     </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
+    {% else %}
+    <div class="text-center py-5 px-4">
+        <div class="brand-preview mx-auto mb-3">
+            <i class="bi bi-building text-slate-300" style="font-size: 1.5rem;"></i>
+        </div>
+        <h3 class="text-base font-semibold text-slate-800 mb-1">No brands found</h3>
+        <p class="text-sm text-slate-500 mb-4">Create your first brand or adjust the search filters.</p>
+        <button class="btn-primary btn-sm" onclick="prepareBrandModal('new');" data-bs-toggle="modal" data-bs-target="#brandModal">
+            <i class="bi bi-plus-lg"></i> New Brand
+        </button>
+    </div>
+    {% endif %}
 </div>
 
-<!-- Modal: Brand Editor -->
 <div class="modal fade" id="brandModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content border-0 rounded-4 shadow-lg">
-      <div class="modal-header bg-light border-bottom-0 pb-0 pt-4 px-4">
-        <h5 class="modal-title fw-bold text-dark d-flex align-items-center" id="brandModalLabel">
-            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2 shadow-sm" style="width: 32px; height: 32px; font-size: 0.9rem;"><i class="fas fa-copyright"></i></div>
-            <span>Brand Details</span>
-        </h5>
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content border-0 rounded-4 shadow-lg overflow-hidden">
+      <div class="modal-header border-0 px-4 pt-4 pb-0">
+        <div>
+            <div class="brand-chip mb-2"><i class="bi bi-building"></i> Brand editor</div>
+            <h5 class="modal-title fw-bold text-dark d-flex align-items-center mb-0" id="brandModalLabel">
+                <span>Brand details</span>
+            </h5>
+        </div>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <form method="post" action="{{ url_for('admin.admin_save_brand') }}">
-        <div class="modal-body p-4">
-           <input type="hidden" name="brandId" id="field_brandId_hidden">
-           
-           <div class="mb-3 d-none">
-              <label class="form-label small fw-bold text-muted text-uppercase mb-1">Brand Slug / ID <span class="text-danger">*</span></label>
-              <input type="text" class="form-control form-control-lg bg-light border" name="brandId_new" id="field_brandId" placeholder="e.g. coca-cola" required>
-              <small class="text-muted mt-1 text-xs">Used internally to link products. Must be unique.</small>
-           </div>
-           
-           <div class="row g-3 mb-3">
-              <div class="col-md-6">
-                 <label class="form-label small fw-bold text-muted text-uppercase mb-1">Name (EN)</label>
-                 <input type="text" class="form-control form-control-lg bg-light border" name="name_en" id="field_brand_name_en">
+        <div class="modal-body px-4 pb-4 pt-3">
+           <div class="row g-4 align-items-start">
+              <div class="col-lg-4">
+                 <div class="rounded-4 border border-slate-200 bg-slate-50 p-4 h-100">
+                    <div class="text-xs uppercase tracking-[0.2em] text-slate-500 mb-3">Preview</div>
+                    <div class="brand-preview mb-3" id="brandPreviewBox">
+                        <i class="bi bi-building text-slate-300" id="brandPreviewIcon" style="font-size: 1.5rem;"></i>
+                        <img id="brandPreviewImage" alt="Brand preview" class="d-none">
+                    </div>
+                    <div class="text-sm font-semibold text-slate-800" id="brandPreviewTitle">Brand name preview</div>
+                    <div class="text-xs text-slate-500 mt-1" id="brandPreviewMeta">Logo and website updates appear here.</div>
+                 </div>
               </div>
-              <div class="col-md-6">
-                 <label class="form-label small fw-bold text-muted text-uppercase mb-1">Name (DE)</label>
-                 <input type="text" class="form-control form-control-lg bg-light border" name="name_de" id="field_brand_name_de">
-              </div>
-           </div>
+              <div class="col-lg-8">
+                 <div class="mb-3">
+                    <label class="form-label small fw-bold text-muted text-uppercase mb-1">Brand ID / slug</label>
+                    <input type="text" class="adm-input" name="brandId" id="field_brandId" placeholder="e.g. coca-cola" required>
+                    <small class="text-slate-400 d-block mt-1">Used internally for product links. It is auto-generated from the name until you edit it.</small>
+                 </div>
 
-           <div class="mb-2">
-              <label class="form-label small fw-bold text-muted text-uppercase mb-1">Logo URL</label>
-              <div class="input-group input-group-lg bg-light border rounded">
-                 <span class="input-group-text bg-transparent border-0"><i class="fas fa-image text-muted"></i></span>
-                 <input type="text" class="form-control bg-transparent border-0 ps-0 shadow-none" name="image_url" id="field_brand_image" placeholder="https://...">
+                 <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                       <label class="form-label small fw-bold text-muted text-uppercase mb-1">Name (EN)</label>
+                       <input type="text" class="adm-input" name="name_en" id="field_brand_name_en" placeholder="Brand name">
+                    </div>
+                    <div class="col-md-6">
+                       <label class="form-label small fw-bold text-muted text-uppercase mb-1">Name (DE)</label>
+                       <input type="text" class="adm-input" name="name_de" id="field_brand_name_de" placeholder="Deutsche Bezeichnung">
+                    </div>
+                 </div>
+
+                 <div class="row g-3">
+                    <div class="col-md-6">
+                       <label class="form-label small fw-bold text-muted text-uppercase mb-1">Website</label>
+                       <input type="url" class="adm-input" name="website" id="field_brand_website" placeholder="https://brand.com">
+                    </div>
+                    <div class="col-md-6">
+                       <label class="form-label small fw-bold text-muted text-uppercase mb-1">Logo URL</label>
+                       <input type="url" class="adm-input" name="image_url" id="field_brand_image" placeholder="https://...">
+                    </div>
+                 </div>
               </div>
            </div>
         </div>
-        <div class="modal-footer border-top-0 px-4 pb-4 pt-0 justify-content-between">
-           <button type="button" class="btn btn-light rounded-pill px-4 fw-bold shadow-sm" data-bs-dismiss="modal">Cancel</button>
-           <div class="d-flex gap-2">
-              <button type="submit" formaction="" class="btn btn-outline-danger rounded-pill px-4 fw-bold shadow-sm d-none" id="btn_delete_brand" onclick="return confirm('Delete this brand?')"><i class="fas fa-trash-alt me-1"></i> Delete</button>
-              <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm"><i class="fas fa-save me-1"></i> Save Brand</button>
-           </div>
+          <div class="modal-footer border-top border-slate-100 px-4 py-4 justify-content-end gap-2">
+              <button type="submit" formaction="" class="brand-delete-pill d-none" id="btn_delete_brand" onclick="return confirm('Delete this brand?')"><i class="bi bi-trash3"></i> Delete</button>
+              <button type="submit" class="brand-save-pill"><i class="bi bi-save2"></i> Save Brand</button>
         </div>
       </form>
     </div>
@@ -134,39 +288,67 @@ document.getElementById('field_brand_name_en').addEventListener('input', functio
 </div>
 
 <script>
+function updateBrandPreview() {
+    const title = document.getElementById('field_brand_name_en').value.trim() || document.getElementById('field_brandId').value.trim() || 'Brand name preview';
+    const website = document.getElementById('field_brand_website').value.trim();
+    const imageUrl = document.getElementById('field_brand_image').value.trim();
+    const previewTitle = document.getElementById('brandPreviewTitle');
+    const previewMeta = document.getElementById('brandPreviewMeta');
+    const previewIcon = document.getElementById('brandPreviewIcon');
+    const previewImage = document.getElementById('brandPreviewImage');
+
+    previewTitle.innerText = title;
+    previewMeta.innerText = website || 'Logo and website updates appear here.';
+
+    if (imageUrl) {
+        previewImage.src = imageUrl;
+        previewImage.classList.remove('d-none');
+        previewIcon.classList.add('d-none');
+    } else {
+        previewImage.classList.add('d-none');
+        previewIcon.classList.remove('d-none');
+    }
+}
+
 function prepareBrandModal(mode, brand) {
    const label = document.getElementById('brandModalLabel').querySelector('span');
    const delBtn = document.getElementById('btn_delete_brand');
-   
+   const idField = document.getElementById('field_brandId');
+
    if (mode === 'new' || !brand) {
-      label.innerText = "Create New Brand";
-      document.getElementById('field_brandId_hidden').value = '';
-      document.getElementById('field_brandId').value = '';
-      document.getElementById('field_brandId').readOnly = false;
+      label.innerText = 'Create new brand';
+      idField.value = '';
+      idField.readOnly = false;
       document.getElementById('field_brand_name_en').value = '';
       document.getElementById('field_brand_name_de').value = '';
+      document.getElementById('field_brand_website').value = '';
       document.getElementById('field_brand_image').value = '';
       delBtn.classList.add('d-none');
       delBtn.removeAttribute('formaction');
    } else {
-      label.innerText = `Edit: ${brand.name_en || brand.brandId}`;
-      document.getElementById('field_brandId_hidden').value = brand.brandId || '';
-      document.getElementById('field_brandId').value = brand.brandId || '';
-      document.getElementById('field_brandId').readOnly = true; // Cannot edit slug once created
+      label.innerText = `Edit brand: ${brand.name_en || brand.brandId}`;
+      idField.value = brand.brandId || '';
+      idField.readOnly = true;
       document.getElementById('field_brand_name_en').value = brand.name_en || '';
       document.getElementById('field_brand_name_de').value = brand.name_de || '';
+      document.getElementById('field_brand_website').value = brand.website || '';
       document.getElementById('field_brand_image').value = brand.image_url || '';
       delBtn.classList.remove('d-none');
       delBtn.setAttribute('formaction', `/admin/brands/delete/${brand.brandId}`);
    }
+   updateBrandPreview();
 }
-</script>
 
-<script>
 document.getElementById('field_brand_name_en').addEventListener('input', function(e) {
-    if (!document.getElementById('field_brandId').readOnly) {
-        document.getElementById('field_brandId').value = e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    const idField = document.getElementById('field_brandId');
+    if (!idField.readOnly) {
+        idField.value = e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
     }
+    updateBrandPreview();
 });
+document.getElementById('field_brandId').addEventListener('input', updateBrandPreview);
+document.getElementById('field_brand_name_de').addEventListener('input', updateBrandPreview);
+document.getElementById('field_brand_website').addEventListener('input', updateBrandPreview);
+document.getElementById('field_brand_image').addEventListener('input', updateBrandPreview);
 </script>
 {% endblock %}

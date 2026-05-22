@@ -28,6 +28,7 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/buttons.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/shopping_list.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/misc.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/messages.css') }}?v=1">
 
   <!-- Custom Page Styles Inserted Here -->
   {% block styles %}{% endblock %}
@@ -444,11 +445,25 @@
                             <h5 class="fw-bold m-0" style="color: #65388f;"><i class="bi bi-tags-fill me-2"></i>Top Brands</h5>
                             <a href="{{ url_for('main.compare_prices') }}" class="btn btn-sm text-decoration-none fw-bold" style="color: #65388f;">Explore All Brands <i class="bi bi-arrow-right"></i></a>
                           </div>
-                          <div class="brands-grid d-grid gap-3" style="grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); width: 100%;">
+                          <div class="brands-grid d-grid gap-3" style="grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); width: 100%;">
                             {% for brand in mega_menu.brands %}
-                            <a href="{{ url_for('main.compare_prices', search=brand) }}" class="brand-card shadow-sm border border-light py-2 text-center text-truncate px-2" title="{{ brand }}">
-                              {{ brand }}
+                            <a href="{{ url_for('main.compare_prices', search=brand.display_name) }}" class="brand-card text-decoration-none" title="{{ brand.display_name }}">
+                              <div class="brand-card-visual brand-card-visual--plain">
+                                {% if brand.image %}
+                                  <img src="{{ brand.image }}" alt="{{ brand.display_name }}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                  <div class="brand-card-fallback" style="display: none;">{{ brand.initials }}</div>
+                                {% else %}
+                                  <div class="brand-card-fallback">{{ brand.initials }}</div>
+                                {% endif %}
+                              </div>
+                              <div class="brand-card-label text-truncate">{{ brand.display_name }}</div>
                             </a>
+                            {% else %}
+                            <div class="brand-empty-state text-center py-5 px-3">
+                              <div class="brand-empty-icon mb-3"><i class="bi bi-tags-fill"></i></div>
+                              <div class="fw-bold mb-1" style="color: #3f2a63;">No brands saved yet</div>
+                              <div class="text-muted small">Add a brand in the database and it will appear here automatically.</div>
+                            </div>
                             {% endfor %}
                           </div>
                        </div>
@@ -573,14 +588,21 @@
   <!-- ========================================== -->
   {% with messages = get_flashed_messages(with_categories=true) %}
   {% if messages %}
-  <div class="container mt-4 pt-5" style="position:relative; z-index: 1050;">
+  <div class="sg-toast-container" aria-live="polite" aria-atomic="true">
     {% for category, message in messages %}
-    <div class="alert alert-{{ 'success' if category == 'success' else 'danger' if category == 'error' else category }} alert-dismissible fade show shadow-sm border-0" role="alert">
-      <div class="d-flex align-items-center gap-2">
-        <i class="bi {% if category == 'success' %}bi-check-circle-fill text-success{% elif category == 'error' %}bi-exclamation-triangle-fill text-danger{% else %}bi-info-circle-fill text-info{% endif %} ms-1 fs-5"></i>
-        <div class="fw-medium">{{ message }}</div>
+    {% set flash_type = 'danger' if category == 'error' else category if category in ['success', 'warning', 'info'] else 'neutral' %}
+    <div class="sg-toast sg-toast--{{ flash_type }} is-visible" role="status" data-sg-flash data-toast-duration="3600">
+      <div class="sg-toast__icon">
+        <i class="bi {% if flash_type == 'success' %}bi-check2-circle{% elif flash_type == 'danger' %}bi-exclamation-octagon-fill{% elif flash_type == 'warning' %}bi-exclamation-triangle-fill{% elif flash_type == 'info' %}bi-info-circle-fill{% else %}bi-bell-fill{% endif %}"></i>
       </div>
-      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      <div class="sg-toast__content">
+        <div class="sg-toast__label">{{ flash_type }}</div>
+        <div class="sg-toast__title">{{ message }}</div>
+      </div>
+      <button type="button" class="sg-toast__close" aria-label="Dismiss notification" onclick="this.closest('.sg-toast').remove()">
+        <i class="bi bi-x-lg"></i>
+      </button>
+      <div class="sg-toast__progress"></div>
     </div>
     {% endfor %}
   </div>
@@ -615,6 +637,21 @@
       </div>
     </div>
   </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      document.querySelectorAll("[data-sg-flash]").forEach(function (toast) {
+        const duration = parseInt(toast.getAttribute("data-toast-duration") || "3600", 10);
+        setTimeout(function () {
+          if (!toast.isConnected) return;
+          toast.classList.add("is-leaving");
+          setTimeout(function () {
+            if (toast.isConnected) toast.remove();
+          }, 220);
+        }, Math.max(900, duration));
+      });
+    });
+  </script>
 
   <!-- JavaScript Libraries -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

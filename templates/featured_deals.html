@@ -201,7 +201,7 @@
     color: #65388f;
   }
   
-  .dropdown-item i {
+  .sort-dropdown-menu .dropdown-item i {
     width: 20px;
     text-align: center;
     margin-right: 0.5rem;
@@ -614,6 +614,71 @@
     color: #6b7280;
     font-size: 0.75rem;
     transition: transform 0.2s ease;
+  }
+
+  .multiselect-option {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.7rem 0.85rem;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.18s ease;
+  }
+
+  .multiselect-option:hover {
+    background: #f8f1ff;
+  }
+
+  .multiselect-option.selected {
+    background: #ede9fe;
+    color: #65388f;
+    font-weight: 700;
+  }
+
+  .multiselect-option.selected .multiselect-checkbox {
+    background: #65388f;
+    color: white;
+    border-color: #65388f;
+  }
+
+  .multiselect-checkbox {
+    width: 20px;
+    height: 20px;
+    border-radius: 6px;
+    border: 1.5px solid #d8dbe3;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    color: transparent;
+    font-size: 0.7rem;
+    transition: all 0.18s ease;
+  }
+
+  .multiselect-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: #ede9fe;
+    color: #65388f;
+    border-radius: 999px;
+    padding: 0.35rem 0.6rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    margin-right: 0.35rem;
+    margin-bottom: 0.2rem;
+  }
+
+  .multiselect-tag-remove {
+    border: none;
+    background: transparent;
+    color: inherit;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
   }
   
   .multiselect-trigger.active .multiselect-arrow {
@@ -1200,12 +1265,12 @@
             <div class="price-range-slider">
               <div class="range-slider-container">
                 <div class="range-slider-track" id="rangeTrack"></div>
-                <input type="range" class="range-slider-input" id="minPriceRange" min="0" max="100" value="0" step="0.5">
-                <input type="range" class="range-slider-input" id="maxPriceRange" min="0" max="100" value="100" step="0.5">
+                <input type="range" class="range-slider-input" id="minPriceRange" min="0" max="{{ price_max_limit|int }}" value="0" step="0.5">
+                <input type="range" class="range-slider-input" id="maxPriceRange" min="0" max="{{ price_max_limit|int }}" value="{{ price_max_limit|int }}" step="0.5">
               </div>
               <div class="range-values">
                 <span class="range-value">€<span id="minPriceValue">0</span></span>
-                <span class="range-value">€<span id="maxPriceValue">100</span></span>
+                <span class="range-value">€<span id="maxPriceValue">{{ price_max_limit|int }}</span></span>
               </div>
             </div>
           </div>
@@ -1214,7 +1279,7 @@
           <div class="filter-group">
             <label class="filter-label">Store</label>
             <div class="custom-multiselect" id="storeMultiselect">
-              <div class="multiselect-trigger" onclick="toggleMultiselect('storeMultiselect')">
+              <div class="multiselect-trigger" onclick="toggleMultiselect('storeMultiselect', event)">
                 <div class="multiselect-selected" id="storeSelected">
                   <span class="multiselect-placeholder">All Stores</span>
                 </div>
@@ -1237,16 +1302,25 @@
           <div class="filter-group">
             <label class="filter-label">Brand</label>
             <div class="custom-multiselect" id="brandMultiselect">
-              <div class="multiselect-trigger" onclick="toggleMultiselect('brandMultiselect')">
+              <div class="multiselect-trigger" onclick="toggleMultiselect('brandMultiselect', event)">
                 <div class="multiselect-selected" id="brandSelected">
                   <span class="multiselect-placeholder">All Brands</span>
                 </div>
                 <i class="bi bi-chevron-down multiselect-arrow"></i>
               </div>
               <div class="multiselect-dropdown" id="brandDropdown">
+                {% if brand_options and brand_options|length > 0 %}
+                  {% for brand in brand_options %}
+                  <div class="multiselect-option" data-value="{{ brand.display_name|lower }}" onclick='toggleOption("brand", {{ brand.display_name|lower|tojson }}, {{ brand.display_name|tojson }}, event)'>
+                    <div class="multiselect-checkbox"><i class="bi bi-check"></i></div>
+                    <span>{{ brand.display_name }}</span>
+                  </div>
+                  {% endfor %}
+                {% else %}
                 <div class="multiselect-option disabled" style="color: #9ca3af; cursor: not-allowed;">
                   <span>No brands available yet</span>
                 </div>
+                {% endif %}
               </div>
             </div>
           </div>
@@ -1417,10 +1491,11 @@ const selectedStores = new Set();
 const selectedBrands = new Set();
 
 // Toggle multi-select dropdown
-function toggleMultiselect(id) {
+function toggleMultiselect(id, event) {
   const multiselect = document.getElementById(id);
   const trigger = multiselect.querySelector('.multiselect-trigger');
   const dropdown = multiselect.querySelector('.multiselect-dropdown');
+  const evt = event || window.event;
   
   // Close other dropdowns
   document.querySelectorAll('.multiselect-dropdown.active').forEach(d => {
@@ -1432,16 +1507,18 @@ function toggleMultiselect(id) {
   
   trigger.classList.toggle('active');
   dropdown.classList.toggle('active');
-  event.stopPropagation();
+  if (evt) evt.stopPropagation();
 }
 
 // Toggle option in multi-select
 function toggleOption(type, value, label, event) {
-  event.stopPropagation();
+  const evt = event || window.event;
+  if (evt) evt.stopPropagation();
   
-  const option = event.currentTarget;
+  const option = evt && evt.currentTarget ? evt.currentTarget : null;
   const selectedSet = type === 'store' ? selectedStores : selectedBrands;
   const selectedContainer = document.getElementById(type + 'Selected');
+  if (!option || !selectedContainer) return;
   
   if (selectedSet.has(value)) {
     selectedSet.delete(value);
@@ -1480,7 +1557,8 @@ function updateSelectedDisplay(type, selectedSet, container) {
 
 // Remove tag from multi-select
 function removeTag(type, value, event) {
-  event.stopPropagation();
+  const evt = event || window.event;
+  if (evt) evt.stopPropagation();
   
   const selectedSet = type === 'store' ? selectedStores : selectedBrands;
   const selectedContainer = document.getElementById(type + 'Selected');
@@ -1508,6 +1586,7 @@ const maxPriceRange = document.getElementById('maxPriceRange');
 const minPriceValue = document.getElementById('minPriceValue');
 const maxPriceValue = document.getElementById('maxPriceValue');
 const rangeTrack = document.getElementById('rangeTrack');
+const priceMaxLimit = {{ price_max_limit|int }};
 
 function updateRangeSlider() {
   let minVal = parseFloat(minPriceRange.value);
@@ -1557,7 +1636,7 @@ function applyFilters() {
   if (minPrice && minPrice > 0) params.set('min_price', minPrice);
   else params.delete('min_price');
   
-  if (maxPrice && maxPrice < 100) params.set('max_price', maxPrice);
+  if (maxPrice && parseFloat(maxPrice) < priceMaxLimit) params.set('max_price', maxPrice);
   else params.delete('max_price');
   
   if (stores) params.set('store', stores);
@@ -1574,7 +1653,7 @@ function applyFilters() {
 function clearFilters() {
   // Reset range slider
   minPriceRange.value = 0;
-  maxPriceRange.value = 100;
+  maxPriceRange.value = priceMaxLimit;
   updateRangeSlider();
   
   // Clear multi-selects
@@ -1609,6 +1688,8 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   if (params.get('max_price')) {
     maxPriceRange.value = params.get('max_price');
+  } else {
+    maxPriceRange.value = priceMaxLimit;
   }
   updateRangeSlider();
   
@@ -1650,7 +1731,7 @@ function updateActiveFilters() {
   
   if (params.get('min_price') || params.get('max_price')) {
     const min = params.get('min_price') || '0';
-    const max = params.get('max_price') || '∞';
+    const max = params.get('max_price') || String(priceMaxLimit);
     filters.push({ label: `Price: €${min} - €${max}`, param: ['min_price', 'max_price'] });
   }
   

@@ -1271,9 +1271,9 @@
               {% if user_data.favorites %}
                 <div class="pa-fav-grid">
                   {% for fav in user_data.favorites %}
-                  {% set view_url = url_for('main.product_detail', product_id=fav.id, store_name=fav.store, store_price=fav.best_price or fav.price) %}
-                  <div class="pa-fav-card" id="fav-card-{{ fav.id }}">
-                    <button class="pa-fav-remove" onclick="removeProfileFavorite(event, '{{ fav.id }}', this)" title="Remove">
+                  {% set view_url = url_for('main.product_detail', product_id=fav.product_id) %}
+                  <div class="pa-fav-card" id="fav-card-{{ fav.product_id }}">
+                    <button class="pa-fav-remove" onclick="removeProfileFavorite(event, '{{ fav.product_id }}', this)" title="Remove">
                       <i class="bi bi-x"></i>
                     </button>
                     <a href="{{ view_url }}" class="pa-fav-inner text-decoration-none">
@@ -1283,9 +1283,6 @@
                       <div class="pa-fav-body">
                         <p class="pa-fav-name" title="{{ fav.name }}">{{ fav.name }}</p>
                         <div class="pa-fav-meta">
-                          {% if fav.store %}
-                          <span class="pa-fav-store"><i class="bi bi-shop"></i> {{ fav.store }}</span>
-                          {% endif %}
                           {% if fav.category %}
                           <span class="pa-fav-cat">{{ fav.category }}</span>
                           {% endif %}

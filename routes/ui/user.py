@@ -57,7 +57,11 @@ def profile():
         update_user(user_email, update_data)
         tab = request.form.get('tab', 'overview')
         return redirect(url_for('main.profile') + f'?tab={tab}')
-    user_data = get_user_by_email(user_email)
+    user_data = get_user_by_email(user_email) or {}
+    try:
+        user_data['favorites'] = favorites_model.get_user_favorites(user_email)
+    except Exception:
+        user_data['favorites'] = []
     stores = stores_model.list_stores()
     category_options = helpers.get_category_options()
     return render_template('profile.html', user_data=helpers.sanitize_mongo_doc(user_data), stores=stores, category_options=category_options)

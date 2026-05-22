@@ -295,11 +295,19 @@ const asyncToggleFavorite = async function (event, arg1, arg2) { // Internal Hea
   }
 
   try {
+    const favoriteDetails = {
+      name: btn.getAttribute('data-name') || btn.getAttribute('data-product-name') || '',
+      image: btn.getAttribute('data-image') || '',
+      price: btn.getAttribute('data-price') || '',
+      store: btn.getAttribute('data-store') || '',
+      category: btn.getAttribute('data-category') || ''
+    };
+
     // 2. SERVER SYNC: POST to favorite toggle endpoint
     const response = await fetch('/api/toggle-favorite', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ product_id: productId })
+      body: JSON.stringify({ product_id: productId, details: favoriteDetails })
     });
 
     const data = await response.json();
@@ -309,7 +317,8 @@ const asyncToggleFavorite = async function (event, arg1, arg2) { // Internal Hea
     }
 
     // 3. CONFIRMATION FEEDBACK
-    if (data.action === 'added') {
+    const isNowFavorite = data.action === 'added' || data.is_favorite === true;
+    if (isNowFavorite) {
       showNotification('Added to favorites', 'success');
     } else {
       showNotification('Removed from favorites', 'info');

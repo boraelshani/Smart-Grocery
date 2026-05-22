@@ -7,6 +7,7 @@ from models.featured_deals_model import featured_deals_model
 from models.multibuy_offers_model import multibuy_offers_model
 from models.favorites_model import favorites_model
 from models.quantity_discounts_model import quantity_discounts_model
+from routes.ui.public import invalidate_home_cache
 from utils import helpers
 import json
 import os
@@ -92,16 +93,34 @@ def api_claim_deal():
 def toggle_favorite():
     email = session.get('user')
     if not email: return jsonify({'error': 'unauthorized'}), 401
-    pid = request.get_json().get('product_id')
+    payload = request.get_json(silent=True) or {}
+    pid = payload.get('product_id') or payload.get('id')
     if not pid: return jsonify({'error': 'missing_id'}), 400
+    details = payload.get('details') or {}
     if favorites_model.is_favorited(email, pid):
         favorites_model.remove_favorite(email, pid)
+        invalidate_home_cache(email)
         return jsonify({'success': True, 'action': 'removed', 'is_favorite': False})
-    p = products_model.get_product_by_id(pid) or featured_deals_model.get_deal_by_id(pid)
+    p = products_model.get_product_by_id(pid) or featured_deals_model.get_deal_by_id(pid) or details
     if not p: return jsonify({'error': 'not_found'}), 404
-    c = get_cheapest_from_product(p)
-    success = favorites_model.add_favorite(email, pid, {'name': p.get('displayName') or p.get('name_en') or p.get('name') or p.get('title'), 'image': p.get('image'), 'best_price': c.get('price'), 'store': c.get('store')})
-    return jsonify({'success': bool(success), 'is_favorite': True})
+    try:
+        c = get_cheapest_from_product(p)
+    except Exception:
+        c = {}
+    success = favorites_model.add_favorite(
+        email,
+        pid,
+        {
+            'name': p.get('displayName') or p.get('name_en') or p.get('name') or p.get('title') or details.get('name') or details.get('product_name') or details.get('title') or str(pid),
+            'image': p.get('image') or p.get('product_image') or details.get('image'),
+            'best_price': c.get('price') if isinstance(c, dict) else None,
+            'category': p.get('category') or details.get('category'),
+            'offer': p.get('offer'),
+            'discount_tiers': p.get('discount_tiers'),
+        }
+    )
+    invalidate_home_cache(email)
+    return jsonify({'success': bool(success), 'action': 'added', 'is_favorite': True})
 
 @api_bp.route('/community-price-report', methods=['POST'])
 def api_community_price_report_create():

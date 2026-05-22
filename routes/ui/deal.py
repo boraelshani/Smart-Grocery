@@ -6,7 +6,9 @@ from models.multibuy_offers_model import multibuy_offers_model
 from models.quantity_discounts_model import quantity_discounts_model
 from models.favorites_model import favorites_model
 from models.notifications_model import notifications_model
+from utils.menu_data import get_mega_menu
 from utils import helpers
+import math
 
 # Standard category list
 STANDARD_CATEGORIES = [
@@ -43,7 +45,21 @@ def featured_deals_page():
     page = int(request.args.get('page', 1))
     category_filter = (request.args.get('category') or '').strip()
     search_query = (request.args.get('search') or '').strip()
+    store_filters = {s.strip().lower() for s in (request.args.get('store') or '').split(',') if s.strip()}
+    brand_filters = {b.strip().lower() for b in (request.args.get('brand') or '').split(',') if b.strip()}
     user_email = session.get('user')
+
+    def _parse_price(value):
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return None
+
+    def _deal_price(deal):
+        price = _parse_price(deal.get('price'))
+        if price is not None:
+            return price
+        return _parse_price(deal.get('original_price'))
     
     using_fallback = False
     try:
@@ -55,12 +71,45 @@ def featured_deals_page():
         using_fallback = True
         deals = load_featured_deals_fallback()
 
+    price_values_all = [_parse_price(d.get('price')) or _parse_price(d.get('original_price')) for d in deals]
+    price_values_all = [p for p in price_values_all if p is not None]
+    price_max_limit = int(math.ceil(max(price_values_all))) if price_values_all else 0
+
     if category_filter:
         deals = [d for d in deals if category_filter.lower() in (d.get('category') or '').lower()]
     if search_query:
         sq = search_query.lower()
         deals = [d for d in deals if sq in (d.get('title') or d.get('name') or '').lower() or 
                 sq in (d.get('store') or '').lower()]
+
+    if store_filters:
+        deals = [d for d in deals if any(
+            str(v).strip().lower() in store_filters
+            for v in [d.get('store'), d.get('source'), d.get('store_name')]
+            if v
+        )]
+
+    if brand_filters:
+        deals = [d for d in deals if any(
+            str(v).strip().lower() in brand_filters
+            for v in [d.get('brand'), d.get('brand_name'), d.get('brandName')]
+            if v
+        )]
+
+    min_price = _parse_price(request.args.get('min_price'))
+    max_price = _parse_price(request.args.get('max_price'))
+    if min_price is not None or max_price is not None:
+        filtered = []
+        for deal in deals:
+            price = _deal_price(deal)
+            if price is None:
+                continue
+            if min_price is not None and price < min_price:
+                continue
+            if max_price is not None and price > max_price:
+                continue
+            filtered.append(deal)
+        deals = filtered
 
     fav_ids = set()
     if user_email:
@@ -84,6 +133,7 @@ def featured_deals_page():
     paginated_deals = deals[(page - 1) * per_page: page * per_page]
     
     category_options = helpers.get_category_options()
+    brand_options = get_mega_menu().get('brands', [])
 
     # Calculate breadcrumb path and visual categories based on the full tree
     breadcrumb_path = []
@@ -133,8 +183,10 @@ def featured_deals_page():
                           total_pages=total_pages,
                           page=page,
                           current_page=page,
+                          price_max_limit=price_max_limit,
                           category_filter=category_filter,
                           category_options=category_options,
+                          brand_options=brand_options,
                           breadcrumb_path=breadcrumb_path,
                           visual_categories=visual_categories,
                           search_query=search_query,

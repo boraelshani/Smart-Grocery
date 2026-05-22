@@ -191,7 +191,7 @@ def inject_navbar_data():
             }
 
             admin_emails = {e.strip().lower() for e in str(app.config.get('ADMIN_EMAILS', '')).split(',') if e.strip()}
-            is_admin_nav = bool(user_dict.get('is_admin')) or (email.lower() in admin_emails)
+            is_admin_nav = bool(user_dict.get('is_admin') or user_dict.get('isAdmin')) or (email.lower() in admin_emails)
 
             from datetime import datetime, timedelta
             cutoff = datetime.utcnow() - timedelta(days=7)
