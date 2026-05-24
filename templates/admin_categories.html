@@ -4,10 +4,6 @@
 {% block admin_subtitle %}Organize the taxonomy, shape the hierarchy, and keep every node easy to edit.{% endblock %}
 
 {% block admin_actions %}
-<button class="btn-primary btn-sm category-action-pill" onclick="prepareCategoryModal('new');" data-bs-toggle="modal" data-bs-target="#categoryModal">
-    <span class="category-action-icon"><i class="bi bi-plus-lg"></i></span>
-    <span>New Category</span>
-</button>
 {% endblock %}
 
 {% block extra_styles %}
@@ -204,7 +200,13 @@
             <h3 class="text-sm font-semibold text-slate-800 mb-1">Category tree</h3>
             <p class="text-xs text-slate-500 mb-0">Click through branches, inspect parents, and edit fast.</p>
         </div>
-        <span class="category-chip"><i class="bi bi-layers"></i> {{ root_categories }} roots</span>
+        <div class="flex items-center gap-2">
+            <span class="category-chip"><i class="bi bi-layers"></i> {{ root_categories }} roots</span>
+            <button class="btn-primary btn-sm category-action-pill" onclick="prepareCategoryModal('new');" data-bs-toggle="modal" data-bs-target="#categoryModal">
+                <span class="category-action-icon"><i class="bi bi-plus-lg"></i></span>
+                <span>New Category</span>
+            </button>
+        </div>
     </div>
 
     <div class="p-4">

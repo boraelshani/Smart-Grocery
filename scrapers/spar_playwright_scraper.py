@@ -21,9 +21,11 @@ Usage:
 
 import re
 import time
+import os
 from datetime import datetime, timezone, timedelta
 from typing import List, Dict, Optional, Tuple
 from decimal import Decimal
+from urllib.parse import quote
 
 try:
     from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeout
@@ -39,7 +41,12 @@ class SparPlaywrightScraper:
     SPAR Austria scraper using Playwright for reliable data extraction.
     """
     
-    def __init__(self, headless=True):
+    def __init__(
+        self,
+        headless=True,
+        storage_state_path: Optional[str] = None,
+        profile_dir: Optional[str] = None,
+    ):
         """
         Initialize the Playwright-based scraper.
         
@@ -49,6 +56,11 @@ class SparPlaywrightScraper:
         self.headless = headless
         self.base_url = "https://www.spar.at"
         self.store_id = "spar"
+        # SPAR pagination behaves more reliably with a literal space query
+        # than with an empty search parameter.
+        self.search_query = " "
+        self.storage_state_path = storage_state_path
+        self.profile_dir = profile_dir
         self.playwright = None
         self.browser = None
         self.context = None
@@ -77,32 +89,50 @@ class SparPlaywrightScraper:
         print("[*] Starting browser...")
         self.playwright = sync_playwright().start()
         
-        # Launch browser with more realistic settings
-        self.browser = self.playwright.chromium.launch(
-            headless=self.headless,
-            args=[
-                '--disable-blink-features=AutomationControlled',
-                '--disable-dev-shm-usage',
-                '--no-sandbox',
-                '--disable-web-security',
-                '--disable-features=IsolateOrigins,site-per-process',
-            ]
-        )
-        
+        browser_args = [
+            '--disable-blink-features=AutomationControlled',
+            '--disable-dev-shm-usage',
+            '--no-sandbox',
+            '--disable-web-security',
+            '--disable-features=IsolateOrigins,site-per-process',
+        ]
+
         # Create context with realistic settings and persistent cookies
-        self.context = self.browser.new_context(
-            viewport={'width': 1920, 'height': 1080},
-            user_agent='Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            locale='de-AT',
-            timezone_id='Europe/Vienna',
-            accept_downloads=True,
-            has_touch=False,
-            is_mobile=False,
-            java_script_enabled=True,
-        )
+        context_kwargs = {
+            'viewport': {'width': 1920, 'height': 1080},
+            'user_agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'locale': 'de-AT',
+            'timezone_id': 'Europe/Vienna',
+            'accept_downloads': True,
+            'has_touch': False,
+            'is_mobile': False,
+            'java_script_enabled': True,
+        }
+        if self.profile_dir:
+            # Use persistent context to keep Cloudflare-cleared browser profile.
+            self.context = self.playwright.chromium.launch_persistent_context(
+                user_data_dir=self.profile_dir,
+                headless=self.headless,
+                channel='chrome',
+                args=browser_args,
+                **context_kwargs,
+            )
+            self.browser = None
+            print(f"[*] Using persistent browser profile: {self.profile_dir}")
+        else:
+            self.browser = self.playwright.chromium.launch(
+                headless=self.headless,
+                args=browser_args,
+            )
+            if self.storage_state_path and os.path.exists(self.storage_state_path):
+                context_kwargs['storage_state'] = self.storage_state_path
+                print(f"[*] Loaded browser session state from {self.storage_state_path}")
+            self.context = self.browser.new_context(
+                **context_kwargs,
+            )
         
         # Create page
-        self.page = self.context.new_page()
+        self.page = self.context.pages[0] if self.context.pages else self.context.new_page()
         
         # Enhanced anti-detection
         self.page.add_init_script("""
@@ -210,6 +240,49 @@ class SparPlaywrightScraper:
         
         parts = [p for p in [brand_norm, name_norm, size_norm, unit_norm] if p]
         return '_'.join(parts)
+
+    def _build_search_url(self, page_num: int, cache_bust: bool = False, page_first: bool = False) -> str:
+        """Build a search URL using a space query and optional cache-buster."""
+        search_value = quote(self.search_query)
+        if page_first:
+            url = f"{self.base_url}/produktwelt/suche?page={page_num}&search={search_value}"
+        else:
+            url = f"{self.base_url}/produktwelt/suche?search={search_value}&page={page_num}"
+        if cache_bust:
+            url = f"{url}&_={int(time.time() * 1000)}"
+        return url
+
+    def _page_signature(self, products: List[Dict]) -> str:
+        """Return a compact page signature to detect repeated pagination pages."""
+        if not products:
+            return ""
+        head = products[:8]
+        parts = []
+        for p in head:
+            name = (p.get('name') or '').strip().lower()
+            brand = (p.get('brand') or '').strip().lower()
+            price = p.get('price') or 0
+            parts.append(f"{brand}|{name}|{price}")
+        return "::".join(parts)
+
+    def _is_challenge_page(self) -> bool:
+        """Detect Cloudflare/challenge pages that do not contain catalog data."""
+        try:
+            title = (self.page.title() or "").lower()
+            url = (self.page.url or "").lower()
+            if "just a moment" in title:
+                return True
+            if "__cf_chl" in url or "challenge-platform" in url:
+                return True
+            html = (self.page.content() or "").lower()
+            challenge_markers = [
+                "enable javascript and cookies to continue",
+                "cdn-cgi/challenge-platform",
+                "cf_chl",
+            ]
+            return any(marker in html for marker in challenge_markers)
+        except Exception:
+            return False
     
     def scrape_page(self, page_num: int = 1) -> List[Dict]:
         """
@@ -221,8 +294,8 @@ class SparPlaywrightScraper:
         Returns:
             List of product dictionaries
         """
-        # Use the correct parameter order that SPAR expects
-        url = f"{self.base_url}/produktwelt/suche?page={page_num}&search="
+        # Use a space search query to force full-catalog search mode.
+        url = self._build_search_url(page_num)
         print(f"[*] Scraping page {page_num}: {url}")
         
         try:
@@ -530,8 +603,8 @@ class SparPlaywrightScraper:
         
         try:
             while page <= max_pages:
-                # Use main search URL
-                url = f"{self.base_url}/produktwelt/suche?search=&page={page}"
+                # Use main search URL with a space query.
+                url = self._build_search_url(page)
                 
                 try:
                     products = self._scrape_search_page(url, page)
@@ -553,6 +626,28 @@ class SparPlaywrightScraper:
                         break
                 else:
                     consecutive_empty = 0
+
+                    # Detect repeated page payloads (common when SPAR pagination gets stuck).
+                    page_signature = self._page_signature(products)
+                    if page > 1 and hasattr(self, '_last_page_signature') and self._last_page_signature == page_signature:
+                        print(f"[!] Page {page} looks identical to previous page. Retrying with anti-cache URL...")
+                        retry_url = self._build_search_url(page, cache_bust=True, page_first=True)
+                        retry_products = self._scrape_search_page(retry_url, page)
+                        retry_signature = self._page_signature(retry_products)
+                        if retry_products and retry_signature and retry_signature != page_signature:
+                            print(f"[✓] Recovered page {page} with anti-cache retry")
+                            products = retry_products
+                            page_signature = retry_signature
+                        else:
+                            self._repeated_signature_hits = getattr(self, '_repeated_signature_hits', 0) + 1
+                            print(f"[!] Repeated pagination signatures: {self._repeated_signature_hits}")
+                            if self._repeated_signature_hits >= 5:
+                                print("[*] Pagination appears stuck on duplicate pages. Stopping early to avoid bad data.")
+                                break
+                    else:
+                        self._repeated_signature_hits = 0
+
+                    self._last_page_signature = page_signature
                     
                     # Check for new products
                     new_products = 0
@@ -645,6 +740,10 @@ class SparPlaywrightScraper:
         try:
             # Navigate to page with faster timeout
             self.page.goto(url, wait_until='domcontentloaded', timeout=20000)
+
+            if self._is_challenge_page():
+                print(f"[!] Challenge page detected on page {page_num}. Session is not validated for scraping.")
+                return []
             
             # Wait for products to load
             try:
@@ -910,6 +1009,11 @@ class SparPlaywrightScraper:
                         stats['products_updated'] += 1
                 
                 # Product store entry
+                regular_price = product_data['price']
+                if product_data.get('is_promotion') and product_data.get('original_price'):
+                    # Preserve shelf/base price; promo discount is represented via Promotion/Offer.
+                    regular_price = product_data['original_price']
+
                 product_store = db_session.query(ProductStore).filter_by(
                     product_id=product.id,
                     store_id='spar'
@@ -919,7 +1023,7 @@ class SparPlaywrightScraper:
                     product_store = ProductStore(
                         product_id=product.id,
                         store_id='spar',
-                        base_price=Decimal(str(product_data['price'])),
+                        base_price=Decimal(str(regular_price)),
                         is_available=True,
                         product_url=product_data.get('product_url'),
                         last_seen=datetime.now(timezone.utc),
@@ -928,47 +1032,88 @@ class SparPlaywrightScraper:
                     db_session.add(product_store)
                     stats['product_stores_added'] += 1
                 else:
-                    product_store.base_price = Decimal(str(product_data['price']))
+                    product_store.base_price = Decimal(str(regular_price))
                     product_store.is_available = True
                     product_store.last_seen = datetime.now(timezone.utc)
                     stats['product_stores_updated'] += 1
                 
+                # Upsert/deactivate SPAR promotions for this product-store.
+                active_targets = db_session.query(PromotionTarget).join(
+                    Promotion, PromotionTarget.promotion_id == Promotion.id
+                ).filter(
+                    PromotionTarget.product_id == product.id,
+                    PromotionTarget.store_id == 'spar',
+                    Promotion.is_active == True
+                ).all()
+
                 # Handle promotions
                 if product_data.get('is_promotion') and product_data.get('original_price'):
                     discount_value = product_data.get('discount_percentage', 0)
-                    
-                    offer = Offer(
-                        name=f"SPAR {discount_value}% Rabatt",
-                        description=product_data.get('promo_text', ''),
-                        discount_type='percentage',
-                        discount_value=Decimal(str(discount_value)),
-                        is_active=True,
-                        created_at=datetime.now(timezone.utc),
-                        updated_at=datetime.now(timezone.utc)
-                    )
-                    db_session.add(offer)
-                    db_session.flush()
-                    
-                    promotion = Promotion(
-                        name=f"SPAR Aktion - {product_data['name'][:50]}",
-                        description=product_data.get('promo_text', ''),
-                        offer_id=offer.id,
-                        start_date=datetime.now(timezone.utc).date(),
-                        end_date=product_data['offer_end_date'].date() if product_data.get('offer_end_date') else None,
-                        is_active=True,
-                        created_at=datetime.now(timezone.utc)
-                    )
-                    db_session.add(promotion)
-                    db_session.flush()
-                    
-                    promo_target = PromotionTarget(
-                        promotion_id=promotion.id,
-                        product_id=product.id,
-                        store_id='spar',
-                        created_at=datetime.now(timezone.utc)
-                    )
-                    db_session.add(promo_target)
-                    stats['promotions_added'] += 1
+
+                    active_target = active_targets[0] if active_targets else None
+                    end_date = product_data['offer_end_date'].date() if product_data.get('offer_end_date') else None
+
+                    if active_target:
+                        # Reuse current active promotion for this product-store instead of creating duplicates.
+                        promotion = active_target.promotion
+                        if promotion.offer:
+                            promotion.offer.name = f"SPAR {discount_value}% Rabatt"
+                            promotion.offer.description = product_data.get('promo_text', '')
+                            promotion.offer.discount_type = 'percentage'
+                            promotion.offer.discount_value = Decimal(str(discount_value))
+                            promotion.offer.is_active = True
+                            promotion.offer.updated_at = datetime.now(timezone.utc)
+
+                        promotion.name = f"SPAR Aktion - {product_data['name'][:50]}"
+                        promotion.description = product_data.get('promo_text', '')
+                        promotion.start_date = datetime.now(timezone.utc).date()
+                        promotion.end_date = end_date
+                        promotion.is_active = True
+
+                        # Deactivate any duplicate active promotions for same product-store.
+                        for dup in active_targets[1:]:
+                            dup.promotion.is_active = False
+                            if dup.promotion.offer:
+                                dup.promotion.offer.is_active = False
+                    else:
+                        offer = Offer(
+                            name=f"SPAR {discount_value}% Rabatt",
+                            description=product_data.get('promo_text', ''),
+                            discount_type='percentage',
+                            discount_value=Decimal(str(discount_value)),
+                            is_active=True,
+                            created_at=datetime.now(timezone.utc),
+                            updated_at=datetime.now(timezone.utc)
+                        )
+                        db_session.add(offer)
+                        db_session.flush()
+
+                        promotion = Promotion(
+                            name=f"SPAR Aktion - {product_data['name'][:50]}",
+                            description=product_data.get('promo_text', ''),
+                            offer_id=offer.id,
+                            start_date=datetime.now(timezone.utc).date(),
+                            end_date=end_date,
+                            is_active=True,
+                            created_at=datetime.now(timezone.utc)
+                        )
+                        db_session.add(promotion)
+                        db_session.flush()
+
+                        promo_target = PromotionTarget(
+                            promotion_id=promotion.id,
+                            product_id=product.id,
+                            store_id='spar',
+                            created_at=datetime.now(timezone.utc)
+                        )
+                        db_session.add(promo_target)
+                        stats['promotions_added'] += 1
+                else:
+                    # No promo currently visible: deactivate active SPAR promo rows for this product-store.
+                    for active_target in active_targets:
+                        active_target.promotion.is_active = False
+                        if active_target.promotion.offer:
+                            active_target.promotion.offer.is_active = False
                 
                 if stats['processed'] % 50 == 0:
                     db_session.commit()

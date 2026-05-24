@@ -5,6 +5,12 @@ NAVBAR FIXES - Ensures consistent behavior across all pages
 */
 
 /* ═══ GLOBAL BODY PADDING ═══ */
+/* Admin pages manage their own top spacing */
+body.admin-mode {
+  padding-top: 0 !important;
+}
+
+/* ═══ GLOBAL BODY PADDING ═══ */
 body {
   padding-top: 140px !important;
   transition: padding-top 0.3s cubic-bezier(0.4, 0, 0.2, 1);

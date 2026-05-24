@@ -1,6 +1,6 @@
 {% extends "base.html" %} {# ── Suppress the public navbar
 ──────────────────────────────────────── #} {% block navbar %}{% endblock %} {%
-block body_class %}bg-slate-50{% endblock %} {% block styles %} {# Tailwind CSS
+block body_class %}bg-slate-50 admin-mode{% endblock %} {% block styles %} {# Tailwind CSS
 CDN #}
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
@@ -455,17 +455,15 @@ CDN #}
     <div class="flex-1 flex flex-col min-h-screen" style="margin-left: 16rem">
         {# Top bar #}
         <header
-            class="h-9 bg-white border-b border-slate-200 sticky top-0 z-30 flex items-center px-6 gap-4 flex-shrink-0"
+            class="bg-white border-b border-slate-200 sticky top-0 z-30 flex items-center px-6 gap-4 flex-shrink-0 py-3"
         >
-            <div
-                class="flex items-center gap-1.5 text-sm text-slate-400 min-w-0"
-            >
-                <a
-                    href="{{ url_for('admin.admin_dashboard') }}"
-                    class="hover:text-slate-600 no-underline"
-                    >Admin</a
-                >
-                {% block admin_breadcrumb %}{% endblock %}
+            <div class="flex items-center gap-2 text-sm text-slate-400 min-w-0">
+                <div class="truncate min-w-0">
+                    <a href="{{ url_for('admin.admin_dashboard') }}" class="hover:text-slate-600 no-underline whitespace-nowrap">Admin</a>
+                    <span class="admin-breadcrumb-inline inline-block truncate" style="max-width: calc(100vw - 320px); vertical-align: middle; white-space: nowrap;">
+                        {% block admin_breadcrumb %}{% endblock %}
+                    </span>
+                </div>
             </div>
             <div class="ml-auto flex items-center gap-2">
                 {% block admin_actions %}{% endblock %}
@@ -525,7 +523,8 @@ CDN #}
         </div>
         {% endif %} {# ── PRIMARY CONTENT
         ──────────────────────────────────────────── #}
-        <main class="flex-1 px-6 pt-0 pb-3 overflow-x-hidden">
+        <main class="flex-1 px-6 pt-6 pb-3 overflow-x-hidden">
+            {% block admin_page_actions %}{% endblock %}
             {% block admin_content %}{% endblock %}
         </main>
 

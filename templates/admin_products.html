@@ -15,6 +15,10 @@
 {% endblock %}
 
 {% block admin_actions %}
+{% endblock %}
+
+{% block admin_page_actions %}
+<div class="flex flex-wrap justify-end gap-2 mb-4">
 <a href="{{ url_for('admin.admin_smart_import_page') }}"
    class="btn-secondary btn-sm no-underline admin-hero-btn admin-hero-btn-soft admin-hero-btn-spacious">
     <span class="admin-hero-icon admin-hero-icon-soft"><i class="bi bi-stars"></i></span>
@@ -26,6 +30,7 @@
     <span class="admin-hero-icon admin-hero-icon-strong"><i class="bi bi-plus-lg"></i></span>
     <span>Add Product</span>
 </button>
+ </div>
 {% endblock %}
 
 {% block extra_styles %}

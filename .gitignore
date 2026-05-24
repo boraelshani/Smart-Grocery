@@ -112,4 +112,11 @@ compare_page.html
 hofer.png
 hofer_home.png
 
+# Playwright / Chromium browser profile and generated scraper artifacts
+data/spar_profile/
+data/spar_storage_state.json
+# HAR files (HTTP Archive) used for debugging/snapshots
+*.har
+www.spar.at.har
+
 

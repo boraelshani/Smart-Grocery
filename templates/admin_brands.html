@@ -4,10 +4,6 @@
 {% block admin_subtitle %}Curate the brand directory, keep logos current, and jump straight into editing.{% endblock %}
 
 {% block admin_actions %}
-<button class="btn-primary btn-sm brand-action-pill" onclick="prepareBrandModal('new');" data-bs-toggle="modal" data-bs-target="#brandModal">
-    <span class="brand-action-icon"><i class="bi bi-plus-lg"></i></span>
-    <span>New Brand</span>
-</button>
 {% endblock %}
 
 {% block extra_styles %}
@@ -146,9 +142,15 @@
             <h3 class="text-sm font-semibold text-slate-800 mb-1">Brands directory</h3>
             <p class="text-xs text-slate-500 mb-0">Fast edits with logo previews and direct updates.</p>
         </div>
-        <span class="brand-chip">
-            <i class="bi bi-list-check"></i> {{ total_brands }} entries
-        </span>
+        <div class="flex items-center gap-2">
+            <span class="brand-chip">
+                <i class="bi bi-list-check"></i> {{ total_brands }} entries
+            </span>
+            <button class="btn-primary btn-sm brand-action-pill" onclick="prepareBrandModal('new');" data-bs-toggle="modal" data-bs-target="#brandModal">
+                <span class="brand-action-icon"><i class="bi bi-plus-lg"></i></span>
+                <span>New Brand</span>
+            </button>
+        </div>
     </div>
 
     {% if data.brands %}
