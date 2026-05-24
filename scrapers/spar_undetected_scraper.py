@@ -316,14 +316,83 @@ class SparUndetectedScraper:
         
         return all_products
     
+    # ── Name normalisation helpers for cross-store matching ──────────────────
+
+    _SIZE_RE = re.compile(
+        r'\d+[\.,]?\d*\s*(g|kg|mg|ml|l|cl|dl|stk|stück|x|\d+er)\b',
+        re.IGNORECASE,
+    )
+    _STOP = frozenset({
+        'g','kg','ml','l','cl','stk','x','und','mit','von','der','die','das',
+        'bio','pack','set','je','pro','im','aus','fur','natur','natural',
+    })
+
+    def _normalise_words(self, name: str):
+        n = name.lower()
+        for src, tgt in (('ä','ae'),('ö','oe'),('ü','ue'),('ß','ss')):
+            n = n.replace(src, tgt)
+        n = self._SIZE_RE.sub(' ', n)
+        n = re.sub(r'[^\w\s]', ' ', n)
+        return frozenset(w for w in n.split() if len(w) >= 3 and w not in self._STOP)
+
+    def _similarity(self, ws1, ws2):
+        if not ws1 or not ws2:
+            return 0.0
+        return len(ws1 & ws2) / max(len(ws1), len(ws2))
+
+    def _find_billa_match(self, spar_name: str, billa_index: dict,
+                          billa_word_sets: dict, threshold: float = 0.6):
+        """Return (billa_product_id, score) or (None, 0)."""
+        spar_words = self._normalise_words(spar_name)
+        candidates = set()
+        for w in spar_words:
+            candidates.update(billa_index.get(w, set()))
+        best_id, best_score = None, 0.0
+        for bpid in candidates:
+            score = self._similarity(spar_words, billa_word_sets[bpid])
+            if score > best_score:
+                best_score, best_id = score, bpid
+        return (best_id, best_score) if best_score >= threshold else (None, 0.0)
+
+    def _build_billa_index(self, db_session):
+        """Load all BILLA products and build an inverted word index."""
+        from models.postgres_models import Product, ProductStore
+        from collections import defaultdict
+        rows = (
+            db_session.query(Product.id, Product.name, Product.name_de)
+            .join(ProductStore, ProductStore.product_id == Product.id)
+            .filter(ProductStore.store_id == 'billa')
+            .all()
+        )
+        word_sets = {}
+        index = defaultdict(set)
+        for row in rows:
+            name = row.name or row.name_de or ''
+            ws = self._normalise_words(name)
+            word_sets[row.id] = ws
+            for w in ws:
+                index[w].add(row.id)
+        print(f"[*] BILLA index built: {len(rows):,} products")
+        return index, word_sets
+
+    # ── Main save method ──────────────────────────────────────────────────────
+
     def save_to_database(self, products: List[Dict], db_session) -> Dict:
-        """Save products to database."""
+        """
+        Save scraped SPAR products to the database.
+
+        For each product we first check whether a matching BILLA product
+        already exists (by normalised name similarity ≥ 0.6).  If so, we
+        attach a SPAR ProductStore row to that existing product instead of
+        creating a new Product row.  This is what makes cross-store price
+        comparison possible on the compare page.
+        """
         from models.postgres_models import Product, ProductStore, Store
-        
+
         print(f"\n{'='*80}")
-        print("DATABASE INSERTION - Starting")
+        print("DATABASE INSERTION - Starting (with cross-store linking)")
         print(f"{'='*80}\n")
-        
+
         # Ensure SPAR store exists
         store = db_session.query(Store).filter_by(store_id='spar').first()
         if not store:
@@ -337,103 +406,145 @@ class SparUndetectedScraper:
             )
             db_session.add(store)
             db_session.commit()
-        
+
+        # Pre-load BILLA index for fast cross-store matching
+        billa_index, billa_word_sets = self._build_billa_index(db_session)
+
         stats = {
             'processed': 0,
+            'linked_to_billa': 0,
             'products_added': 0,
             'products_updated': 0,
             'product_stores_added': 0,
             'product_stores_updated': 0,
             'validation_errors': 0,
-            'database_errors': 0
+            'database_errors': 0,
         }
-        
+
         for product_data in products:
             try:
                 stats['processed'] += 1
-                
-                # Validate
+
                 if not product_data.get('name') or not product_data.get('price'):
                     stats['validation_errors'] += 1
                     continue
-                
-                # Generate fingerprint
-                fingerprint = self._generate_fingerprint(
-                    product_data['name'],
-                    product_data.get('brand', ''),
-                    product_data.get('unit', ''),
-                    product_data.get('size_normalized')
+
+                spar_name  = product_data['name']
+                spar_price = Decimal(str(product_data['price']))
+                spar_url   = product_data.get('product_url')
+                spar_image = product_data.get('image_url')
+                now        = datetime.now(timezone.utc)
+
+                # ── Try to match a BILLA product first ───────────────────────
+                billa_pid, score = self._find_billa_match(
+                    spar_name, billa_index, billa_word_sets
                 )
-                
-                # Check if product exists
-                product = db_session.query(Product).filter_by(fingerprint=fingerprint).first()
-                
-                if not product:
-                    product = Product(
-                        fingerprint=fingerprint,
-                        name=product_data['name'],
-                        name_de=product_data['name'],
-                        brand=product_data.get('brand'),
-                        unit_normalized=product_data.get('unit'),
-                        size_normalized=product_data.get('size_normalized'),
-                        default_image_url=product_data.get('image_url'),
-                        created_at=datetime.now(timezone.utc),
-                        updated_at=datetime.now(timezone.utc)
-                    )
-                    db_session.add(product)
-                    db_session.flush()
-                    stats['products_added'] += 1
-                    
-                    if stats['products_added'] % 50 == 0:
-                        print(f"[+] Added {stats['products_added']} new products...")
+
+                if billa_pid:
+                    # Attach SPAR price to the existing BILLA product row
+                    existing_ps = db_session.query(ProductStore).filter_by(
+                        product_id=billa_pid, store_id='spar'
+                    ).first()
+
+                    if not existing_ps:
+                        db_session.add(ProductStore(
+                            product_id=billa_pid,
+                            store_id='spar',
+                            base_price=spar_price,
+                            is_available=True,
+                            product_url=spar_url,
+                            last_seen=now,
+                            created_at=now,
+                        ))
+                        stats['product_stores_added'] += 1
+                    else:
+                        existing_ps.base_price = spar_price
+                        existing_ps.is_available = True
+                        existing_ps.last_seen = now
+                        stats['product_stores_updated'] += 1
+
+                    # Back-fill image if BILLA product has none
+                    if spar_image:
+                        billa_product = db_session.get(Product, billa_pid)
+                        if billa_product and not billa_product.default_image_url:
+                            billa_product.default_image_url = spar_image
+
+                    stats['linked_to_billa'] += 1
+
                 else:
-                    if product_data.get('image_url') and not product.default_image_url:
-                        product.default_image_url = product_data['image_url']
-                        product.updated_at = datetime.now(timezone.utc)
+                    # ── No BILLA match — save as standalone SPAR product ─────
+                    fingerprint = self._generate_fingerprint(
+                        spar_name,
+                        product_data.get('brand', ''),
+                        product_data.get('unit', ''),
+                        product_data.get('size_normalized'),
+                    )
+                    product = db_session.query(Product).filter_by(
+                        fingerprint=fingerprint
+                    ).first()
+
+                    if not product:
+                        product = Product(
+                            fingerprint=fingerprint,
+                            name=spar_name,
+                            name_de=spar_name,
+                            brand=product_data.get('brand'),
+                            unit_normalized=product_data.get('unit'),
+                            size_normalized=product_data.get('size_normalized'),
+                            default_image_url=spar_image,
+                            created_at=now,
+                            updated_at=now,
+                        )
+                        db_session.add(product)
+                        db_session.flush()
+                        stats['products_added'] += 1
+                    else:
+                        if spar_image and not product.default_image_url:
+                            product.default_image_url = spar_image
+                            product.updated_at = now
                         stats['products_updated'] += 1
-                
-                # Product store entry
-                product_store = db_session.query(ProductStore).filter_by(
-                    product_id=product.id,
-                    store_id='spar'
-                ).first()
-                
-                if not product_store:
-                    product_store = ProductStore(
-                        product_id=product.id,
-                        store_id='spar',
-                        base_price=Decimal(str(product_data['price'])),
-                        is_available=True,
-                        product_url=product_data.get('product_url'),
-                        last_seen=datetime.now(timezone.utc),
-                        created_at=datetime.now(timezone.utc)
-                    )
-                    db_session.add(product_store)
-                    stats['product_stores_added'] += 1
-                else:
-                    product_store.base_price = Decimal(str(product_data['price']))
-                    product_store.is_available = True
-                    product_store.last_seen = datetime.now(timezone.utc)
-                    stats['product_stores_updated'] += 1
-                
-                # Commit every 100 products
+
+                    ps = db_session.query(ProductStore).filter_by(
+                        product_id=product.id, store_id='spar'
+                    ).first()
+                    if not ps:
+                        db_session.add(ProductStore(
+                            product_id=product.id,
+                            store_id='spar',
+                            base_price=spar_price,
+                            is_available=True,
+                            product_url=spar_url,
+                            last_seen=now,
+                            created_at=now,
+                        ))
+                        stats['product_stores_added'] += 1
+                    else:
+                        ps.base_price = spar_price
+                        ps.is_available = True
+                        ps.last_seen = now
+                        stats['product_stores_updated'] += 1
+
                 if stats['processed'] % 100 == 0:
                     db_session.commit()
-                    print(f"[*] Progress: {stats['processed']}/{len(products)}")
-                
+                    print(
+                        f"[*] {stats['processed']}/{len(products)} | "
+                        f"linked={stats['linked_to_billa']} "
+                        f"new={stats['products_added']}"
+                    )
+
             except Exception as e:
-                print(f"[!] Database error: {e}")
+                print(f"[!] DB error on '{product_data.get('name','?')}': {e}")
                 stats['database_errors'] += 1
                 db_session.rollback()
                 continue
-        
+
         try:
             db_session.commit()
             print(f"\n[✓] Database insertion complete!")
         except Exception as e:
             print(f"[!] Final commit error: {e}")
             db_session.rollback()
-        
+
         return stats
 
 

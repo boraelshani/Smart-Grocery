@@ -478,10 +478,12 @@
                href="{{ url_for('main.compare_prices') }}"><i class="bi bi-search me-1"></i>Compare</a>
           </li>
 
+          {% if is_admin_nav %}
           <li class="nav-item">
-            <a class="nav-link {% if request.endpoint == 'recipe.recipe_planner' %}active{% endif %} rounded-pill px-3 py-2 text-nowrap" 
+            <a class="nav-link {% if request.endpoint == 'recipe.recipe_planner' %}active{% endif %} rounded-pill px-3 py-2 text-nowrap"
                href="{{ url_for('recipe.recipe_planner') }}"><i class="bi bi-magic me-1"></i>Recipe Planner</a>
           </li>
+          {% endif %}
 
           <li class="nav-item">
             <a class="nav-link {% if request.endpoint == 'main.featured_deals_page' %}active{% endif %} rounded-pill px-3 py-2 text-nowrap" 

@@ -45,6 +45,7 @@ NON_FOOD_PRODUCT_WORDS = {
 JUNK_SLUG_ROOTS = {
     "cat_beverages", "cat_snacks", "cat_household",
     "cat_baby-food", "cat_fast-food-to-go",
+    "cat_pet", "cat_pets", "cat_tiernahrung", "cat_tierfutter",
 }
 
 JUNK_CATEGORY_NAMES = {
@@ -55,6 +56,10 @@ JUNK_CATEGORY_NAMES = {
     "soft drinks", "alcoholic beverages", "beer", "wine & spirits",
     "energy drinks", "juices", "hot drinks", "drinks", "beverages & drinks",
     "candy", "chocolate", "gummies", "chips & crisps", "crackers", "popcorn",
+    # Pet food
+    "pet food", "pet", "pets", "cat food", "dog food", "animal food",
+    "tiernahrung", "tierfutter", "katzenfutter", "hundefutter", "haustier",
+    "haustiere", "haustierzubehör",
     # German
     "süßigkeiten", "getränke", "alkoholische getränke", "haushalt",
     "limonaden", "säfte", "erfrischungsgetränke",
@@ -70,6 +75,14 @@ GLOBAL_NEGATIVE_NAME_KEYWORDS = {
     "vodka", "whiskey", "gin", "rum", "tequila", "brandy", "schnapps", "liqueur",
     "cocktail", "cheeseburger", "sugarfree", "sugar-free", "zuckerfrei",
     "smoothie", "energy",   # energy drinks, smoothies are never cooking ingredients
+    # Pet / animal food — never a cooking ingredient
+    "katze", "katzenfutter", "katzensnack", "katzennahrung",
+    "hund", "hundefutter", "hundesnack", "hundenahr",
+    "tiernahrung", "tierfutter", "haustier",
+    "für katzen", "für hunde", "for cats", "for dogs",
+    "whiskas", "felix", "purina", "pedigree", "royal canin", "iams", "friskies",
+    "sheba", "dreamies", "animonda", "almo nature",
+    "aquarium", "vogelfutter", "hamster", "kaninchen", "meerschwein",
 }
 
 # Per-ingredient additional blocked substrings
@@ -180,6 +193,21 @@ INGREDIENT_TYPE_MAP = [
 
 # For these types, we allow some snack-category products (e.g. condiments can overlap)
 LENIENT_INGREDIENT_TYPES = {"condiment", "seasoning", "other_food"}
+
+# Ingredient types where matching must be strict — the search term must be the
+# primary product, not a secondary descriptor (e.g. "butter" in "apple butter").
+STRICT_INGREDIENT_TYPES = frozenset({"fresh_produce", "grain_starch", "protein", "dairy"})
+
+# All single words extracted from INGREDIENT_TYPE_MAP — used to detect when a
+# known food word precedes the search term in a product name, signalling a
+# compound product (e.g. "apple" before "butter" → apple-butter, not plain butter).
+_FOOD_PREFIX_WORDS: frozenset = frozenset(
+    word
+    for _, keywords in INGREDIENT_TYPE_MAP
+    for phrase in keywords
+    for word in phrase.lower().split()
+    if len(word) >= 4
+)
 
 # ── Category allowlist ────────────────────────────────────────────────────────
 # For each ingredient type, at least ONE of these substrings must appear in
@@ -325,8 +353,6 @@ def calculate_proportion_message(req_text, prod_unit, price):
     if not (req_q and prod_q and req_u and prod_u):
         return None
 
-    for qty, unit in [(req_q, req_u), (prod_q, prod_u)]:
-        pass  # unit conversion below modifies locals directly
 
     if req_u in ('kg',): req_q *= 1000; req_u = 'g'
     if req_u in ('l',):  req_q *= 1000; req_u = 'ml'
@@ -418,8 +444,7 @@ def _is_flavor_descriptor(product_name_lower: str, search_term_lower: str) -> bo
     return bool(re.search(pattern, product_name_lower))
 
 
-def _is_junk_by_name(product_name_lower: str, search_term_lower: str,
-                     ing_type: str = "other_food") -> bool:
+def _is_junk_by_name(product_name_lower: str, search_term_lower: str) -> bool:
     """
     Return True when the product name signals it is not a usable cooking ingredient.
     Checks: global negative keywords, per-ingredient keywords, flavor-suffix pattern.
@@ -427,7 +452,6 @@ def _is_junk_by_name(product_name_lower: str, search_term_lower: str,
     """
     search_words = set(search_term_lower.split())
     search_first = search_term_lower.split()[0] if search_term_lower else ""
-    is_lenient = ing_type in LENIENT_INGREDIENT_TYPES
 
     # Global negative keywords (skip if ingredient IS that kind of product)
     if search_first not in INGREDIENT_IS_DRINK_OR_SNACK:
@@ -448,12 +472,68 @@ def _is_junk_by_name(product_name_lower: str, search_term_lower: str,
     return False
 
 
+# Words that negate or invert the ingredient — always reject regardless of length
+_NEGATING_PREFIX_WORDS = frozenset({
+    "not", "no", "non", "ohne", "free", "fake", "mock", "vegan", "imitation",
+})
+
+def _search_term_is_leading(name_lower: str, search_term_lower: str, ing_type: str) -> bool:
+    """
+    Return True when the search term is the primary ingredient in the product name.
+
+    For strict types (dairy, protein, produce, grain) we reject:
+      - Products where a known food keyword precedes the search term
+          ("apple butter tache" → "apple" is food → REJECT)
+      - Products where the search term is a hyphen-compound prefix
+          ("butter-apfeltasche" → "butter-" is a flavor descriptor → REJECT)
+      - Products where a negating word precedes the search term
+          ("not milk" → "not" inverts the ingredient → REJECT)
+      - Products where a known food/flavor word follows the search term
+          ("milk schokolade" → "schokolade" signals flavored variant → REJECT)
+    """
+    if ing_type not in STRICT_INGREDIENT_TYPES:
+        return True
+
+    idx = name_lower.find(search_term_lower)
+    if idx < 0:
+        return True
+
+    term_end = idx + len(search_term_lower)
+
+    # Reject if immediately followed by a hyphen → compound-word prefix
+    # e.g. "butter-apfeltasche": butter is a flavor/descriptor, not the product
+    if term_end < len(name_lower) and name_lower[term_end] == '-':
+        return False
+
+    # Check prefix words
+    prefix_words = name_lower[:idx].split()
+    for word in prefix_words:
+        if word in _NEGATING_PREFIX_WORDS:
+            return False  # "not milk", "no butter" etc.
+        if word in _FOOD_PREFIX_WORDS:
+            return False  # a food word precedes the ingredient → compound product
+
+    # Check suffix words for flavor descriptors (e.g. "milk schokolade")
+    suffix_words = name_lower[term_end:].split()
+    _FLAVOR_SUFFIX_WORDS = frozenset({
+        "schokolade", "chocolate", "kakao", "vanille", "vanilla",
+        "erdbeer", "strawberry", "haselnuss", "hazelnut", "karamel", "caramel",
+    })
+    for word in suffix_words:
+        if word in _FLAVOR_SUFFIX_WORDS:
+            return False  # flavored variant of the ingredient, not the plain product
+
+    return True
+
+
 def _passes_all_filters(product, name_lower: str, search_term_lower: str,
                         ing_type: str, require_whole_word: bool = True) -> bool:
     """Single gate: return True only if this product is an acceptable match."""
     if _is_non_food_product(name_lower):
         return False
     if require_whole_word and not _term_appears_as_whole_word(name_lower, search_term_lower):
+        return False
+    if not _search_term_is_leading(name_lower, search_term_lower, ing_type):
         return False
 
     is_junk, is_allowed = _check_category(product, ing_type)
@@ -468,7 +548,7 @@ def _passes_all_filters(product, name_lower: str, search_term_lower: str,
     if not is_allowed:
         return False
 
-    if _is_junk_by_name(name_lower, search_term_lower, ing_type):
+    if _is_junk_by_name(name_lower, search_term_lower):
         return False
     return True
 
@@ -501,7 +581,8 @@ a home cook would actually buy to fulfill that INGREDIENT in a real recipe.
 Rules:
 - ACCEPT: the product is the ingredient itself or a direct substitute (e.g. fresh, frozen, canned, powdered form).
 - REJECT: the product is a snack, candy, beverage, kitchen tool, cleaning product,
-  ready-made meal, or any item that uses the ingredient word merely as branding or flavor.
+  ready-made meal, pet food, animal food, or any item that uses the ingredient word merely as branding or flavor.
+- ALWAYS REJECT any product intended for pets or animals (cat food, dog food, bird food, etc.).
 
 Examples of REJECT:
 - Ingredient "mushrooms" → "Sour Mushroom Candy": REJECT (candy)
@@ -668,12 +749,12 @@ def match_ingredients_to_products(ingredients: list[str]) -> list[dict]:
             if prop:
                 m['proportional_message'] = prop
 
-        # Register best match for Gemini validation
+        # Register ALL candidates for Gemini validation (not just the best match)
         result_idx = len(results)
-        if matches:
+        for match_idx, match in enumerate(matches):
             pair_idx = len(gemini_pairs)
-            gemini_pairs.append((raw_ing, matches[0]["name"]))
-            pair_to_location[pair_idx] = (result_idx, 0)
+            gemini_pairs.append((raw_ing, match["name"]))
+            pair_to_location[pair_idx] = (result_idx, match_idx)
 
         results.append({
             "original_request": raw_ing,
@@ -683,17 +764,22 @@ def match_ingredients_to_products(ingredients: list[str]) -> list[dict]:
         })
 
     # ── Phase 4: Gemini batch validation ─────────────────────────────────────
-    # Ask Gemini which best-match products are actually valid cooking matches.
-    # Pairs that Gemini rejects get their best match removed (keeping fallbacks).
+    # Gemini now sees every candidate for every ingredient and approves/rejects
+    # each one individually — rejected candidates are removed, approved ones kept.
+    # The first approved candidate becomes the displayed product.
     if gemini_pairs:
         valid_indices = _gemini_validate_matches(gemini_pairs)
         for pair_idx, (result_idx, match_idx) in pair_to_location.items():
             if pair_idx not in valid_indices:
-                # Gemini said this product is not a valid match — remove it
                 result = results[result_idx]
-                rejected_name = result["matches"][match_idx]["name"] if result["matches"] else "?"
-                print(f"[recipe_matcher] Gemini rejected: '{result['original_request']}' → '{rejected_name}'")
-                result["matches"] = []  # clear all matches so alt-finder can kick in
+                if match_idx < len(result["matches"]) and result["matches"][match_idx] is not None:
+                    rejected_name = result["matches"][match_idx]["name"]
+                    print(f"[recipe_matcher] Gemini rejected: '{result['original_request']}' → '{rejected_name}'")
+                    result["matches"][match_idx] = None  # mark for removal
+
+        # Strip out rejected matches, preserving order of approved ones
+        for result in results:
+            result["matches"] = [m for m in result["matches"] if m is not None]
 
     return results
 

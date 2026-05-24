@@ -470,6 +470,12 @@ body { margin: 0; padding: 0; overscroll-behavior-y: none; }
         <div id="additionalProductsList" class="d-flex flex-wrap gap-2"></div>
       </div>
 
+      <div id="pantryStaplesSection" class="mt-4 p-4 d-none" style="border-radius:12px;border:2px solid #c4b5f4;background:#f5f3ff;box-shadow:0 2px 8px rgba(101,56,143,0.08);">
+        <h4 class="fw-bold mb-1" style="color:#5b21b6;"><i class="bi bi-house-heart-fill me-2" style="color:#7c3aed;"></i>Stuff You Might Have at Home</h4>
+        <p class="mb-3" style="color:#7c3aed;font-size:0.85rem;">These are common pantry staples — no need to add them to your shopping list.</p>
+        <div id="pantryStaplesList" class="d-flex flex-wrap gap-2"></div>
+      </div>
+
       <div id="recipePreparationBlock" class="mt-4 p-4 bg-white" style="border-radius:16px;border:1.5px solid #f1f5f9;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
         <h3 class="fw-bold m-0 mb-4" style="color:#1a202c;"><i class="bi bi-journal-text text-primary me-2"></i>Preparation Steps</h3>
         <div id="instructionsList" class="ps-3" style="border-left:3px solid #e2e8f0;font-size:1.05rem;line-height:1.65;color:#475569;"></div>
@@ -684,11 +690,25 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     } else {
                         /* ── Detailed recipe ── */
+                        const PANTRY_STAPLES = [
+                            'salt', 'pepper', 'water', 'olive oil', 'vegetable oil',
+                            'sunflower oil', 'cooking oil', 'oil', 'sugar',
+                            'baking soda', 'baking powder', 'vinegar', 'black pepper',
+                            'white pepper', 'sea salt', 'table salt', 'tap water'
+                        ];
+                        function isPantryStaple(name) {
+                            const lower = name.toLowerCase().trim();
+                            return PANTRY_STAPLES.some(s => lower === s || lower.startsWith(s + ' ') || lower.endsWith(' ' + s) || lower.includes(' ' + s + ' ') || lower.includes(s));
+                        }
+
                         resultsContainer.classList.remove('d-none');
                         ingredientsList.innerHTML = '';
                         const additionalList = document.getElementById('additionalProductsList');
                         additionalList.innerHTML = '';
                         document.getElementById('additionalProductsSection').classList.add('d-none');
+                        const pantryList = document.getElementById('pantryStaplesList');
+                        pantryList.innerHTML = '';
+                        document.getElementById('pantryStaplesSection').classList.add('d-none');
                         document.getElementById('instructionsList').innerHTML = '';
                         matchedProductsData = [];
                         let matchedCount = 0, unmatchedCount = 0, estTotal = 0.0;
@@ -710,8 +730,21 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
 
                         if (data.ingredients) {
-                            document.getElementById('itemCountBadge').textContent = `${data.ingredients.length} items`;
+                            const shoppingIngredients = data.ingredients.filter(i => !isPantryStaple(i.original_request));
+                            document.getElementById('itemCountBadge').textContent = `${shoppingIngredients.length} items`;
+
                             data.ingredients.forEach(item => {
+                                /* ── Pantry staple — goes to the "at home" box ── */
+                                if (isPantryStaple(item.original_request)) {
+                                    document.getElementById('pantryStaplesSection').classList.remove('d-none');
+                                    const badge = document.createElement('span');
+                                    badge.className = 'badge p-2 px-3 fw-semibold';
+                                    badge.style.cssText = 'background:#ede9f7;color:#5b21b6;border:1.5px solid #c4b5f4;font-size:0.85rem;border-radius:8px;';
+                                    badge.innerHTML = `<i class="bi bi-house-fill me-1" style="color:#7c3aed;"></i>${item.original_request}`;
+                                    pantryList.appendChild(badge);
+                                    return;
+                                }
+
                                 if (item.matches && item.matches.length > 0) {
                                     matchedCount++;
                                     let cheapest = item.matches[0];

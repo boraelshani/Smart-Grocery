@@ -381,7 +381,7 @@ function scrollCircularCategories(direction) {
         <a href="{{ url_for('main.profile') }}" class="footer-link">My Profile</a>
         <a href="{{ url_for('main.shopping_list') }}" class="footer-link">Shopping Lists</a>
         <a href="{{ url_for('main.notifications_page') }}" class="footer-link">Notifications</a>
-        <a href="{{ url_for('recipe.recipe_planner') }}" class="footer-link">Recipe Planner</a>
+        {% if is_admin_nav %}<a href="{{ url_for('recipe.recipe_planner') }}" class="footer-link">Recipe Planner</a>{% endif %}
       </div>
 
       <!-- Features / Quick Stats -->

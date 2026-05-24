@@ -29,7 +29,7 @@ Examples:
 import sys
 import argparse
 from datetime import datetime
-from scrapers.spar_scraper import SparScraper
+from scrapers.spar_session_scraper import SparSessionScraper as SparScraper
 
 
 def main():
@@ -73,10 +73,7 @@ def main():
         print("[*] TEST MODE: Limiting to 2 pages")
     
     print(f"""
-╔═══════════════════════════════════════════════════════════════════════════╗
-║                      SPAR AUSTRIA SCRAPER                                 ║
-║                      Smart Grocery Project                                ║
-╚═══════════════════════════════════════════════════════════════════════════╝
+=== SPAR AUSTRIA SCRAPER - Smart Grocery ===
 
 Configuration:
   Max Pages:  {args.max_pages or 'All'}
@@ -92,7 +89,7 @@ Configuration:
     
     with app.app_context():
         # Initialize scraper
-        scraper = SparScraper()
+        scraper = SparScraper(headless=False)
         
         # Scrape products
         print("[*] Starting product scraping...")
@@ -109,7 +106,7 @@ Configuration:
             print("\nPlease check the error messages above for details.")
             sys.exit(1)
         
-        print(f"\n[✓] Successfully scraped {len(products)} products")
+        print(f"\n[[OK]] Successfully scraped {len(products)} products")
         
         # Display sample products
         print("\n" + "="*80)
@@ -136,33 +133,27 @@ Configuration:
                 
                 # Print final statistics
                 print(f"""
-╔═══════════════════════════════════════════════════════════════════════════╗
-║                         OPERATION COMPLETE                                ║
-╚═══════════════════════════════════════════════════════════════════════════╝
+=== OPERATION COMPLETE ===
 
 SCRAPING RESULTS:
   Products scraped:        {len(products)}
   
 DATABASE OPERATIONS:
-  Products added:          {db_stats['products_added']}
-  Products updated:        {db_stats['products_updated']}
-  Product-stores added:    {db_stats['product_stores_added']}
-  Product-stores updated:  {db_stats['product_stores_updated']}
-  Promotions added:        {db_stats['promotions_added']}
-  
-ERRORS:
-  Validation errors:       {db_stats['validation_errors']}
-  Database errors:         {db_stats['database_errors']}
+  Linked to BILLA:         {db_stats.get('linked_to_billa', 0)}
+  New SPAR-only products:  {db_stats.get('products_added', 0)}
+  Products updated:        {db_stats.get('products_updated', 0)}
+  Product-stores added:    {db_stats.get('product_stores_added', 0)}
+  Product-stores updated:  {db_stats.get('product_stores_updated', 0)}
 
 Completed:                 {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 """)
                 
-                if db_stats['database_errors'] > 0:
+                if db_stats.get('database_errors', 0) > 0:
                     print("[!] Some errors occurred during database insertion.")
                     print("    Check the logs above for details.")
                     sys.exit(1)
                 else:
-                    print("[✓] All products successfully saved to database!")
+                    print("[[OK]] All products successfully saved to database!")
                     
             except Exception as e:
                 print(f"\n[!] FATAL ERROR during database operations: {e}")

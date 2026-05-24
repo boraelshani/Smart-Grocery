@@ -14,20 +14,19 @@ A single, consistent product card design used across all pages
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  transition: box-shadow 0.2s ease, transform 0.2s ease;
+  transition: box-shadow 0.2s ease;
   height: 100%;
   position: relative;
   cursor: pointer;
 }
 
 .product-card-unified:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
 }
 
 /* ═══ IMAGE SECTION ═══ */
 .product-card-unified .card-image-section {
-  height: 200px;
+  height: 220px;
   width: 100%;
   display: flex;
   align-items: center;
@@ -35,12 +34,18 @@ A single, consistent product card design used across all pages
   padding: 15px;
   background: white;
   position: relative;
+  overflow: hidden;
 }
 
 .product-card-unified .card-image-section img {
   max-height: 100%;
   max-width: 100%;
   object-fit: contain;
+  transition: transform 0.3s ease;
+}
+
+.product-card-unified:hover .card-image-section img {
+  transform: scale(1.08);
 }
 
 /* ═══ PRODUCT LABELS (Top Left Corner) ═══ */
@@ -203,37 +208,46 @@ A single, consistent product card design used across all pages
 
 /* Store Prices List */
 .store-prices-list {
+  margin-top: 0.5rem;
   margin-bottom: 0.65rem;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 0;
+  border: 1.5px solid #e9ecef;
+  border-radius: 8px;
+  overflow: hidden;
 }
 
 .store-price-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 5px 0;
-  background: transparent;
-  font-size: 0.8rem;
+  padding: 9px 12px;
+  background: #fafafa;
+  border-bottom: 1.5px solid #e9ecef;
+}
+
+.store-price-row:last-child {
+  border-bottom: none;
 }
 
 .store-price-row.cheapest {
-  background: transparent;
+  background: #f5f3ff;
 }
 
 .store-name {
   display: flex;
   align-items: center;
   gap: 5px;
-  color: #6b7280;
-  font-weight: 600;
+  color: #374151;
+  font-weight: 700;
   font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .store-price-row.cheapest .store-name {
-  color: #6b7280;
-  font-weight: 600;
+  color: #5b21b6;
 }
 
 .store-name i {
@@ -242,17 +256,17 @@ A single, consistent product card design used across all pages
 }
 
 .store-price-row.cheapest .store-name i {
-  color: #9ca3af;
+  color: #7c3aed;
 }
 
 .store-price {
   font-weight: 800;
   color: #1a1a3e;
-  font-size: 1rem;
+  font-size: 1.05rem;
 }
 
 .store-price-row.cheapest .store-price {
-  color: #1a1a3e;
+  color: #5b21b6;
 }
 
 .more-stores-hint {
@@ -260,8 +274,10 @@ A single, consistent product card design used across all pages
   font-size: 0.75rem;
   color: #9ca3af;
   font-weight: 600;
-  padding: 4px 0;
+  padding: 7px 0;
   font-style: italic;
+  background: #f8f9fa;
+  border-top: 1.5px solid #e9ecef;
 }
 
 /* Savings Badge */
@@ -269,10 +285,11 @@ A single, consistent product card design used across all pages
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  background: #eff6ff;
-  color: #1d4ed8;
+  background: #ecfdf3;
+  color: #059669;
+  border: 1px solid #a7f3d0;
   padding: 4px 10px;
-  border-radius: 0;
+  border-radius: 6px;
   font-size: 0.72rem;
   font-weight: 700;
   margin-bottom: 0.65rem;
@@ -323,7 +340,7 @@ A single, consistent product card design used across all pages
 /* ═══ RESPONSIVE ADJUSTMENTS ═══ */
 @media (max-width: 768px) {
   .product-card-unified .card-image-section {
-    height: 180px;
+    height: 200px;
   }
   
   .product-card-unified .product-name {

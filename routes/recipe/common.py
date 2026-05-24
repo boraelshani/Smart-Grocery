@@ -1,14 +1,17 @@
-from flask import render_template, request, jsonify, session
+from flask import render_template, request, jsonify, session, abort
 from . import recipe_bp
 from utils.recipe_ai import get_recipe_details, get_budget_meal_ideas, get_ingredient_alternatives
 from utils.recipe_matcher import match_ingredients_to_products
 from utils.recipe_image_fetcher import fetch_bing_image
 from models.saved_recipes_model import get_saved_recipes, save_recipe, delete_recipe
+from routes.admin.common import _is_admin_user
 import traceback
 
 @recipe_bp.route('/recipe-planner')
 def recipe_planner():
     user_email = session.get('user')
+    if not _is_admin_user(user_email):
+        abort(403)
     saved_recipes = get_saved_recipes(user_email) if user_email else []
     return render_template('recipe_planner.html', saved_recipes=saved_recipes)
 
@@ -94,8 +97,9 @@ def api_delete_recipe(recipe_id):
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @recipe_bp.route('/api/recipe/smart', methods=['POST'])
-
 def smart_search():
+    if not _is_admin_user(session.get('user')):
+        return jsonify({'success': False, 'error': 'Access restricted.'}), 403
     try:
         data = request.json
         if not data:
