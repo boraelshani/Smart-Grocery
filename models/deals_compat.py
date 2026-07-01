@@ -39,23 +39,26 @@ def list_active_promotions():
     
     deals = []
     for promo, target, product, product_store, store, offer in results:
-        base_price = float(product_store.base_price) if product_store.base_price else None
-        
-        # Calculate discounted price
-        discounted_price = base_price
+        # base_price in product_store is the current selling price (already the promo price)
+        promo_price = float(product_store.base_price) if product_store.base_price else None
+
+        discounted_price = promo_price
+        original_price = promo_price
         discount_percent = 0
-        
-        if offer and base_price:
+
+        if offer and promo_price:
             if offer.discount_type == 'percentage':
                 discount_percent = int(offer.discount_value)
-                discounted_price = base_price * (1 - float(offer.discount_value) / 100)
+                # Reconstruct original shelf price from promo price + discount %
+                if discount_percent > 0 and discount_percent < 100:
+                    original_price = promo_price / (1 - discount_percent / 100)
             elif offer.discount_type == 'fixed':
-                discounted_price = base_price - float(offer.discount_value)
-                if base_price > 0:
-                    discount_percent = int((float(offer.discount_value) / base_price) * 100)
-        
-        # Format as old featured_deals format
-        # Use actual product ID so clicking on deal goes to correct product page
+                original_price = promo_price + float(offer.discount_value)
+                if original_price > 0:
+                    discount_percent = int((float(offer.discount_value) / original_price) * 100)
+            elif offer.discount_type == 'bogo':
+                discount_percent = int(offer.discount_value)
+
         deal = {
             'id': str(product.id),
             '_id': str(product.id),
@@ -64,7 +67,7 @@ def list_active_promotions():
             'description': promo.description or promo.name,
             'price': discounted_price,
             'priceText': f'€{discounted_price:.2f}' if discounted_price else None,
-            'original_price': base_price,
+            'original_price': original_price,
             'discount_percent': discount_percent,
             'discount_label': f'{discount_percent}% OFF' if discount_percent else None,
             'store': store.name,
@@ -149,23 +152,26 @@ def get_promotion_by_id(promo_id):
         return None
     
     promo, target, product, product_store, store, offer = result
-    base_price = float(product_store.base_price) if product_store.base_price else None
-    
-    # Calculate discounted price
-    discounted_price = base_price
+    promo_price = float(product_store.base_price) if product_store.base_price else None
+
+    discounted_price = promo_price
+    original_price = promo_price
     discount_percent = 0
-    
-    if offer and base_price:
+
+    if offer and promo_price:
         if offer.discount_type == 'percentage':
             discount_percent = int(offer.discount_value)
-            discounted_price = base_price * (1 - float(offer.discount_value) / 100)
+            if discount_percent > 0 and discount_percent < 100:
+                original_price = promo_price / (1 - discount_percent / 100)
         elif offer.discount_type == 'fixed':
-            discounted_price = base_price - float(offer.discount_value)
-            if base_price > 0:
-                discount_percent = int((float(offer.discount_value) / base_price) * 100)
-    
+            original_price = promo_price + float(offer.discount_value)
+            if original_price > 0:
+                discount_percent = int((float(offer.discount_value) / original_price) * 100)
+        elif offer.discount_type == 'bogo':
+            discount_percent = int(offer.discount_value)
+
     return {
-        'id': str(product.id),  # Use actual product ID for routing
+        'id': str(product.id),
         '_id': str(product.id),
         'productId': str(product.id),
         'product_id': str(product.id),
@@ -173,7 +179,7 @@ def get_promotion_by_id(promo_id):
         'name': product.name or product.name_de,
         'description': promo.description or promo.name,
         'price': discounted_price,
-        'original_price': base_price,
+        'original_price': original_price,
         'discount_percent': discount_percent,
         'store': store.name,
         'store_id': store.store_id,

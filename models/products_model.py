@@ -5,7 +5,7 @@ from __future__ import annotations
 import math
 from typing import List, Optional, Dict, Any
 from sqlalchemy import or_, func, desc, asc
-from models.postgres_models import db, Product, ProductStore, Store, Category, PriceHistory
+from models.postgres_models import db, Product, ProductStore, Store, Category, PriceHistory, Promotion, PromotionTarget, Offer
 
 
 class ProductsModel:
@@ -175,44 +175,101 @@ class ProductsModel:
         product_pricing = {}
         for ps in product_stores:
             product_pricing.setdefault(ps.product_id, []).append(ps)
-        
+
+        # Load active promotions for these products (one query, not per-product)
+        from datetime import date as _date
+        today = _date.today()
+        promo_map: dict = {}  # (product_id, store_id) -> {discount_percent, original_price, promo_text}
+        if product_ids:
+            pt_rows = db.session.query(
+                PromotionTarget.product_id,
+                PromotionTarget.store_id,
+                Promotion.description,
+                Offer.discount_type,
+                Offer.discount_value,
+            ).join(Promotion, Promotion.id == PromotionTarget.promotion_id
+            ).outerjoin(Offer, Offer.id == Promotion.offer_id
+            ).filter(
+                PromotionTarget.product_id.in_(product_ids),
+                Promotion.is_active == True,
+                Promotion.start_date <= today,
+                db.or_(Promotion.end_date == None, Promotion.end_date >= today),
+            ).all()
+            for pt in pt_rows:
+                promo_map[(pt.product_id, pt.store_id)] = {
+                    'discount_type': pt.discount_type,
+                    'discount_value': float(pt.discount_value) if pt.discount_value else 0,
+                    'promo_text': pt.description,
+                }
+
         results = []
         for row in rows:
             doc = row.to_dict()
             row_pricing = product_pricing.get(row.id, [])
-            
+
             stores_list = []
             cheapest_price = None
             cheapest_store = None
-            
+
             for ps in row_pricing:
                 price = float(ps.base_price) if ps.base_price else None
                 store_name = store_name_map.get(ps.store_id, ps.store_id)
-                
-                stores_list.append({
+                promo = promo_map.get((ps.product_id, ps.store_id))
+
+                store_entry = {
                     'store': store_name,
                     'name': store_name,
                     'price': price,
                     'url': ps.product_url,
                     'image': row.default_image_url,
-                    'storeProductId': f'{ps.product_id}_{ps.store_id}'
-                })
-                
+                    'storeProductId': f'{ps.product_id}_{ps.store_id}',
+                    'has_deal': promo is not None,
+                }
+
+                if promo and price:
+                    dt = promo['discount_type']
+                    dv = promo['discount_value']
+                    if dt == 'percentage' and dv > 0:
+                        original = price / (1 - dv / 100) if dv < 100 else price
+                        store_entry['original_price'] = round(original, 2)
+                        store_entry['discount_percent'] = int(dv)
+                    elif dt == 'fixed' and dv > 0:
+                        store_entry['original_price'] = round(price + dv, 2)
+                        store_entry['discount_percent'] = int(dv / (price + dv) * 100) if price + dv else 0
+                    elif dt == 'bogo':
+                        store_entry['discount_percent'] = int(dv)
+                    store_entry['promo_text'] = promo.get('promo_text') or ''
+
+                stores_list.append(store_entry)
+
                 if price is not None and (cheapest_price is None or price < cheapest_price):
                     cheapest_price = price
                     cheapest_store = store_name
-            
+
             doc['stores'] = stores_list
             doc['price'] = cheapest_price
             doc['store'] = cheapest_store
-            
+            doc['has_deal'] = any(s.get('has_deal') for s in stores_list)
+
+            # Bubble up promo info from the cheapest store to the top-level doc
+            # so product card templates can show badges without extra lookups
+            for s in stores_list:
+                if s.get('has_deal') and s.get('store') == cheapest_store:
+                    if s.get('discount_percent'):
+                        doc['discount_percent'] = s['discount_percent']
+                    if s.get('original_price'):
+                        doc['original_price'] = s['original_price']
+                    if s.get('promo_text'):
+                        doc['promo_text'] = s['promo_text']
+                    break
+
             if cheapest_price is not None and cheapest_store:
                 doc['cheapest'] = {'price': cheapest_price, 'store': cheapest_store}
-            
+
             if row.category_id and row.category_id in cat_map:
                 cat = cat_map[row.category_id]
                 doc['category'] = cat.name_en or cat.name_de
-            
+
             results.append(doc)
         
         return results
