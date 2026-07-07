@@ -1,4 +1,4 @@
-from flask import render_template, session, request, redirect, url_for
+from flask import render_template, session, request, redirect, url_for, jsonify
 from .. import main_bp
 from models.products_model import products_model
 from models.featured_deals_model import featured_deals_model
@@ -6,6 +6,7 @@ from models.multibuy_offers_model import multibuy_offers_model
 from models.quantity_discounts_model import quantity_discounts_model
 from models.favorites_model import favorites_model
 from models.stores_model import stores_model
+from models.postgres_models import db, Product, ProductStore, Category, PriceAlert, PriceFeedback, Notification
 from comparison.comparison_engine import build_compare_product_payload, build_best_price_summary
 from comparison.store_matcher import build_store_meta_map
 from utils.menu_data import get_mega_menu
@@ -86,12 +87,109 @@ def product_detail(product_id):
         except (ValueError, TypeError):
             best_price_value = None
     
-    return render_template('product_detail.html', 
-                         product=payload, 
+    # Similar products (same category, different product)
+    similar_products = []
+    raw_cat_id = product.get('category_id') or product.get('categoryId')
+    try:
+        cat_id = int(raw_cat_id) if raw_cat_id else None
+    except (ValueError, TypeError):
+        cat_id = None
+
+    if cat_id:
+        try:
+            sim_rows = (Product.query
+                        .filter(Product.category_id == cat_id, Product.id != int(product.get('id', 0)))
+                        .limit(12).all())
+            similar_products = products_model._hydrate_products_bulk(sim_rows)[:6]
+        except Exception:
+            pass
+
+    # Category breadcrumb path
+    category_path = []
+    if cat_id:
+        try:
+            cat = db.session.get(Category, cat_id)
+            while cat:
+                category_path.insert(0, {'name': cat.name_en or cat.name_de, 'slug': cat.slug or ''})
+                cat = db.session.get(Category, cat.parent_id) if cat.parent_id else None
+        except Exception:
+            pass
+
+    # Existing price alert for this user+product
+    existing_alert = None
+    pid_int = int(product.get('id', 0)) if product.get('id') else None
+    if user_email and pid_int:
+        try:
+            existing_alert = PriceAlert.query.filter_by(
+                user_email=user_email, product_id=pid_int, is_active=True
+            ).first()
+        except Exception:
+            pass
+
+    return render_template('product_detail.html',
+                         product=payload,
                          best_price_value=best_price_value,
                          best_price_stores=best_price_stores,
                          is_favorited=is_favorited,
-                         price_history=price_history)
+                         price_history=price_history,
+                         similar_products=similar_products,
+                         category_path=category_path,
+                         existing_alert=existing_alert)
+
+@main_bp.route('/api/price-alert/set', methods=['POST'])
+def set_price_alert():
+    user_email = session.get('user')
+    if not user_email:
+        return jsonify({'error': 'Login required'}), 401
+    data = request.get_json() or {}
+    try:
+        product_id = int(data.get('product_id', 0))
+        target_price = float(data.get('target_price', 0))
+    except (ValueError, TypeError):
+        return jsonify({'error': 'Invalid data'}), 400
+    if not product_id or target_price <= 0:
+        return jsonify({'error': 'Invalid product or price'}), 400
+    # Upsert: deactivate old alert, create new one
+    PriceAlert.query.filter_by(user_email=user_email, product_id=product_id, is_active=True).update({'is_active': False})
+    alert = PriceAlert(user_email=user_email, product_id=product_id, target_price=target_price)
+    db.session.add(alert)
+    db.session.commit()
+    return jsonify({'ok': True, 'target_price': float(alert.target_price)})
+
+
+@main_bp.route('/api/price-alert/delete', methods=['POST'])
+def delete_price_alert():
+    user_email = session.get('user')
+    if not user_email:
+        return jsonify({'error': 'Login required'}), 401
+    data = request.get_json() or {}
+    try:
+        product_id = int(data.get('product_id', 0))
+    except (ValueError, TypeError):
+        return jsonify({'error': 'Invalid data'}), 400
+    PriceAlert.query.filter_by(user_email=user_email, product_id=product_id, is_active=True).update({'is_active': False})
+    db.session.commit()
+    return jsonify({'ok': True})
+
+
+@main_bp.route('/api/report-price', methods=['POST'])
+def report_price():
+    user_email = session.get('user')
+    data = request.get_json() or {}
+    try:
+        fb = PriceFeedback(
+            product_id=str(data.get('product_id', '')),
+            store=data.get('store', ''),
+            user_email=user_email or 'anonymous',
+            is_correct=False,
+            reported_price=data.get('reported_price') or None,
+        )
+        db.session.add(fb)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+    return jsonify({'ok': True})
+
 
 @main_bp.route('/compare')
 @main_bp.route('/compare-prices')
@@ -133,7 +231,7 @@ def compare_prices():
         query['$and'] = and_clauses
 
     total_products = products_model.count_products(query)
-    raw_products = products_model.list_products(query=query, skip=0, limit=total_products or 0)
+    raw_products = products_model.list_products(query=query, skip=0, limit=total_products) if total_products else []
 
     min_price = _parse_price(request.args.get('min_price'))
     max_price = _parse_price(request.args.get('max_price'))

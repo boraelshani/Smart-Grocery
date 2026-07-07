@@ -258,10 +258,11 @@ def get_user_email():
     Strategy:
     1. Check for valid JWT token in headers/cookies.
     2. Check for Flask Session (legacy/simple auth).
-    3. Fallback: Return a default mock user if in dev mode with no auth.
-    
+
     Returns:
-        str: The user's email address or None.
+        str: The user's email address, or None if not authenticated.
+        (No mock/dev fallback — an unauthenticated request must never be
+        silently attributed to another account.)
     """
     # 1. Try JWT
     try:
@@ -274,13 +275,7 @@ def get_user_email():
         pass
 
     # 2. Try Session (Server-side cookie)
-    email = session.get("user")
-    
-    # 3. Last Resort: Dev Mode Mock User
-    if not email and getattr(m, "users", None):
-        # Pick the first available mock user if one exists
-        email = "user1@example.com" if "user1@example.com" in m.users else next(iter(m.users.keys()), None)
-    return email
+    return session.get("user")
 
 
 def get_category_options():

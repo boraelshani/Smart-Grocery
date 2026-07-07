@@ -1,651 +1,1107 @@
 {% extends "base.html" %}
-
-{% block title %}{{ product.name }} - Smart Grocery{% endblock %}
-
-{% block body_class %}{% endblock %}
+{% block title %}{{ product.name or product.title }} - SmartGrocery{% endblock %}
+{% block body_class %}pd-body{% endblock %}
 
 {% block styles %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
-  /* Force cream background everywhere */
-  body {
-    background-color: #f4f0ec !important;
-  }
-  
-  .container, main, .bg-light {
-    background-color: #f4f0ec !important;
-  }
+/* ── Layout ─────────────────────────────────────────────── */
+body.pd-body { background-color: #f4f0ec !important; }
+.pd-page {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 0 2rem 3rem;
+  /* push below fixed navbar (~80px) with generous breathing room */
+  padding-top: 100px;
+}
 
-  /* Hero Section with Breadcrumb */
-  .product-hero {
-    background: #f4f0ec !important;
-    padding: 2rem 0 1rem;
-  }
+/* ── Breadcrumbs ─────────────────────────────────────────── */
+.pd-breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0 0 1.5rem;
+  font-size: 0.82rem;
+  color: #a58ac2;
+  flex-wrap: wrap;
+}
+.pd-breadcrumbs a {
+  color: #6b5b7b;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.pd-breadcrumbs a:hover { color: #65388f; }
+.pd-breadcrumbs .sep { color: #c9b8d9; }
+.pd-breadcrumbs .current { color: #3a3b3a; font-weight: 500; }
 
-  .breadcrumb-modern {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    font-size: 0.9375rem;
-    color: #6b7280;
-  }
+/* ── Hero grid ───────────────────────────────────────────── */
+.pd-hero {
+  display: grid;
+  grid-template-columns: 480px 1fr 380px;
+  gap: 2.5rem;
+  margin-bottom: 2.5rem;
+  align-items: start;
+}
 
-  .breadcrumb-modern a {
-    color: #65388f;
-    text-decoration: none;
-    transition: all 0.2s;
-    font-weight: 500;
-  }
+/* ── Image card ──────────────────────────────────────────── */
+.pd-image-card {
+  position: relative;
+  background: #f4f0ec;
+  border-radius: 20px;
+  border: 1px solid #e0d7ce;
+  overflow: hidden;
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.pd-image-card img {
+  width: 82%;
+  height: 82%;
+  object-fit: contain;
+  mix-blend-mode: multiply;
+}
+.pd-fav-btn {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255,255,255,0.9);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+  z-index: 2;
+}
+.pd-fav-btn:hover { transform: scale(1.1); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+.pd-fav-btn i { font-size: 1.1rem; color: #c9b8d9; transition: color 0.15s; }
+.pd-fav-btn.active i { color: #ef4444; }
+.pd-no-image {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #ede8f5 0%, #e2d8ef 100%);
+}
+.pd-no-image i { font-size: 4rem; color: #a58ac2; }
 
-  .breadcrumb-modern a:hover {
-    text-decoration: underline;
-  }
+/* ── Info column ─────────────────────────────────────────── */
+.pd-info { display: flex; flex-direction: column; gap: 0; }
+.pd-title {
+  font-size: 1.85rem;
+  font-weight: 800;
+  color: #3a3b3a;
+  line-height: 1.2;
+  margin: 0 0 0.4rem;
+  letter-spacing: -0.02em;
+}
+.pd-subtitle {
+  font-size: 0.95rem;
+  color: #7a6e78;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.pd-size-badge {
+  background: #e9e3de;
+  color: #5c4f5a;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
 
-  .breadcrumb-separator {
-    color: #d1d5db;
-  }
+/* ── Price info (clean, no box) ──────────────────────────── */
+.pd-price-info { margin-bottom: 1.5rem; }
+.pd-best-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #a58ac2;
+  margin-bottom: 0.35rem;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.pd-best-price {
+  font-size: 3rem;
+  font-weight: 900;
+  color: #3a3b3a;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  margin-bottom: 0.25rem;
+}
+.pd-best-store {
+  font-size: 0.9rem;
+  color: #7a6e78;
+  margin-bottom: 0.75rem;
+}
+.pd-best-store strong { color: #3a3b3a; }
+.pd-savings-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: #dcfce7;
+  color: #166534;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 20px;
+}
 
-  /* Main Product Grid */
-  .product-detail-grid {
-    display: grid;
-    grid-template-columns: 1fr 1.5fr;
-    gap: 2rem;
-    margin-top: 2rem;
-  }
+/* ── Action buttons ──────────────────────────────────────── */
+.pd-actions { display: flex; gap: 0.75rem; margin-bottom: 0; }
+.pd-btn-primary {
+  flex: 1;
+  height: 40px;
+  background: linear-gradient(135deg, #65388f 0%, #48236b 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: opacity 0.15s, transform 0.15s;
+  box-shadow: 0 4px 14px rgba(101,56,143,0.35);
+}
+.pd-btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+.pd-btn-secondary {
+  height: 40px;
+  padding: 0 1rem;
+  background: white;
+  color: #65388f;
+  border: 1.5px solid #d4bfe8;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.pd-btn-secondary:hover { background: #f0eaf6; border-color: #65388f; }
+.pd-btn-secondary.alert-active { background: #fef9c3; color: #854d0e; border-color: #fde047; }
 
-  /* Product Image Section */
-  .product-image-section {
-    background: white;
-    border-radius: 16px;
-    padding: 2rem;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
-    height: fit-content;
-    overflow: visible;
-  }
+/* ── Hero chart column ───────────────────────────────────── */
+.pd-hero-chart {
+  background: white;
+  border: 1px solid #e9e3de;
+  border-radius: 16px;
+  padding: 1.25rem;
+}
+.pd-hero-chart-wrap { position: relative; height: 300px; }
 
-  .product-image-main {
-    width: 100%;
-    aspect-ratio: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: #f9fafb;
-    border-radius: 12px;
-    overflow: hidden;
-    margin-bottom: 1rem;
-  }
+/* ── Bottom layout: stores full-width ────────────────────── */
+.pd-bottom { margin-bottom: 2rem; }
 
-  .product-image-main img {
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
-  }
+/* ── Stores section ──────────────────────────────────────── */
+.pd-section-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #3a3b3a;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.pd-section-title i { color: #65388f; }
 
-  /* Product Info Section */
-  .product-info-section {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-  }
+.pd-stores-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.875rem;
+}
+.pd-stores-table thead th {
+  text-align: left;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #a58ac2;
+  padding: 0.625rem 0.875rem;
+  border-bottom: 1px solid #e9e3de;
+  white-space: nowrap;
+  background: #faf7f4;
+}
+.pd-stores-table thead th:first-child { border-radius: 12px 0 0 0; }
+.pd-stores-table thead th:last-child { border-radius: 0 12px 0 0; }
+.pd-stores-table tbody tr {
+  transition: background 0.12s;
+}
+.pd-stores-table tbody tr:hover { background: #faf5f0; }
+.pd-stores-table tbody td {
+  padding: 1rem 0.875rem;
+  border-bottom: 1px solid #f0ebe4;
+  vertical-align: middle;
+}
+.pd-stores-table tbody tr:last-child td { border-bottom: none; }
 
-  /* Product Header with Details - White Container */
-  .product-header-container {
-    background: white;
-    border-radius: 16px;
-    padding: 2rem;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
-  }
+.pd-row-best td:first-child {
+  border-left: 3px solid #65388f;
+}
+.pd-row-best { background: #f7f2fb !important; }
 
-  .product-brand {
-    color: #65388f;
-    font-size: 0.875rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-bottom: 0.5rem;
-  }
+.pd-store-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.pd-store-logo {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.8rem;
+  color: white;
+  flex-shrink: 0;
+}
+.pd-store-logo.billa { background: linear-gradient(135deg,#e53e3e,#c53030); }
+.pd-store-logo.spar { background: linear-gradient(135deg,#38a169,#276749); }
+.pd-store-logo.hofer { background: linear-gradient(135deg,#3182ce,#2b6cb0); }
+.pd-store-logo.default { background: linear-gradient(135deg,#65388f,#48236b); }
 
-  .product-title {
-    font-size: 2rem;
-    font-weight: 800;
-    color: #1e293b;
-    line-height: 1.2;
-    margin-bottom: 1.5rem;
-  }
+.pd-best-row-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #65388f;
+  background: #e8ddf2;
+  padding: 1px 6px;
+  border-radius: 20px;
+}
+.pd-price-cell { white-space: nowrap; }
+.pd-price-orig { color: #a58ac2; text-decoration: line-through; font-size: 0.8rem; display: block; }
+.pd-price-main { font-size: 1.1rem; font-weight: 800; color: #3a3b3a; }
+.pd-price-main.sale { color: #dc2626; }
+.pd-discount-tag {
+  display: inline-flex;
+  margin-left: 4px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  background: #dc2626;
+  color: white;
+  padding: 1px 5px;
+  border-radius: 20px;
+  vertical-align: middle;
+}
+.pd-unit-price { font-size: 0.76rem; color: #a58ac2; margin-top: 2px; }
+.pd-product-name-cell { color: #3a3b3a; max-width: 200px; }
+.pd-size-cell { color: #7a6e78; white-space: nowrap; }
+.pd-updated-cell { color: #a58ac2; font-size: 0.78rem; white-space: nowrap; }
+.pd-view-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.75rem;
+  color: #65388f;
+  font-weight: 600;
+  text-decoration: none;
+  border: 1px solid #d4bfe8;
+  border-radius: 6px;
+  padding: 4px 9px;
+  transition: all 0.12s;
+  background: white;
+  white-space: nowrap;
+}
+.pd-view-btn:hover { background: #f0eaf6; color: #48236b; }
+.pd-report-btn {
+  background: none;
+  border: 1px solid #e9e3de;
+  color: #9b6cb5;
+  cursor: pointer;
+  font-size: 0.78rem;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.12s;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 500;
+}
+.pd-report-btn:hover { color: #ef4444; background: #fef2f2; border-color: #fecaca; }
 
-  .product-details-list {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    padding-top: 1.5rem;
-    border-top: 1px solid #e5e7eb;
-  }
+/* ── Similar products section ────────────────────────────── */
+.pd-similar-section { margin-top: 2rem; }
 
-  .detail-row {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-  }
+.pd-card {
+  background: white;
+  border: 1px solid #e9e3de;
+  border-radius: 16px;
+  padding: 1.25rem;
+}
+.pd-card-title {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #3a3b3a;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.pd-card-title i { color: #65388f; margin-right: 0.35rem; }
+.pd-view-history-btn {
+  font-size: 0.72rem;
+  color: #65388f;
+  background: none;
+  border: 1px solid #d4bfe8;
+  border-radius: 6px;
+  padding: 2px 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.12s;
+}
+.pd-view-history-btn:hover { background: #f0eaf6; }
 
-  .detail-row i {
-    color: #65388f;
-    font-size: 1.125rem;
-    width: 24px;
-  }
+.pd-chart-wrap { position: relative; height: 200px; }
 
-  .detail-row .detail-label {
-    font-weight: 600;
-    color: #6b7280;
-    min-width: 120px;
-  }
+/* Similar products */
+.pd-similar-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 0.75rem;
+}
+.pd-sim-card {
+  background: #f8f4ef;
+  border-radius: 10px;
+  padding: 0.75rem;
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  transition: background 0.15s, border-color 0.15s;
+  border: 1px solid transparent;
+}
+.pd-sim-card:hover { background: #ede8f5; border-color: #d4bfe8; }
+.pd-sim-img {
+  width: 100%; aspect-ratio: 1; object-fit: contain;
+  border-radius: 8px; background: #f4f0ec; padding: 6px;
+  mix-blend-mode: multiply;
+}
+.pd-sim-name {
+  font-size: 0.75rem; color: #3a3b3a; font-weight: 600;
+  line-height: 1.35; overflow: hidden;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  text-decoration: none;
+}
+.pd-sim-price {
+  font-size: 0.8rem; font-weight: 700; color: #65388f;
+  text-decoration: none;
+}
+.pd-sim-card:hover .pd-sim-name,
+.pd-sim-card:hover .pd-sim-price { text-decoration: none; }
 
-  .detail-row .detail-value {
-    color: #1e293b;
-    font-weight: 500;
-  }
+/* ── Modals ──────────────────────────────────────────────── */
+.pd-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(58,59,58,0.5);
+  backdrop-filter: blur(4px);
+  z-index: 1050;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+.pd-modal-overlay.open { opacity: 1; pointer-events: all; }
+.pd-modal-box {
+  background: white;
+  border-radius: 20px;
+  padding: 1.75rem;
+  width: 90%;
+  max-width: 420px;
+  transform: translateY(20px) scale(0.97);
+  transition: transform 0.2s;
+  position: relative;
+}
+.pd-modal-overlay.open .pd-modal-box { transform: translateY(0) scale(1); }
+.pd-modal-close {
+  position: absolute;
+  top: 14px; right: 14px;
+  background: #f4f0ec; border: none;
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: #7a6e78;
+  font-size: 1rem;
+  transition: background 0.12s;
+}
+.pd-modal-close:hover { background: #e9e3de; }
+.pd-modal-title {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #3a3b3a;
+  margin-bottom: 0.35rem;
+}
+.pd-modal-sub {
+  font-size: 0.85rem;
+  color: #7a6e78;
+  margin-bottom: 1.25rem;
+}
+.pd-modal-input-wrap {
+  position: relative;
+  margin-bottom: 1rem;
+}
+.pd-modal-input-prefix {
+  position: absolute;
+  left: 14px; top: 50%; transform: translateY(-50%);
+  color: #7a6e78; font-weight: 600;
+}
+.pd-modal-input {
+  width: 100%;
+  height: 50px;
+  border: 1.5px solid #e9e3de;
+  border-radius: 12px;
+  padding: 0 1rem 0 2rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #3a3b3a;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.pd-modal-input:focus { border-color: #65388f; }
+.pd-modal-hint { font-size: 0.78rem; color: #a58ac2; margin-bottom: 1.25rem; }
+.pd-modal-btn {
+  width: 100%;
+  height: 48px;
+  background: linear-gradient(135deg, #65388f 0%, #48236b 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.pd-modal-btn:hover { opacity: 0.9; }
+.pd-modal-btn.danger { background: linear-gradient(135deg, #ef4444, #dc2626); }
 
-  /* Price Comparison - NO CONTAINER */
-  .price-comparison-title {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: #1e293b;
-    margin-bottom: 1.5rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
+/* Full history modal */
+.pd-history-modal .pd-modal-box {
+  max-width: 800px;
+  cursor: move;
+  user-select: none;
+}
+.pd-history-chart-wrap { height: 340px; }
 
-  .price-comparison-title i {
-    color: #65388f;
-  }
+/* Report modal */
+.pd-report-textarea {
+  width: 100%;
+  border: 1.5px solid #e9e3de;
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  color: #3a3b3a;
+  resize: vertical;
+  min-height: 80px;
+  outline: none;
+  margin-bottom: 1rem;
+  font-family: inherit;
+}
+.pd-report-textarea:focus { border-color: #65388f; }
 
-  .store-price-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
+/* ── Toast ───────────────────────────────────────────────── */
+.pd-toast {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: #3a3b3a;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  z-index: 2000;
+  transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  pointer-events: none;
+  white-space: nowrap;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+}
+.pd-toast.show { transform: translateX(-50%) translateY(0); }
 
-  .store-price-card {
-    background: white;
-    border: 2px solid #e5e7eb;
-    border-radius: 12px;
-    padding: 1.5rem;
-    transition: all 0.3s ease;
-    position: relative;
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 2rem;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-  }
-
-  .store-price-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(101, 56, 143, 0.15);
-    border-color: #65388f;
-  }
-
-  .store-price-card.best-price {
-    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
-    border-color: #22c55e;
-  }
-
-  .best-price-badge {
-    position: absolute;
-    top: 0;
-    right: 0;
-    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-    color: white;
-    padding: 0.5rem 1rem;
-    border-bottom-left-radius: 12px;
-    font-size: 0.75rem;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-  }
-
-  .store-header {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    flex: 1;
-  }
-
-  .store-name {
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: #1e293b;
-  }
-
-  .store-price-info {
-    display: flex;
-    align-items: center;
-    gap: 2rem;
-  }
-
-  .price-display {
-    font-size: 2rem;
-    font-weight: 800;
-    color: #65388f;
-  }
-
-  .store-price-card.best-price .price-display {
-    color: #16a34a;
-  }
-
-  .price-difference {
-    font-size: 0.875rem;
-    color: #ef4444;
-    font-weight: 600;
-  }
-
-  .store-price-card.best-price .price-difference {
-    color: #16a34a;
-  }
-
-  .price-per-unit {
-    font-size: 0.875rem;
-    color: #6b7280;
-    margin-top: 0.25rem;
-  }
-
-  /* Product Details Section */
-  .product-details-section {
-    background: white;
-    border-radius: 16px;
-    padding: 2rem;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
-  }
-
-  .detail-item {
-    display: flex;
-    padding: 1rem 0;
-    border-bottom: 1px solid #e5e7eb;
-  }
-
-  .detail-item:last-child {
-    border-bottom: none;
-  }
-
-  .detail-label {
-    font-weight: 600;
-    color: #6b7280;
-    min-width: 150px;
-  }
-
-  .detail-value {
-    color: #1e293b;
-    font-weight: 500;
-  }
-
-  /* Action Buttons */
-  .action-buttons {
-    display: flex;
-    gap: 0.75rem;
-    margin-top: 1.5rem;
-    width: 100%;
-    align-items: stretch;
-  }
-
-  .btn-action {
-    padding: 0.875rem 1.5rem;
-    border-radius: 10px;
-    font-weight: 700;
-    font-size: 0.9375rem;
-    border: 2px solid;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    text-decoration: none;
-  }
-
-  .btn-primary-action {
-    background: linear-gradient(135deg, #65388f 0%, #7c3aed 100%);
-    border-color: #65388f;
-    color: white;
-    flex: 1;
-  }
-
-  .btn-primary-action:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(101, 56, 143, 0.3);
-    color: white;
-  }
-
-  .btn-favorite {
-    background: white;
-    border-color: #e5e7eb;
-    color: #65388f;
-    padding: 0.875rem 1rem;
-    min-width: 52px;
-    width: 52px;
-    flex: 0 0 52px;
-    display: flex !important;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .btn-favorite:hover {
-    background: #f9fafb;
-    border-color: #65388f;
-    transform: translateY(-2px);
-  }
-
-  .btn-favorite.favorited {
-    background: white !important;
-    border-color: #dc2626 !important;
-    color: #dc2626 !important;
-  }
-
-  .btn-favorite.favorited:hover {
-    background: #fef2f2 !important;
-    border-color: #dc2626 !important;
-  }
-
-  .btn-favorite i {
-    font-size: 1.25rem;
-  }
-
-  /* Responsive Design */
-  @media (max-width: 1024px) {
-    .product-detail-grid {
-      grid-template-columns: 1fr;
-    }
-
-    .product-image-section {
-      position: relative;
-      top: 0;
-    }
-
-    .store-price-card {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 1rem;
-    }
-
-    .store-price-info {
-      width: 100%;
-      justify-content: space-between;
-    }
-  }
-
-  @media (max-width: 768px) {
-    .product-title {
-      font-size: 1.5rem;
-    }
-
-    .price-display {
-      font-size: 1.75rem;
-    }
-
-    .store-price-info {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 0.5rem;
-    }
-  }
-
-  /* Empty State */
-  .empty-state {
-    text-align: center;
-    padding: 3rem 2rem;
-    color: #6b7280;
-  }
-
-  .empty-state i {
-    font-size: 3rem;
-    color: #d1d5db;
-    margin-bottom: 1rem;
-  }
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width: 1300px) {
+  .pd-hero { grid-template-columns: 400px 1fr 320px; gap: 2rem; }
+  .pd-similar-grid { grid-template-columns: repeat(4, 1fr); }
+}
+@media (max-width: 1000px) {
+  .pd-hero { grid-template-columns: 360px 1fr; gap: 1.5rem; }
+  .pd-hero > :last-child { display: none; } /* hide chart col, moves to below */
+  .pd-similar-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 700px) {
+  .pd-page { padding: 0 1rem 3rem; padding-top: 100px; }
+  .pd-hero { grid-template-columns: 1fr; gap: 1.5rem; }
+  .pd-image-card { aspect-ratio: 4/3; max-height: 280px; }
+  .pd-title { font-size: 1.4rem; }
+  .pd-best-price { font-size: 2rem; }
+  .pd-actions { flex-direction: column; }
+  .pd-btn-secondary { width: 100%; }
+  .pd-similar-grid { grid-template-columns: repeat(2, 1fr); }
+  .pd-stores-table thead th:nth-child(2),
+  .pd-stores-table tbody td:nth-child(2),
+  .pd-stores-table thead th:nth-child(4),
+  .pd-stores-table tbody td:nth-child(4) { display: none; }
+}
 </style>
 {% endblock %}
 
 {% block content %}
-<div style="background-color: #f4f0ec; min-height: 100vh;">
-<div class="product-hero">
-  <div class="container">
-    <!-- Breadcrumb -->
-    <nav class="breadcrumb-modern">
-      <a href="{{ url_for('main.home') }}">Home</a>
-      <span class="breadcrumb-separator">/</span>
-      <a href="{{ url_for('main.compare_prices') }}">Products</a>
-      <span class="breadcrumb-separator">/</span>
-      <span>{{ product.name }}</span>
-    </nav>
-  </div>
-</div>
+{% set product_name = product.name or product.title or 'Product' %}
+{% set product_id = product.id or product._id %}
+{% set prod_size = '' %}
+{% if product.size_normalized %}
+  {% if product.unit_normalized %}
+    {% set prod_size = (product.size_normalized | string) + ' ' + product.unit_normalized %}
+  {% else %}
+    {% set prod_size = product.size_normalized | string %}
+  {% endif %}
+{% endif %}
+{% set store_list = product.stores or [] %}
+{% set all_prices = store_list | map(attribute='price') | reject('none') | list %}
+{% set max_price = all_prices | max if all_prices else 0 %}
+{% set cheapest_store_name = best_price_stores[0] if best_price_stores else '' %}
 
-<div class="container" style="padding: 2rem 0 4rem; background-color: #f4f0ec !important;">
-  <div class="product-detail-grid">
-    <!-- Left Column: Product Image -->
-    <div class="product-image-section">
-      <div class="product-image-main">
-        <img src="{{ product.image or product.defaultImageUrl or url_for('static', filename='placeholder.svg') }}" 
-             alt="{{ product.name }}"
-             onerror="this.src='{{ url_for('static', filename='placeholder.svg') }}'">
+<div class="pd-page">
+
+  <!-- Breadcrumbs -->
+  <nav class="pd-breadcrumbs" aria-label="breadcrumb">
+    <a href="{{ url_for('main.home') }}">Home</a>
+    {% for crumb in category_path %}
+    <span class="sep">›</span>
+    <a href="{{ url_for('main.compare_prices') }}?category={{ crumb.slug }}">{{ crumb.name }}</a>
+    {% endfor %}
+    <span class="sep">›</span>
+    <span class="current">{{ product_name }}</span>
+  </nav>
+
+  <!-- Hero -->
+  <div class="pd-hero">
+    <!-- Image -->
+    <div class="pd-image-card">
+      <button class="pd-fav-btn {% if is_favorited %}active{% endif %}"
+              id="favBtn"
+              onclick="toggleFavorite({{ product_id }}, this)"
+              title="{% if is_favorited %}Remove from favorites{% else %}Add to favorites{% endif %}">
+        <i class="bi {% if is_favorited %}bi-heart-fill{% else %}bi-heart{% endif %}"></i>
+      </button>
+      {% if product.image or product.defaultImageUrl or product.default_image_url %}
+      <img src="{{ product.image or product.defaultImageUrl or product.default_image_url }}"
+           alt="{{ product_name }}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\'pd-no-image\'><i class=\'bi bi-basket3\'></i></div>'">
+      {% else %}
+      <div class="pd-no-image"><i class="bi bi-basket3"></i></div>
+      {% endif %}
+    </div>
+
+    <!-- Info -->
+    <div class="pd-info">
+      <h1 class="pd-title">{{ product_name }}</h1>
+      <div class="pd-subtitle">
+        {% if product.brand %}<span>{{ product.brand }}</span>{% endif %}
+        {% if prod_size %}<span class="pd-size-badge">{{ prod_size }}</span>{% endif %}
+        {% if product.category %}<span style="color:#a58ac2;">{{ product.category }}</span>{% endif %}
       </div>
-      
-      <!-- Quick Actions -->
-      <div style="display: flex; gap: 1rem; margin-top: 1.5rem; width: 100%; align-items: center;">
-        <button style="flex: 1; height: 52px; background: linear-gradient(135deg, #65388f 0%, #7c3aed 100%); color: white; border: 2px solid #65388f; border-radius: 10px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-size: 0.9375rem;" onclick="addToShoppingList('{{ product.id }}', '{{ product.name }}', '{{ best_price_value }}', '{{ product.image or product.defaultImageUrl }}')">
-          <i class="bi bi-cart-plus"></i>
-          Add to List
+
+      {% if best_price_value %}
+      <div class="pd-price-info">
+        <div class="pd-best-label"><i class="bi bi-star-fill"></i> Best Price</div>
+        <div class="pd-best-price">€{{ "%.2f"|format(best_price_value) }}</div>
+        <div class="pd-best-store">at <strong>{{ cheapest_store_name }}</strong></div>
+        {% if max_price and max_price > best_price_value and (max_price - best_price_value) > 0.01 %}
+        <div class="pd-savings-badge">
+          <i class="bi bi-piggy-bank-fill"></i>
+          Save up to €{{ "%.2f"|format(max_price - best_price_value) }} vs most expensive
+        </div>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      <div class="pd-actions">
+        <button class="pd-btn-primary"
+                onclick="addToShoppingList('{{ product_id }}', {{ product_name | tojson }}, {{ best_price_value or 0 }}, {{ (product.image or product.defaultImageUrl or '') | tojson }}, {{ cheapest_store_name | tojson }})">
+          <i class="bi bi-plus-lg"></i> Add to List
         </button>
-        <button id="fav-btn-{{ product.id }}" style="width: 52px; height: 52px; background: white; border: 2px solid {% if is_favorited %}#dc2626{% else %}#e5e7eb{% endif %}; color: {% if is_favorited %}#dc2626{% else %}#65388f{% endif %}; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0;" onclick="toggleProductFavorite('{{ product.id }}', this)" title="{% if is_favorited %}Remove from{% else %}Add to{% endif %} favorites">
-          <i class="bi bi-heart{% if is_favorited %}-fill{% endif %}" style="font-size: 1.25rem;"></i>
+        <button class="pd-btn-secondary {% if existing_alert %}alert-active{% endif %}"
+                id="alertBtn"
+                onclick="openPriceAlertModal()">
+          <i class="bi bi-bell{% if existing_alert %}-fill{% endif %}"></i>
+          {% if existing_alert %}Alert: €{{ "%.2f"|format(existing_alert.target_price) }}{% else %}Set Price Alert{% endif %}
         </button>
       </div>
     </div>
 
-    <!-- Right Column: Product Info & Prices -->
-    <div class="product-info-section">
-      <!-- Product Header with Details in ONE Container -->
-      <div class="product-header-container">
-        {% if product.brand %}
-        <div class="product-brand">{{ product.brand }}</div>
-        {% endif %}
-        <h1 class="product-title">{{ product.name }}</h1>
-        
-        <!-- DEBUG: Show all product fields -->
-        <!-- Available fields: {{ product.keys() | list }} -->
-        
-        <!-- Product Details -->
-        <div class="product-details-list">
-          {% if product.unitSize %}
-          <div class="detail-row">
-            <i class="bi bi-box-seam"></i>
-            <span class="detail-label">Size:</span>
-            <span class="detail-value">{{ product.unitSize }}</span>
-          </div>
-          {% endif %}
-          
-          {% if product.category %}
-          <div class="detail-row">
-            <i class="bi bi-grid"></i>
-            <span class="detail-label">Category:</span>
-            <span class="detail-value">{{ product.category }}</span>
-          </div>
-          {% endif %}
-          
-          {% if product.brand %}
-          <div class="detail-row">
-            <i class="bi bi-award"></i>
-            <span class="detail-label">Brand:</span>
-            <span class="detail-value">{{ product.brand }}</span>
-          </div>
-          {% endif %}
-          
-          {% if product.barcode %}
-          <div class="detail-row">
-            <i class="bi bi-upc-scan"></i>
-            <span class="detail-label">Barcode:</span>
-            <span class="detail-value">{{ product.barcode }}</span>
-          </div>
-          {% endif %}
-          
-          {% if best_price_value %}
-          <div class="detail-row">
-            <i class="bi bi-star-fill"></i>
-            <span class="detail-label">Best Price:</span>
-            <span class="detail-value" style="color: #16a34a; font-weight: 700;">€{{ "%.2f"|format(best_price_value) }}</span>
-          </div>
-          {% endif %}
-        </div>
+    <!-- Price History (hero 3rd column) -->
+    {% if price_history %}
+    <div class="pd-hero-chart">
+      <div class="pd-card-title">
+        <span><i class="bi bi-graph-up"></i> Price History</span>
+        <button class="pd-view-history-btn" onclick="openHistoryModal()">View full</button>
       </div>
+      <div class="pd-hero-chart-wrap">
+        <canvas id="priceChartSmall"></canvas>
+      </div>
+    </div>
+    {% else %}
+    <div></div>
+    {% endif %}
 
-      <!-- Price Comparison - NO CONTAINER, just title and cards -->
-      <div>
-        <h2 class="price-comparison-title">
-          <i class="bi bi-shop"></i>
-          Price Comparison
-        </h2>
+  </div>
 
-        {% if product.stores and product.stores|length > 0 %}
-        <div class="store-price-grid">
-          {% for store_data in product.stores %}
-          <div class="store-price-card {% if store_data.price == best_price_value %}best-price{% endif %}">
-            {% if store_data.price == best_price_value %}
-            <div class="best-price-badge">
-              <i class="bi bi-star-fill"></i>
-              Best Price
-            </div>
-            {% endif %}
+  <!-- Stores table (full width) -->
+  <div class="pd-bottom">
+    <div class="pd-section-title">
+      <i class="bi bi-shop"></i> Prices in Stores
+      <span style="font-size:0.78rem;font-weight:400;color:#a58ac2;margin-left:auto;">{{ store_list|length }} store{% if store_list|length != 1 %}s{% endif %}</span>
+    </div>
 
-            <div class="store-header">
-              <div class="store-name">{{ store_data.store }}</div>
-            </div>
-
-            <div class="store-price-info">
-              <div>
-                <div class="price-display">€{{ "%.2f"|format(store_data.price) }}</div>
-                {% if product.normalized_unit_price and product.normalized_unit_label %}
-                <div class="price-per-unit">€{{ "%.2f"|format(product.normalized_unit_price) }}/{{ product.normalized_unit_label }}</div>
-                {% endif %}
+    {% if store_list %}
+    <div style="border:1px solid #e9e3de;border-radius:16px;overflow:hidden;background:white;">
+      <table class="pd-stores-table">
+        <thead>
+          <tr>
+            <th>Store</th>
+            <th>Product Name</th>
+            <th>Size</th>
+            <th>Price</th>
+            <th>Price / Unit</th>
+            <th>Updated</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in store_list | sort(attribute='price') %}
+          {% set is_best = s.price == best_price_value %}
+          {% set store_key = s.store | lower | replace(' ', '') %}
+          {% set display_size = s.store_size if s.get('store_size') else prod_size %}
+          {% set display_name = s.store_product_name if s.get('store_product_name') else product_name %}
+          <tr class="{% if is_best %}pd-row-best{% endif %}">
+            <td>
+              <div class="pd-store-cell">
+                <div class="pd-store-logo {{ store_key if store_key in ['billa','spar','hofer'] else 'default' }}">
+                  {{ s.store[:1] | upper }}
+                </div>
+                <div>
+                  <div style="font-weight:600;color:#3a3b3a;">{{ s.store }}</div>
+                  {% if is_best %}<div class="pd-best-row-label"><i class="bi bi-star-fill" style="font-size:0.55rem;"></i> Cheapest</div>{% endif %}
+                </div>
               </div>
-
-              {% if store_data.price != best_price_value and best_price_value %}
-              <div class="price-difference">
-                +€{{ "%.2f"|format(store_data.price - best_price_value) }} more
-              </div>
+            </td>
+            <td class="pd-product-name-cell" title="{{ display_name }}">
+              {{ display_name | truncate(50, true, '…') }}
+            </td>
+            <td class="pd-size-cell">{{ display_size or '—' }}</td>
+            <td class="pd-price-cell">
+              {% if s.get('has_deal') and s.get('original_price') %}
+              <span class="pd-price-orig">€{{ "%.2f"|format(s.original_price) }}</span>
               {% endif %}
-            </div>
-          </div>
+              <span class="pd-price-main {% if s.get('has_deal') %}sale{% endif %}">
+                €{{ "%.2f"|format(s.price) }}
+                {% if s.get('discount_percent') %}<span class="pd-discount-tag">-{{ s.discount_percent }}%</span>{% endif %}
+              </span>
+            </td>
+            <td>
+              {% set up = s.get('unit_price') or s.get('normalized_unit_price') %}
+              {% set up_label = s.get('unit_price_unit') or s.get('normalized_unit_label') or 'kg' %}
+              {% if up %}
+              <span class="pd-unit-price">€{{ "%.2f"|format(up) }}/{{ up_label }}</span>
+              {% else %}
+              <span class="pd-unit-price" style="color:#c9b8d9;">—</span>
+              {% endif %}
+            </td>
+            <td class="pd-updated-cell">{{ s.get('last_seen_label') or '—' }}</td>
+            <td style="white-space:nowrap;display:flex;gap:0.4rem;align-items:center;">
+              {% if s.get('url') %}
+              <a href="{{ s.url }}" target="_blank" rel="noopener" class="pd-view-btn">
+                <i class="bi bi-box-arrow-up-right"></i> View
+              </a>
+              {% endif %}
+              <button class="pd-report-btn" title="Report wrong price"
+                      onclick="openReportModal('{{ product_id }}', '{{ s.store }}', {{ s.price }})">
+                <i class="bi bi-flag"></i>
+              </button>
+            </td>
+          </tr>
           {% endfor %}
-        </div>
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div style="padding:3rem;text-align:center;color:#a58ac2;background:#f8f4ef;border-radius:16px;border:1px solid #e9e3de;">
+      <i class="bi bi-shop" style="font-size:2rem;display:block;margin-bottom:0.5rem;"></i>
+      No store prices available yet.
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Similar Products (full width below stores) -->
+  {% if similar_products %}
+  <div class="pd-similar-section">
+    <div class="pd-section-title"><i class="bi bi-grid"></i> Similar Products</div>
+    <div class="pd-similar-grid">
+      {% for sim in similar_products[:6] %}
+      {% set sim_id = sim.id or sim._id %}
+      <a href="/product/{{ sim_id }}" class="pd-sim-card">
+        {% if sim.image or sim.defaultImageUrl or sim.default_image_url %}
+        <img class="pd-sim-img" src="{{ sim.image or sim.defaultImageUrl or sim.default_image_url }}" alt="{{ sim.name or sim.title }}" loading="lazy">
         {% else %}
-        <div class="empty-state">
-          <i class="bi bi-shop"></i>
-          <p>No store prices available for this product yet.</p>
-        </div>
+        <div class="pd-sim-img" style="display:flex;align-items:center;justify-content:center;background:#ede8f5;"><i class="bi bi-basket3" style="color:#a58ac2;font-size:1.5rem;"></i></div>
         {% endif %}
-      </div>
+        <div class="pd-sim-name">{{ sim.name or sim.title }}</div>
+        {% if sim.price %}
+        <div class="pd-sim-price">€{{ "%.2f"|format(sim.price) }}</div>
+        {% endif %}
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+
+<!-- ── Price Alert Modal ───────────────────────────────────────── -->
+<div class="pd-modal-overlay" id="alertModal" onclick="if(event.target===this)closeModal('alertModal')">
+  <div class="pd-modal-box">
+    <button class="pd-modal-close" onclick="closeModal('alertModal')"><i class="bi bi-x-lg"></i></button>
+    <div style="font-size:2rem;margin-bottom:0.75rem;">🔔</div>
+    <div class="pd-modal-title">Set a Price Alert</div>
+    <div class="pd-modal-sub">
+      We'll notify you on the website when <strong>{{ product_name }}</strong> drops to your target price.
+    </div>
+    <div class="pd-modal-input-wrap">
+      <span class="pd-modal-input-prefix">€</span>
+      <input type="number" id="alertPriceInput" class="pd-modal-input"
+             step="0.01" min="0.01" placeholder="0.00"
+             value="{{ '%.2f'|format(existing_alert.target_price) if existing_alert else '' }}">
+    </div>
+    {% if best_price_value %}
+    <div class="pd-modal-hint">Current best price: €{{ "%.2f"|format(best_price_value) }}</div>
+    {% endif %}
+    <button class="pd-modal-btn" onclick="savePriceAlert({{ product_id }})">
+      {% if existing_alert %}Update Alert{% else %}Set Alert{% endif %}
+    </button>
+    {% if existing_alert %}
+    <button class="pd-modal-btn danger" style="margin-top:0.5rem;" onclick="deletePriceAlert({{ product_id }})">
+      Remove Alert
+    </button>
+    {% endif %}
+  </div>
+</div>
+
+<!-- ── Report Modal ───────────────────────────────────────────── -->
+<div class="pd-modal-overlay" id="reportModal" onclick="if(event.target===this)closeModal('reportModal')">
+  <div class="pd-modal-box">
+    <button class="pd-modal-close" onclick="closeModal('reportModal')"><i class="bi bi-x-lg"></i></button>
+    <div style="font-size:2rem;margin-bottom:0.75rem;">🚩</div>
+    <div class="pd-modal-title">Report Wrong Price</div>
+    <div class="pd-modal-sub" id="reportModalSub">Let us know what's wrong with the price.</div>
+    <div class="pd-modal-input-wrap">
+      <span class="pd-modal-input-prefix">€</span>
+      <input type="number" id="reportPriceInput" class="pd-modal-input"
+             step="0.01" min="0.01" placeholder="Actual price (optional)">
+    </div>
+    <textarea class="pd-report-textarea" id="reportNote" placeholder="Additional details (optional)…"></textarea>
+    <button class="pd-modal-btn" onclick="submitReport()">Submit Report</button>
+  </div>
+</div>
+
+<!-- ── Full Price History Modal ───────────────────────────────── -->
+<div class="pd-modal-overlay pd-history-modal" id="historyModal" onclick="if(event.target===this)closeModal('historyModal')">
+  <div class="pd-modal-box" id="historyModalBox">
+    <button class="pd-modal-close" onclick="closeModal('historyModal')"><i class="bi bi-x-lg"></i></button>
+    <div class="pd-modal-title" style="margin-bottom:1rem;">Price History — {{ product_name }}</div>
+    <div class="pd-history-chart-wrap">
+      <canvas id="priceChartFull"></canvas>
     </div>
   </div>
 </div>
-</div>
+
+<!-- Toast -->
+<div class="pd-toast" id="pdToast"></div>
 
 <script>
-function addToShoppingList(productId, productName, price, image, store) {
-  console.log('Adding to list:', { productId, productName, price, image, store });
+// ── Data ─────────────────────────────────────────────────────────
+const PRODUCT_ID = {{ product_id }};
+const PRICE_HISTORY = {{ price_history | tojson }};
+const BEST_PRICE = {{ best_price_value if best_price_value else 'null' }};
+
+// ── Toast ────────────────────────────────────────────────────────
+function pdToast(msg, duration=2800) {
+  const el = document.getElementById('pdToast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), duration);
 }
 
-function toggleProductFavorite(productId, button) {
-  console.log('toggleProductFavorite called for product:', productId);
-  const icon = button.querySelector('i');
-  
-  button.disabled = true;
-  button.style.opacity = '0.6';
-  
-  fetch('/api/toggle-favorite', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ product_id: productId })
-  })
-  .then(response => response.json())
-  .then(data => {
-    console.log('API response:', data);
-    button.disabled = false;
-    button.style.opacity = '1';
-    
-    if (data.success) {
-      if (data.is_favorite) {
-        // Added to favorites
-        icon.classList.remove('bi-heart');
-        icon.classList.add('bi-heart-fill');
-        button.style.borderColor = '#dc2626';
-        button.style.color = '#dc2626';
-        showMessage('Added to favorites! ❤️', 'success');
-      } else {
-        // Removed from favorites
-        icon.classList.remove('bi-heart-fill');
-        icon.classList.add('bi-heart');
-        button.style.borderColor = '#e5e7eb';
-        button.style.color = '#65388f';
-        showMessage('Removed from favorites', 'info');
-      }
-    } else if (data.error === 'unauthorized') {
-      showMessage('Please log in to add favorites', 'error');
-      setTimeout(() => window.location.href = '/login', 1500);
-    } else {
-      showMessage('Failed to update favorites', 'error');
+// ── Modals ───────────────────────────────────────────────────────
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// ── Favorite ─────────────────────────────────────────────────────
+async function toggleFavorite(productId, btn) {
+  const isActive = btn.classList.contains('active');
+  const icon = btn.querySelector('i');
+  try {
+    const res = await fetch(isActive ? '/api/favorites/remove' : '/api/favorites/add', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ product_id: String(productId) })
+    });
+    if (res.ok) {
+      btn.classList.toggle('active');
+      icon.className = btn.classList.contains('active') ? 'bi bi-heart-fill' : 'bi bi-heart';
+      pdToast(btn.classList.contains('active') ? '❤️ Added to favorites' : 'Removed from favorites');
+    } else if (res.status === 401) {
+      pdToast('Please log in to save favorites');
     }
-  })
-  .catch(err => {
-    console.error('Error:', err);
-    button.disabled = false;
-    button.style.opacity = '1';
-    showMessage('Failed to update favorites. Please try again.', 'error');
-  });
+  } catch { pdToast('Something went wrong'); }
 }
 
-function showMessage(message, type) {
-  if (typeof showNotification === 'function') {
-    showNotification(message, type === 'error' ? 'danger' : type);
+// ── Price Alert ───────────────────────────────────────────────────
+function openPriceAlertModal() { openModal('alertModal'); }
+
+async function savePriceAlert(productId) {
+  const val = parseFloat(document.getElementById('alertPriceInput').value);
+  if (!val || val <= 0) { pdToast('Please enter a valid price'); return; }
+  if (BEST_PRICE && val >= BEST_PRICE) {
+    pdToast(`Target must be below current best price (€${BEST_PRICE.toFixed(2)})`);
     return;
   }
-
-  const messageDiv = document.createElement('div');
-  const normalizedType = type === 'error' ? 'danger' : (type || 'info');
-  const variants = {
-    success: { icon: 'bi-check2-circle', title: 'Success' },
-    danger: { icon: 'bi-exclamation-octagon-fill', title: 'Error' },
-    info: { icon: 'bi-info-circle-fill', title: 'Info' },
-    warning: { icon: 'bi-exclamation-triangle-fill', title: 'Warning' }
-  };
-  const variant = variants[normalizedType] || variants.info;
-
-  messageDiv.className = `sg-toast sg-toast--${normalizedType} is-visible`;
-  messageDiv.style.position = 'fixed';
-  messageDiv.style.top = '100px';
-  messageDiv.style.right = '20px';
-  messageDiv.style.maxWidth = '380px';
-  messageDiv.style.zIndex = '9999';
-  messageDiv.style.setProperty('--toast-duration', '3000ms');
-  messageDiv.innerHTML = `
-    <div class="sg-toast__icon"><i class="bi ${variant.icon}"></i></div>
-    <div class="sg-toast__content">
-      <div class="sg-toast__label">${variant.title}</div>
-      <div class="sg-toast__title"></div>
-    </div>
-    <button type="button" class="sg-toast__close" aria-label="Close notification"><i class="bi bi-x-lg"></i></button>
-    <span class="sg-toast__progress"></span>
-  `;
-  messageDiv.querySelector('.sg-toast__title').textContent = message;
-  messageDiv.querySelector('.sg-toast__close').addEventListener('click', () => messageDiv.remove());
-  document.body.appendChild(messageDiv);
-
-  setTimeout(() => {
-    messageDiv.classList.add('is-leaving');
-    setTimeout(() => {
-      if (messageDiv.parentNode) {
-        document.body.removeChild(messageDiv);
-      }
-    }, 220);
-  }, 3000);
+  try {
+    const res = await fetch('/api/price-alert/set', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ product_id: productId, target_price: val })
+    });
+    if (res.ok) {
+      closeModal('alertModal');
+      pdToast('🔔 Price alert set for €' + val.toFixed(2));
+      const btn = document.getElementById('alertBtn');
+      btn.classList.add('alert-active');
+      btn.innerHTML = '<i class="bi bi-bell-fill"></i> Alert: €' + val.toFixed(2);
+    } else if (res.status === 401) {
+      pdToast('Please log in to set price alerts');
+      closeModal('alertModal');
+    } else {
+      pdToast('Could not set alert, try again');
+    }
+  } catch { pdToast('Something went wrong'); }
 }
+
+async function deletePriceAlert(productId) {
+  try {
+    const res = await fetch('/api/price-alert/delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ product_id: productId })
+    });
+    if (res.ok) {
+      closeModal('alertModal');
+      pdToast('Alert removed');
+      const btn = document.getElementById('alertBtn');
+      btn.classList.remove('alert-active');
+      btn.innerHTML = '<i class="bi bi-bell"></i> Set Price Alert';
+    }
+  } catch { pdToast('Something went wrong'); }
+}
+
+// ── Report Price ──────────────────────────────────────────────────
+let reportContext = {};
+function openReportModal(productId, store, currentPrice) {
+  reportContext = { product_id: productId, store, current_price: currentPrice };
+  document.getElementById('reportModalSub').textContent =
+    `Report a wrong price for ${store} (currently showing €${parseFloat(currentPrice).toFixed(2)}).`;
+  document.getElementById('reportPriceInput').value = '';
+  document.getElementById('reportNote').value = '';
+  openModal('reportModal');
+}
+
+async function submitReport() {
+  const reportedPrice = parseFloat(document.getElementById('reportPriceInput').value) || null;
+  try {
+    await fetch('/api/report-price', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...reportContext, reported_price: reportedPrice })
+    });
+  } catch {}
+  closeModal('reportModal');
+  pdToast('Thanks for reporting! We\'ll review it.');
+}
+
+// ── Charts ────────────────────────────────────────────────────────
+function buildChartData() {
+  if (!PRICE_HISTORY || !PRICE_HISTORY.length) return null;
+  // Group by store; use numeric timestamp as x so Chart.js draws left→right
+  const storeMap = {};
+  PRICE_HISTORY.forEach(h => {
+    if (!storeMap[h.store]) storeMap[h.store] = [];
+    const ts = h.timestamp ? new Date(h.timestamp).getTime() : 0;
+    const price = h.price != null ? h.price : h.new_price;
+    if (price != null) storeMap[h.store].push({ x: ts, y: price });
+  });
+  // Sort each store's points by timestamp ascending
+  Object.values(storeMap).forEach(pts => pts.sort((a, b) => a.x - b.x));
+
+  const palette = ['#65388f','#10b981','#e53e3e','#f59e0b','#3182ce'];
+  const datasets = Object.entries(storeMap).map(([store, points], i) => ({
+    label: store,
+    data: points,
+    borderColor: palette[i % palette.length],
+    backgroundColor: palette[i % palette.length] + '18',
+    fill: false,
+    tension: 0.35,
+    pointRadius: 4,
+    pointHoverRadius: 6,
+    borderWidth: 2,
+  }));
+  return { datasets };
+}
+
+const chartOpts = (compact=false, allPoints=[]) => {
+  // Clamp x-axis to actual data range so lines start from the left edge
+  const allX = allPoints.map(p => p.x).filter(Boolean);
+  const allY = allPoints.map(p => p.y).filter(v => v != null);
+  const xMin = allX.length ? Math.min(...allX) : undefined;
+  const xMax = allX.length ? Math.max(...allX) : undefined;
+  const yMin = allY.length ? Math.min(...allY) : undefined;
+  const yPad = yMin != null ? yMin * 0.05 : 0;
+
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    parsing: false,
+    animation: { duration: 400 },
+    plugins: {
+      legend: {
+        display: true,
+        position: 'top',
+        labels: { font: { size: compact ? 10 : 12 }, padding: compact ? 8 : 16, boxWidth: 14, boxHeight: 2 }
+      },
+      tooltip: {
+        backgroundColor: 'rgba(255,255,255,0.97)',
+        titleColor: '#3a3b3a',
+        bodyColor: '#3a3b3a',
+        borderColor: '#e9e3de',
+        borderWidth: 1,
+        padding: 10,
+        callbacks: {
+          title: items => {
+            const d = new Date(items[0].parsed.x);
+            return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+          },
+          label: ctx => ` ${ctx.dataset.label}: €${ctx.parsed.y.toFixed(2)}`
+        }
+      }
+    },
+    scales: {
+      x: {
+        type: 'linear',
+        min: xMin,
+        max: xMax,
+        grid: { display: false },
+        border: { display: false },
+        ticks: {
+          font: { size: compact ? 10 : 11 },
+          color: '#9b8fa8',
+          maxTicksLimit: compact ? 5 : 8,
+          callback: v => {
+            const d = new Date(v);
+            return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+          }
+        }
+      },
+      y: {
+        min: yMin != null ? yMin - yPad : undefined,
+        grid: { color: '#f0ebe4', drawBorder: false },
+        border: { display: false },
+        ticks: {
+          font: { size: compact ? 10 : 11 },
+          color: '#9b8fa8',
+          maxTicksLimit: compact ? 4 : 5,
+          callback: v => '€' + v.toFixed(2)
+        }
+      }
+    }
+  };
+};
+
+let smallChart = null, fullChart = null;
+
+document.addEventListener('DOMContentLoaded', () => {
+  const data = buildChartData();
+  if (!data) return;
+  const allPoints = data.datasets.flatMap(ds => ds.data);
+
+  const smallCtx = document.getElementById('priceChartSmall');
+  if (smallCtx) {
+    smallChart = new Chart(smallCtx, { type: 'line', data, options: chartOpts(true, allPoints) });
+  }
+});
+
+function openHistoryModal() {
+  openModal('historyModal');
+  const data = buildChartData();
+  if (!data) return;
+  const allPoints = data.datasets.flatMap(ds => ds.data);
+  if (fullChart) { fullChart.destroy(); }
+  setTimeout(() => {
+    const ctx = document.getElementById('priceChartFull');
+    if (ctx) fullChart = new Chart(ctx, { type: 'line', data, options: chartOpts(false, allPoints) });
+  }, 50);
+}
+
+// Draggable history modal
+(function() {
+  const box = document.getElementById('historyModalBox');
+  if (!box) return;
+  let dragging = false, ox = 0, oy = 0;
+  box.addEventListener('mousedown', e => {
+    if (e.target.closest('canvas,button,input')) return;
+    dragging = true;
+    ox = e.clientX - box.offsetLeft;
+    oy = e.clientY - box.offsetTop;
+    box.style.position = 'absolute';
+  });
+  document.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    box.style.left = (e.clientX - ox) + 'px';
+    box.style.top = (e.clientY - oy) + 'px';
+  });
+  document.addEventListener('mouseup', () => { dragging = false; });
+})();
+
+// ── Keyboard close ────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    ['alertModal','reportModal','historyModal'].forEach(id => closeModal(id));
+  }
+});
 </script>
 {% endblock %}
+
+{% block scripts %}{% endblock %}

@@ -84,11 +84,35 @@ def build_inverted_index(products):
     return index
 
 
-def find_best_match(spar_name: str, billa_index: dict,
-                    billa_word_sets: dict, threshold: float):
+def sizes_compatible(spar_size, spar_unit, billa_size, billa_unit) -> bool:
+    """Return True if both products have the same size, or if either has no size data."""
+    if spar_size is None or billa_size is None:
+        return True  # can't compare — don't disqualify
+    # Normalise units to a common form
+    unit_map = {'l': 'l', 'ml': 'ml', 'cl': 'ml', 'dl': 'ml',
+                'kg': 'kg', 'g': 'g', 'mg': 'g',
+                'stk': 'stk', 'stück': 'stk', 'stueck': 'stk'}
+    su = unit_map.get((spar_unit or '').lower(), (spar_unit or '').lower())
+    bu = unit_map.get((billa_unit or '').lower(), (billa_unit or '').lower())
+    # Convert to a common base unit for comparison
+    to_base = {'ml': 0.001, 'cl': 0.01, 'dl': 0.1, 'l': 1.0,
+               'g': 0.001, 'kg': 1.0, 'mg': 0.000001}
+    try:
+        sv = float(spar_size) * to_base.get(su, 1.0)
+        bv = float(billa_size) * to_base.get(bu, 1.0)
+        # Allow 5% tolerance for rounding differences (e.g. 500g vs 0.5kg)
+        return abs(sv - bv) / max(sv, bv) < 0.05
+    except (TypeError, ValueError, ZeroDivisionError):
+        return True
+
+
+def find_best_match(spar_name: str, spar_size, spar_unit,
+                    billa_index: dict, billa_word_sets: dict,
+                    billa_sizes: dict, threshold: float):
     """
-    Given a SPAR product name, find the best matching BILLA product id.
+    Given a SPAR product, find the best matching BILLA product id.
     Returns (billa_product_id, score) or (None, 0).
+    Size must match (within tolerance) if both products have size data.
     """
     spar_words = normalise(spar_name)
     if not spar_words:
@@ -102,9 +126,14 @@ def find_best_match(spar_name: str, billa_index: dict,
     best_id, best_score = None, 0.0
     for bpid in candidates:
         score = similarity(spar_words, billa_word_sets[bpid])
-        if score > best_score:
-            best_score = score
-            best_id = bpid
+        if score <= best_score:
+            continue
+        # Reject if sizes are known and don't match
+        bsize, bunit = billa_sizes.get(bpid, (None, None))
+        if not sizes_compatible(spar_size, spar_unit, bsize, bunit):
+            continue
+        best_score = score
+        best_id = bpid
 
     if best_score >= threshold:
         return best_id, best_score
@@ -118,7 +147,8 @@ def run(dry_run: bool, threshold: float, store1: str, store2: str):
         # ── Load store-1 (SPAR) products ─────────────────────────────────────
         store1_rows = (
             db.session.query(Product.id, Product.name, Product.name_de,
-                             Product.default_image_url)
+                             Product.default_image_url,
+                             Product.size_normalized, Product.unit_normalized)
             .join(ProductStore, ProductStore.product_id == Product.id)
             .filter(ProductStore.store_id == store1)
             .all()
@@ -131,7 +161,8 @@ def run(dry_run: bool, threshold: float, store1: str, store2: str):
 
         # ── Load store-2 (BILLA) products ────────────────────────────────────
         store2_rows = (
-            db.session.query(Product.id, Product.name, Product.name_de)
+            db.session.query(Product.id, Product.name, Product.name_de,
+                             Product.size_normalized, Product.unit_normalized)
             .join(ProductStore, ProductStore.product_id == Product.id)
             .filter(ProductStore.store_id == store2)
             .all()
@@ -145,6 +176,7 @@ def run(dry_run: bool, threshold: float, store1: str, store2: str):
             billa_products.append((row.id, name))
 
         billa_word_sets = {pid: normalise(name) for pid, name in billa_products}
+        billa_sizes = {row.id: (row.size_normalized, row.unit_normalized) for row in store2_rows}
         billa_index = build_inverted_index(billa_products)
 
         # ── Load existing store-1 ProductStore prices ─────────────────────────
@@ -165,7 +197,8 @@ def run(dry_run: bool, threshold: float, store1: str, store2: str):
             spar_image = row.default_image_url
 
             billa_pid, score = find_best_match(
-                spar_name, billa_index, billa_word_sets, threshold
+                spar_name, row.size_normalized, row.unit_normalized,
+                billa_index, billa_word_sets, billa_sizes, threshold
             )
 
             if billa_pid is None:
@@ -195,6 +228,15 @@ def run(dry_run: bool, threshold: float, store1: str, store2: str):
                     skipped_no_match += 1
                     continue
 
+                # Price-ratio sanity check — reject if prices differ by more than 2.5x
+                billa_product_check = db.session.get(Product, billa_pid)
+                billa_ps = ProductStore.query.filter_by(product_id=billa_pid, store_id=store2).first()
+                if billa_ps and billa_ps.base_price and spar_ps.base_price:
+                    ratio = float(spar_ps.base_price) / float(billa_ps.base_price)
+                    if ratio < 0.4 or ratio > 2.5:
+                        skipped_no_match += 1
+                        continue
+
                 # Create a new ProductStore for SPAR on the BILLA product row
                 new_ps = ProductStore(
                     product_id=billa_pid,
@@ -204,6 +246,9 @@ def run(dry_run: bool, threshold: float, store1: str, store2: str):
                     product_url=spar_ps.product_url,
                     last_seen=spar_ps.last_seen,
                     created_at=spar_ps.created_at,
+                    store_product_name=spar_name,
+                    store_size_normalized=row.size_normalized,
+                    store_unit_normalized=row.unit_normalized,
                 )
                 db.session.add(new_ps)
 
@@ -212,11 +257,15 @@ def run(dry_run: bool, threshold: float, store1: str, store2: str):
                 if billa_product and not billa_product.default_image_url and spar_image:
                     billa_product.default_image_url = spar_image
 
-                # Delete the now-redundant standalone SPAR Product row
-                # (its ProductStore row points to it; cascade will handle it)
-                spar_product = db.session.get(Product, spar_pid)
-                if spar_product:
-                    db.session.delete(spar_product)
+                # Remove the source product's own store entry so it doesn't duplicate
+                # (the store is now represented via the canonical product's product_store)
+                # We do NOT delete the source product row — it stays as a stub in case
+                # the link needs to be reversed.
+                old_ps = ProductStore.query.filter_by(
+                    product_id=spar_pid, store_id=store1
+                ).first()
+                if old_ps:
+                    db.session.delete(old_ps)
 
                 matched += 1
 

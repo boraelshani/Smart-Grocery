@@ -110,8 +110,29 @@ app = Flask(__name__)
 # SECRET_KEY is crucial for security. usage:
 # 1. It signs the session cookie so users can't tamper with their session data (like claiming to be logged in).
 # 2. It's used for CSRF protection in forms.
-# We try to get it from environment variables, but fall back to 'dev-secret-key' for local development.
-app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key')
+# In production it MUST come from the environment. If missing, we generate a
+# random ephemeral key (sessions won't survive restarts) and warn loudly —
+# a hardcoded fallback would let anyone forge session cookies.
+_secret = os.environ.get('SECRET_KEY')
+if not _secret:
+    import secrets as _secrets
+    _secret = _secrets.token_hex(32)
+    print('WARNING: SECRET_KEY not set — using a random ephemeral key. '
+          'Set SECRET_KEY in .env for persistent sessions.')
+app.secret_key = _secret
+
+# ── Session cookie hardening ────────────────────────────────────────────────
+# HttpOnly: JS cannot read the session cookie (mitigates XSS token theft)
+# SameSite=Lax: browsers won't send the cookie on cross-site POSTs (CSRF defense)
+# Secure: only sent over HTTPS (enable via COOKIE_SECURE=1 in production)
+from datetime import timedelta as _td
+app.config.update(
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE='Lax',
+    SESSION_COOKIE_SECURE=bool(os.environ.get('COOKIE_SECURE')),
+    PERMANENT_SESSION_LIFETIME=_td(days=14),
+    MAX_CONTENT_LENGTH=8 * 1024 * 1024,  # 8 MB request cap (avatar uploads are data-URLs)
+)
 
 # JWT_SECRET_KEY is specifically for JSON Web Token encryption.
 # This often matches the app secret key but can be separate.
@@ -142,6 +163,50 @@ app.register_blueprint(admin_bp, url_prefix='/admin')
 app.register_blueprint(api_bp, url_prefix='/api')
 app.register_blueprint(compare_engine_bp, url_prefix='/api/compare')
 app.register_blueprint(recipe_bp)
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# SECURITY MIDDLEWARE
+# ═══════════════════════════════════════════════════════════════════════════
+
+@app.before_request
+def _csrf_origin_check():
+    """
+    Cross-site request forgery defense for state-changing requests.
+    Combined with SameSite=Lax cookies, rejecting unsafe-method requests whose
+    Origin/Referer host doesn't match ours blocks cross-site form/AJAX abuse
+    without requiring per-form tokens.
+    """
+    if request.method not in ('POST', 'PUT', 'PATCH', 'DELETE'):
+        return None
+    # Requests authenticated purely by Bearer token are immune to CSRF
+    auth_header = request.headers.get('Authorization', '')
+    if auth_header.lower().startswith('bearer ') and not request.cookies:
+        return None
+    origin = request.headers.get('Origin') or request.headers.get('Referer')
+    if not origin:
+        # Non-browser clients (curl, scripts) send neither header; browsers
+        # always send Origin on cross-site POSTs, so missing headers are safe.
+        return None
+    from urllib.parse import urlparse
+    origin_host = urlparse(origin).netloc.split(':')[0]
+    request_host = (request.host or '').split(':')[0]
+    if origin_host and request_host and origin_host != request_host:
+        return jsonify({'error': 'cross-origin request rejected'}), 403
+    return None
+
+
+@app.after_request
+def _security_headers(resp):
+    """Attach standard browser-security headers to every response."""
+    resp.headers.setdefault('X-Content-Type-Options', 'nosniff')
+    resp.headers.setdefault('X-Frame-Options', 'DENY')
+    resp.headers.setdefault('Referrer-Policy', 'strict-origin-when-cross-origin')
+    resp.headers.setdefault('Permissions-Policy', 'camera=(self), microphone=(), geolocation=()')
+    if os.environ.get('COOKIE_SECURE'):
+        # Only meaningful when serving over HTTPS
+        resp.headers.setdefault('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
+    return resp
 
 
 @app.context_processor
@@ -256,7 +321,9 @@ def internal_error(error):
     return render_template('500.html'), 500
 
 
-# Health check endpoint to verify PostgreSQL connectivity
+# Health check endpoint to verify PostgreSQL connectivity.
+# Deliberately returns no internal detail — exception text can leak
+# connection strings and schema information.
 @app.route('/health')
 def health():
     try:
@@ -266,19 +333,24 @@ def health():
             sa_db.session.execute(text('SELECT 1'))
             sa_db.session.commit()
         return jsonify({'status': 'ok', 'db': 'connected'}), 200
-    except Exception as e:
-        return jsonify({'status': 'error', 'db': 'disconnected', 'detail': str(e)}), 500
+    except Exception:
+        return jsonify({'status': 'error', 'db': 'disconnected'}), 500
 
 
 @app.route('/debug-db')
 def debug_db():
     """
     Debug route to inspect PostgreSQL connection details.
-    Useful for troubleshooting connection issues in different environments.
+    Admin-only: exposes database name/user and would otherwise leak
+    infrastructure details to anyone on the internet.
     """
-    info = {'database_url': (os.environ.get('DATABASE_URL') or '')[:50] + '...'}
+    from routes.admin.common import _require_admin
+    ok, res = _require_admin()
+    if not ok:
+        return res
+    info = {}
     try:
-        from models.postgres_models import db as sa_db
+        from models.postgres_models import db as sa_db, Product, Store, Category
         from sqlalchemy import text
         with app.app_context():
             result = sa_db.session.execute(text('SELECT current_database(), current_user'))
@@ -286,24 +358,17 @@ def debug_db():
             info['database_name'] = row[0] if row else None
             info['database_user'] = row[1] if row else None
             info['status'] = 'connected'
-            
-            # Test actual data retrieval
-            from models.postgres_models import Product, Store, Category
-            product_count = Product.query.count()
-            store_count = Store.query.count()
-            category_count = Category.query.count()
-            
-            info['product_count'] = product_count
-            info['store_count'] = store_count
-            info['category_count'] = category_count
-    except Exception as e:
-        import traceback
-        info['error'] = str(e)
-        info['traceback'] = traceback.format_exc()
+            info['product_count'] = Product.query.count()
+            info['store_count'] = Store.query.count()
+            info['category_count'] = Category.query.count()
+    except Exception:
         info['status'] = 'disconnected'
     return jsonify(info)
 
 
 if __name__ == '__main__':
+    # Debug mode only when explicitly requested — never default to it.
+    # (debug=True exposes the Werkzeug interactive debugger: remote code execution.)
+    debug_mode = os.environ.get('FLASK_DEBUG', '').lower() in ('1', 'true', 'yes')
     # use_reloader=False prevents WinError 10038 on some Windows environments
-    app.run(debug=True, use_reloader=False, port=5001)
+    app.run(debug=debug_mode, use_reloader=False, port=5001)

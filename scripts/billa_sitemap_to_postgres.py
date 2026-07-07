@@ -1,14 +1,19 @@
 #!/usr/bin/env python3
-"""Scrape the full BILLA catalog from the sitemap and load it into PostgreSQL.
+"""
+Billa catalog scraper — incremental, no truncation.
 
-This importer uses the public BILLA sitemap to enumerate all product URLs, then
-fetches each product page and extracts the resolved Nuxt product object.
+Writes to the CURRENT (post-migration-001) schema:
+  products          fingerprint upsert, sets name + name_de
+  product_store     (product_id, store_id) upsert — base_price, unit_price, flags
+  offers            discount-rule rows (percentage / fixed / bogo)
+  promotions        one per scrape run per store ("Billa Aktionen <date>")
+  promotion_targets links (promotion, product, store) for on-sale items
+  price_history     records price changes (product_id, store_id columns)
 
-Behavior:
-- truncates products, offers, and price_history by default
-- never creates or mutates categories
-- maps product categories only to existing category rows when possible
-- normalizes unit_normalized to unit-only values like kg, g, l, ml, stk, cl
+Usage:
+  python scripts/billa_sitemap_to_postgres.py            # full incremental run
+  python scripts/billa_sitemap_to_postgres.py --workers 12 --batch 500
+  python scripts/billa_sitemap_to_postgres.py --limit 200  # test with 200 products
 """
 
 from __future__ import annotations
@@ -21,9 +26,8 @@ import time
 import unicodedata
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
-from urllib.parse import urlparse
 
 import psycopg2
 from psycopg2.extras import execute_values
@@ -35,986 +39,734 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
-from scrapers.real_billa_scraper import RealBillaScraper
+try:
+    from scrapers.real_billa_scraper import RealBillaScraper
+    _SCRAPER = RealBillaScraper()
+except Exception:
+    _SCRAPER = None
 
-SITEMAP_URL = "https://www.billa.at/sitemap.xml"
-STORE_ID = "billa"
-STORE_NAME = "BILLA"
+# ── Constants ─────────────────────────────────────────────────────────────────
+SITEMAP_URL  = "https://www.billa.at/sitemap.xml"
+STORE_ID     = "billa"
+STORE_NAME   = "BILLA"
 STORE_WEBSITE = "https://www.billa.at"
-STORE_LOGO = "https://shop.billa.at/img/logo.png"
-USER_AGENT = (
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-    "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
-)
+STORE_LOGO   = "https://shop.billa.at/img/logo.png"
 HEADERS = {
-    "User-Agent": USER_AGENT,
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-    "Accept-Language": "de-DE,de;q=0.9,en-US;q=0.8,en;q=0.7",
+    "User-Agent": (
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+    ),
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept-Language": "de-AT,de;q=0.9,en-US;q=0.5",
 }
-UNIT_ALIASES = {
-    "kilogramm": "kg",
-    "kilogram": "kg",
-    "gramm": "g",
-    "gram": "g",
-    "liter": "l",
-    "litre": "l",
-    "milliliter": "ml",
-    "millilitre": "ml",
+
+UNIT_MAP = {
+    "kilogramm": "kg", "kilogram": "kg",
+    "gramm": "g",      "gram": "g",
+    "liter": "l",      "litre": "l",
+    "milliliter": "ml","millilitre": "ml",
     "zentiliter": "cl",
-    "stück": "stk",
-    "stueck": "stk",
-    "stk": "stk",
-    "st": "stk",
-    "st.": "stk",
-    "packung": "pack",
-    "pack": "pack",
-    "dose": "dose",
-    "flasche": "flasche",
-    "beutel": "beutel",
-    "karton": "karton",
+    "stück": "stk",    "stueck": "stk", "stk": "stk",
+    "st": "stk",       "st.": "stk",    "stck": "stk",
+    "packung": "pack", "pack": "pack",
+    "dose": "dose",    "flasche": "flasche",
+    "beutel": "beutel","karton": "karton",
+    "paar": "pair",    "pcs": "stk",    "piece": "stk",
 }
+KNOWN_UNITS = {"kg","g","l","ml","cl","stk","pack","dose","flasche","beutel","karton","pair"}
 
 
+# ── Helpers ────────────────────────────────────────────────────────────────────
 def _now() -> datetime:
     return datetime.now(timezone.utc)
 
+def _today() -> date:
+    return date.today()
 
-def _load_database_uri() -> str:
+def _load_uri() -> str:
     load_dotenv()
-    database_uri = os.getenv("DATABASE_URL") or os.getenv("SQLALCHEMY_DATABASE_URI")
-    if not database_uri:
-        raise RuntimeError("DATABASE_URL or SQLALCHEMY_DATABASE_URI is not set.")
-    return database_uri
+    uri = os.getenv("DATABASE_URL") or os.getenv("SQLALCHEMY_DATABASE_URI")
+    if not uri:
+        raise RuntimeError("DATABASE_URL is not set")
+    return uri
 
-
-def _connect_db(database_uri: str):
+def _connect(uri: str) -> psycopg2.extensions.connection:
     return psycopg2.connect(
-        database_uri,
-        connect_timeout=15,
-        keepalives=1,
-        keepalives_idle=30,
-        keepalives_interval=10,
-        keepalives_count=5,
+        uri, connect_timeout=15,
+        keepalives=1, keepalives_idle=30,
+        keepalives_interval=10, keepalives_count=5,
     )
 
+def _nfc(s: Any) -> str:
+    if not isinstance(s, str):
+        s = str(s) if s is not None else ""
+    return unicodedata.normalize("NFC", s).strip()
 
-def _normalize_text(value: Any) -> str:
-    if value is None:
-        return ""
-    if not isinstance(value, str):
-        value = str(value)
-    value = unicodedata.normalize("NFKD", value)
-    value = "".join(ch for ch in value if not unicodedata.combining(ch))
-    value = value.lower().strip()
-    value = re.sub(r"[^a-z0-9]+", " ", value)
-    return re.sub(r"\s+", " ", value).strip()
-
-
-def _normalize_unit(value: Any) -> Optional[str]:
-    if value is None:
+def _normalize_unit(raw: Any) -> Optional[str]:
+    if not raw:
         return None
-    if not isinstance(value, str):
-        value = str(value)
-    cleaned = unicodedata.normalize("NFKD", value)
-    cleaned = "".join(ch for ch in cleaned if not unicodedata.combining(ch))
-    cleaned = cleaned.lower().strip().replace(".", "")
-    cleaned = re.sub(r"\s+", " ", cleaned)
-    cleaned = cleaned.strip()
-    if not cleaned:
-        return None
-    if cleaned in UNIT_ALIASES:
-        return UNIT_ALIASES[cleaned]
-    compact = cleaned.replace(" ", "")
-    if compact in UNIT_ALIASES:
-        return UNIT_ALIASES[compact]
-    if cleaned in {"kg", "g", "l", "ml", "cl", "stk", "pack", "dose", "flasche", "beutel", "karton"}:
-        return cleaned
+    v = _nfc(raw).lower().rstrip(".")
+    v = re.sub(r"\s+", " ", v).strip()
+    if v in UNIT_MAP:
+        return UNIT_MAP[v]
+    if v in KNOWN_UNITS:
+        return v
     return None
 
-
-def _normalize_price(raw_price: Any) -> Optional[float]:
-    if raw_price is None or isinstance(raw_price, bool):
+def _normalize_price(raw: Any) -> Optional[float]:
+    if raw is None or isinstance(raw, bool):
         return None
     try:
-        price = float(raw_price)
+        p = float(raw)
     except (TypeError, ValueError):
         return None
-    if price <= 0:
+    if p <= 0:
         return None
-    if float(price).is_integer():
-        price = price / 100.0
-    return round(price, 2)
+    # Billa's Nuxt API returns euro prices as floats (2.39) and cent values as
+    # whole integers (149 = €1.49). Dividing integer values by 100 converts cents
+    # to euros. Float prices like 2.39 are already in euros and stay unchanged.
+    if p == int(p):
+        p = p / 100.0
+    return round(p, 2)
 
+def _extract_amount(product: Dict[str, Any]) -> Optional[float]:
+    amt = product.get("amount")
+    if amt is None:
+        return None
+    try:
+        return float(str(amt).replace(",", "."))
+    except (TypeError, ValueError):
+        return None
+
+def _extract_unit(product: Dict[str, Any]) -> Optional[str]:
+    for key in ("baseUnitShort", "volumeLabelShort", "baseUnitLong", "volumeLabelLong"):
+        u = _normalize_unit(product.get(key))
+        if u:
+            return u
+    # Fallback: scan name
+    name = _nfc(product.get("name") or "").lower()
+    for token, unit in [("kilogramm","kg"),("gramm","g"),("milliliter","ml"),
+                        ("zentiliter","cl"),("liter","l"),("stück","stk"),("pack","pack")]:
+        if token in name:
+            return unit
+    return None
+
+def _extract_image(product: Dict[str, Any]) -> Optional[str]:
+    for img in (product.get("images") or []):
+        if isinstance(img, str) and img.startswith("http"):
+            return img
+        if isinstance(img, dict):
+            for k in ("url","src","image","imageUrl"):
+                v = img.get(k)
+                if isinstance(v, str) and v.startswith("http"):
+                    return v
+    return None
 
 def _extract_price_data(product: Dict[str, Any]) -> Dict[str, Any]:
-    """Extract comprehensive price and offer data from product."""
-    price_obj = product.get("price")
-    result = {
-        "base_price": None,
-        "promo_price": None,
-        "unit_price": None,
-        "offer_details": None,
-        "min_quantity": None,
+    """Return base_price, promo_price, unit_price_str, discount_pct, is_preis_gesenkt, has_app_voucher."""
+    result: Dict[str, Any] = {
+        "base_price": None, "promo_price": None,
+        "unit_price_str": None, "discount_pct": None,
+        "is_preis_gesenkt": False, "has_app_voucher": False,
     }
-    
+    price_obj = product.get("price")
     if not isinstance(price_obj, dict):
-        price = _normalize_price(price_obj)
-        if price:
-            result["base_price"] = price
+        result["base_price"] = _normalize_price(price_obj)
         return result
-    
-    # Extract regular/base price
+
     regular = price_obj.get("regular")
     if isinstance(regular, dict):
-        base_val = regular.get("value")
-        promo_val = regular.get("promotionValue")
-        result["base_price"] = _normalize_price(base_val)
-        if promo_val and promo_val != base_val:
-            result["promo_price"] = _normalize_price(promo_val)
+        result["base_price"] = _normalize_price(regular.get("value"))
+        promo_raw = regular.get("promotionValue")
+        if promo_raw and promo_raw != regular.get("value"):
+            result["promo_price"] = _normalize_price(promo_raw)
     elif regular is not None:
         result["base_price"] = _normalize_price(regular)
-    
-    # Check for crossed/original price (indicates discount)
-    crossed = price_obj.get("crossed")
-    if crossed:
-        crossed_price = _normalize_price(crossed)
-        if crossed_price and not result["base_price"]:
-            result["base_price"] = crossed_price
-        elif crossed_price and result["base_price"] and crossed_price > result["base_price"]:
-            # Crossed price is higher, so current price is promo
-            result["promo_price"] = result["base_price"]
-            result["base_price"] = crossed_price
-    
-    # Extract unit price (e.g., "€1.99/kg")
-    unit_price_obj = price_obj.get("baseUnitLong") or price_obj.get("perStandardizedQuantity")
-    if unit_price_obj:
-        result["unit_price"] = str(unit_price_obj)
-    
-    # Extract discount percentage
-    discount_pct = price_obj.get("discountPercentage")
-    if discount_pct:
-        result["offer_details"] = f"-{abs(int(discount_pct))}%"
-    
-    # Check for quantity-based offers (e.g., "ab 24 Stück")
-    min_qty = price_obj.get("minQuantity") or price_obj.get("minimumQuantity")
-    if min_qty:
+
+    # crossed price means original was higher → current is promo
+    crossed = _normalize_price(price_obj.get("crossed"))
+    if crossed and result["base_price"] and crossed > result["base_price"]:
+        result["promo_price"] = result["base_price"]
+        result["base_price"] = crossed
+
+    # unit price string (Grundpreis), e.g. "€1.99 / kg"
+    for key in ("baseUnitLong", "perStandardizedQuantity", "pricePerUnit"):
+        v = price_obj.get(key)
+        if v:
+            result["unit_price_str"] = str(v)
+            break
+
+    # discount percentage
+    disc = price_obj.get("discountPercentage") or price_obj.get("discount")
+    if disc:
         try:
-            result["min_quantity"] = int(min_qty)
+            result["discount_pct"] = abs(float(disc))
         except (TypeError, ValueError):
             pass
-    
-    # Extract offer labels/badges
+
+    # Billa-specific flags
     labels = product.get("labels") or product.get("badges") or []
-    if isinstance(labels, list):
-        for label in labels:
-            if isinstance(label, dict):
-                label_text = label.get("text") or label.get("name") or ""
-            else:
-                label_text = str(label)
-            
-            if label_text:
-                # Look for offer patterns
-                if any(x in label_text.lower() for x in ["aktion", "angebot", "rabatt", "gratis", "+"]):
-                    if result["offer_details"]:
-                        result["offer_details"] += f" | {label_text}"
-                    else:
-                        result["offer_details"] = label_text
-    
-    # If no base price found, try other fields
+    for label in (labels if isinstance(labels, list) else []):
+        txt = (label.get("text") or label.get("name") or str(label)).lower() if isinstance(label, dict) else str(label).lower()
+        if "preis gesenkt" in txt or "preisgesenkt" in txt:
+            result["is_preis_gesenkt"] = True
+        if "app" in txt and ("rabatt" in txt or "voucher" in txt or "angebot" in txt):
+            result["has_app_voucher"] = True
+
     if not result["base_price"]:
-        for key in ("value", "basePrice", "salePrice"):
-            val = price_obj.get(key)
-            if val:
-                result["base_price"] = _normalize_price(val)
-                if result["base_price"]:
-                    break
-    
+        for key in ("value", "basePrice", "salePrice", "currentPrice"):
+            v = _normalize_price(price_obj.get(key))
+            if v:
+                result["base_price"] = v
+                break
+
     return result
 
 
-def _extract_price(product: Dict[str, Any]) -> Optional[float]:
-    """Legacy function for backward compatibility - returns effective price."""
-    price_data = _extract_price_data(product)
-    return price_data.get("promo_price") or price_data.get("base_price")
-
-
-def _extract_image(product: Dict[str, Any]) -> Optional[str]:
-    images = product.get("images")
-    if not isinstance(images, list):
-        return None
-    for image in images:
-        if isinstance(image, str) and image.startswith("http"):
-            return image
-        if isinstance(image, dict):
-            for key in ("url", "src", "image", "imageUrl"):
-                candidate = image.get(key)
-                if isinstance(candidate, str) and candidate.startswith("http"):
-                    return candidate
-    return None
-
-
-def _extract_unit(product: Dict[str, Any]) -> Optional[str]:
-    # Prefer the dedicated unit fields from the product object.
-    for key in ("baseUnitShort", "volumeLabelShort"):
-        unit = _normalize_unit(product.get(key))
-        if unit:
-            return unit
-
-    # Then try the long unit labels.
-    for key in ("baseUnitLong", "volumeLabelLong"):
-        unit = _normalize_unit(product.get(key))
-        if unit:
-            return unit
-
-    # Fallback: sometimes the unit appears in the product label fields.
-    text_candidates = [
-        product.get("name") or "",
-        product.get("descriptionShort") or "",
-        product.get("descriptionLong") or "",
-    ]
-    for text in text_candidates:
-        txt = _normalize_text(text)
-        if not txt:
-            continue
-        if any(token in txt for token in ["kilogramm", "kilogram"]):
-            return "kg"
-        if any(token in txt for token in ["milliliter", "millilitre"]):
-            return "ml"
-        if "zentiliter" in txt:
-            return "cl"
-        if any(token in txt for token in ["liter", "litre"]):
-            return "l"
-        if any(token in txt for token in ["gramm", "gram"]):
-            return "g"
-        if any(token in txt for token in ["stueck", "stück", "stk"]):
-            return "stk"
-        if "pack" in txt:
-            return "pack"
-    return None
-
-
-def _extract_amount(product: Dict[str, Any]) -> Optional[float]:
-    amount = product.get("amount")
-    if amount is None:
-        return None
-    try:
-        return float(str(amount).replace(",", "."))
-    except (TypeError, ValueError):
-        return None
-
-
-def _load_sitemap_product_urls(session: requests.Session) -> List[str]:
-    response = session.get(SITEMAP_URL, timeout=60)
-    response.raise_for_status()
-    locs = re.findall(r"<loc>(.*?)</loc>", response.text)
+# ── Sitemap ────────────────────────────────────────────────────────────────────
+def _load_sitemap_urls(session: requests.Session) -> List[str]:
+    resp = session.get(SITEMAP_URL, headers=HEADERS, timeout=60)
+    resp.raise_for_status()
+    locs = re.findall(r"<loc>(.*?)</loc>", resp.text)
+    seen: set = set()
     urls = []
-    seen = set()
     for loc in locs:
-        if "/produkte/" not in loc:
-            continue
-        if loc in seen:
+        if "/produkte/" not in loc or loc in seen:
             continue
         seen.add(loc)
         urls.append(loc)
     return urls
 
 
-def _chunked(values: Sequence[str], size: int) -> Iterable[List[str]]:
-    for start in range(0, len(values), size):
-        yield list(values[start : start + size])
-
-
-def _fingerprint_from_url(product_url: str) -> str:
-    slug = product_url.rstrip("/").split("/")[-1]
-    return f"billa:{slug}"
-
-
-def _get_category_rows(cursor) -> List[Dict[str, Any]]:
-    cursor.execute("SELECT id, slug, name_en, name_de, parent_id FROM categories")
-    rows = cursor.fetchall()
-    return [
-        {"id": r[0], "slug": r[1], "name_en": r[2], "name_de": r[3], "parent_id": r[4]}
-        for r in rows
-    ]
-
-
-class CategoryIndex:
-    def __init__(self, rows: Sequence[Dict[str, Any]]):
-        self.rows = list(rows)
-        self.by_key: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
-        for row in self.rows:
-            for value in (row.get("slug"), row.get("name_en"), row.get("name_de")):
-                key = _normalize_text(value)
-                if key:
-                    self.by_key[key].append(row)
-        self.keys = list(self.by_key.keys())
-
-    def resolve(self, candidate_texts: Iterable[str]) -> Optional[int]:
-        normalized_candidates = [k for k in (_normalize_text(text) for text in candidate_texts) if k]
-        if not normalized_candidates:
-            return None
-
-        # Exact matches first.
-        for candidate in normalized_candidates:
-            matches = self.by_key.get(candidate)
-            if matches:
-                return matches[0]["id"]
-
-        # Partial matches next. Choose the most specific existing category.
-        best_match = None
-        best_score = 0
-        for candidate in normalized_candidates:
-            for key in self.keys:
-                if candidate == key:
-                    continue
-                if candidate in key or key in candidate:
-                    score = min(len(candidate), len(key))
-                    if score > best_score:
-                        best_score = score
-                        best_match = self.by_key[key][0]["id"]
-        return best_match
-
-
-CATEGORY_FALLBACKS = [
-    ["Obst & Gemüse", "Obst", "Exotisches Obst"],
-    ["Obst & Gemüse", "Obst"],
-    ["Obst & Gemüse", "Gemüse"],
-    ["Dairy & Eggs", "Milk"],
-    ["Dairy & Eggs", "Cheese"],
-    ["Dairy & Eggs", "Eggs"],
-    ["Dairy & Eggs", "Butter & Cream"],
-    ["Meat & Fish", "Fresh Meat"],
-    ["Meat & Fish", "Sausages & Cold Cuts"],
-    ["Bakery & Bread", "Bread"],
-    ["Bakery & Bread", "Rolls & Buns"],
-    ["Pantry & Staples", "Pasta & Rice"],
-    ["Pantry & Staples", "Sauces & Condiments"],
-    ["Pantry & Staples", "Canned & Jarred Goods"],
-    ["Beverages", "Water"],
-    ["Beverages", "Soft Drinks"],
-    ["Beverages", "Juice & Nectar"],
-    ["Beverages", "Coffee"],
-    ["Beverages", "Tea"],
-    ["Snacks & Sweets", "Chips"],
-    ["Snacks & Sweets", "Sweets"],
-    ["Frozen", "Frozen Pizza"],
-    ["Frozen", "Frozen Ready Meals"],
-    ["Household & Personal Care", "Cleaning"],
-    ["Baby & Kids", "Baby Food"],
-    ["Pets", "Pet Food"],
-]
-
-
-def _resolve_category_id(category_index: CategoryIndex, product: Dict[str, Any]) -> Optional[int]:
-    candidate_texts: List[str] = []
-
-    # Product category + breadcrumb categories from Billa.
-    category = product.get("category")
-    if isinstance(category, str):
-        candidate_texts.append(category)
-    elif isinstance(category, dict):
-        candidate_texts.extend(
-            [
-                category.get("name") or "",
-                category.get("slug") or "",
-                category.get("name_en") or "",
-                category.get("name_de") or "",
-            ]
-        )
-
-    parent_categories = product.get("parentCategories")
-    if isinstance(parent_categories, list):
-        for group in parent_categories:
-            if isinstance(group, list):
-                for cat in group:
-                    if isinstance(cat, dict):
-                        candidate_texts.extend(
-                            [
-                                cat.get("name") or "",
-                                cat.get("slug") or "",
-                                cat.get("key") or "",
-                            ]
-                        )
-            elif isinstance(group, dict):
-                candidate_texts.extend(
-                    [
-                        group.get("name") or "",
-                        group.get("slug") or "",
-                        group.get("key") or "",
-                    ]
-                )
-
-    # Try direct + partial match against existing categories.
-    category_id = category_index.resolve(candidate_texts)
-    if category_id:
-        return category_id
-
-    # Try fallbacks from the known taxonomy labels, but still only map to existing rows.
-    for path in CATEGORY_FALLBACKS:
-        category_id = category_index.resolve(path)
-        if category_id:
-            return category_id
-    return None
-
-
-def _extract_resolved_product(html: str, target_slug: str) -> Optional[Dict[str, Any]]:
+# ── Per-product fetch & parse ──────────────────────────────────────────────────
+def _extract_nuxt_product(html: str, target_slug: str) -> Optional[Dict[str, Any]]:
     soup = BeautifulSoup(html, "html.parser")
-    script = soup.find("script", id="__NUXT_DATA__")
-    if not script or not script.string:
+    tag = soup.find("script", id="__NUXT_DATA__")
+    if not tag or not tag.string:
         return None
-
     try:
-        data = json.loads(script.string)
+        data = json.loads(tag.string)
     except json.JSONDecodeError:
         return None
 
-    scraper = RealBillaScraper()
     target = target_slug.strip().lower()
-
     for idx, item in enumerate(data):
         if not isinstance(item, dict):
             continue
         if not {"name", "slug", "price"}.issubset(item.keys()):
             continue
-        resolved = scraper.resolve_nuxt_data(data, idx)
+        resolved = item
+        if _SCRAPER:
+            try:
+                resolved = _SCRAPER.resolve_nuxt_data(data, idx) or item
+            except Exception:
+                pass
         if not isinstance(resolved, dict):
             continue
         slug = str(resolved.get("slug") or "").strip().lower()
         if slug == target:
             return resolved
-
     return None
 
-
-def _fetch_product(session: requests.Session, url: str, retries: int = 5) -> Optional[Dict[str, Any]]:
+def _fetch_product(session: requests.Session, url: str, retries: int = 4) -> Optional[Dict[str, Any]]:
     slug = url.rstrip("/").split("/")[-1]
-    last_error = None
     for attempt in range(1, retries + 1):
         try:
-            response = session.get(url, headers=HEADERS, timeout=60, allow_redirects=True)
-            response.raise_for_status()
-            product = _extract_resolved_product(response.text, slug)
+            resp = session.get(url, headers=HEADERS, timeout=45, allow_redirects=True)
+            if resp.status_code in (404, 410):
+                return None
+            resp.raise_for_status()
+            product = _extract_nuxt_product(resp.text, slug)
             if product:
                 return product
-            # If no product found, it might be a redirect or removed product
             if attempt < retries:
-                time.sleep(min(8, attempt * 2))
-                continue
-            return None
-        except requests.exceptions.Timeout as exc:
-            last_error = exc
+                time.sleep(1.5 * attempt)
+        except requests.exceptions.Timeout:
             if attempt < retries:
-                print(f"[BILLA] Timeout on {url}, retry {attempt}/{retries}")
-                time.sleep(min(10, attempt * 3))
-        except requests.exceptions.HTTPError as exc:
-            # 404 or 410 means product no longer exists
-            if exc.response.status_code in (404, 410):
-                return None
-            last_error = exc
+                time.sleep(min(15, 3 * attempt))
+        except requests.exceptions.HTTPError:
             if attempt < retries:
-                time.sleep(min(8, attempt * 2))
-        except Exception as exc:
-            last_error = exc
+                time.sleep(min(10, 2 * attempt))
+        except Exception:
             if attempt < retries:
-                time.sleep(min(8, attempt * 2))
-    
-    print(f"[BILLA] Failed to fetch {url} after {retries} attempts: {last_error}")
+                time.sleep(2)
     return None
 
 
-def _build_product_row(category_index: CategoryIndex, product_url: str, product: Dict[str, Any]) -> Dict[str, Any]:
-    slug = str(product.get("slug") or "").strip()
-    name = str(product.get("name") or "").strip()
+# ── Category resolution ────────────────────────────────────────────────────────
+class CategoryIndex:
+    def __init__(self, rows: List[Tuple]):
+        self._map: Dict[str, int] = {}
+        for cat_id, slug, name_en, name_de in rows:
+            for v in (slug, name_en, name_de):
+                if v:
+                    key = v.lower().strip()
+                    if key not in self._map:
+                        self._map[key] = cat_id
+
+    def resolve(self, candidates: Iterable[str]) -> Optional[int]:
+        for c in candidates:
+            if not c:
+                continue
+            k = c.lower().strip()
+            if k in self._map:
+                return self._map[k]
+        # Partial match
+        for c in candidates:
+            if not c:
+                continue
+            k = c.lower().strip()
+            for key, cat_id in self._map.items():
+                if (k in key or key in k) and len(k) > 3:
+                    return cat_id
+        return None
+
+def _cat_candidates(product: Dict[str, Any]) -> List[str]:
+    out: List[str] = []
+    cat = product.get("category")
+    if isinstance(cat, str):
+        out.append(cat)
+    elif isinstance(cat, dict):
+        for k in ("name","slug","name_en","name_de","key"):
+            v = cat.get(k)
+            if v:
+                out.append(str(v))
+    parents = product.get("parentCategories") or []
+    if isinstance(parents, list):
+        for g in parents:
+            if isinstance(g, list):
+                for item in g:
+                    if isinstance(item, dict):
+                        for k in ("name","slug","key"):
+                            v = item.get(k)
+                            if v: out.append(str(v))
+            elif isinstance(g, dict):
+                for k in ("name","slug","key"):
+                    v = g.get(k)
+                    if v: out.append(str(v))
+    return out
+
+
+# ── Build row ─────────────────────────────────────────────────────────────────
+def _build_row(url: str, product: Dict[str, Any], cat_index: CategoryIndex) -> Optional[Dict[str, Any]]:
+    slug = _nfc(product.get("slug") or "")
+    name = _nfc(product.get("name") or "")
+    if not slug or not name:
+        return None
+
     price_data = _extract_price_data(product)
-    
-    # Need at least a base price
-    if not slug or not name or not price_data.get("base_price"):
-        return {}
+    if not price_data["base_price"]:
+        return None
 
-    brand = product.get("brand")
-    brand_name = None
-    if isinstance(brand, dict):
-        brand_name = str(brand.get("name") or brand.get("slug") or "").strip() or None
-    elif isinstance(brand, str):
-        brand_name = brand.strip() or None
+    brand_raw = product.get("brand")
+    brand = None
+    if isinstance(brand_raw, dict):
+        brand = _nfc(brand_raw.get("name") or brand_raw.get("slug") or "") or None
+    elif isinstance(brand_raw, str):
+        brand = _nfc(brand_raw) or None
 
-    category_id = _resolve_category_id(category_index, product)
-    unit_normalized = _extract_unit(product)
-    amount = _extract_amount(product)
-    image_url = _extract_image(product)
+    category_id = cat_index.resolve(_cat_candidates(product))
+    unit = _extract_unit(product)
+    size = _extract_amount(product)
+    image = _extract_image(product)
+
+    product_url = str(product.get("url") or "")
+    if not product_url.startswith("http"):
+        product_url = f"https://shop.billa.at/produkte/{slug}"
+
+    # Parse unit_price_str → numeric value + unit string
+    unit_price_num: Optional[float] = None
+    unit_price_unit: Optional[str] = None
+    ustr = price_data.get("unit_price_str") or ""
+    if ustr:
+        m = re.search(r"([\d,\.]+)", ustr)
+        if m:
+            try:
+                unit_price_num = float(m.group(1).replace(",", "."))
+            except ValueError:
+                pass
+        # unit part: e.g. "€1.99 / kg" → "kg"
+        um = re.search(r"/\s*([a-zA-Zü]+)", ustr)
+        if um:
+            unit_price_unit = _normalize_unit(um.group(1)) or um.group(1).lower()
 
     return {
         "fingerprint": f"billa:{slug}",
+        "name": name,
         "name_de": name,
-        "brand": brand_name,
+        "brand": brand,
         "category_id": category_id,
-        "store_id": STORE_ID,
-        "unit_normalized": unit_normalized,
-        "size_normalized": amount,
-        "default_image_url": image_url,
+        "unit_normalized": unit,
+        "size_normalized": size,
+        "default_image_url": image,
         "barcode": None,
-        "created_at": _now(),
-        "updated_at": _now(),
+        # store data
         "product_url": product_url,
-        # Offer data
         "base_price": price_data["base_price"],
         "promo_price": price_data["promo_price"],
-        "unit_price": price_data["unit_price"],
-        "offer_details": price_data["offer_details"],
-        "min_quantity": price_data["min_quantity"],
+        "unit_price": unit_price_num,
+        "unit_price_unit": unit_price_unit,
+        "is_preis_gesenkt": price_data["is_preis_gesenkt"],
+        "has_app_voucher": price_data["has_app_voucher"],
+        "discount_pct": price_data["discount_pct"],
     }
 
 
-def _clear_product_graph(cursor) -> None:
-    print("[BILLA] Clearing existing products, offers, and price history...")
-    cursor.execute("TRUNCATE TABLE price_history, offers, products RESTART IDENTITY CASCADE;")
-
-
+# ── DB writes ──────────────────────────────────────────────────────────────────
 def _ensure_store(cursor) -> None:
-    cursor.execute(
-        """
+    cursor.execute("""
         INSERT INTO stores (store_id, name, website, logo_url, country, api_available, scraping_required, active)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        VALUES (%s, %s, %s, %s, 'AT', FALSE, TRUE, TRUE)
         ON CONFLICT (store_id) DO UPDATE SET
-            name = EXCLUDED.name,
-            website = EXCLUDED.website,
-            logo_url = EXCLUDED.logo_url,
-            country = EXCLUDED.country,
-            api_available = EXCLUDED.api_available,
-            scraping_required = EXCLUDED.scraping_required,
-            active = EXCLUDED.active
-        """,
-        (STORE_ID, STORE_NAME, STORE_WEBSITE, STORE_LOGO, "AT", False, True, True),
-    )
+            name=EXCLUDED.name, website=EXCLUDED.website,
+            logo_url=EXCLUDED.logo_url, active=EXCLUDED.active
+    """, (STORE_ID, STORE_NAME, STORE_WEBSITE, STORE_LOGO))
 
 
-def _insert_products(cursor, rows: List[Dict[str, Any]], update_mode: str = 'full') -> None:
-    """Insert or update products.
-    
-    Args:
-        update_mode: 'full' = update all fields, 'minimal' = only update updated_at
-    """
+def _upsert_products(cursor, rows: List[Dict]) -> Dict[str, int]:
+    """Upsert products; return fingerprint→id map."""
     if not rows:
-        return
-    
+        return {}
+    ts = _now()
     records = [
         (
-            row["fingerprint"],
-            row["name_de"],
-            row["brand"],
-            row["category_id"],
-            row["store_id"],
-            row["unit_normalized"],
-            row["size_normalized"],
-            row["default_image_url"],
-            row["barcode"],
-            row["created_at"],
-            row["updated_at"],
+            r["fingerprint"], r["name"], r["name_de"],
+            r["brand"], r["category_id"],
+            r["unit_normalized"], r["size_normalized"],
+            r["default_image_url"], r["barcode"],
+            ts, ts,
         )
-        for row in rows
+        for r in rows
     ]
-    
-    if update_mode == 'minimal':
-        # Only update timestamp for existing products (price-only updates)
-        execute_values(
-            cursor,
-            """INSERT INTO products (fingerprint, name_de, brand, category_id, store_id, unit_normalized, size_normalized, default_image_url, barcode, created_at, updated_at) 
-            VALUES %s 
-            ON CONFLICT (fingerprint) DO UPDATE SET updated_at = EXCLUDED.updated_at""",
-            records,
-            page_size=1000,
-        )
-    else:
-        # Full update for new products or changed products
-        execute_values(
-            cursor,
-            """INSERT INTO products (fingerprint, name_de, brand, category_id, store_id, unit_normalized, size_normalized, default_image_url, barcode, created_at, updated_at) 
-            VALUES %s 
-            ON CONFLICT (fingerprint) DO UPDATE SET 
-                name_de = EXCLUDED.name_de, 
-                brand = EXCLUDED.brand, 
-                category_id = EXCLUDED.category_id, 
-                store_id = EXCLUDED.store_id, 
-                unit_normalized = EXCLUDED.unit_normalized, 
-                size_normalized = EXCLUDED.size_normalized, 
-                default_image_url = EXCLUDED.default_image_url, 
-                barcode = EXCLUDED.barcode, 
-                updated_at = EXCLUDED.updated_at""",
-            records,
-            page_size=1000,
-        )
+    execute_values(cursor, """
+        INSERT INTO products
+            (fingerprint, name, name_de, brand, category_id,
+             unit_normalized, size_normalized, default_image_url, barcode,
+             created_at, updated_at)
+        VALUES %s
+        ON CONFLICT (fingerprint) DO UPDATE SET
+            name             = EXCLUDED.name,
+            name_de          = EXCLUDED.name_de,
+            brand            = EXCLUDED.brand,
+            category_id      = COALESCE(EXCLUDED.category_id, products.category_id),
+            unit_normalized  = COALESCE(EXCLUDED.unit_normalized, products.unit_normalized),
+            size_normalized  = COALESCE(EXCLUDED.size_normalized, products.size_normalized),
+            default_image_url= COALESCE(EXCLUDED.default_image_url, products.default_image_url),
+            updated_at       = EXCLUDED.updated_at
+    """, records, page_size=1000)
+
+    fps = [r["fingerprint"] for r in rows]
+    cursor.execute("SELECT fingerprint, id FROM products WHERE fingerprint = ANY(%s)", (fps,))
+    return dict(cursor.fetchall())
 
 
-def _insert_offers(cursor, rows: List[Dict[str, Any]]) -> None:
+def _upsert_product_store(cursor, rows: List[Dict], fp_to_id: Dict[str, int]) -> Dict[int, float]:
+    """Upsert product_store rows; return product_id→old_base_price for price_history."""
     if not rows:
-        return
-    fingerprints = [row["fingerprint"] for row in rows]
-    cursor.execute("SELECT fingerprint, id FROM products WHERE fingerprint = ANY(%s)", (fingerprints,))
-    fp_to_id = dict(cursor.fetchall())
+        return {}
 
-    offer_rows = []
-    ts = _now()
-    for row in rows:
-        product_id = fp_to_id.get(row["fingerprint"])
-        if not product_id:
-            continue
-        
-        # Use base_price for legacy price field, but store both base and promo
-        base_price = row.get("base_price")
-        promo_price = row.get("promo_price")
-        
-        offer_rows.append(
-            (
-                product_id,
-                STORE_ID,
-                base_price,  # Legacy price field
-                base_price,  # base_price
-                promo_price,  # promo_price
-                row.get("unit_price"),
-                row.get("offer_details"),
-                row.get("min_quantity"),
-                row["product_url"],
-                True,
-                ts,
-                ts,
-                ts,
-            )
-        )
-
-    if not offer_rows:
-        return
-
-    execute_values(
-        cursor,
-        """INSERT INTO offers (product_id, store_id, price, base_price, promo_price, unit_price, offer_details, min_quantity, product_url, is_available, last_seen, created_at, updated_at) 
-        VALUES %s 
-        ON CONFLICT (product_id, store_id) DO UPDATE SET 
-            price=EXCLUDED.price, 
-            base_price=EXCLUDED.base_price, 
-            promo_price=EXCLUDED.promo_price, 
-            unit_price=EXCLUDED.unit_price, 
-            offer_details=EXCLUDED.offer_details, 
-            min_quantity=EXCLUDED.min_quantity, 
-            product_url=EXCLUDED.product_url, 
-            is_available=EXCLUDED.is_available, 
-            last_seen=EXCLUDED.last_seen, 
-            updated_at=EXCLUDED.updated_at""",
-        offer_rows,
-        page_size=1000,
-    )
-
-
-def _insert_price_history(cursor, rows: List[Dict[str, Any]]) -> None:
-    if not rows:
-        return
-    fingerprints = [row["fingerprint"] for row in rows]
-    cursor.execute(
-        "SELECT p.id, o.id, o.base_price, o.promo_price FROM products p JOIN offers o ON p.id = o.product_id WHERE p.fingerprint = ANY(%s)",
-        (fingerprints,)
-    )
-    data = cursor.fetchall()
-    if not data:
-        return
-
-    offer_ids = [offer_id for _product_id, offer_id, _base, _promo in data]
-    cursor.execute(
-        "SELECT offer_id FROM price_history WHERE offer_id = ANY(%s) AND source = %s",
-        (offer_ids, STORE_ID),
-    )
-    existing_offer_ids = {row[0] for row in cursor.fetchall()}
-
-    ts = _now()
-    history_rows = []
-    for _product_id, offer_id, base_price, promo_price in data:
-        if offer_id in existing_offer_ids:
-            continue
-        # Record the effective price (promo if available, otherwise base)
-        effective_price = promo_price if promo_price else base_price
-        history_rows.append((offer_id, None, float(effective_price) if effective_price is not None else None, ts, STORE_ID))
-    
-    if history_rows:
-        execute_values(
-            cursor,
-            "INSERT INTO price_history (offer_id, old_price, new_price, changed_at, source) VALUES %s",
-            history_rows,
-            page_size=1000,
-        )
-
-
-def _row_persisted(database_uri: str, fingerprint: str) -> bool:
-    check_conn = _connect_db(database_uri)
-    try:
-        with check_conn.cursor() as cursor:
-            cursor.execute(
-                """
-                SELECT p.id, o.id
-                FROM products p
-                JOIN offers o ON o.product_id = p.id
-                WHERE p.fingerprint = %s AND o.store_id = %s
-                """,
-                (fingerprint, STORE_ID),
-            )
-            return cursor.fetchone() is not None
-    finally:
-        check_conn.close()
-
-
-def _persist_rows(conn, rows: List[Dict[str, Any]], database_uri: str, update_mode: str = 'full') -> psycopg2.extensions.connection:
-    """Persist product and offer data.
-    
-    Args:
-        update_mode: 'full' = new product, 'minimal' = price/offer update only
-    """
-    if not rows:
-        return conn
-
-    fingerprint = rows[0]["fingerprint"]
-    for attempt in range(1, 4):
-        try:
-            with conn.cursor() as cursor:
-                _insert_products(cursor, rows, update_mode=update_mode)
-                _insert_offers(cursor, rows)
-                # Only insert price history for actual price changes
-                if update_mode == 'full' or any(row.get('price_changed') for row in rows):
-                    _insert_price_history(cursor, rows)
-                conn.commit()
-            return conn
-        except psycopg2.Error:
-            try:
-                if conn.closed == 0:
-                    conn.rollback()
-            except Exception:
-                pass
-
-            try:
-                if _row_persisted(database_uri, fingerprint):
-                    return conn
-            except psycopg2.Error:
-                # If verification cannot reach DB, continue with reconnect/retry.
-                pass
-
-            try:
-                conn.close()
-            except Exception:
-                pass
-            if attempt == 3:
-                raise
-            time.sleep(min(5, attempt * 2))
-            conn = _connect_db(database_uri)
-            conn.autocommit = False
-
-    return conn
-
-
-def _load_existing_products(cursor) -> Dict[str, Dict[str, Any]]:
-    """Load existing products with their current offer data for comparison."""
+    fps = [r["fingerprint"] for r in rows]
     cursor.execute("""
-        SELECT 
-            p.fingerprint,
-            p.id,
-            p.name_de,
-            o.base_price,
-            o.promo_price,
-            o.unit_price,
-            o.offer_details,
-            o.min_quantity
-        FROM products p
-        LEFT JOIN offers o ON p.id = o.product_id AND o.store_id = %s
-        WHERE p.store_id = %s
-    """, (STORE_ID, STORE_ID))
-    
-    result = {}
-    for row in cursor.fetchall():
-        fingerprint, prod_id, name, base_price, promo_price, unit_price, offer_details, min_qty = row
-        result[fingerprint] = {
-            'id': prod_id,
-            'name': name,
-            'base_price': float(base_price) if base_price else None,
-            'promo_price': float(promo_price) if promo_price else None,
-            'unit_price': unit_price,
-            'offer_details': offer_details,
-            'min_quantity': min_qty,
-        }
-    return result
+        SELECT ps.product_id, ps.base_price
+        FROM product_store ps
+        JOIN products p ON p.id = ps.product_id
+        WHERE p.fingerprint = ANY(%s) AND ps.store_id = %s
+    """, (fps, STORE_ID))
+    old_prices: Dict[int, float] = {pid: float(bp) for pid, bp in cursor.fetchall()}
+
+    ts = _now()
+    records = []
+    for r in rows:
+        pid = fp_to_id.get(r["fingerprint"])
+        if not pid:
+            continue
+        # When a promo_price exists it IS the current selling price;
+        # store it as base_price and the regular price as was_price.
+        current_price = r["promo_price"] if r["promo_price"] else r["base_price"]
+        original_price = r["base_price"] if r["promo_price"] else None
+        records.append((
+            pid, STORE_ID,
+            current_price,
+            r["unit_price"],
+            r["unit_price_unit"],
+            True,  # is_available
+            r["product_url"],
+            ts,    # last_seen
+            r["is_preis_gesenkt"],
+            False, # immer_billig (Billa doesn't have this concept)
+            r["has_app_voucher"],
+            original_price,  # was_price
+            ts,    # created_at
+        ))
+
+    if not records:
+        return old_prices
+
+    execute_values(cursor, """
+        INSERT INTO product_store
+            (product_id, store_id, base_price, unit_price, unit_price_unit,
+             is_available, product_url, last_seen,
+             is_preis_gesenkt, immer_billig, has_app_voucher,
+             was_price, created_at)
+        VALUES %s
+        ON CONFLICT (product_id, store_id) DO UPDATE SET
+            base_price       = EXCLUDED.base_price,
+            unit_price       = EXCLUDED.unit_price,
+            unit_price_unit  = EXCLUDED.unit_price_unit,
+            is_available     = EXCLUDED.is_available,
+            product_url      = EXCLUDED.product_url,
+            last_seen        = EXCLUDED.last_seen,
+            is_preis_gesenkt = EXCLUDED.is_preis_gesenkt,
+            immer_billig     = EXCLUDED.immer_billig,
+            has_app_voucher  = EXCLUDED.has_app_voucher,
+            was_price        = EXCLUDED.was_price
+    """, records, page_size=1000)
+
+    return old_prices
 
 
-def scrape_billa_to_postgres(
-    workers: int = 8,
-    chunk_size: int = 300,
-    resume: bool = False,
-    shard_count: int = 1,
-    shard_index: int = 0,
+def _record_price_history(cursor, rows: List[Dict], fp_to_id: Dict[str, int], old_prices: Dict[int, float]) -> None:
+    ts = _now()
+    history = []
+    for r in rows:
+        pid = fp_to_id.get(r["fingerprint"])
+        if not pid:
+            continue
+        new_price = r["base_price"]
+        old_price = old_prices.get(pid)
+        if old_price is None or abs(new_price - old_price) > 0.001:
+            history.append((pid, STORE_ID, old_price, new_price, ts, STORE_ID))
+
+    if not history:
+        return
+    execute_values(cursor, """
+        INSERT INTO price_history (product_id, store_id, old_price, new_price, changed_at, source)
+        VALUES %s
+    """, history, page_size=1000)
+
+
+def _upsert_promotions(cursor, rows: List[Dict], fp_to_id: Dict[str, int], promo_id: Optional[int]) -> None:
+    if promo_id is None:
+        return
+    """For every row with a discount, upsert an offer rule and add a promotion_target."""
+    # Group by discount_pct to reuse offer rows
+    offer_cache: Dict[str, int] = {}  # discount_key → offer_id
+
+    def _get_or_create_offer(discount_pct: Optional[float], is_preis_gesenkt: bool) -> int:
+        """Create or find a matching discount offer row."""
+        if discount_pct:
+            key = f"pct_{round(discount_pct, 1)}"
+            name = f"Billa -{round(discount_pct)}% Rabatt"
+            disc_type = "percentage"
+            disc_val = round(discount_pct, 2)
+        elif is_preis_gesenkt:
+            key = "preis_gesenkt"
+            name = "Billa Preis Gesenkt"
+            disc_type = "percentage"
+            disc_val = 5.0  # placeholder when we don't know the exact %
+        else:
+            key = "generic"
+            name = "Billa Aktion"
+            disc_type = "percentage"
+            disc_val = 1.0
+
+        if key in offer_cache:
+            return offer_cache[key]
+
+        cursor.execute("""
+            INSERT INTO offers (name, description, discount_type, discount_value, min_quantity, is_active, created_at, updated_at)
+            VALUES (%s, %s, %s, %s, 1, TRUE, %s, %s)
+            ON CONFLICT DO NOTHING
+            RETURNING id
+        """, (name, name, disc_type, disc_val, _now(), _now()))
+        row = cursor.fetchone()
+        if not row:
+            cursor.execute("SELECT id FROM offers WHERE name = %s LIMIT 1", (name,))
+            row = cursor.fetchone()
+        offer_id = row[0]
+        offer_cache[key] = offer_id
+        return offer_id
+
+    targets = []
+    for r in rows:
+        has_promo = r.get("promo_price") or r.get("discount_pct") or r.get("is_preis_gesenkt")
+        if not has_promo:
+            continue
+        pid = fp_to_id.get(r["fingerprint"])
+        if not pid:
+            continue
+        offer_id = _get_or_create_offer(r.get("discount_pct"), r.get("is_preis_gesenkt", False))
+        # Make sure promotion uses this offer (update offer_id on the promotion)
+        cursor.execute("UPDATE promotions SET offer_id = %s WHERE id = %s AND offer_id IS NULL",
+                       (offer_id, promo_id))
+        targets.append((promo_id, pid, STORE_ID, _now()))
+
+    if not targets:
+        return
+
+    execute_values(cursor, """
+        INSERT INTO promotion_targets (promotion_id, product_id, store_id, created_at)
+        VALUES %s
+        ON CONFLICT (promotion_id, product_id, store_id) DO NOTHING
+    """, targets, page_size=1000)
+
+
+def _setup_promotion(cursor) -> int:
+    """
+    Create today's Billa promotion campaign (one per day).
+    Returns the promotion id.
+    Deactivates yesterday's billa promotions.
+    """
+    today = _today()
+    promo_name = f"Billa Aktionen {today.isoformat()}"
+
+    # Deactivate old billa promotion campaigns (not today's)
+    cursor.execute(
+        "UPDATE promotions SET is_active = FALSE WHERE name LIKE %s AND name != %s AND is_active = TRUE",
+        ("Billa Aktionen %", promo_name)
+    )
+
+    cursor.execute("""
+        INSERT INTO promotions (name, description, is_active, start_date, end_date, created_at)
+        VALUES (%s, 'Auto-generated from Billa scraper', TRUE, %s, NULL, %s)
+        RETURNING id
+    """, (promo_name, today, _now()))
+    row = cursor.fetchone()
+    if row:
+        return row[0]
+    cursor.execute("SELECT id FROM promotions WHERE name = %s LIMIT 1", (promo_name,))
+    r = cursor.fetchone()
+    return r[0] if r else None
+
+
+# ── Main scrape loop ───────────────────────────────────────────────────────────
+def scrape_billa(
+    workers: int = 10,
+    batch: int = 300,
+    limit: Optional[int] = None,
 ) -> None:
-    database_uri = _load_database_uri()
+    uri = _load_uri()
     session = requests.Session()
-    session.headers.update(HEADERS)
 
-    print("[BILLA] Loading sitemap product URLs...")
-    product_urls = _load_sitemap_product_urls(session)
-    print(f"[BILLA] Found {len(product_urls):,} product URLs in sitemap")
+    print("[BILLA] Fetching sitemap...")
+    urls = _load_sitemap_urls(session)
+    print(f"[BILLA] {len(urls):,} product URLs found")
 
-    conn = _connect_db(database_uri)
+    if limit:
+        urls = urls[:limit]
+        print(f"[BILLA] Limiting to {limit} products (test mode)")
+
+    conn = _connect(uri)
     conn.autocommit = False
     try:
-        with conn.cursor() as cursor:
-            _ensure_store(cursor)
-            if not resume:
-                _clear_product_graph(cursor)
-            category_rows = _get_category_rows(cursor)
-            category_index = CategoryIndex(category_rows)
-            existing_products = _load_existing_products(cursor) if resume else {}
+        with conn.cursor() as cur:
+            _ensure_store(cur)
+            cur.execute("SELECT id, slug, name_en, name_de FROM categories")
+            cat_rows = cur.fetchall()
+            cat_index = CategoryIndex(cat_rows)
+            promo_id = _setup_promotion(cur)
             conn.commit()
 
-        # In resume mode, we still need to check ALL products for price/offer updates
-        # But we'll handle them differently based on whether they exist
-        if resume and existing_products:
-            print(f"[BILLA] Resume mode: {len(existing_products):,} existing products will be checked for updates")
+        total = len(urls)
+        done = inserted = updated = skipped = failed = 0
 
-        if shard_count > 1:
-            if shard_index < 0 or shard_index >= shard_count:
-                raise ValueError("shard-index must be between 0 and shard-count - 1")
-            product_urls = [
-                url for index, url in enumerate(product_urls) if index % shard_count == shard_index
-            ]
-            print(
-                f"[BILLA] Shard {shard_index + 1}/{shard_count}: {len(product_urls):,} URLs assigned"
-            )
+        def _chunks(lst: list, n: int):
+            for i in range(0, len(lst), n):
+                yield lst[i:i + n]
 
-        total = len(product_urls)
-        processed = 0
-        inserted = 0
-        updated = 0
-        skipped = 0
-        failed = 0
+        for chunk_idx, chunk in enumerate(_chunks(urls, batch)):
+            rows_this_chunk: List[Dict] = []
+            seen_fps: set = set()
 
-        print(f"[BILLA] Fetching product pages with {workers} workers in batches of {chunk_size}...")
-        for batch_idx, batch in enumerate(_chunked(product_urls, chunk_size)):
-            batch_rows: List[Dict[str, Any]] = []
-            seen = set()
-
-            with ThreadPoolExecutor(max_workers=workers) as executor:
-                future_map = {executor.submit(_fetch_product, session, url): url for url in batch}
-                for future in as_completed(future_map):
-                    url = future_map[future]
-                    processed += 1
+            with ThreadPoolExecutor(max_workers=workers) as pool:
+                fut_map = {pool.submit(_fetch_product, session, url): url for url in chunk}
+                for fut in as_completed(fut_map):
+                    url = fut_map[fut]
+                    done += 1
                     try:
-                        product = future.result()
+                        product = fut.result()
                     except Exception as exc:
-                        print(f"[BILLA] {processed}/{total} exception for {url}: {exc}")
                         failed += 1
+                        print(f"[BILLA] ERR {url}: {exc}")
                         continue
 
                     if not product:
                         skipped += 1
-                        if processed % 500 == 0:
-                            print(f"[BILLA] Progress: {processed}/{total} | New: {inserted} | Updated: {updated} | Skipped: {skipped} | Failed: {failed}")
                         continue
 
-                    row = _build_product_row(category_index, url, product)
+                    row = _build_row(url, product, cat_index)
                     if not row:
                         skipped += 1
                         continue
-                    
-                    fingerprint = row["fingerprint"]
-                    if fingerprint in seen:
-                        skipped += 1
+
+                    fp = row["fingerprint"]
+                    if fp in seen_fps:
                         continue
-                    seen.add(fingerprint)
-                    
-                    # Check if product exists and needs update
-                    existing = existing_products.get(fingerprint)
-                    
-                    if existing:
-                        # Product exists - check if we need to update
-                        needs_update = False
-                        price_changed = False
-                        
-                        # Check if price changed
-                        new_base = row.get("base_price")
-                        new_promo = row.get("promo_price")
-                        old_base = existing.get("base_price")
-                        old_promo = existing.get("promo_price")
-                        
-                        if new_base != old_base or new_promo != old_promo:
-                            needs_update = True
-                            price_changed = True
-                        
-                        # Check if offer details changed (promotions, unit price, etc.)
-                        if (row.get("offer_details") != existing.get("offer_details") or
-                            row.get("unit_price") != existing.get("unit_price") or
-                            row.get("min_quantity") != existing.get("min_quantity")):
-                            needs_update = True
-                        
-                        if needs_update:
-                            # Update only offer data, not full product
-                            row['price_changed'] = price_changed
-                            conn = _persist_rows(conn, [row], database_uri, update_mode='minimal')
-                            updated += 1
-                            if processed % 500 == 0:
-                                print(f"[BILLA] Progress: {processed}/{total} | New: {inserted} | Updated: {updated} | Skipped: {skipped} | Failed: {failed}")
-                        else:
-                            # No changes needed
-                            skipped += 1
+                    seen_fps.add(fp)
+                    rows_this_chunk.append(row)
+
+                    if done % 250 == 0:
+                        print(f"[BILLA] {done}/{total}  inserted={inserted}  updated={updated}  skipped={skipped}  failed={failed}")
+
+            if not rows_this_chunk:
+                print(f"[BILLA] Chunk {chunk_idx+1}: no products to persist")
+                continue
+
+            # Commit this chunk
+            for attempt in range(1, 4):
+                try:
+                    with conn.cursor() as cur:
+                        fp_to_id = _upsert_products(cur, rows_this_chunk)
+                        old_prices = _upsert_product_store(cur, rows_this_chunk, fp_to_id)
+                        _record_price_history(cur, rows_this_chunk, fp_to_id, old_prices)
+                        _upsert_promotions(cur, rows_this_chunk, fp_to_id, promo_id)
+                    conn.commit()
+
+                    # Count new vs updated
+                    n_new = sum(1 for r in rows_this_chunk
+                                if fp_to_id.get(r["fingerprint"]) not in old_prices)
+                    inserted += n_new
+                    updated += len(rows_this_chunk) - n_new
+                    break
+                except psycopg2.Error as exc:
+                    conn.rollback()
+                    if attempt == 3:
+                        print(f"[BILLA] Chunk {chunk_idx+1} failed after 3 attempts: {exc}")
+                        failed += len(rows_this_chunk)
                     else:
-                        # New product - full insert
-                        batch_rows.append(row)
-                        conn = _persist_rows(conn, [row], database_uri, update_mode='full')
-                        inserted += 1
-                        existing_products[fingerprint] = {
-                            'base_price': row.get("base_price"),
-                            'promo_price': row.get("promo_price"),
-                            'unit_price': row.get("unit_price"),
-                            'offer_details': row.get("offer_details"),
-                            'min_quantity': row.get("min_quantity"),
-                        }
-                        batch_rows.clear()
+                        time.sleep(2 * attempt)
+                        try:
+                            conn = _connect(uri)
+                            conn.autocommit = False
+                        except Exception:
+                            pass
 
-                        if processed % 500 == 0:
-                            print(f"[BILLA] Progress: {processed}/{total} | New: {inserted} | Updated: {updated} | Skipped: {skipped} | Failed: {failed}")
+            print(f"[BILLA] Chunk {chunk_idx+1}/{(total+batch-1)//batch}: "
+                  f"inserted={inserted}  updated={updated}  skipped={skipped}  failed={failed}")
 
-            if batch_rows:
-                conn = _persist_rows(conn, batch_rows, database_uri, update_mode='full')
-                inserted += len(batch_rows)
-                for row in batch_rows:
-                    existing_products[row["fingerprint"]] = {
-                        'base_price': row.get("base_price"),
-                        'promo_price': row.get("promo_price"),
-                        'unit_price': row.get("unit_price"),
-                        'offer_details': row.get("offer_details"),
-                        'min_quantity': row.get("min_quantity"),
-                    }
-                batch_rows.clear()
+            # Brief cooldown between chunks to avoid hammering Billa
+            time.sleep(0.5)
 
-            print(f"[BILLA] Batch {batch_idx + 1} complete: New={inserted:,} | Updated={updated:,} | Skipped={skipped:,} | Failed={failed}")
-
-        print(f"[BILLA] Done. New products: {inserted:,} | Updated: {updated:,}")
-        print(f"[BILLA] Summary: Processed={processed}, New={inserted}, Updated={updated}, Skipped={skipped}, Failed={failed}")
     except Exception:
-        if conn.closed == 0:
+        try:
             conn.rollback()
+        except Exception:
+            pass
         raise
     finally:
         conn.close()
 
+    print(f"\n[BILLA] DONE — processed={done}  inserted={inserted}  updated={updated}  skipped={skipped}  failed={failed}")
+
 
 def main() -> None:
     import argparse
-
-    parser = argparse.ArgumentParser(description="Scrape full BILLA catalog from sitemap into PostgreSQL.")
-    parser.add_argument("--workers", type=int, default=8, help="Concurrent product-page fetch workers.")
-    parser.add_argument("--chunk-size", type=int, default=300, help="How many product URLs to process before each commit.")
-    parser.add_argument("--resume", action="store_true", help="Keep existing rows and skip fingerprints already in PostgreSQL.")
-    parser.add_argument("--shard-count", type=int, default=1, help="Split remaining URLs across N parallel importer processes.")
-    parser.add_argument("--shard-index", type=int, default=0, help="Zero-based shard index for this process.")
-    args = parser.parse_args()
-
-    scrape_billa_to_postgres(
-        workers=max(1, args.workers),
-        chunk_size=max(1, args.chunk_size),
-        resume=args.resume,
-        shard_count=max(1, args.shard_count),
-        shard_index=max(0, args.shard_index),
-    )
+    p = argparse.ArgumentParser(description="Billa sitemap → PostgreSQL (product_store schema)")
+    p.add_argument("--workers",  type=int, default=10,  help="Concurrent HTTP workers (default 10)")
+    p.add_argument("--batch",    type=int, default=300, help="Commit every N products (default 300)")
+    p.add_argument("--limit",    type=int, default=None,help="Stop after N products (for testing)")
+    args = p.parse_args()
+    scrape_billa(workers=args.workers, batch=args.batch, limit=args.limit)
 
 
 if __name__ == "__main__":

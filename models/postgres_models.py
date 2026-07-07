@@ -158,6 +158,15 @@ class ProductStore(db.Model):
     product_url = db.Column(db.Text)
     last_seen = db.Column(db.DateTime)
     created_at = db.Column(db.DateTime, default=_now)
+    unit_price = db.Column(db.Numeric(10, 4))
+    unit_price_unit = db.Column(db.Text)
+    is_preis_gesenkt = db.Column(db.Boolean, default=False)
+    immer_billig = db.Column(db.Boolean, default=False)
+    has_app_voucher = db.Column(db.Boolean, default=False)
+    store_product_name = db.Column(db.Text)
+    store_size_normalized = db.Column(db.Numeric(10, 3))
+    store_unit_normalized = db.Column(db.Text)
+    was_price = db.Column(db.Numeric(10, 2), nullable=True)
     
     # Relationships
     promotion_targets = db.relationship('PromotionTarget', backref='product_store', lazy='dynamic', cascade='all, delete-orphan')
@@ -167,35 +176,40 @@ class ProductStore(db.Model):
             'productId': str(self.product_id),
             'storeId': self.store_id,
             'basePrice': float(self.base_price) if self.base_price else None,
+            'unitPrice': float(self.unit_price) if self.unit_price else None,
+            'unitPriceUnit': self.unit_price_unit,
             'isAvailable': self.is_available,
+            'isPreisGesenkt': self.is_preis_gesenkt,
+            'immerBillig': self.immer_billig,
+            'hasAppVoucher': self.has_app_voucher,
             'productUrl': self.product_url,
             'lastSeen': self.last_seen,
             'createdAt': self.created_at,
-            'updatedAt': self.updated_at
         }
     
     def get_final_price(self):
-        """Calculate final price with active promotions"""
-        # Get active promotions for this product-store
+        """Calculate final price with active promotions."""
+        today = datetime.now(timezone.utc).date()
         active_promotions = self.promotion_targets.join(Promotion).filter(
             Promotion.is_active == True,
-            Promotion.start_date <= datetime.now(timezone.utc).date(),
-            db.or_(
-                Promotion.end_date == None,
-                Promotion.end_date >= datetime.now(timezone.utc).date()
-            )
+            db.or_(Promotion.start_date == None, Promotion.start_date <= today),
+            db.or_(Promotion.end_date == None, Promotion.end_date >= today),
         ).all()
-        
+
         if not active_promotions:
             return float(self.base_price)
-        
-        # Apply best discount
+
         best_price = float(self.base_price)
         for pt in active_promotions:
-            if pt.promotion.offer:
-                discounted_price = pt.promotion.offer.apply_discount(float(self.base_price))
-                best_price = min(best_price, discounted_price)
-        
+            promo = pt.promotion
+            if not promo or not promo.offer_id:
+                continue
+            # Promotion has no ORM 'offer' relationship — query via session
+            offer = db.session.get(Offer, promo.offer_id)
+            if offer:
+                discounted = offer.apply_discount(float(self.base_price))
+                best_price = min(best_price, discounted)
+
         return best_price
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -216,6 +230,22 @@ class Offer(db.Model):
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=_now)
     updated_at = db.Column(db.DateTime, default=_now)
+
+    def apply_discount(self, base_price: float) -> float:
+        """Return the discounted price for this offer applied to base_price."""
+        val = float(self.discount_value or 0)
+        if self.discount_type == "percentage":
+            return round(base_price * (1 - val / 100), 2)
+        if self.discount_type == "fixed":
+            return round(max(0.0, base_price - val), 2)
+        if self.discount_type == "bogo":
+            # Effective per-unit price when buying min_quantity + free items
+            # e.g. 1+1: pay 1, get 2 → price per unit = base/2
+            trigger = int(self.min_quantity or 1)
+            free = round(val * (trigger) / (100 - val)) if val < 100 else trigger
+            total_units = trigger + free
+            return round(base_price * trigger / total_units, 2) if total_units > 0 else base_price
+        return base_price
 
     def to_dict(self):
         return {
@@ -389,6 +419,7 @@ class ShoppingList(db.Model):
     list_id = db.Column(db.Text, unique=True, index=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
     name = db.Column(db.Text, default='My List')
+    icon = db.Column(db.Text, default='basket')
     share_code = db.Column(db.Text)
     shared = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=_now)
@@ -403,6 +434,7 @@ class ShoppingList(db.Model):
             'listId': self.list_id,
             'userId': str(self.user_id),
             'name': self.name or 'My List',
+            'icon': self.icon or 'basket',
             'items': items_list,
             'totalPrice': sum(float(i.get('price', 0) or 0) * int(i.get('qty', 1) or 1) for i in items_list),
             'shared': bool(self.shared),
@@ -526,6 +558,32 @@ class Favorite(db.Model):
             'price': float(self.best_price) if self.best_price else None,
             'store': self.store,
             'added_at': self.added_at
+        }
+
+# ══════════════════════════════════════════════════════════════════════════════
+# PRICE ALERTS
+# ══════════════════════════════════════════════════════════════════════════════
+
+class PriceAlert(db.Model):
+    __tablename__ = 'price_alerts'
+    __table_args__ = {'extend_existing': True}
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_email = db.Column(db.Text, nullable=False, index=True)
+    product_id = db.Column(db.Integer, nullable=False, index=True)
+    target_price = db.Column(db.Numeric(10, 2), nullable=False)
+    is_active = db.Column(db.Boolean, default=True, index=True)
+    created_at = db.Column(db.DateTime, default=_now)
+    triggered_at = db.Column(db.DateTime, nullable=True)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'user_email': self.user_email,
+            'product_id': self.product_id,
+            'target_price': float(self.target_price) if self.target_price else None,
+            'is_active': self.is_active,
+            'created_at': self.created_at,
         }
 
 # ══════════════════════════════════════════════════════════════════════════════

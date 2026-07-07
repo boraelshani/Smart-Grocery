@@ -23,16 +23,57 @@ def shopping_list():
     active_list_id = lists_data.get('active_list_id')
     user_data = get_user_by_email(user_email) or {}
 
-    # Simple estimation and labeling
+    # Bulk-hydrate all products referenced across lists (for cheapest-mix pricing)
+    from models.postgres_models import Product
+    all_pids = set()
+    for lst in all_lists:
+        for item in lst.get('items', []):
+            if isinstance(item, dict):
+                pid = item.get('product_id') or item.get('productId')
+                try:
+                    if pid: all_pids.add(int(pid))
+                except (ValueError, TypeError):
+                    pass
+    product_map = {}
+    if all_pids:
+        try:
+            rows = Product.query.filter(Product.id.in_(list(all_pids))).all()
+            for doc in products_model._hydrate_products_bulk(rows):
+                product_map[str(doc.get('id'))] = doc
+        except Exception as e:
+            print(f'WARNING: bulk hydrate failed: {e}')
+
+    # Per-list stats: cheapest mix total, bought count, store count
     for lst in all_lists:
         items = lst.get('items', [])
         total = 0.0
+        bought = 0
+        stores_seen = set()
         for item in items:
-            p = item.get('price', 0)
-            q = item.get('qty', 1)
-            try: total += float(str(p).replace('€','').strip()) * int(q)
+            if not isinstance(item, dict):
+                continue
+            if item.get('purchased') or item.get('checked'):
+                bought += 1
+            q = 1
+            try: q = int(item.get('qty') or item.get('quantity') or 1)
             except: pass
+            pid = str(item.get('product_id') or item.get('productId') or '')
+            product = product_map.get(pid)
+            unit = 0.0
+            if product:
+                prices = [float(s['price']) for s in (product.get('stores') or []) if s.get('price') is not None]
+                if prices:
+                    unit = min(prices)
+                for s in (product.get('stores') or []):
+                    if s.get('store'): stores_seen.add(s['store'])
+            if not unit:
+                try: unit = float(str(item.get('price', 0)).replace('€','').strip() or 0)
+                except: unit = 0.0
+            total += unit * q
         lst['estimated_total'] = f'€{total:.2f}'
+        lst['cheapest_total'] = total
+        lst['bought_count'] = bought
+        lst['store_count'] = len(stores_seen)
 
     active_list = next((l for l in all_lists if str(l.get('id')) == str(active_list_id)), all_lists[0] if all_lists else None)
     

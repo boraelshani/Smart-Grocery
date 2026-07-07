@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Privacy Policy - Smart Grocery{% endblock %}
+
+{% block content %}
+<div style="max-width:820px;margin:0 auto;padding:110px 1.5rem 4rem;color:#3a3b3a;">
+  <h1 style="font-weight:800;color:#3a3b3a;margin-bottom:0.5rem;">Privacy Policy</h1>
+  <p style="color:#7a6e78;margin-bottom:2rem;">Last updated: July 2026</p>
+
+  <h2 style="font-size:1.15rem;font-weight:700;color:#65388f;margin:1.75rem 0 0.5rem;">Who we are</h2>
+  <p>Smart Grocery is a grocery price comparison service. This page explains what personal data we process, why, and what rights you have under the EU General Data Protection Regulation (GDPR / DSGVO).</p>
+
+  <h2 style="font-size:1.15rem;font-weight:700;color:#65388f;margin:1.75rem 0 0.5rem;">What data we collect</h2>
+  <ul style="line-height:1.8;">
+    <li><strong>Account data</strong> — your email address, display name, and a securely hashed password (we never store passwords in plain text).</li>
+    <li><strong>Optional profile data</strong> — phone, address, and avatar, only if you choose to add them.</li>
+    <li><strong>Usage data you create</strong> — shopping lists, favorites, price alerts, and price reports you submit.</li>
+  </ul>
+  <p>We do not sell your data, and we do not share it with third parties for advertising.</p>
+
+  <h2 style="font-size:1.15rem;font-weight:700;color:#65388f;margin:1.75rem 0 0.5rem;">Cookies</h2>
+  <p>We use only <strong>strictly necessary cookies</strong>:</p>
+  <ul style="line-height:1.8;">
+    <li><code>session</code> — keeps you logged in during your visit.</li>
+    <li><code>auth_token</code> — remembers your login securely (HttpOnly, so scripts cannot read it).</li>
+  </ul>
+  <p>We do not use tracking, analytics, or advertising cookies, which is why no consent pop-up is required for our cookies under the ePrivacy rules.</p>
+
+  <h2 style="font-size:1.15rem;font-weight:700;color:#65388f;margin:1.75rem 0 0.5rem;">Legal basis &amp; retention</h2>
+  <p>We process your account data to provide the service you signed up for (Art. 6(1)(b) GDPR). Your data is kept for as long as your account exists.</p>
+
+  <h2 style="font-size:1.15rem;font-weight:700;color:#65388f;margin:1.75rem 0 0.5rem;">Your rights</h2>
+  <ul style="line-height:1.8;">
+    <li>Access, correct, or delete your personal data</li>
+    <li>Export your data (data portability)</li>
+    <li>Object to or restrict processing</li>
+    <li>Lodge a complaint with your local data protection authority</li>
+  </ul>
+  <p>To exercise any of these rights, contact us and we will respond within 30 days. You can update your profile data anytime from your account settings, and deleting your account removes your personal data.</p>
+
+  <h2 style="font-size:1.15rem;font-weight:700;color:#65388f;margin:1.75rem 0 0.5rem;">Security</h2>
+  <p>Passwords are hashed with bcrypt, connections to our database are encrypted, sessions use HttpOnly and SameSite cookies, and access to administrative functions is restricted.</p>
+</div>
+{% endblock %}

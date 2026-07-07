@@ -9,11 +9,48 @@ from models.multibuy_offers_model import multibuy_offers_model
 from models.notifications_model import notifications_model
 from utils import helpers
 from comparison.cheapest_finder import get_cheapest_from_product
+import time
+
+# ── Login rate limiting (in-memory, per IP+email) ───────────────────────────
+# Blocks credential-stuffing / brute-force: after MAX_ATTEMPTS failures within
+# WINDOW_SEC the pair is locked out until the window expires.
+_LOGIN_MAX_ATTEMPTS = 5
+_LOGIN_WINDOW_SEC = 15 * 60
+_login_attempts = {}  # key -> [timestamps]
+
+def _client_ip():
+    # Trust the last X-Forwarded-For hop only if behind a proxy; fall back to remote_addr
+    fwd = request.headers.get('X-Forwarded-For', '')
+    return (fwd.split(',')[0].strip() if fwd else request.remote_addr) or 'unknown'
+
+def _login_blocked(key: str) -> bool:
+    now = time.time()
+    attempts = [t for t in _login_attempts.get(key, []) if now - t < _LOGIN_WINDOW_SEC]
+    _login_attempts[key] = attempts
+    return len(attempts) >= _LOGIN_MAX_ATTEMPTS
+
+def _record_failed_login(key: str):
+    _login_attempts.setdefault(key, []).append(time.time())
+    # Opportunistic cleanup so the dict doesn't grow forever
+    if len(_login_attempts) > 10000:
+        cutoff = time.time() - _LOGIN_WINDOW_SEC
+        for k in list(_login_attempts.keys()):
+            if not any(t > cutoff for t in _login_attempts[k]):
+                del _login_attempts[k]
+
+EMAIL_RE = re.compile(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        email = request.form['email']; password = request.form['password']
+        email = (request.form.get('email') or '').strip().lower()
+        password = request.form.get('password') or ''
+        rate_key = f"{_client_ip()}:{email}"
+        if _login_blocked(rate_key):
+            msg = 'Too many failed attempts. Please try again in a few minutes.'
+            if request.is_json or request.accept_mimetypes.best == 'application/json':
+                return jsonify({'error': msg}), 429
+            return render_template('login.html', error=msg, email=email), 429
         if users_model.authenticate(email, password):
             token = helpers.generate_jwt(email)
             if request.is_json or request.accept_mimetypes.best == 'application/json':
@@ -42,6 +79,7 @@ def login():
             resp = redirect(url_for('main.home'))
             resp.set_cookie('auth_token', token, httponly=True, samesite='Lax', secure=bool(os.environ.get('COOKIE_SECURE')))
             return resp
+        _record_failed_login(rate_key)
         if request.is_json or request.accept_mimetypes.best == 'application/json':
             return jsonify({'error': 'Invalid credentials'}), 401
         return render_template('login.html', error="Invalid credentials", email=email)
@@ -50,8 +88,16 @@ def login():
 @auth_bp.route('/signup', methods=['GET', 'POST'])
 def signup():
     if request.method == 'POST':
-        name = request.form.get('name'); email = request.form.get('email'); password = request.form.get('password')
+        name = (request.form.get('name') or '').strip()
+        email = (request.form.get('email') or '').strip().lower()
+        password = request.form.get('password') or ''
         if not email or not password: return render_template('signup.html', error='Missing fields', name=name, email=email)
+        if not EMAIL_RE.match(email) or len(email) > 254:
+            return render_template('signup.html', error='Please enter a valid email address', name=name, email=email)
+        if len(password) < 8:
+            return render_template('signup.html', error='Password must be at least 8 characters', name=name, email=email)
+        if len(name) > 100:
+            return render_template('signup.html', error='Name too long', name=name[:100], email=email)
         if users_model.get_user_by_email(email): return render_template('signup.html', error='Email registered', name=name, email=email)
         user_doc = {'email': email, 'password': password, 'name': name or email, 'shopping_list': [], 'total_cost': 0.0, 'seen_deals': []}
         try: users_model.create_user(user_doc)

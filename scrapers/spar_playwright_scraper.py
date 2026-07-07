@@ -548,7 +548,51 @@ class SparPlaywrightScraper:
             discount_percentage = None
             if is_promotion:
                 discount_percentage = round(((original_price - price) / original_price) * 100, 1)
-            
+
+            # Detect BOGO / multi-buy / tiered discount offers from promo_text
+            import re as _re
+            bogo_min_qty = None
+            bogo_free_qty = None
+            multibuy_min_qty = None
+            multibuy_discount_pct = None
+            discount_type_override = None
+            if promo_text:
+                txt_lower = promo_text.lower()
+                # Pattern: "2+1 gratis", "3+1 gratis", "1+1 gratis", "6+6 gratis"
+                m = _re.search(r'(\d+)\s*\+\s*(\d+)\s*(gratis|free|geschenkt)', txt_lower)
+                if m:
+                    bogo_min_qty = int(m.group(1))
+                    bogo_free_qty = int(m.group(2))
+                    discount_type_override = 'bogo'
+                    is_promotion = True
+                # Pattern: "3 für 2", "2 für 1"
+                if not bogo_min_qty:
+                    m2 = _re.search(r'(\d+)\s*f[uü]r\s*(\d+)', txt_lower)
+                    if m2:
+                        pay = int(m2.group(2))
+                        get = int(m2.group(1))
+                        if get > pay:
+                            bogo_min_qty = pay
+                            bogo_free_qty = get - pay
+                            discount_type_override = 'bogo'
+                            is_promotion = True
+                # Pattern: "2 kaufen X% sparen", "ab 2 stück X% rabatt", "bei kauf von 2 X%"
+                if not discount_type_override:
+                    m3 = _re.search(r'(?:ab\s*|bei.*?kauf.*?von\s*|kaufen?\s*)(\d+).*?(\d+(?:\.\d+)?)\s*%', txt_lower)
+                    if m3:
+                        multibuy_min_qty = int(m3.group(1))
+                        multibuy_discount_pct = float(m3.group(2))
+                        discount_type_override = 'multibuy'
+                        is_promotion = True
+                    # Pattern: "20% ab 2 stück"
+                    elif not discount_type_override:
+                        m4 = _re.search(r'(\d+(?:\.\d+)?)\s*%.*?ab\s*(\d+)', txt_lower)
+                        if m4:
+                            multibuy_discount_pct = float(m4.group(1))
+                            multibuy_min_qty = int(m4.group(2))
+                            discount_type_override = 'multibuy'
+                            is_promotion = True
+
             return {
                 'name': name,
                 'brand': brand,
@@ -556,6 +600,11 @@ class SparPlaywrightScraper:
                 'original_price': original_price,
                 'is_promotion': is_promotion,
                 'discount_percentage': discount_percentage,
+                'discount_type_override': discount_type_override,
+                'bogo_min_qty': bogo_min_qty,
+                'bogo_free_qty': bogo_free_qty,
+                'multibuy_min_qty': multibuy_min_qty,
+                'multibuy_discount_pct': multibuy_discount_pct,
                 'promo_text': promo_text,
                 'offer_end_date': offer_end_date,
                 'image_url': image_url,
@@ -1047,8 +1096,21 @@ class SparPlaywrightScraper:
                 ).all()
 
                 # Handle promotions
-                if product_data.get('is_promotion') and product_data.get('original_price'):
-                    discount_value = product_data.get('discount_percentage', 0)
+                if product_data.get('is_promotion'):
+                    # Determine offer type: BOGO > multibuy > percentage
+                    dtype = product_data.get('discount_type_override') or 'percentage'
+                    if dtype == 'bogo':
+                        discount_value = product_data.get('bogo_free_qty', 1)
+                        min_qty = product_data.get('bogo_min_qty', 1)
+                        offer_name = f"SPAR {product_data.get('bogo_min_qty', '')}+{product_data.get('bogo_free_qty', '')} Gratis"
+                    elif dtype == 'multibuy':
+                        discount_value = product_data.get('multibuy_discount_pct', 0)
+                        min_qty = product_data.get('multibuy_min_qty', 2)
+                        offer_name = f"SPAR {discount_value}% ab {min_qty} Stück"
+                    else:
+                        discount_value = product_data.get('discount_percentage', 0)
+                        min_qty = 1
+                        offer_name = f"SPAR {discount_value}% Rabatt"
 
                     active_target = active_targets[0] if active_targets else None
                     end_date = product_data['offer_end_date'].date() if product_data.get('offer_end_date') else None
@@ -1057,10 +1119,11 @@ class SparPlaywrightScraper:
                         # Reuse current active promotion for this product-store instead of creating duplicates.
                         promotion = active_target.promotion
                         if promotion.offer:
-                            promotion.offer.name = f"SPAR {discount_value}% Rabatt"
+                            promotion.offer.name = offer_name
                             promotion.offer.description = product_data.get('promo_text', '')
-                            promotion.offer.discount_type = 'percentage'
+                            promotion.offer.discount_type = dtype
                             promotion.offer.discount_value = Decimal(str(discount_value))
+                            promotion.offer.min_quantity = min_qty
                             promotion.offer.is_active = True
                             promotion.offer.updated_at = datetime.now(timezone.utc)
 
@@ -1077,10 +1140,11 @@ class SparPlaywrightScraper:
                                 dup.promotion.offer.is_active = False
                     else:
                         offer = Offer(
-                            name=f"SPAR {discount_value}% Rabatt",
+                            name=offer_name,
                             description=product_data.get('promo_text', ''),
-                            discount_type='percentage',
+                            discount_type=dtype,
                             discount_value=Decimal(str(discount_value)),
+                            min_quantity=min_qty,
                             is_active=True,
                             created_at=datetime.now(timezone.utc),
                             updated_at=datetime.now(timezone.utc)

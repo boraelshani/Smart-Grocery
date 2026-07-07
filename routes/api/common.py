@@ -70,7 +70,9 @@ def api_get_stores():
             loc = s.get('location') or ''
             out.append({'id': str(s.get('storeId') or s.get('id')), 'name': s.get('name'), 'location': loc, 'image': img, 'url': s.get('url') or s.get('website'), 'hours': s.get('hours'), 'deals': 0})
         return jsonify({'stores': out})
-    except Exception as e: return jsonify({'error': str(e)}), 500
+    except Exception:
+        current_app.logger.exception('stores endpoint failed')
+        return jsonify({'error': 'internal error'}), 500
 
 @api_bp.route('/claim-deal', methods=['POST'])
 def api_claim_deal():
@@ -138,7 +140,9 @@ def api_community_price_report_create():
         sa_db.session.add(report)
         sa_db.session.commit()
         return jsonify({'success': True, 'id': str(report.id)})
-    except Exception as e: return jsonify({'error': str(e)}), 500
+    except Exception:
+        current_app.logger.exception('community price report failed')
+        return jsonify({'error': 'internal error'}), 500
 
 @api_bp.route('/products/submit-pending', methods=['POST'])
 def submit_pending_product():
@@ -151,7 +155,7 @@ def submit_pending_product():
         if not barcode:
             return jsonify({'success': False, 'error': 'Missing barcode'}), 400
             
-        from models.postgres_models import db as sa_db
+        from models.postgres_models import db as sa_db, PendingProduct
         from services.pending_product_service import PendingProductService
         
         # Check if it already exists to avoid dupes
@@ -169,8 +173,9 @@ def submit_pending_product():
         sa_db.session.add(pp)
         sa_db.session.commit()
         return jsonify({'success': True})
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+    except Exception:
+        current_app.logger.exception('submit pending product failed')
+        return jsonify({'success': False, 'error': 'internal error'}), 500
 
 
 @api_bp.route('/admin/scrape/preview', methods=['POST'])
@@ -184,8 +189,9 @@ def api_scrape_preview():
         store = (data.get('store') or '').lower() or 'unknown'
         preview = compare_scraped_to_db(products, sa_db.session, store)
         return jsonify({'preview': preview})
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+    except Exception:
+        current_app.logger.exception('scrape preview failed')
+        return jsonify({'error': 'internal error'}), 500
 
 
 @api_bp.route('/admin/scrape/apply', methods=['POST'])
@@ -203,6 +209,7 @@ def api_scrape_apply():
 
         stats = apply_scraped_products(products, sa_db.session, store)
         return jsonify(stats)
-    except Exception as e:
+    except Exception:
         sa_db.session.rollback()
-        return jsonify({'error': str(e)}), 500
+        current_app.logger.exception('scrape apply failed')
+        return jsonify({'error': 'internal error'}), 500

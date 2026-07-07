@@ -1,0 +1,69 @@
+name: Daily Grocery Scraper
+
+on:
+  schedule:
+    # Runs every day at 03:00 UTC (05:00 Vienna time, before stores open)
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+    # Also allows manual trigger from GitHub Actions tab
+    inputs:
+      store:
+        description: 'Store to scrape (all | spar | billa)'
+        required: false
+        default: 'all'
+      max_pages:
+        description: 'Max pages (leave empty for full scrape)'
+        required: false
+        default: ''
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Install Playwright browsers
+        run: |
+          playwright install chromium
+          playwright install-deps chromium
+
+      - name: Run scrapers
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SQLALCHEMY_DATABASE_URI: ${{ secrets.DATABASE_URL }}
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+        run: |
+          STORE="${{ github.event.inputs.store || 'all' }}"
+          MAX_PAGES="${{ github.event.inputs.max_pages }}"
+
+          CMD="python scripts/run_daily_scrapers.py --store $STORE"
+          if [ -n "$MAX_PAGES" ]; then
+            CMD="$CMD --max-pages $MAX_PAGES"
+          fi
+
+          echo "Running: $CMD"
+          $CMD
+
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: scraper-logs-${{ github.run_id }}
+          path: |
+            *.log
+            scraper_output.txt
+          retention-days: 7

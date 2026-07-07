@@ -16,13 +16,25 @@ class UsersModel:
         user = User.query.filter_by(email=email).first()
         if not user or not user.password_hash:
             return False
-        try:
-            pw = user.password_hash
-            if isinstance(pw, str):
-                pw = pw.encode('utf-8')
-            return bcrypt.checkpw(password.encode('utf-8'), pw)
-        except Exception:
-            return user.password_hash == password
+        stored = user.password_hash
+        if isinstance(stored, bytes):
+            stored = stored.decode('utf-8', errors='replace')
+        if stored.startswith('$2'):
+            try:
+                return bcrypt.checkpw(password.encode('utf-8'), stored.encode('utf-8'))
+            except (ValueError, TypeError):
+                return False
+        # Legacy plaintext record: verify in constant time, then immediately
+        # upgrade the stored value to a bcrypt hash so it never stays plaintext.
+        import hmac
+        if hmac.compare_digest(stored.encode('utf-8'), password.encode('utf-8')):
+            try:
+                user.password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+            return True
+        return False
 
     def get_user_by_email(self, email: str) -> Optional[dict]:
         if not email:
@@ -45,12 +57,16 @@ class UsersModel:
         db.session.commit()
         return uid
 
+    # Whitelist of user attributes callers may modify. Prevents mass
+    # assignment of privileged columns (is_admin, password_hash, email, id).
+    _UPDATABLE_FIELDS = {'name', 'phone', 'address', 'avatar'}
+
     def update_user(self, email: str, update_data: dict) -> bool:
         user = User.query.filter_by(email=email).first()
         if not user:
             return False
         for key, val in update_data.items():
-            if hasattr(user, key):
+            if key in self._UPDATABLE_FIELDS and hasattr(user, key):
                 setattr(user, key, val)
         user.updated_at = datetime.now(timezone.utc)
         db.session.commit()
@@ -123,15 +139,27 @@ def get_user_lists(email: str) -> dict:
     active_id = lists[0].list_id if lists else None
     return {'lists': [lst.to_dict() for lst in lists], 'active_list_id': active_id}
 
-def create_shopping_list(email: str, name: str) -> Optional[str]:
+def create_shopping_list(email: str, name: str, icon: str = 'basket') -> Optional[str]:
     user = _get_user_obj(email)
     if not user:
         return None
     list_id = f"list_{uuid.uuid4().hex[:12]}"
-    lst = ShoppingList(list_id=list_id, user_id=user.id, name=name or 'My List')
+    lst = ShoppingList(list_id=list_id, user_id=user.id, name=name or 'My List', icon=icon or 'basket')
     db.session.add(lst)
     db.session.commit()
     return list_id
+
+def set_list_icon(email: str, list_id: str, icon: str) -> bool:
+    user = _get_user_obj(email)
+    if not user:
+        return False
+    lst = ShoppingList.query.filter_by(list_id=list_id, user_id=user.id).first()
+    if not lst:
+        return False
+    lst.icon = icon or 'basket'
+    lst.updated_at = datetime.now(timezone.utc)
+    db.session.commit()
+    return True
 
 def set_active_list(email: str, list_id: str) -> bool:
     return True  # Active list is just the most recent one
@@ -159,8 +187,15 @@ def delete_shopping_list(email: str, list_id: str) -> bool:
     db.session.commit()
     return True
 
+def _get_owned_list(email: str, list_id: str):
+    """Fetch a shopping list only if it belongs to the given user (prevents IDOR)."""
+    user = _get_user_obj(email)
+    if not user:
+        return None
+    return ShoppingList.query.filter_by(list_id=list_id, user_id=user.id).first()
+
 def update_list_items(email: str, list_id: str, items: list) -> bool:
-    lst = ShoppingList.query.filter_by(list_id=list_id).first()
+    lst = _get_owned_list(email, list_id)
     if not lst:
         return False
     ListItem.query.filter_by(list_id=lst.id).delete()
@@ -180,7 +215,7 @@ def update_list_items(email: str, list_id: str, items: list) -> bool:
     return True
 
 def add_item_to_list(email: str, list_id: str, item) -> bool:
-    lst = ShoppingList.query.filter_by(list_id=list_id).first()
+    lst = _get_owned_list(email, list_id)
     if not lst:
         return False
     if isinstance(item, dict):
@@ -197,7 +232,7 @@ def add_item_to_list(email: str, list_id: str, item) -> bool:
     return True
 
 def remove_item_from_list(email: str, list_id: str, item_name: str) -> bool:
-    lst = ShoppingList.query.filter_by(list_id=list_id).first()
+    lst = _get_owned_list(email, list_id)
     if not lst:
         return False
     li = ListItem.query.filter_by(list_id=lst.id, product_name=item_name).first()

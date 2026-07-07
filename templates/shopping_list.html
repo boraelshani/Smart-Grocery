@@ -5,409 +5,457 @@
 /* ── PAGE BASE ─────────────────────────────────────────────────────────────── */
 body { background: #f5efe6; }
 
-/* ── HERO ──────────────────────────────────────────────────────────────────── */
-.sl-hero {
-  background: #f5efe6;
-  min-height: 280px;
-  position: relative;
-  display: flex;
-  align-items: flex-end;
-  overflow: hidden;
+.sl-main { max-width: 1280px; margin: 0 auto; padding: 2.5rem 2rem 4rem; }
+
+/* ── PAGE HEADER ───────────────────────────────────────────────────────────── */
+.sl-page-head {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  flex-wrap: wrap; gap: 1rem; margin-bottom: 2rem;
 }
-.sl-hero-text {
-  flex: 0 0 42%;
-  padding: 2.5rem 2rem 2.5rem 4rem;
-  z-index: 2;
-  position: relative;
-}
-.sl-hero-title {
+.sl-page-title {
   font-family: 'Cabinet Grotesk', sans-serif;
-  font-size: 4.2rem;
-  font-weight: 500;
-  color: #3b1a6e;
-  letter-spacing: -0.01em;
-  line-height: 1.05;
-  margin-bottom: 0.75rem;
+  font-size: 3rem; font-weight: 600; color: #3b1a6e;
+  letter-spacing: -0.02em; line-height: 1.05; margin: 0 0 0.35rem;
 }
-.sl-hero-sub {
-  font-size: 1.1rem;
-  color: #7c6e8a;
-  line-height: 1.65;
-  margin: 0;
-  max-width: 420px;
-}
-.sl-hero-img-wrap {
-  position: absolute;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  width: 50%;
-  overflow: hidden;
-}
-.sl-hero-img-wrap img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center center;
-  display: block;
-}
+.sl-page-sub { font-size: 1rem; color: #7c6e8a; margin: 0; }
+
 .btn-create-list {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: #65388f;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  padding: 11px 22px;
-  font-size: 0.95rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: background 0.2s, transform 0.15s;
+  display: inline-flex; align-items: center; gap: 8px;
+  background: #65388f; color: white; border: none; border-radius: 12px;
+  padding: 12px 24px; font-size: 0.95rem; font-weight: 700; cursor: pointer;
+  transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
   text-decoration: none;
   box-shadow: 0 4px 14px rgba(101,56,143,0.35);
 }
-.btn-create-list:hover { background: #4a256b; color: white; transform: translateY(-1px); }
+.btn-create-list:hover { background: #48236b; color: white; transform: translateY(-2px); box-shadow: 0 8px 22px rgba(101,56,143,0.4); }
 
-/* ── MAIN CONTENT AREA ─────────────────────────────────────────────────────── */
-.sl-main { max-width: 1200px; margin: 0 auto; padding: 2.5rem 2rem 4rem; }
-
-/* ── SECTION LABELS ────────────────────────────────────────────────────────── */
-.sl-section-label {
-  font-size: 1.05rem;
-  font-weight: 800;
-  color: #3b1a6e;
-  margin-bottom: 1rem;
-  letter-spacing: -0.01em;
-}
-
-/* ── LIST CARDS GRID ───────────────────────────────────────────────────────── */
-.list-cards-grid {
+/* ── LIST CARDS ROW ────────────────────────────────────────────────────────── */
+.list-cards-row {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   gap: 1rem;
-  margin-bottom: 2.5rem;
+  margin-bottom: 2rem;
 }
+
+/* Animated rotating outline for the active card */
+@property --sl-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+@keyframes sl-rotate-outline { to { --sl-angle: 360deg; } }
 
 .list-card {
-  background: #fff;
-  border: 1.5px solid #eee8f8;
-  border-radius: 16px;
-  padding: 1.25rem 1.4rem;
-  cursor: pointer;
-  transition: box-shadow 0.2s, border-color 0.2s, transform 0.2s;
   position: relative;
+  background: #fff;
+  border-radius: 18px;
+  padding: 1.15rem 1.25rem 1.25rem;
+  cursor: pointer;
+  transition: box-shadow 0.25s, transform 0.25s;
+  border: 1.5px solid #eee8f8;
 }
 .list-card:hover {
-  box-shadow: 0 8px 28px rgba(101,56,143,0.12);
-  border-color: #d4c5f0;
-  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(101,56,143,0.13);
+  transform: translateY(-3px);
 }
 .list-card.active {
-  border-color: #65388f;
-  box-shadow: 0 8px 28px rgba(101,56,143,0.18);
+  border-color: transparent;
+  background:
+    linear-gradient(135deg, #f1e8fc 0%, #e7d9f8 100%) padding-box,
+    conic-gradient(from var(--sl-angle), #65388f, #a58ac2, #e9d8ff, #65388f) border-box;
+  border: 2px solid transparent;
+  animation: sl-rotate-outline 3.5s linear infinite;
+  box-shadow: 0 10px 32px rgba(101,56,143,0.22);
 }
+.list-card.active .list-card-emoji { background: rgba(255,255,255,0.75); }
+.list-card.active .list-progress-track { background: rgba(255,255,255,0.7); }
 
-/* ── ADD NEW LIST CARD ─────────────────────────────────────────────────────── */
-.list-card-add {
-  background: #fff;
-  border: 2px dashed #d4c5f0;
-  border-radius: 16px;
-  padding: 1.25rem 1.4rem;
-  cursor: pointer;
-  transition: border-color 0.2s, background 0.2s, transform 0.2s;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.75rem;
-  min-height: 130px;
-  color: #65388f;
-}
-.list-card-add:hover {
-  border-color: #65388f;
-  background: #faf7ff;
-  transform: translateY(-2px);
-}
-.list-card-add-icon {
-  width: 52px; height: 52px;
-  background: #f0eaff;
-  border-radius: 12px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 1.6rem;
-  color: #65388f;
-  transition: background 0.2s;
-}
-.list-card-add:hover .list-card-add-icon { background: #e4d8fc; }
-.list-card-add-label {
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: #65388f;
-}
+.list-card-head { display: flex; align-items: flex-start; gap: 0.85rem; margin-bottom: 0.85rem; }
 
-.list-card-top { display: flex; align-items: flex-start; gap: 1rem; margin-bottom: 1rem; }
-.list-card-icon {
-  width: 52px; height: 52px;
-  background: #f0eaff;
-  border-radius: 12px;
+.list-card-emoji {
+  width: 54px; height: 54px; flex-shrink: 0;
+  background: linear-gradient(135deg, #f3ecfd 0%, #ece0fb 100%);
+  border-radius: 14px;
   display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-  color: #65388f;
-  font-size: 1.4rem;
-}
-.list-card-info { flex: 1; min-width: 0; }
-.list-card-name {
-  font-size: 1rem;
-  font-weight: 800;
-  color: #1a0a2e;
-  margin-bottom: 3px;
-  white-space: nowrap;
+  font-size: 1.7rem;
+  transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
   overflow: hidden;
-  text-overflow: ellipsis;
 }
-.list-card-date { font-size: 0.78rem; color: #9ca3af; }
+.list-card-emoji img, .sl-detail-emoji img {
+  width: 82%; height: 82%; object-fit: contain;
+}
+.list-card:hover .list-card-emoji { transform: scale(1.12) rotate(-6deg); }
+.list-card.active .list-card-emoji { animation: sl-emoji-float 2.6s ease-in-out infinite; }
+@keyframes sl-emoji-float {
+  0%,100% { transform: translateY(0) rotate(0deg); }
+  50%     { transform: translateY(-4px) rotate(4deg); }
+}
+
+.list-card-titlebox { flex: 1; min-width: 0; padding-top: 2px; }
+.list-card-name {
+  font-size: 1rem; font-weight: 800; color: #1a0a2e;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  margin-bottom: 2px;
+}
+.list-card-sub { font-size: 0.78rem; color: #9b8fae; font-weight: 600; }
 
 .list-card-menu {
   background: none; border: none; color: #c4b5fd; padding: 0;
-  cursor: pointer; font-size: 1.2rem; flex-shrink: 0;
+  cursor: pointer; font-size: 1.1rem; flex-shrink: 0;
   width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
-  border-radius: 50%; transition: background 0.15s;
+  border-radius: 50%; transition: background 0.15s, color 0.15s;
 }
-.list-card-menu:hover { background: #f5f0ff; color: #65388f; }
+.list-card-menu:hover { background: #f0e9fb; color: #65388f; }
 
-.list-card-stats {
-  display: flex; gap: 0.6rem; flex-wrap: wrap;
+.list-card-price {
+  font-size: 1.45rem; font-weight: 900; color: #1a0a2e; letter-spacing: -0.02em;
+  margin-bottom: 0.7rem;
 }
-.list-stat-chip {
-  display: inline-flex; align-items: center; gap: 5px;
-  background: #f0eaff;
-  color: #65388f;
-  font-size: 0.78rem;
-  font-weight: 700;
-  padding: 5px 12px;
-  border-radius: 999px;
-}
-.list-stat-chip i { font-size: 0.7rem; }
+.list-card-price .sl-price-label { font-size: 0.72rem; font-weight: 600; color: #9b8fae; margin-left: 6px; }
 
-/* ── ACTIVE LIST WRAPPER ───────────────────────────────────────────────────── */
-.active-list-wrapper {
-  background: #fff;
-  border: 1.5px solid #eee8f8;
-  border-radius: 20px;
-  overflow: hidden;
+.list-progress-track {
+  height: 7px; background: #efe9f8; border-radius: 999px; overflow: hidden;
+  margin-bottom: 0.55rem;
+}
+.list-progress-fill {
+  height: 100%; border-radius: 999px;
+  background: linear-gradient(90deg, #65388f, #a58ac2);
+  transition: width 0.5s cubic-bezier(0.4,0,0.2,1);
+}
+.list-card-footer { display: flex; align-items: center; justify-content: space-between; }
+.list-card-bought { font-size: 0.76rem; font-weight: 700; color: #7c6e8a; }
+
+.sl-avatars { display: flex; align-items: center; }
+.sl-avatar {
+  width: 26px; height: 26px; border-radius: 50%;
+  border: 2px solid #fff;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 0.62rem; font-weight: 800; color: #fff;
+  margin-left: -7px;
+  background: #a58ac2;
+}
+.sl-avatar:first-child { margin-left: 0; }
+.sl-avatar.more { background: #e6ddf5; color: #65388f; }
+
+/* Add-new card */
+.list-card-add {
+  background: transparent;
+  border: 2px dashed #d4c5f0;
+  border-radius: 18px;
+  cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 0.6rem; min-height: 170px; color: #65388f;
+  transition: border-color 0.2s, background 0.2s, transform 0.2s;
+}
+.list-card-add:hover { border-color: #65388f; background: #faf7ff; transform: translateY(-3px); }
+.list-card-add-icon {
+  width: 48px; height: 48px; background: #f0eaff; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.5rem; color: #65388f; transition: background 0.2s, transform 0.3s;
+}
+.list-card-add:hover .list-card-add-icon { background: #e4d8fc; transform: rotate(90deg); }
+.list-card-add-label { font-size: 0.85rem; font-weight: 700; }
+
+/* ── DETAIL PANEL ──────────────────────────────────────────────────────────── */
+.sl-detail {
+  background: #fff; border: 1.5px solid #eee8f8; border-radius: 22px;
+  overflow: visible;
+  animation: sl-fade-up 0.4s ease;
+}
+@keyframes sl-fade-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-.active-list-header {
-  padding: 1.5rem 1.75rem 1rem;
-  border-bottom: 1px solid #f1f5f9;
-}
-.active-list-title-row {
+.sl-detail-head {
   display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 0.85rem;
-  flex-wrap: wrap; gap: 0.75rem;
+  flex-wrap: wrap; gap: 0.85rem;
+  padding: 1.5rem 1.75rem 1.15rem;
 }
-.active-list-name {
-  font-size: 1.55rem; font-weight: 900; color: #1a0a2e;
-  letter-spacing: -0.03em;
-  display: flex; align-items: center; gap: 0.5rem;
-  margin: 0;
+.sl-detail-identity { display: flex; align-items: center; gap: 0.9rem; min-width: 0; }
+.sl-detail-emoji {
+  width: 50px; height: 50px; flex-shrink: 0;
+  background: linear-gradient(135deg, #f3ecfd, #ece0fb);
+  border-radius: 13px; display: flex; align-items: center; justify-content: center;
+  font-size: 1.6rem;
+}
+.sl-detail-name {
+  font-size: 1.45rem; font-weight: 900; color: #1a0a2e; letter-spacing: -0.02em;
+  margin: 0; display: flex; align-items: center; gap: 0.5rem;
 }
 .btn-edit-name {
   background: none; border: none; color: #c4b5fd; cursor: pointer;
-  font-size: 0.95rem; padding: 4px; border-radius: 6px;
-  transition: color 0.15s;
+  font-size: 0.9rem; padding: 4px; border-radius: 6px; transition: color 0.15s;
 }
 .btn-edit-name:hover { color: #65388f; }
+.sl-detail-avatars-row { display: flex; align-items: center; gap: 0.5rem; margin-top: 3px; }
 
-.active-list-actions { display: flex; gap: 0.5rem; align-items: center; }
-
-.btn-share-list {
+.sl-detail-actions { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+.btn-action-pill {
   display: inline-flex; align-items: center; gap: 6px;
-  border: 1.5px solid #e0d8f5;
-  color: #65388f;
-  background: white;
-  border-radius: 8px;
-  padding: 8px 18px;
-  font-size: 0.85rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.15s;
+  border: 1.5px solid #e0d8f5; color: #65388f; background: white;
+  border-radius: 10px; padding: 9px 16px;
+  font-size: 0.84rem; font-weight: 700; cursor: pointer;
+  transition: all 0.18s; text-decoration: none;
 }
-.btn-share-list:hover { background: #f5f0ff; border-color: #65388f; }
+.btn-action-pill:hover { background: #f5f0ff; border-color: #65388f; color: #65388f; transform: translateY(-1px); }
+.btn-action-pill.primary { background: #65388f; color: #fff; border-color: #65388f; }
+.btn-action-pill.primary:hover { background: #48236b; color: #fff; }
 
-.btn-more {
-  width: 36px; height: 36px;
-  border: 1.5px solid #e0d8f5;
-  background: white; color: #65388f;
-  border-radius: 8px; cursor: pointer;
+/* ── STAT CARDS ────────────────────────────────────────────────────────────── */
+.sl-stats-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 0.9rem;
+  padding: 0 1.75rem 1.4rem;
+}
+.sl-stat-card {
+  border-radius: 16px; padding: 1.05rem 1.2rem;
+  display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
+  background: #f8f5fd; border: 1px solid #efe9fa;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.sl-stat-card:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(101,56,143,0.1); }
+.sl-stat-card.highlight { background: linear-gradient(135deg, #f3ecfd, #e9ddfb); border-color: #ddccf5; }
+.sl-stat-label { font-size: 0.75rem; font-weight: 700; color: #7c6e8a; margin-bottom: 4px; }
+.sl-stat-value { font-size: 1.5rem; font-weight: 900; color: #3b1a6e; letter-spacing: -0.02em; line-height: 1.1; }
+.sl-stat-note { font-size: 0.72rem; color: #9b8fae; font-weight: 600; margin-top: 2px; }
+.sl-stat-value.save { color: #16a34a; }
+.sl-stat-icon {
+  width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
-  font-size: 1rem; transition: all 0.15s;
+  font-size: 1.15rem; background: #fff; color: #65388f;
+  box-shadow: 0 2px 8px rgba(101,56,143,0.1);
 }
-.btn-more:hover { background: #f5f0ff; }
+.sl-stat-icon.green { color: #16a34a; }
 
-.active-list-meta {
-  display: flex; align-items: center; gap: 1.25rem;
-  flex-wrap: wrap;
-  font-size: 0.83rem; color: #9ca3af;
+/* Donut chart */
+.sl-donut { position: relative; width: 58px; height: 58px; flex-shrink: 0; }
+.sl-donut svg { transform: rotate(-90deg); }
+.sl-donut-track { stroke: #e9e0f6; }
+.sl-donut-fill {
+  stroke: #65388f; stroke-linecap: round;
+  transition: stroke-dashoffset 0.7s cubic-bezier(0.4,0,0.2,1);
 }
-.active-list-meta-item {
-  display: flex; align-items: center; gap: 5px; font-weight: 600;
+.sl-donut-text {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  font-size: 0.78rem; font-weight: 900; color: #3b1a6e;
 }
-.active-list-meta-item i { font-size: 0.78rem; }
+
+/* ── STORE COMPARISON ──────────────────────────────────────────────────────── */
+.sl-compare-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 1.75rem; margin-bottom: 0.75rem;
+}
+.sl-compare-title { font-size: 0.95rem; font-weight: 800; color: #3b1a6e; margin: 0; }
+.sl-store-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
+  gap: 0.8rem;
+  padding: 0 1.75rem 1.5rem;
+}
+.sl-store-card {
+  position: relative;
+  border: 1.5px solid #eee8f8; border-radius: 15px;
+  padding: 0.95rem 1.05rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: #fff;
+}
+.sl-store-card:hover { border-color: #c9b4e8; box-shadow: 0 6px 18px rgba(101,56,143,0.1); transform: translateY(-2px); }
+.sl-store-card.selected {
+  border-color: #65388f;
+  background: #faf7ff;
+  box-shadow: 0 6px 20px rgba(101,56,143,0.16);
+}
+.sl-store-badge {
+  position: absolute; top: -9px; right: 10px;
+  font-size: 0.62rem; font-weight: 800; letter-spacing: 0.02em;
+  padding: 3px 10px; border-radius: 999px;
+  background: #65388f; color: #fff;
+  box-shadow: 0 2px 8px rgba(101,56,143,0.3);
+}
+.sl-store-badge.complete { background: #0ea5e9; }
+.sl-store-name-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.sl-store-logo {
+  width: 30px; height: 30px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 0.72rem; font-weight: 900; color: #fff; flex-shrink: 0;
+}
+.sl-store-name { font-size: 0.85rem; font-weight: 800; color: #1a0a2e; }
+.sl-store-total { font-size: 1.25rem; font-weight: 900; color: #3b1a6e; letter-spacing: -0.02em; }
+.sl-store-avail { font-size: 0.72rem; color: #9b8fae; font-weight: 600; margin-top: 2px; }
+.sl-store-avail .missing { color: #dc2626; }
 
 /* ── FILTER BAR ────────────────────────────────────────────────────────────── */
 .filter-bar {
   padding: 1rem 1.75rem;
-  border-bottom: 1px solid #f1f5f9;
+  border-top: 1px solid #f4f0fa;
+  border-bottom: 1px solid #f4f0fa;
   display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;
-  background: #fff;
+  background: #fdfcff;
 }
 .filter-search {
-  flex: 1; min-width: 180px; max-width: 340px;
+  flex: 1; min-width: 170px; max-width: 320px;
   display: flex; align-items: center; gap: 8px;
-  background: #f8f6fc; border: 1.5px solid #ede8f8; border-radius: 999px;
-  padding: 8px 18px; transition: border-color 0.15s;
+  background: #fff; border: 1.5px solid #ede8f8; border-radius: 999px;
+  padding: 8px 16px; transition: border-color 0.15s, box-shadow 0.15s;
 }
-.filter-search:focus-within { border-color: #65388f; }
-.filter-search i { color: #9ca3af; font-size: 0.85rem; }
-.filter-search input {
-  border: none; background: transparent; font-size: 0.85rem;
-  color: #1a0a2e; font-weight: 500; width: 100%;
-}
+.filter-search:focus-within { border-color: #65388f; box-shadow: 0 0 0 3px rgba(101,56,143,0.08); }
+.filter-search i { color: #b0a4c4; font-size: 0.85rem; }
+.filter-search input { border: none; background: transparent; font-size: 0.85rem; color: #1a0a2e; font-weight: 500; width: 100%; }
 .filter-search input:focus { outline: none; }
 
-.filter-tabs {
-  display: flex; gap: 3px;
-  background: #f0eaff; border-radius: 999px; padding: 4px;
-}
+.filter-tabs { display: flex; gap: 3px; background: #f0eaff; border-radius: 999px; padding: 4px; }
 .filter-tab {
   border: none; background: transparent; border-radius: 999px;
-  padding: 6px 18px; font-size: 0.8rem; font-weight: 700;
-  color: #7c6e8a; cursor: pointer; transition: all 0.15s;
-  white-space: nowrap;
+  padding: 6px 16px; font-size: 0.8rem; font-weight: 700;
+  color: #7c6e8a; cursor: pointer; transition: all 0.18s; white-space: nowrap;
 }
-.filter-tab.active {
-  background: #65388f; color: white;
-  box-shadow: 0 2px 8px rgba(101,56,143,0.25);
-}
+.filter-tab.active { background: #65388f; color: white; box-shadow: 0 2px 8px rgba(101,56,143,0.25); }
 .filter-tab:hover:not(.active) { background: #e2d8f5; color: #65388f; }
 
-.sort-select {
-  border: 1.5px solid #ede8f8; border-radius: 8px; padding: 7px 12px;
-  font-size: 0.8rem; font-weight: 700; color: #6b7280;
-  background: white; cursor: pointer;
+/* ── ITEM TABLE ────────────────────────────────────────────────────────────── */
+.sl-table-head {
+  display: grid;
+  grid-template-columns: 34px 56px minmax(140px,1.6fr) 110px minmax(120px,1fr) 90px 40px;
+  gap: 0.9rem; align-items: center;
+  padding: 0.7rem 1.75rem;
+  font-size: 0.7rem; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase;
+  color: #9b8fae; border-bottom: 1px solid #f4f0fa;
 }
-
-/* ── STORE GROUP ───────────────────────────────────────────────────────────── */
-.store-group-header {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 0.9rem 1.75rem 0.5rem;
-  font-size: 0.88rem; font-weight: 800;
-  color: #3b1a6e;
-  border-top: 1px solid #f1f5f9;
-}
-.store-group-header:first-child { border-top: none; }
-.store-count-badge {
-  background: #f0eaff; color: #65388f;
-  border-radius: 999px; padding: 2px 10px;
-  font-size: 0.73rem; font-weight: 800; margin-left: 8px;
-  display: inline-block;
-}
-.store-subtotal-badge {
-  font-size: 0.82rem; font-weight: 800; color: #1a0a2e;
-}
-
-/* ── ITEM ROWS ─────────────────────────────────────────────────────────────── */
 .item-row {
-  display: flex;
-  align-items: center;
-  gap: 0.9rem;
-  padding: 0.85rem 1.75rem;
+  display: grid;
+  grid-template-columns: 34px 56px minmax(140px,1.6fr) 110px minmax(120px,1fr) 90px 40px;
+  gap: 0.9rem; align-items: center;
+  padding: 0.8rem 1.75rem;
   border-bottom: 1px solid #f8f6fc;
-  transition: background 0.15s, opacity 0.2s;
-  background: white;
-  cursor: pointer;
+  transition: background 0.15s, opacity 0.25s;
+  background: white; cursor: pointer;
 }
 .item-row:hover { background: #faf7ff; }
 .item-row:last-child { border-bottom: none; }
-.item-row.completed { opacity: 0.6; background: #f8fafc; }
+.item-row.completed { opacity: 0.55; }
 .item-row.completed .item-name { text-decoration: line-through; color: #94a3b8; }
-.item-row.dragging { opacity: 0.4; border: 2px dashed #65388f; background: #f5f0ff; }
-.item-row.drag-over { background: #faf5ff; }
+.item-row.dragging { opacity: 0.4; outline: 2px dashed #65388f; background: #f5f0ff; }
+.item-row.drag-over { background: #f3ecfd; }
 
 .premium-checkbox {
   width: 22px; height: 22px;
-  border: 2px solid #d1d5db; border-radius: 6px;
-  cursor: pointer; transition: all 0.15s;
+  border: 2px solid #d8cdea; border-radius: 7px;
+  cursor: pointer; transition: all 0.18s;
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0; color: transparent;
 }
+.premium-checkbox:hover { border-color: #65388f; }
 .item-checkbox:checked + .premium-checkbox {
   background: #65388f; border-color: #65388f; color: white;
+  animation: sl-check-pop 0.25s cubic-bezier(0.34,1.56,0.64,1);
 }
-.item-checkbox:checked + .premium-checkbox i { color: white; }
+@keyframes sl-check-pop { 0% { transform: scale(0.8); } 100% { transform: scale(1); } }
 
 .item-img-pill {
-  width: 52px; height: 52px; flex-shrink: 0;
-  background: #f5f0ff;
-  border-radius: 10px;
+  width: 50px; height: 50px; flex-shrink: 0;
+  background: #fff; border: 1px solid #f0ecf7; border-radius: 11px;
   display: flex; align-items: center; justify-content: center;
-  overflow: hidden;
-  padding: 4px;
+  overflow: hidden; padding: 4px;
 }
-.item-img-pill img { width: 100%; height: 100%; object-fit: contain; }
+.item-img-pill img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
 
-.item-name { font-size: 0.9rem; font-weight: 700; color: #1a0a2e; margin: 0; }
-
-.item-status-badge {
-  display: inline-flex; align-items: center; gap: 4px;
-  font-size: 0.72rem; font-weight: 700;
-  padding: 3px 10px; border-radius: 999px;
-  background: #eff6ff; color: #2563eb;
-  white-space: nowrap;
+.item-name { font-size: 0.88rem; font-weight: 700; color: #1a0a2e; margin: 0 0 2px; }
+.item-brand { font-size: 0.72rem; color: #9b8fae; font-weight: 600; }
+.item-meta {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  font-size: 0.7rem; color: #9b8fae; font-weight: 600; margin-top: 2px;
 }
-.item-status-badge.purchased { background: #f0fdf4; color: #16a34a; }
+.item-meta .meta-chip {
+  background: #f5f1fb; color: #7c6e8a; border-radius: 999px; padding: 1px 8px;
+  font-weight: 700; white-space: nowrap;
+}
 
-/* Quantity controls */
 .qty-container {
-  display: flex; align-items: center;
-  background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 3px;
-  flex-shrink: 0;
+  display: inline-flex; align-items: center;
+  background: #f8f6fc; border: 1.5px solid #ede8f8; border-radius: 10px; padding: 2px;
+  width: fit-content; justify-self: start;
 }
 .qty-btn {
-  width: 28px; height: 28px; border-radius: 6px;
+  width: 26px; height: 26px; border-radius: 7px;
   display: flex; align-items: center; justify-content: center;
-  background: white; border: 1px solid #e2e8f0;
-  color: #65388f; cursor: pointer; transition: all 0.15s; font-size: 0.8rem;
+  background: white; border: 1px solid #ede8f8;
+  color: #65388f; cursor: pointer; transition: all 0.15s; font-size: 0.75rem;
 }
 .qty-btn:hover { background: #65388f; color: white; border-color: #65388f; }
 .qty-input {
-  width: 36px; text-align: center; font-weight: 800;
-  border: none; background: transparent; color: #1a0a2e; font-size: 0.9rem;
+  width: 32px; text-align: center; font-weight: 800;
+  border: none; background: transparent; color: #1a0a2e; font-size: 0.85rem;
 }
 
-.item-price {
-  font-size: 1rem; font-weight: 900; color: #1a0a2e; white-space: nowrap; text-align: right;
+/* Cheapest price cell + popover */
+.item-price-cell { position: relative; }
+.item-cheapest {
+  display: inline-flex; flex-direction: column; gap: 3px;
+  border-radius: 10px; padding: 4px 8px; margin: -4px -8px;
+  transition: background 0.15s;
 }
-.item-price-unit { font-size: 0.72rem; color: #9ca3af; font-weight: 600; }
+.item-price-cell:hover .item-cheapest { background: #f3ecfd; }
+.item-cheapest-price { font-size: 0.92rem; font-weight: 900; color: #16a34a; }
+.item-cheapest-store {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 0.7rem; font-weight: 700; color: #7c6e8a;
+}
+.item-cheapest-store .store-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+
+.price-popover {
+  position: absolute; z-index: 50;
+  bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%) translateY(4px);
+  background: #fff; border: 1px solid #ece4f8; border-radius: 14px;
+  box-shadow: 0 16px 40px rgba(59,26,110,0.18);
+  padding: 0.7rem 0.85rem; min-width: 190px;
+  opacity: 0; visibility: hidden; pointer-events: none;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+.item-price-cell:hover .price-popover,
+.item-price-cell.popover-open .price-popover {
+  opacity: 1; visibility: visible; pointer-events: auto;
+  transform: translateX(-50%) translateY(0);
+}
+.price-popover::after {
+  content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+  border: 7px solid transparent; border-top-color: #fff;
+}
+.price-popover-title {
+  font-size: 0.66rem; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase;
+  color: #9b8fae; margin-bottom: 6px;
+}
+.price-popover-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  padding: 4px 6px; border-radius: 8px; font-size: 0.8rem;
+}
+.price-popover-row.cheapest { background: #f0fdf4; }
+.price-popover-row .pp-store { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; color: #4b3a63; }
+.price-popover-row .pp-price { font-weight: 800; color: #1a0a2e; }
+.price-popover-row.cheapest .pp-price { color: #16a34a; }
+
+.item-total { font-size: 0.95rem; font-weight: 900; color: #1a0a2e; text-align: right; }
+.item-total-unit { font-size: 0.68rem; color: #9b8fae; font-weight: 600; text-align: right; }
 
 .btn-remove-item {
-  width: 32px; height: 32px; flex-shrink: 0;
-  border: 1.5px solid #eef0f3; background: white; color: #9ca3af;
-  border-radius: 8px; cursor: pointer; transition: all 0.15s;
-  display: flex; align-items: center; justify-content: center; font-size: 0.85rem;
+  width: 30px; height: 30px; flex-shrink: 0;
+  border: 1.5px solid #f0ecf7; background: white; color: #b0a4c4;
+  border-radius: 9px; cursor: pointer; transition: all 0.15s;
+  display: flex; align-items: center; justify-content: center; font-size: 0.8rem;
 }
 .btn-remove-item:hover { background: #fff1f2; color: #e11d48; border-color: #fecdd3; }
 
 /* ── EMPTY / PLACEHOLDER ───────────────────────────────────────────────────── */
 .sl-placeholder {
-  background: #fff; border: 1.5px solid #eee8f8; border-radius: 16px;
+  background: #fff; border: 1.5px solid #eee8f8; border-radius: 20px;
   padding: 4rem 2rem; text-align: center; color: #9ca3af;
 }
 .sl-placeholder i { font-size: 3rem; opacity: 0.3; display: block; margin-bottom: 1rem; }
 
 /* ── MODALS ────────────────────────────────────────────────────────────────── */
-.modal-content { border-radius: 16px !important; border: none !important; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.15) !important; }
+.modal-content { border-radius: 18px !important; border: none !important; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.15) !important; }
 .modal-header { border-bottom: 1px solid #f1f5f9 !important; padding: 1.5rem !important; }
 .modal-body { padding: 1.5rem !important; }
 .modal-footer { border-top: none !important; padding: 1rem 1.5rem 2rem !important; }
@@ -415,115 +463,152 @@ body { background: #f5efe6; }
 .modal { z-index: 1060 !important; }
 
 .btn-confirm-action {
-  border-radius: 8px !important; padding: 0.75rem 1.5rem !important;
+  border-radius: 10px !important; padding: 0.75rem 1.5rem !important;
   font-weight: 700 !important; transition: all 0.2s ease !important; border: none !important;
 }
 .btn-confirm-action:hover { transform: translateY(-1px); box-shadow: 0 8px 16px rgba(0,0,0,0.1); }
-
-.header-icon-circle { border-radius: 10px !important; }
-
+.header-icon-circle { border-radius: 12px !important; }
+.btn-premium-purple { background: #65388f; color: white; border: none; border-radius: 10px; font-weight: 700; }
+.btn-premium-purple:hover { background: #48236b; color: white; }
 .btn-template-pill {
-  background: #f1f5f9; border-radius: 8px; font-size: 0.85rem;
+  background: #f1f5f9; border-radius: 10px; font-size: 0.85rem;
   font-weight: 600; color: #475569; transition: all 0.2s ease;
 }
 .btn-template-pill:hover { background: #e2e8f0; color: #65388f; }
 
-.btn-premium-purple {
-  background: #65388f; color: white; border: none; border-radius: 8px;
-  font-weight: 700;
+/* Icon picker */
+.icon-picker-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
+.icon-picker-option {
+  aspect-ratio: 1; border: 2px solid #ede8f8; border-radius: 12px;
+  background: #faf8fe; font-size: 1.45rem;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.18s cubic-bezier(0.34,1.56,0.64,1);
 }
-.btn-premium-purple:hover { background: #4a256b; color: white; }
+.icon-picker-option:hover { transform: scale(1.14); border-color: #c9b4e8; background: #f3ecfd; }
+.icon-picker-option.selected {
+  border-color: #65388f; background: #ece0fb;
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(101,56,143,0.25);
+}
+.icon-picker-option img { width: 72%; height: 72%; object-fit: contain; }
+
+/* ── ACTIVITY FEED ─────────────────────────────────────────────────────────── */
+.activity-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 7px 10px; border-radius: 10px;
+  background: #faf8fe; border: 1px solid #ede8f8;
+  font-size: 0.82rem;
+}
+.activity-dot {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+  background: #a58ac2;
+}
+.activity-text { flex: 1; color: #4b3a63; font-weight: 600; }
+.activity-text .activity-item-name { color: #1a0a2e; }
+.activity-time { font-size: 0.72rem; color: #9b8fae; white-space: nowrap; }
 
 /* ── RESPONSIVE ────────────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .sl-table-head { display: none; }
+  .item-row {
+    grid-template-columns: 30px 46px 1fr auto;
+    grid-template-areas:
+      "check img name remove"
+      "check img controls controls";
+    row-gap: 0.4rem;
+  }
+  .item-row > .cell-check { grid-area: check; }
+  .item-row > .cell-img { grid-area: img; }
+  .item-row > .cell-name { grid-area: name; }
+  .item-row > .cell-remove { grid-area: remove; }
+  .item-row > .cell-qty, .item-row > .cell-price, .item-row > .cell-total {
+    grid-area: controls; display: inline-flex;
+  }
+  .item-row > .cell-qty { justify-self: start; }
+}
 @media (max-width: 768px) {
-  .sl-hero { align-items: flex-start; flex-direction: column; min-height: auto; }
-  .sl-hero-text { flex: none; width: 100%; padding: 2rem 1.5rem 1rem; }
-  .sl-hero-img-wrap { position: relative; width: 100%; height: 200px; }
-  .sl-hero-img-wrap::before { width: 30%; }
-  .btn-create-list { position: relative; top: auto; right: auto; margin: 0 1.5rem 1.5rem; box-shadow: none; }
   .sl-main { padding: 1.5rem 1rem 3rem; }
-  .list-cards-grid { grid-template-columns: 1fr; }
-  .active-list-header { padding: 1rem 1.25rem 0.75rem; }
-  .filter-bar { padding: 0.75rem 1.25rem; }
-  .item-row { padding: 0.75rem 1.25rem; }
-  .store-group-header { padding: 0.6rem 1.25rem 0.4rem; }
+  .sl-page-title { font-size: 2.2rem; }
+  .sl-detail-head, .sl-stats-row, .sl-store-row, .sl-compare-head, .filter-bar, .sl-table-head, .item-row { padding-left: 1.1rem; padding-right: 1.1rem; }
 }
 </style>
 {% endblock %}
 
 {% block content %}
 
-<!-- ── HERO ──────────────────────────────────────────────────────────────── -->
-<section class="sl-hero">
-  <div class="sl-hero-text">
-    <h1 class="sl-hero-title">My Shopping Lists</h1>
-    <p class="sl-hero-sub">Organize your grocery trips, track what you need, and compare prices across stores — all in one place.</p>
-  </div>
-  <div class="sl-hero-img-wrap">
-    <img src="https://images.unsplash.com/photo-1583258292688-d0213dc5a3a8?w=1200&h=560&fit=crop&q=80"
-         alt="Grocery shopping bag with fresh produce">
-  </div>
-</section>
-
-<!-- ── MAIN CONTENT ──────────────────────────────────────────────────────── -->
 <div class="sl-main">
 
-  <!-- LIST CARDS GRID -->
-  <p class="sl-section-label">Your Lists</p>
+  <!-- ── PAGE HEADER ──────────────────────────────────────────────────────── -->
+  <div class="sl-page-head">
+    <div>
+      <h1 class="sl-page-title">My Lists</h1>
+      <p class="sl-page-sub">Organize, compare and shop smarter.</p>
+    </div>
+    <button class="btn-create-list" data-bs-toggle="modal" data-bs-target="#createListModal">
+      <i class="bi bi-plus-lg"></i> New List
+    </button>
+  </div>
 
+  <!-- ── LIST CARDS ───────────────────────────────────────────────────────── -->
   {% if all_lists %}
-  <div class="list-cards-grid">
+  <div class="list-cards-row" id="list-cards-row">
     {% for shopping_list in all_lists %}
-    {% set list_items_list = shopping_list.list_items if shopping_list.list_items is defined else (shopping_list['items'] if 'items' in shopping_list else []) %}
+    {% set list_items_list = shopping_list['items'] if 'items' in shopping_list else [] %}
     {% set list_count = list_items_list|length %}
+    {% set bought = shopping_list.bought_count or 0 %}
+    {% set pct = (bought / list_count * 100)|round|int if list_count else 0 %}
     <div class="list-card {{ 'active' if active_list and shopping_list.id == active_list.id else '' }}"
          data-list-id="{{ shopping_list.id }}"
+         data-icon="{{ shopping_list.icon or 'basket' }}"
          onclick="switchList('{{ shopping_list.id }}')">
 
-      <div class="list-card-top">
-        <div class="list-card-icon"><i class="bi bi-basket3-fill"></i></div>
-        <div class="list-card-info">
+      <div class="list-card-head">
+        <div class="list-card-emoji" data-role="emoji"></div>
+        <div class="list-card-titlebox">
           <div class="list-card-name">{{ shopping_list.name }}</div>
-          <div class="list-card-date">
-            <i class="bi bi-clock me-1"></i>
-            {{ (shopping_list.created_at|string)[:10] if shopping_list.created_at else 'No date' }}
+          <div class="list-card-sub">
+            {{ list_count }} item{{ 's' if list_count != 1 }}{% if shopping_list.store_count %} · {{ shopping_list.store_count }} store{{ 's' if shopping_list.store_count != 1 }}{% endif %}
           </div>
         </div>
-        <!-- Three-dot dropdown -->
         <div class="dropdown" onclick="event.stopPropagation()">
           <button class="list-card-menu" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></button>
-          <ul class="dropdown-menu dropdown-menu-end shadow border-0 p-2" style="border-radius:10px; min-width:160px;">
-            <li>
-              <button class="dropdown-item py-2 fw-600" style="font-weight:600;"
-                onclick="renameList('{{ shopping_list.id }}', '{{ shopping_list.name }}')">
-                <i class="bi bi-pencil me-2 text-muted"></i>Rename
-              </button>
-            </li>
+          <ul class="dropdown-menu dropdown-menu-end shadow border-0 p-2" style="border-radius:12px; min-width:170px;">
+            <li><button class="dropdown-item py-2" style="font-weight:600;"
+              onclick="renameList('{{ shopping_list.id }}', '{{ shopping_list.name }}')">
+              <i class="bi bi-pencil me-2 text-muted"></i>Rename</button></li>
+            <li><button class="dropdown-item py-2" style="font-weight:600;"
+              onclick="openIconPicker('{{ shopping_list.id }}')">
+              <i class="bi bi-emoji-smile me-2 text-muted"></i>Change Icon</button></li>
             <li><hr class="dropdown-divider my-1"></li>
-            <li>
-              <button class="dropdown-item py-2 fw-600 text-danger" style="font-weight:600;"
-                onclick="deleteList('{{ shopping_list.id }}', '{{ shopping_list.name }}')">
-                <i class="bi bi-trash3 me-2"></i>Delete
-              </button>
-            </li>
+            <li><button class="dropdown-item py-2 text-danger" style="font-weight:600;"
+              onclick="deleteList('{{ shopping_list.id }}', '{{ shopping_list.name }}')">
+              <i class="bi bi-trash3 me-2"></i>Delete</button></li>
           </ul>
         </div>
       </div>
 
-      <div class="list-card-stats">
-        <span class="list-stat-chip">
-          <i class="bi bi-bag-check-fill"></i>
-          {{ list_count }} Items
-        </span>
-        <span class="list-stat-chip">
-          <i class="bi bi-currency-euro"></i>
-          {{ shopping_list.estimated_total|replace('€','')|default('0.00', true) }}
-        </span>
+      <div class="list-card-price" data-role="card-price">
+        {{ shopping_list.estimated_total or '€0.00' }}<span class="sl-price-label">cheapest mix</span>
+      </div>
+
+      <div class="list-progress-track">
+        <div class="list-progress-fill" data-role="card-progress" style="width: {{ pct }}%;"></div>
+      </div>
+
+      <div class="list-card-footer">
+        <span class="list-card-bought" data-role="card-bought">{{ bought }} / {{ list_count }} bought</span>
+        <div class="sl-avatars" data-role="card-avatars">
+          {% for collab in (shopping_list.collaborators or [])[:3] %}
+          <span class="sl-avatar" title="{{ collab.email }}">{{ collab.email[:2]|upper }}</span>
+          {% endfor %}
+          {% if (shopping_list.collaborators or [])|length > 3 %}
+          <span class="sl-avatar more">+{{ (shopping_list.collaborators)|length - 3 }}</span>
+          {% endif %}
+        </div>
       </div>
     </div>
     {% endfor %}
 
-    <!-- Add new list card -->
     <div class="list-card-add" data-bs-toggle="modal" data-bs-target="#createListModal">
       <div class="list-card-add-icon"><i class="bi bi-plus-lg"></i></div>
       <span class="list-card-add-label">New List</span>
@@ -533,203 +618,218 @@ body { background: #f5efe6; }
   {% else %}
   <div class="sl-placeholder mb-4">
     <i class="bi bi-plus-circle"></i>
-    <h5 class="fw-700" style="color:#4b5563;">No lists yet</h5>
-    <p class="mb-0">Create your first shopping list to get started.</p>
+    <h5 style="color:#4b5563; font-weight:700;">No lists yet</h5>
+    <p class="mb-3">Create your first shopping list to get started.</p>
+    <button class="btn-create-list" data-bs-toggle="modal" data-bs-target="#createListModal" style="margin:0 auto;">
+      <i class="bi bi-plus-lg"></i> Create a List
+    </button>
   </div>
   {% endif %}
 
-  <!-- ── PLACEHOLDER (no list selected) ──────────────────────────────────── -->
-  <div id="list-placeholder" class="sl-placeholder {% if active_list %}d-none{% endif %}">
+  <!-- ── PLACEHOLDER (no list selected) ───────────────────────────────────── -->
+  <div id="list-placeholder" class="sl-placeholder {% if all_lists %}d-none{% endif %}">
     <i class="bi bi-layers-half"></i>
-    <h5 class="fw-700" style="color:#4b5563; font-weight:700;">Select a list</h5>
-    <p class="mb-0">Your items and totals will appear here.</p>
+    <h5 style="color:#4b5563; font-weight:700;">Select a list</h5>
+    <p class="mb-0">Your items, totals and store comparison will appear here.</p>
   </div>
 
-  <!-- ── ACTIVE LIST ──────────────────────────────────────────────────────── -->
-  <div id="active-list-wrapper" class="active-list-wrapper {% if not active_list %}d-none{% endif %}">
+  <!-- ── DETAIL PANEL (rendered by JS) ────────────────────────────────────── -->
+  <div id="sl-detail" class="sl-detail d-none">
 
     <!-- Header -->
-    <div class="active-list-header">
-      <div class="active-list-title-row">
-        <h2 class="active-list-name" id="active-list-title">
-          <i class="bi bi-basket3-fill text-premium-purple me-2" style="color:#65388f;font-size:1.2rem;"></i>
-          {{ active_list.name if active_list else 'Select a List' }}
-          {% if active_list and active_list.is_shared %}
-            <span class="badge bg-info text-dark ms-2" style="font-size:0.75rem;cursor:pointer;border-radius:999px;"
-              onclick="showCollaboratorsModal()"><i class="bi bi-people-fill me-1"></i>Shared</span>
-          {% elif active_list and active_list.collaborators %}
-            <span class="badge bg-primary ms-2" style="font-size:0.75rem;cursor:pointer;border-radius:999px;"
-              onclick="showCollaboratorsModal()"><i class="bi bi-person-lines-fill me-1"></i>{{ active_list.collaborators|length }} shared</span>
-          {% endif %}
-        </h2>
-        <div class="active-list-actions">
-          <button class="btn-share-list" onclick="showShareListModal('{{ active_list.id if active_list else "" }}')">
-            <i class="bi bi-person-plus"></i> Share List
-          </button>
-          <div class="dropdown">
-            <button class="btn-more" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></button>
-            <ul class="dropdown-menu dropdown-menu-end shadow border-0 p-2" style="border-radius:8px;">
-              <li><a href="{{ url_for('main.compare_prices') }}" class="dropdown-item py-2 fw-600" style="font-weight:600;">
-                <i class="bi bi-plus-lg me-2 text-muted"></i>Add Items</a></li>
-              <li><button class="dropdown-item py-2 fw-600" style="font-weight:600;" onclick="showExportListConfirm()">
-                <i class="bi bi-download me-2 text-muted"></i>Export CSV</button></li>
-              <li><button class="dropdown-item py-2 fw-600" style="font-weight:600;" onclick="showPrintListConfirm()">
-                <i class="bi bi-printer me-2 text-muted"></i>Print List</button></li>
-              <li><hr class="dropdown-divider my-1"></li>
-              <li><button class="dropdown-item py-2 fw-600 text-danger" style="font-weight:600;" onclick="showClearAllConfirm()">
-                <i class="bi bi-trash me-2"></i>Clear All</button></li>
-            </ul>
+    <div class="sl-detail-head">
+      <div class="sl-detail-identity">
+        <div class="sl-detail-emoji" id="detail-emoji">🧺</div>
+        <div style="min-width:0;">
+          <h2 class="sl-detail-name">
+            <span id="detail-name">List</span>
+            <button class="btn-edit-name" id="detail-rename-btn" title="Rename"><i class="bi bi-pencil-fill"></i></button>
+          </h2>
+          <div class="sl-detail-avatars-row">
+            <div class="sl-avatars" id="detail-avatars"></div>
+            <span class="list-card-sub" id="detail-shared-label"></span>
           </div>
         </div>
       </div>
-
-      <!-- Meta row -->
-      <div class="active-list-meta">
-        <span class="active-list-meta-item">
-          <i class="bi bi-bag-check"></i>
-          <span id="items-count">{{ items|length if items else 0 }}</span> Items
-        </span>
-        <span class="active-list-meta-item">
-          <i class="bi bi-cash-stack"></i>
-          <span id="planned-total">€0.00</span> Estimated total
-        </span>
-        <span class="active-list-meta-item">
-          <i class="bi bi-check2-circle"></i>
-          <span id="completed-count">0</span> Done
-        </span>
-        <span class="active-list-meta-item">
-          <i class="bi bi-wallet2"></i>
-          <span id="remaining-total">€0.00</span> Left
-        </span>
+      <div class="sl-detail-actions">
+        <button class="btn-action-pill" onclick="showShareListModalActive()"><i class="bi bi-person-plus"></i> Share</button>
+        <a class="btn-action-pill primary" href="{{ url_for('main.compare_prices') }}"><i class="bi bi-plus-circle"></i> Add Product</a>
+        <button class="btn-action-pill" id="btn-check-all" onclick="checkAllItems()" title="Check all items"><i class="bi bi-check2-all"></i> Check All</button>
+        <button class="btn-action-pill" onclick="showExportListConfirm()"><i class="bi bi-download"></i> Export</button>
+        <div class="dropdown">
+          <button class="btn-action-pill" data-bs-toggle="dropdown" style="padding:9px 12px;"><i class="bi bi-three-dots"></i></button>
+          <ul class="dropdown-menu dropdown-menu-end shadow border-0 p-2" style="border-radius:12px;">
+            <li><button class="dropdown-item py-2" style="font-weight:600;" onclick="uncheckAllItems()">
+              <i class="bi bi-square me-2 text-muted"></i>Uncheck All</button></li>
+            <li><button class="dropdown-item py-2" style="font-weight:600;" onclick="showPrintListConfirm()">
+              <i class="bi bi-printer me-2 text-muted"></i>Print List</button></li>
+            <li><button class="dropdown-item py-2" style="font-weight:600;" onclick="clearCompleted()">
+              <i class="bi bi-check2-square me-2 text-muted"></i>Remove Purchased</button></li>
+            <li><hr class="dropdown-divider my-1"></li>
+            <li><button class="dropdown-item py-2 text-danger" style="font-weight:600;" onclick="showClearAllConfirm()">
+              <i class="bi bi-trash me-2"></i>Clear All Items</button></li>
+          </ul>
+        </div>
       </div>
+    </div>
+
+    <!-- Stat cards -->
+    <div class="sl-stats-row">
+      <div class="sl-stat-card highlight">
+        <div>
+          <div class="sl-stat-label">Cheapest (mix of stores)</div>
+          <div class="sl-stat-value" id="stat-mix-total">€0.00</div>
+          <div class="sl-stat-note" id="stat-mix-note">Total for all items</div>
+        </div>
+        <div class="sl-stat-icon"><i class="bi bi-tags-fill"></i></div>
+      </div>
+      <div class="sl-stat-card">
+        <div>
+          <div class="sl-stat-label">Best single store</div>
+          <div class="sl-stat-value" id="stat-single-total">—</div>
+          <div class="sl-stat-note" id="stat-single-store">No store data</div>
+        </div>
+        <div class="sl-stat-icon"><i class="bi bi-shop"></i></div>
+      </div>
+      <div class="sl-stat-card">
+        <div>
+          <div class="sl-stat-label">You save</div>
+          <div class="sl-stat-value save" id="stat-savings">€0.00</div>
+          <div class="sl-stat-note">By using best prices</div>
+        </div>
+        <div class="sl-stat-icon green"><i class="bi bi-graph-up-arrow"></i></div>
+      </div>
+      <div class="sl-stat-card">
+        <div>
+          <div class="sl-stat-label">Items bought</div>
+          <div class="sl-stat-value" id="stat-bought">0 / 0</div>
+          <div class="sl-stat-note" id="stat-bought-note">0% completed</div>
+        </div>
+        <div class="sl-donut">
+          <svg width="58" height="58" viewBox="0 0 58 58">
+            <circle class="sl-donut-track" cx="29" cy="29" r="24" fill="none" stroke-width="6"/>
+            <circle class="sl-donut-fill" id="donut-fill" cx="29" cy="29" r="24" fill="none" stroke-width="6"
+                    stroke-dasharray="150.8" stroke-dashoffset="150.8"/>
+          </svg>
+          <div class="sl-donut-text" id="donut-pct">0%</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Store comparison -->
+    <div id="store-compare-section" class="d-none">
+      <div class="sl-compare-head">
+        <p class="sl-compare-title">Compare stores for this list</p>
+        <span class="list-card-sub" style="font-weight:600;">Click a store to see its prices</span>
+      </div>
+      <div class="sl-store-row" id="store-compare-row"></div>
+    </div>
+
+    <!-- Activity feed (shared lists) -->
+    <div id="activity-feed-section" class="d-none" style="padding: 0 1.5rem 1rem;">
+      <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.65rem;">
+        <i class="bi bi-clock-history" style="color:#9b8fae;font-size:0.9rem;"></i>
+        <span style="font-size:0.78rem;font-weight:700;color:#9b8fae;text-transform:uppercase;letter-spacing:0.06em;">Recent Activity</span>
+      </div>
+      <div id="activity-feed-list" style="display:flex;flex-direction:column;gap:6px;"></div>
+    </div>
+
+    <!-- Filter bar -->
+    <div class="filter-bar">
+      <div class="filter-search">
+        <i class="bi bi-search"></i>
+        <input type="text" id="item-search" placeholder="Search items…" oninput="applyAllFilters()">
+      </div>
+      <div class="filter-tabs">
+        <button class="filter-tab active" onclick="setItemFilter('all', this)">All</button>
+        <button class="filter-tab" onclick="setItemFilter('tobuy', this)">To Buy</button>
+        <button class="filter-tab" onclick="setItemFilter('purchased', this)">Bought</button>
+      </div>
+    </div>
+
+    <!-- Table header -->
+    <div class="sl-table-head" id="sl-table-head">
+      <span></span><span></span>
+      <span>Product</span>
+      <span>Quantity</span>
+      <span id="price-col-label">Cheapest Price</span>
+      <span style="text-align:right;">Total</span>
+      <span></span>
     </div>
 
     <!-- Items body -->
-    <div id="active-list-body">
-      {% if items and items|length > 0 %}
-      <div id="items-container">
-        {% set ns_store = namespace(current_store='') %}
-        {% for it in items %}
-        {% set name = (it.name if it.name is defined else it) %}
-        {% set item_id = (it.id if it.id is defined else (it if it is string else '')) %}
-        {% set product_id = (it.product_id if it.product_id is defined else (it.productId if it.productId is defined else (it.deal_id if it.deal_id is defined else (it.dealId if it.dealId is defined else (it.id if it.id is defined else ''))))) %}
-        {% set store = (it.store if it.store is defined else 'Other') %}
-        {% set purchased = (it.purchased if it.purchased is defined else false) %}
-        {% set img = (it.image if it.image is defined else '') %}
-        {% set raw_price = (it.price_val if it.price_val is defined else (it.price if it.price is defined else '')) %}
-        {% set raw_price = (raw_price|string).replace('$','').replace('€','').replace(',','') if raw_price is not none else '' %}
-        {% set unit = (it.price_val if it.price_val is defined else (raw_price|float if raw_price is defined else 0.0)) %}
-        {% set qty = (it.qty if it.qty is defined else 1) %}
-        {% set offer_obj = it.offer if it.offer is mapping else None %}
-        {% set offer_x = offer_obj.x if offer_obj and offer_obj.x is defined else (it.offer_x if it.offer_x is defined else '') %}
-        {% set offer_y = offer_obj.y if offer_obj and offer_obj.y is defined else (it.offer_y if it.offer_y is defined else '') %}
-        {% set offer_type = offer_obj.type if offer_obj and offer_obj.type is defined else ('buyXgetY' if offer_x and offer_y else '') %}
-
-        {% if store != ns_store.current_store %}
-        {% set ns_store.current_store = store %}
-        {% set store_item_count = items | selectattr('store', 'equalto', store) | list | length %}
-        <div class="store-group-header">
-          <span><i class="bi bi-shop me-2"></i>{{ store }}<span class="store-count-badge">{{ store_item_count }}</span></span>
-          <span class="store-subtotal-badge store-subtotal" data-store="{{ store }}">—</span>
-        </div>
-        {% endif %}
-
-        <div class="item-row {{ 'completed' if purchased }}" draggable="true"
-             data-item-id="{{ item_id }}" data-name="{{ name }}" data-price="{{ raw_price }}"
-             data-product-id="{{ product_id }}"
-             data-qty="{{ qty }}" data-store="{{ store }}" data-image="{{ img }}"
-             data-offer-json='{{ offer_obj|tojson|forceescape if offer_obj is not none else "" }}'
-             data-tier-json='{{ it.get("discount_tiers")|tojson|forceescape if it is mapping and it.get("discount_tiers") else "" }}'
-             data-offer-type="{{ offer_type }}" data-offer-x="{{ offer_x }}" data-offer-y="{{ offer_y }}"
-             {% if product_id %}onclick="openProductDetailFromList(event, this.dataset.productId)"{% endif %}>
-
-          <div class="form-check p-0 m-0">
-            <input class="form-check-input item-checkbox d-none" type="checkbox"
-                   id="item-{{ loop.index0 }}" {% if purchased %}checked{% endif %}
-                   onchange="toggleItemComplete(this)">
-            <label class="premium-checkbox" for="item-{{ loop.index0 }}">
-              <i class="bi bi-check-lg" style="font-size:0.8rem;"></i>
-            </label>
-          </div>
-
-          <div class="item-img-pill">
-            <img src="{{ prefer_processed(img if img else url_for('static', filename='placeholder.svg')) or (img if img else url_for('static', filename='placeholder.svg')) }}"
-                 alt="{{ name }}">
-          </div>
-
-          <div class="flex-grow-1">
-            <p class="item-name mb-1">{{ name }}</p>
-            <span class="item-status-badge {{ 'purchased' if purchased else '' }}">
-              <i class="bi {{ 'bi-check-circle-fill' if purchased else 'bi-cart3' }}"></i>
-              {{ 'Purchased' if purchased else 'To Buy' }}
-            </span>
-          </div>
-
-          <div class="qty-container">
-            <button class="qty-btn" onclick="changeQuantity(this, -1)"><i class="bi bi-dash"></i></button>
-            <input type="number" class="qty-input" value="{{ qty }}" min="1"
-                   onchange="setQuantity(this)" onkeypress="if(event.key==='Enter') setQuantity(this)">
-            <button class="qty-btn" onclick="changeQuantity(this, 1)"><i class="bi bi-plus"></i></button>
-          </div>
-
-          <div class="text-end" style="min-width:80px;">
-            <div class="item-price fw-900">€0.00</div>
-            <div class="item-price-unit">€{{ '%.2f'|format(unit|float) }} ea.</div>
-          </div>
-
-          <button class="btn-remove-item" onclick="showRemoveItemConfirm(this, '{{ name }}')" title="Remove">
-            <i class="bi bi-x-lg"></i>
-          </button>
-        </div>
-        {% endfor %}
-      </div>
-      {% else %}
-      <div class="p-5 text-center" style="color:#9ca3af;">
-        <i class="bi bi-cart-x" style="font-size:3rem;opacity:0.25;display:block;margin-bottom:1rem;"></i>
-        <h5 class="fw-700" style="color:#4b5563;font-weight:700;">This list is empty</h5>
-        <p class="mb-4">Add items from the product browser.</p>
-        <a href="{{ url_for('main.compare_prices') }}" class="btn-create-list" style="margin:0 auto;">
-          <i class="bi bi-search me-2"></i>Browse Products
-        </a>
-      </div>
-      {% endif %}
+    <div id="items-container"></div>
+    <div id="empty-list-msg" class="p-5 text-center d-none" style="color:#9ca3af;">
+      <i class="bi bi-cart-x" style="font-size:3rem;opacity:0.25;display:block;margin-bottom:1rem;"></i>
+      <h5 style="color:#4b5563;font-weight:700;">This list is empty</h5>
+      <p class="mb-4">Add items from the product browser.</p>
+      <a href="{{ url_for('main.compare_prices') }}" class="btn-create-list" style="margin:0 auto;">
+        <i class="bi bi-search me-2"></i>Browse Products
+      </a>
     </div>
-  </div><!-- /active-list-wrapper -->
+  </div><!-- /sl-detail -->
 
 </div><!-- /sl-main -->
 
 
 <!-- ════════════════════════════════════════════════════════════════════════ -->
-<!-- MODALS — all functionality preserved                                     -->
+<!-- MODALS                                                                    -->
 <!-- ════════════════════════════════════════════════════════════════════════ -->
 
 <!-- Create List -->
 <div class="modal fade" id="createListModal" tabindex="-1">
-  <div class="modal-dialog modal-dialog-centered" style="max-width:420px;">
+  <div class="modal-dialog modal-dialog-centered" style="max-width:440px;">
     <div class="modal-content">
       <div class="modal-header d-flex align-items-center">
         <div class="header-icon-circle me-3" style="width:44px;height:44px;background:#f5f0ff;display:flex;align-items:center;justify-content:center;color:#65388f;">
           <i class="bi bi-plus-circle-fill fs-5"></i>
         </div>
-        <h5 class="modal-title fw-800 m-0" style="color:#65388f;font-weight:800;">New Shopping List</h5>
+        <h5 class="modal-title m-0" style="color:#65388f;font-weight:800;">New Shopping List</h5>
         <button type="button" class="btn-close ms-auto" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
-        <label class="form-label fw-700 text-muted small text-uppercase mb-2" style="font-weight:700;">List Name</label>
+        <label class="form-label text-muted small text-uppercase mb-2" style="font-weight:700;">List Name</label>
         <input type="text" class="form-control form-control-lg border-2 mb-4" id="new-list-name"
                placeholder="e.g. Weekly Groceries"
-               style="border-radius:8px;font-size:1rem;border-color:#e2e8f0;background:#f8fafc;">
-        <label class="form-label fw-700 text-muted small text-uppercase mb-2" style="font-weight:700;">Quick Templates</label>
+               style="border-radius:10px;font-size:1rem;border-color:#e2e8f0;background:#f8fafc;">
+
+        <label class="form-label text-muted small text-uppercase mb-2" style="font-weight:700;">Pick an Icon</label>
+        <div class="icon-picker-grid mb-4" id="create-icon-grid"></div>
+
+        <label class="form-label text-muted small text-uppercase mb-2" style="font-weight:700;">Quick Templates</label>
         <div class="row g-2">
-          <div class="col-6"><button class="btn btn-template-pill w-100 py-2" onclick="document.getElementById('new-list-name').value='Weekly Groceries'"><i class="bi bi-calendar-week me-2"></i>Weekly</button></div>
-          <div class="col-6"><button class="btn btn-template-pill w-100 py-2" onclick="document.getElementById('new-list-name').value='Party Supplies'"><i class="bi bi-balloon-fill me-2"></i>Party</button></div>
-          <div class="col-6"><button class="btn btn-template-pill w-100 py-2" onclick="document.getElementById('new-list-name').value='Meal Prep'"><i class="bi bi-egg-fried me-2"></i>Meal Prep</button></div>
-          <div class="col-6"><button class="btn btn-template-pill w-100 py-2" onclick="document.getElementById('new-list-name').value='Breakfast'"><i class="bi bi-sun-fill me-2"></i>Breakfast</button></div>
+          <div class="col-6"><button class="btn btn-template-pill w-100 py-2" onclick="applyTemplate('Weekly Groceries','basket')"><i class="bi bi-calendar-week me-2"></i>Weekly</button></div>
+          <div class="col-6"><button class="btn btn-template-pill w-100 py-2" onclick="applyTemplate('Party Supplies','party')"><i class="bi bi-balloon-fill me-2"></i>Party</button></div>
+          <div class="col-6"><button class="btn btn-template-pill w-100 py-2" onclick="applyTemplate('Meal Prep','meal')"><i class="bi bi-egg-fried me-2"></i>Meal Prep</button></div>
+          <div class="col-6"><button class="btn btn-template-pill w-100 py-2" onclick="applyTemplate('Pharmacy & Essentials','pharmacy')"><i class="bi bi-capsule me-2"></i>Pharmacy</button></div>
         </div>
       </div>
       <div class="modal-footer gap-2">
         <button type="button" class="btn btn-light btn-confirm-action flex-grow-1" data-bs-dismiss="modal">Cancel</button>
         <button type="button" class="btn btn-premium-purple btn-confirm-action flex-grow-1" onclick="createList()">Create List</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Change Icon -->
+<div class="modal fade" id="iconPickerModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered" style="max-width:400px;">
+    <div class="modal-content">
+      <div class="modal-header d-flex align-items-center">
+        <div class="header-icon-circle me-3" style="width:44px;height:44px;background:#f5f0ff;display:flex;align-items:center;justify-content:center;color:#65388f;">
+          <i class="bi bi-emoji-smile-fill fs-5"></i>
+        </div>
+        <h5 class="modal-title m-0" style="font-weight:800;">Change Icon</h5>
+        <button type="button" class="btn-close ms-auto" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="icon-picker-list-id">
+        <div class="icon-picker-grid" id="change-icon-grid"></div>
+      </div>
+      <div class="modal-footer gap-2">
+        <button type="button" class="btn btn-light btn-confirm-action flex-grow-1" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-premium-purple btn-confirm-action flex-grow-1" onclick="confirmIconChange()">Save Icon</button>
       </div>
     </div>
   </div>
@@ -743,21 +843,21 @@ body { background: #f5efe6; }
         <div class="header-icon-circle me-3" style="width:44px;height:44px;background:#f5f0ff;display:flex;align-items:center;justify-content:center;color:#65388f;">
           <i class="bi bi-person-plus-fill fs-5"></i>
         </div>
-        <h5 class="modal-title fw-800 m-0" style="font-weight:800;">Share List</h5>
+        <h5 class="modal-title m-0" style="font-weight:800;">Share List</h5>
         <button type="button" class="btn-close ms-auto" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
         <input type="hidden" id="share-list-id">
-        <label class="form-label fw-700 text-muted small text-uppercase mb-2" style="font-weight:700;">Invite Collaborator</label>
+        <label class="form-label text-muted small text-uppercase mb-2" style="font-weight:700;">Invite Collaborator</label>
         <div class="input-group mb-4">
           <input type="email" class="form-control border-2" id="share-email" placeholder="Friend's email"
-                 style="border-radius:8px;border-color:#e2e8f0;background:#f8fafc;">
-          <select class="form-select border-2" id="share-role" style="max-width:110px;border-radius:8px;border-color:#e2e8f0;font-size:0.9rem;">
+                 style="border-radius:10px;border-color:#e2e8f0;background:#f8fafc;">
+          <select class="form-select border-2" id="share-role" style="max-width:110px;border-radius:10px;border-color:#e2e8f0;font-size:0.9rem;">
             <option value="edit">Editor</option>
             <option value="view">Viewer</option>
           </select>
         </div>
-        <button type="button" class="btn btn-premium-purple w-100 py-3 fw-bold" style="border-radius:8px;" onclick="confirmShareList()">Send Invite</button>
+        <button type="button" class="btn btn-premium-purple w-100 py-3 fw-bold" style="border-radius:10px;" onclick="confirmShareList()">Send Invite</button>
       </div>
     </div>
   </div>
@@ -771,7 +871,7 @@ body { background: #f5efe6; }
         <div class="header-icon-circle me-3" style="width:44px;height:44px;background:#f5f0ff;display:flex;align-items:center;justify-content:center;color:#65388f;">
           <i class="bi bi-people-fill fs-5"></i>
         </div>
-        <h5 class="modal-title fw-800 m-0" style="font-weight:800;">Shared With</h5>
+        <h5 class="modal-title m-0" style="font-weight:800;">Shared With</h5>
         <button type="button" class="btn-close ms-auto" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
@@ -789,14 +889,14 @@ body { background: #f5efe6; }
         <div class="header-icon-circle me-3" style="width:44px;height:44px;background:#f5f0ff;display:flex;align-items:center;justify-content:center;color:#65388f;">
           <i class="bi bi-pencil-fill fs-5"></i>
         </div>
-        <h5 class="modal-title fw-800 m-0" style="font-weight:800;">Rename List</h5>
+        <h5 class="modal-title m-0" style="font-weight:800;">Rename List</h5>
         <button type="button" class="btn-close ms-auto" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
         <input type="hidden" id="rename-list-id">
-        <label class="form-label fw-700 text-muted small text-uppercase mb-2" style="font-weight:700;">New Name</label>
+        <label class="form-label text-muted small text-uppercase mb-2" style="font-weight:700;">New Name</label>
         <input type="text" class="form-control form-control-lg border-2" id="rename-list-name"
-               placeholder="Enter new name" style="border-radius:8px;border-color:#e2e8f0;background:#f8fafc;">
+               placeholder="Enter new name" style="border-radius:10px;border-color:#e2e8f0;background:#f8fafc;">
       </div>
       <div class="modal-footer gap-2">
         <button type="button" class="btn btn-light btn-confirm-action flex-grow-1" data-bs-dismiss="modal">Cancel</button>
@@ -814,7 +914,7 @@ body { background: #f5efe6; }
         <div class="header-icon-circle me-3" style="width:44px;height:44px;background:#fff1f2;display:flex;align-items:center;justify-content:center;color:#e11d48;">
           <i class="bi bi-trash3-fill fs-5"></i>
         </div>
-        <h5 class="modal-title fw-800 text-danger m-0" style="font-weight:800;">Delete List?</h5>
+        <h5 class="modal-title text-danger m-0" style="font-weight:800;">Delete List?</h5>
         <button type="button" class="btn-close ms-auto" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body text-center">
@@ -837,7 +937,7 @@ body { background: #f5efe6; }
         <div class="header-icon-circle me-3" style="width:44px;height:44px;background:#fff1f2;display:flex;align-items:center;justify-content:center;color:#e11d48;">
           <i class="bi bi-trash3-fill fs-5"></i>
         </div>
-        <h5 class="modal-title fw-800 text-danger m-0" style="font-weight:800;">Clear All Items?</h5>
+        <h5 class="modal-title text-danger m-0" style="font-weight:800;">Clear All Items?</h5>
         <button type="button" class="btn-close ms-auto" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body text-center">
@@ -859,12 +959,11 @@ body { background: #f5efe6; }
         <div class="header-icon-circle me-3" style="width:44px;height:44px;background:#fef2f2;display:flex;align-items:center;justify-content:center;color:#ef4444;">
           <i class="bi bi-x-circle-fill fs-5"></i>
         </div>
-        <h5 class="modal-title fw-800 text-danger m-0" style="font-weight:800;">Remove Item?</h5>
+        <h5 class="modal-title text-danger m-0" style="font-weight:800;">Remove Item?</h5>
         <button type="button" class="btn-close ms-auto" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body text-center">
         <p class="text-muted mb-0">Remove <strong id="removeItemName" class="text-dark">this item</strong> from your list?</p>
-        <input type="hidden" id="removeItemBtn">
       </div>
       <div class="modal-footer gap-2">
         <button type="button" class="btn btn-light btn-confirm-action flex-grow-1" data-bs-dismiss="modal">Cancel</button>
@@ -882,11 +981,11 @@ body { background: #f5efe6; }
         <div class="header-icon-circle me-3" style="width:44px;height:44px;background:#f0fdf4;display:flex;align-items:center;justify-content:center;color:#16a34a;">
           <i class="bi bi-download fs-5"></i>
         </div>
-        <h5 class="modal-title fw-800 text-success m-0" style="font-weight:800;">Export List?</h5>
+        <h5 class="modal-title text-success m-0" style="font-weight:800;">Export List?</h5>
         <button type="button" class="btn-close ms-auto" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body text-center">
-        <p class="text-muted mb-0">Your list will be downloaded as a <strong>CSV file</strong>.</p>
+        <p class="text-muted mb-0">Your list will be downloaded as a <strong>CSV file</strong> including the cheapest store for each item.</p>
       </div>
       <div class="modal-footer gap-2">
         <button type="button" class="btn btn-light btn-confirm-action flex-grow-1" data-bs-dismiss="modal">Cancel</button>
@@ -904,7 +1003,7 @@ body { background: #f5efe6; }
         <div class="header-icon-circle me-3" style="width:44px;height:44px;background:#f0f9ff;display:flex;align-items:center;justify-content:center;color:#0284c7;">
           <i class="bi bi-printer-fill fs-5"></i>
         </div>
-        <h5 class="modal-title fw-800 m-0" style="color:#0284c7;font-weight:800;">Print List?</h5>
+        <h5 class="modal-title m-0" style="color:#0284c7;font-weight:800;">Print List?</h5>
         <button type="button" class="btn-close ms-auto" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body text-center">
@@ -921,32 +1020,106 @@ body { background: #f5efe6; }
 {% endblock %}
 
 {% block scripts %}
-<script id="shared-list-collaborators-data" type="application/json">
-  {{ active_list.collaborators|tojson|safe if active_list and active_list.collaborators else '[]' }}
-</script>
-
 <script>
-// ── FILTER TABS ──────────────────────────────────────────────────────────────
+/* ══════════════════════════════════════════════════════════════════════════
+   STATE
+   ══════════════════════════════════════════════════════════════════════════ */
+const PLACEHOLDER_IMG = "{{ url_for('static', filename='placeholder.svg') }}";
+
+const LIST_ICONS = {
+  basket:   '🧺', cart: '🛒', apple: '🍎', pharmacy: '💊', bbq: '🍖',
+  home:     '🧴', party: '🎉', baby: '🍼', pet: '🐶', coffee: '☕',
+  bread:    '🥐', fish: '🐟', veggie: '🥦', sweets: '🍫', wine: '🍷',
+  meal:     '🍳', gift: '🎁', travel: '✈️'
+};
+
+// The 5 featured icons use Google's Noto animated emoji (transparent GIFs).
+// Anything not in this map falls back to the static emoji character.
+const ANIMATED_ICONS = {
+  basket:   'https://fonts.gstatic.com/s/e/notoemoji/latest/1f9fa/512.gif',
+  cart:     'https://fonts.gstatic.com/s/e/notoemoji/latest/1f6d2/512.gif',
+  pharmacy: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f48a/512.gif',
+  bbq:      'https://fonts.gstatic.com/s/e/notoemoji/latest/1f356/512.gif',
+  party:    'https://fonts.gstatic.com/s/e/notoemoji/latest/1f389/512.gif'
+};
+
+// Render an icon: animated GIF when available, emoji character otherwise.
+// onerror falls back to the emoji if the GIF fails to load.
+function iconHtml(key) {
+  const gif = ANIMATED_ICONS[key];
+  const emoji = iconEmoji(key);
+  if (gif) return `<img src="${gif}" alt="${key}" loading="eager" onerror="this.outerHTML='${emoji}'">`;
+  return emoji;
+}
+function setIconContent(el, key) {
+  if (!el) return;
+  el.innerHTML = iconHtml(key);
+}
+const AVATAR_COLORS = ['#65388f', '#a58ac2', '#7c3aed', '#9333ea', '#c026d3', '#48236b'];
+const STORE_COLORS = {
+  'spar': '#00792d', 'billa': '#ffe500', 'hofer': '#0a4a8f', 'lidl': '#0050aa',
+  'penny': '#c8002d', 'interspar': '#00792d', 'default': '#65388f'
+};
+
+let currentItems = [];        // canonical item state for the selected list
+let currentListId = null;
+let currentListIcon = 'basket';
 let currentFilter = 'all';
-function setItemFilter(filter, tabEl) {
-  currentFilter = filter;
-  document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
-  if (tabEl) tabEl.classList.add('active');
-  applyAllFilters();
+let currentPriceView = 'best'; // 'best' or a store name
+let currentSharedListUsers = [];
+let currentListOwnerEmail = 'You';
+let isSwitchingList = false;
+
+/* ══════════════════════════════════════════════════════════════════════════
+   HELPERS
+   ══════════════════════════════════════════════════════════════════════════ */
+function esc(s) {
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function iconEmoji(key) { return LIST_ICONS[key] || LIST_ICONS.basket; }
+function storeColor(name) {
+  const n = String(name || '').toLowerCase();
+  for (const k in STORE_COLORS) if (n.includes(k)) return STORE_COLORS[k];
+  return STORE_COLORS.default;
+}
+function storeTextColor(name) {
+  const n = String(name || '').toLowerCase();
+  return n.includes('billa') ? '#7a6d00' : '#ffffff';
+}
+function avatarColor(email) {
+  let h = 0; const s = String(email || '');
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return AVATAR_COLORS[h % AVATAR_COLORS.length];
+}
+function avatarHtml(email) {
+  const initials = String(email || '?').slice(0, 2).toUpperCase();
+  return `<span class="sl-avatar" style="background:${avatarColor(email)};" title="${esc(email)}">${esc(initials)}</span>`;
+}
+function fmt(n) { return `€${(Math.round(n * 100) / 100).toFixed(2)}`; }
+
+// "500 g", "1.5 l" — from normalized size + unit (kg/l stored, shown in g/ml when < 1)
+function sizeText(item) {
+  const size = parseFloat(item.size);
+  const unit = String(item.unit || '').toLowerCase();
+  if (!size || size <= 0 || !unit) return '';
+  if (unit === 'kg' && size < 1) return `${Math.round(size * 1000)} g`;
+  if (unit === 'l'  && size < 1) return `${Math.round(size * 1000)} ml`;
+  const rounded = Math.round(size * 100) / 100;
+  return `${rounded} ${unit}`;
 }
 
-function applyAllFilters() {
-  document.querySelectorAll('.item-row').forEach(row => {
-    const done = row.classList.contains('completed');
-    const matchesFilter =
-      currentFilter === 'all' ? true :
-      currentFilter === 'tobuy' ? !done :
-      currentFilter === 'purchased' ? done : true;
-    row.style.display = matchesFilter ? 'flex' : 'none';
-  });
+// "€2.18 / kg" based on the effective unit price
+function unitPriceText(item, price) {
+  const size = parseFloat(item.size);
+  const unit = String(item.unit || '').toLowerCase();
+  if (!size || size <= 0 || !unit || !price) return '';
+  if (unit === 'stk' || unit === 'pc' || unit === 'piece') {
+    if (size <= 1) return '';
+    return `${fmt(price / size)} / pc`;
+  }
+  return `${fmt(price / size)} / ${unit}`;
 }
 
-// ── SAFE RELOAD ───────────────────────────────────────────────────────────────
 function safeReload() {
   document.querySelectorAll('.modal.show').forEach(el => {
     const m = bootstrap.Modal.getInstance(el);
@@ -959,113 +1132,315 @@ function safeReload() {
   setTimeout(() => window.location.reload(), 50);
 }
 
-// ── INIT ──────────────────────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
-  document.querySelectorAll('.modal').forEach(m => document.body.appendChild(m));
-  document.querySelectorAll('.item-row').forEach(row => {
-    const priceEl = row.querySelector('.item-price');
-    if (priceEl) priceEl.textContent = `€${calculateItemPrice(row).toFixed(2)}`;
-  });
-  computeTotals();
-  updateListStats();
-});
-
-// ── PRICING ───────────────────────────────────────────────────────────────────
-function parseOffer(row) {
-  const type = row.getAttribute('data-offer-type') || '';
-  const ox = parseInt(row.getAttribute('data-offer-x') || '0', 10) || 0;
-  const oy = parseInt(row.getAttribute('data-offer-y') || '0', 10) || 0;
-  if (ox > 0 && oy > 0) return { type: 'buyXgetY', x: ox, y: oy };
-  const offerJson = row.getAttribute('data-offer-json');
-  if (offerJson) {
-    try {
-      const obj = JSON.parse(offerJson);
-      if (obj) {
-        const jx = parseInt(obj.x || obj.buy_quantity || 0, 10);
-        const jy = parseInt(obj.y || obj.free_quantity || 0, 10);
-        if (jx > 0 && jy > 0) return { type: 'buyXgetY', x: jx, y: jy };
-        if (obj.type) return obj;
-      }
-    } catch(e) {}
+/* ══════════════════════════════════════════════════════════════════════════
+   PRICING — effective unit price respects the selected price view
+   ══════════════════════════════════════════════════════════════════════════ */
+function cheapestOf(item) {
+  const sp = item.store_prices || [];
+  if (!sp.length) {
+    const p = parseFloat(item.price_val !== undefined ? item.price_val : item.price || 0) || 0;
+    return { price: p, store: item.store || '' };
   }
-  const offerText = row.getAttribute('data-offer') || '';
-  const m = offerText.match(/buy\s+(\d+)\s+get\s+(\d+)/i);
-  if (m) return { type: 'buyXgetY', x: parseInt(m[1],10)||0, y: parseInt(m[2],10)||0 };
-  return null;
+  let best = sp[0];
+  for (const s of sp) if (s.price < best.price) best = s;
+  return { price: best.price, store: best.store };
+}
+function priceInStore(item, storeName) {
+  const sp = item.store_prices || [];
+  const hit = sp.find(s => s.store === storeName);
+  return hit ? hit.price : null;
+}
+function effectiveUnit(item) {
+  if (currentPriceView !== 'best') {
+    const p = priceInStore(item, currentPriceView);
+    if (p !== null) return { price: p, store: currentPriceView, missing: false };
+    const c = cheapestOf(item);
+    return { price: c.price, store: c.store, missing: true };
+  }
+  const c = cheapestOf(item);
+  return { price: c.price, store: c.store, missing: false };
 }
 
-function calculateItemPrice(row) {
-  const unitPrice = parseFloat(row.getAttribute('data-price') || 0) || 0;
-  const qty = parseInt(row.getAttribute('data-qty') || 1, 10) || 1;
-  const offerObj = parseOffer(row);
-  if (offerObj && offerObj.type === 'buyXgetY') {
-    const x = parseInt(offerObj.x||0,10)||0, y = parseInt(offerObj.y||0,10)||0;
-    if (x && y) {
+// Offer-aware line total (buy X get Y, tiers, specials preserved)
+function lineTotal(item) {
+  const unitPrice = effectiveUnit(item).price;
+  const qty = parseInt(item.qty || 1, 10) || 1;
+  const offer = (item.offer && typeof item.offer === 'object') ? item.offer : null;
+  if (offer) {
+    const x = parseInt(offer.x || offer.buy_quantity || 0, 10);
+    const y = parseInt(offer.y || offer.free_quantity || 0, 10);
+    if (x > 0 && y > 0) {
       const cycle = x + y;
       const fullCycles = Math.floor(qty / cycle);
       const remainder = qty % cycle;
       return fullCycles * x * unitPrice + Math.min(remainder, x) * unitPrice;
     }
   }
-  const tierJson = row.getAttribute('data-tier-json');
-  if (tierJson) {
-    try {
-      const tiers = JSON.parse(tierJson);
-      if (Array.isArray(tiers) && tiers.length > 0) {
-        tiers.sort((a,b) => (b.min_qty||0) - (a.min_qty||0));
-        let activeTier = null;
-        for (let tier of tiers) { if (qty >= (tier.min_qty||0)) { activeTier = tier; break; } }
-        if (activeTier) {
-          const bundleSize = activeTier.min_qty || 1;
-          const discountPercent = activeTier.discount_percent || 0;
-          const bundles = Math.floor(qty / bundleSize);
-          const discountedCount = bundles * bundleSize;
-          const remainder = qty % bundleSize;
-          return (unitPrice * (1 - discountPercent/100)) * discountedCount + unitPrice * remainder;
-        }
+  const tiers = item.discount_tiers;
+  if (Array.isArray(tiers) && tiers.length > 0) {
+    const sorted = [...tiers].sort((a,b) => (b.min_qty||0) - (a.min_qty||0));
+    for (const tier of sorted) {
+      if (qty >= (tier.min_qty || 0)) {
+        const bundleSize = tier.min_qty || 1;
+        const discountPercent = tier.discount_percent || 0;
+        const bundles = Math.floor(qty / bundleSize);
+        const discountedCount = bundles * bundleSize;
+        const remainder = qty % bundleSize;
+        return (unitPrice * (1 - discountPercent/100)) * discountedCount + unitPrice * remainder;
       }
-    } catch(e) {}
+    }
   }
-  const specialOffer = row.getAttribute('data-special-offer');
-  if (specialOffer === 'second_half_off') {
+  if (item.special_offer === 'second_half_off') {
     const pairs = Math.floor(qty/2), rem = qty%2;
     return pairs * (unitPrice + unitPrice*0.5) + rem * unitPrice;
-  } else if (specialOffer === 'second_free') {
+  }
+  if (item.special_offer === 'second_free') {
     const pairs = Math.floor(qty/2), rem = qty%2;
     return pairs * unitPrice + rem * unitPrice;
   }
   return unitPrice * qty;
 }
 
-function computeTotals() {
-  let planned = 0, remaining = 0, completedCount = 0;
-  const storeSubtotals = {};
-  const items = document.querySelectorAll('.item-row');
-  items.forEach(row => {
-    const itemPrice = calculateItemPrice(row);
-    const isCompleted = row.classList.contains('completed');
-    const store = row.getAttribute('data-store') || 'Other';
-    if (!storeSubtotals[store]) storeSubtotals[store] = 0;
-    storeSubtotals[store] += itemPrice;
-    planned += itemPrice;
-    if (isCompleted) completedCount++;
-    else remaining += itemPrice;
+/* ══════════════════════════════════════════════════════════════════════════
+   STATS + STORE COMPARISON
+   ══════════════════════════════════════════════════════════════════════════ */
+function computeStats() {
+  const items = currentItems;
+  const total = items.length;
+  const bought = items.filter(i => i.purchased).length;
+
+  // Cheapest mix
+  let mixTotal = 0;
+  items.forEach(i => {
+    const c = cheapestOf(i);
+    mixTotal += c.price * (parseInt(i.qty || 1, 10) || 1);
   });
-  document.querySelectorAll('.store-subtotal').forEach(el => {
-    const s = el.getAttribute('data-store');
-    if (s in storeSubtotals) el.textContent = `€${storeSubtotals[s].toFixed(2)}`;
+
+  // Per-store totals
+  const storeSet = new Set();
+  items.forEach(i => (i.store_prices || []).forEach(s => storeSet.add(s.store)));
+  const stores = [...storeSet];
+  const storeData = stores.map(name => {
+    let sTotal = 0, avail = 0;
+    items.forEach(i => {
+      const p = priceInStore(i, name);
+      if (p !== null) { avail++; sTotal += p * (parseInt(i.qty || 1, 10) || 1); }
+    });
+    return { name, total: sTotal, available: avail, missing: total - avail };
   });
-  const el = id => document.getElementById(id);
-  if (el('planned-total'))    el('planned-total').textContent    = `€${planned.toFixed(2)}`;
-  if (el('remaining-total'))  el('remaining-total').textContent  = `€${remaining.toFixed(2)}`;
-  if (el('completed-count'))  el('completed-count').textContent  = completedCount;
-  if (el('items-count'))      el('items-count').textContent      = items.length;
+
+  // Best single store: max coverage first, then lowest total
+  let best = null;
+  storeData.forEach(s => {
+    if (!best) { best = s; return; }
+    if (s.available > best.available || (s.available === best.available && s.total < best.total)) best = s;
+  });
+
+  const savings = best && best.available === total ? Math.max(0, best.total - mixTotal) : (best ? Math.max(0, best.total - (mixTotal * best.available / (total || 1))) : 0);
+
+  // Render stat cards
+  document.getElementById('stat-mix-total').textContent = fmt(mixTotal);
+  document.getElementById('stat-mix-note').textContent = `Total for all ${total} item${total !== 1 ? 's' : ''}`;
+  if (best) {
+    document.getElementById('stat-single-total').textContent = fmt(best.total);
+    document.getElementById('stat-single-store').textContent =
+      best.available === total ? best.name : `${best.name} (${best.available}/${total} items)`;
+  } else {
+    document.getElementById('stat-single-total').textContent = '—';
+    document.getElementById('stat-single-store').textContent = 'No store data';
+  }
+  document.getElementById('stat-savings').textContent = fmt(savings);
+
+  const pct = total ? Math.round(bought / total * 100) : 0;
+  document.getElementById('stat-bought').textContent = `${bought} / ${total}`;
+  document.getElementById('stat-bought-note').textContent = `${pct}% completed`;
+  const CIRC = 150.8;
+  document.getElementById('donut-fill').style.strokeDashoffset = CIRC - (CIRC * pct / 100);
+  document.getElementById('donut-pct').textContent = `${pct}%`;
+
+  renderStoreComparison(storeData, best, total);
+  updateActiveCard(mixTotal, bought, total);
 }
 
-function updateListStats() { computeTotals(); }
+function renderStoreComparison(storeData, best, totalItems) {
+  const section = document.getElementById('store-compare-section');
+  const row = document.getElementById('store-compare-row');
+  if (!storeData.length) { section.classList.add('d-none'); return; }
+  section.classList.remove('d-none');
 
-// ── SWITCH LIST ───────────────────────────────────────────────────────────────
-let isSwitchingList = false;
+  // Sort: complete stores by total asc, then partial by coverage desc
+  const sorted = [...storeData].sort((a, b) =>
+    (b.available - a.available) || (a.total - b.total));
+  const cheapestName = best ? best.name : null;
+  const mostComplete = sorted.filter(s => s.available === Math.max(...sorted.map(x => x.available)));
+
+  row.innerHTML = sorted.map(s => {
+    const isSelected = currentPriceView === s.name;
+    const badges = [];
+    if (s.name === cheapestName) badges.push('<span class="sl-store-badge">Cheapest</span>');
+    else if (mostComplete.length && mostComplete[0].name === s.name && s.available === totalItems && s.name !== cheapestName)
+      badges.push('<span class="sl-store-badge complete">Most Complete</span>');
+    return `
+      <div class="sl-store-card ${isSelected ? 'selected' : ''}" onclick="setPriceView('${esc(s.name)}')">
+        ${badges.join('')}
+        <div class="sl-store-name-row">
+          <span class="sl-store-logo" style="background:${storeColor(s.name)};color:${storeTextColor(s.name)};">${esc(s.name.slice(0,1).toUpperCase())}</span>
+          <span class="sl-store-name">${esc(s.name)}</span>
+        </div>
+        <div class="sl-store-total">${fmt(s.total)}</div>
+        <div class="sl-store-avail">
+          ${s.available} / ${totalItems} items available
+          ${s.missing > 0 ? `<span class="missing"> · ${s.missing} missing</span>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function setPriceView(storeName) {
+  currentPriceView = (currentPriceView === storeName) ? 'best' : storeName;
+  document.getElementById('price-col-label').textContent =
+    currentPriceView === 'best' ? 'Cheapest Price' : `Price at ${currentPriceView}`;
+  renderItems();
+  computeStats();
+}
+
+function updateActiveCard(mixTotal, bought, total) {
+  const card = document.querySelector(`.list-card[data-list-id="${currentListId}"]`);
+  if (!card) return;
+  const priceEl = card.querySelector('[data-role="card-price"]');
+  if (priceEl) priceEl.innerHTML = `${fmt(mixTotal)}<span class="sl-price-label">cheapest mix</span>`;
+  const progEl = card.querySelector('[data-role="card-progress"]');
+  if (progEl) progEl.style.width = `${total ? Math.round(bought / total * 100) : 0}%`;
+  const boughtEl = card.querySelector('[data-role="card-bought"]');
+  if (boughtEl) boughtEl.textContent = `${bought} / ${total} bought`;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   RENDER ITEMS
+   ══════════════════════════════════════════════════════════════════════════ */
+function popoverHtml(item) {
+  const sp = item.store_prices || [];
+  if (!sp.length) return '';
+  const cheapest = cheapestOf(item);
+  const rows = [...sp].sort((a, b) => a.price - b.price).map(s => `
+    <div class="price-popover-row ${s.price === cheapest.price ? 'cheapest' : ''}">
+      <span class="pp-store">
+        <span class="store-dot" style="background:${storeColor(s.store)};width:8px;height:8px;border-radius:50%;display:inline-block;"></span>
+        ${esc(s.store)}
+      </span>
+      <span class="pp-price">${fmt(s.price)}</span>
+    </div>`).join('');
+  return `
+    <div class="price-popover" onclick="event.stopPropagation()">
+      <div class="price-popover-title">Price comparison</div>
+      ${rows}
+    </div>`;
+}
+
+function renderItems() {
+  const container = document.getElementById('items-container');
+  const emptyMsg = document.getElementById('empty-list-msg');
+  const tableHead = document.getElementById('sl-table-head');
+
+  if (!currentItems.length) {
+    container.innerHTML = '';
+    emptyMsg.classList.remove('d-none');
+    tableHead.classList.add('d-none');
+    return;
+  }
+  emptyMsg.classList.add('d-none');
+  tableHead.classList.remove('d-none');
+
+  container.innerHTML = currentItems.map((item, idx) => {
+    const eff = effectiveUnit(item);
+    const totalPrice = lineTotal(item);
+    const qty = parseInt(item.qty || 1, 10) || 1;
+    const purchased = !!item.purchased;
+    const img = item.image || PLACEHOLDER_IMG;
+    const pid = item.product_id || item.productId || '';
+    return `
+      <div class="item-row ${purchased ? 'completed' : ''}" draggable="true"
+           data-idx="${idx}" data-name="${esc(item.name)}"
+           ${pid ? `onclick="openProductDetailFromList(event, '${esc(pid)}')"` : ''}>
+        <div class="cell-check form-check p-0 m-0" onclick="event.stopPropagation()">
+          <input class="form-check-input item-checkbox d-none" type="checkbox"
+                 id="item-cb-${idx}" ${purchased ? 'checked' : ''}
+                 onchange="toggleItemComplete(${idx}, this)">
+          <label class="premium-checkbox" for="item-cb-${idx}">
+            <i class="bi bi-check-lg" style="font-size:0.8rem;"></i>
+          </label>
+        </div>
+        <div class="cell-img item-img-pill">
+          <img src="${esc(img)}" alt="${esc(item.name)}" onerror="this.src='${PLACEHOLDER_IMG}'">
+        </div>
+        <div class="cell-name" style="min-width:0;">
+          <p class="item-name">${esc(item.name)}</p>
+          <div class="item-meta">
+            ${item.brand ? `<span class="item-brand">${esc(item.brand)}</span>` : ''}
+            ${sizeText(item) ? `<span class="meta-chip">${esc(sizeText(item))}</span>` : ''}
+            ${unitPriceText(item, eff.price) ? `<span class="meta-chip">${esc(unitPriceText(item, eff.price))}</span>` : ''}
+          </div>
+        </div>
+        <div class="cell-qty qty-container" onclick="event.stopPropagation()">
+          <button class="qty-btn" onclick="changeQuantity(${idx}, -1)"><i class="bi bi-dash"></i></button>
+          <input type="number" class="qty-input" value="${qty}" min="1"
+                 onchange="setQuantity(${idx}, this)" onkeypress="if(event.key==='Enter') setQuantity(${idx}, this)">
+          <button class="qty-btn" onclick="changeQuantity(${idx}, 1)"><i class="bi bi-plus"></i></button>
+        </div>
+        <div class="cell-price item-price-cell" onclick="event.stopPropagation(); this.classList.toggle('popover-open');">
+          <div class="item-cheapest">
+            <span class="item-cheapest-price">${fmt(eff.price)}</span>
+            <span class="item-cheapest-store">
+              <span class="store-dot" style="background:${storeColor(eff.store)};"></span>
+              ${esc(eff.store || '—')}${eff.missing ? ' (not in this store)' : ''}
+            </span>
+          </div>
+          ${popoverHtml(item)}
+        </div>
+        <div class="cell-total">
+          <div class="item-total">${fmt(totalPrice)}</div>
+          <div class="item-total-unit">${fmt(eff.price)} ea.</div>
+        </div>
+        <div class="cell-remove" onclick="event.stopPropagation()">
+          <button class="btn-remove-item" onclick="showRemoveItemConfirm(${idx})" title="Remove">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+      </div>`;
+  }).join('');
+
+  applyAllFilters();
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   FILTERS
+   ══════════════════════════════════════════════════════════════════════════ */
+function setItemFilter(filter, tabEl) {
+  currentFilter = filter;
+  document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+  if (tabEl) tabEl.classList.add('active');
+  applyAllFilters();
+}
+
+function applyAllFilters() {
+  const q = (document.getElementById('item-search')?.value || '').toLowerCase().trim();
+  document.querySelectorAll('.item-row').forEach(row => {
+    const idx = parseInt(row.getAttribute('data-idx'), 10);
+    const item = currentItems[idx];
+    if (!item) return;
+    const done = !!item.purchased;
+    const matchesFilter =
+      currentFilter === 'all' ? true :
+      currentFilter === 'tobuy' ? !done :
+      currentFilter === 'purchased' ? done : true;
+    const matchesSearch = !q || String(item.name || '').toLowerCase().includes(q);
+    row.style.display = (matchesFilter && matchesSearch) ? 'grid' : 'none';
+  });
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   LIST SWITCHING / LOADING
+   ══════════════════════════════════════════════════════════════════════════ */
 function switchList(listId) {
   if (isSwitchingList) return;
   isSwitchingList = true;
@@ -1073,15 +1448,30 @@ function switchList(listId) {
   document.querySelectorAll('.list-card').forEach(c => c.classList.remove('active'));
   const card = document.querySelector(`.list-card[data-list-id="${listId}"]`);
   if (card) card.classList.add('active');
-  const target = document.getElementById('active-list-wrapper');
-  if (target && target.scrollIntoView) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
   fetch(`/api/list/${listId}/items`)
     .then(r => { if (!r.ok) throw new Error('Network error'); return r.json(); })
     .then(data => {
       if (data.success) {
-        try { displayListItems(data); } catch(e) { console.error('Display error:', e); showNotification('Error displaying items', 'danger'); }
-        document.getElementById('active-list-wrapper')?.classList.remove('d-none');
-        document.getElementById('list-placeholder')?.classList.add('d-none');
+        currentListId = listId;
+        currentListIcon = data.icon || (card ? card.getAttribute('data-icon') : 'basket') || 'basket';
+        currentItems = mergeItemsByName(data.items || []);
+        currentPriceView = 'best';
+        currentSharedListUsers = data.collaborators || [];
+        currentListOwnerEmail = data.is_shared ? (data.owner_email || 'Another User') : 'You';
+
+        // Header
+        document.getElementById('detail-name').textContent = data.name || 'Unnamed List';
+        setIconContent(document.getElementById('detail-emoji'), currentListIcon);
+        document.getElementById('price-col-label').textContent = 'Cheapest Price';
+        renderDetailAvatars(data);
+
+        renderItems();
+        computeStats();
+        fetchAndRenderActivity(listId);
+
+        document.getElementById('sl-detail').classList.remove('d-none');
+        document.getElementById('list-placeholder').classList.add('d-none');
         fetch('/api/list/set-active', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({list_id: listId}) });
       } else {
         showNotification('Error loading list: ' + (data.error || 'Unknown'), 'danger');
@@ -1091,7 +1481,22 @@ function switchList(listId) {
     .finally(() => { isSwitchingList = false; });
 }
 
-// ── RESTORE LAST OPENED ───────────────────────────────────────────────────────
+function renderDetailAvatars(data) {
+  const avatarsEl = document.getElementById('detail-avatars');
+  const labelEl = document.getElementById('detail-shared-label');
+  const collabs = data.collaborators || [];
+  let html = '';
+  if (data.is_shared && data.owner_email) html += avatarHtml(data.owner_email);
+  collabs.slice(0, 4).forEach(c => { html += avatarHtml(c.email); });
+  if (collabs.length > 4) html += `<span class="sl-avatar more">+${collabs.length - 4}</span>`;
+  avatarsEl.innerHTML = html;
+  avatarsEl.style.cursor = 'pointer';
+  avatarsEl.onclick = showCollaboratorsModal;
+  if (data.is_shared) labelEl.textContent = 'Shared with you';
+  else if (collabs.length) labelEl.textContent = `Shared with ${collabs.length} ${collabs.length === 1 ? 'person' : 'people'}`;
+  else labelEl.textContent = '';
+}
+
 function restoreLastOpenedList() {
   const lastListId = localStorage.getItem('lastOpenedListId');
   let targetId = null;
@@ -1099,174 +1504,145 @@ function restoreLastOpenedList() {
   if (!targetId) { const first = document.querySelector('.list-card'); if (first) targetId = first.getAttribute('data-list-id'); }
   if (targetId) setTimeout(() => switchList(targetId), 50);
 }
-if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', restoreLastOpenedList);
-else restoreLastOpenedList();
 
-// ── MERGE DUPLICATES ──────────────────────────────────────────────────────────
 function mergeItemsByName(items) {
   const merged = {};
   items.forEach(item => {
     const name = (typeof item === 'string') ? item : (item.name || '');
-    const store = (item.store || item.store_name || '').toString();
-    const key = `${name.toLowerCase().trim()}__${store.toLowerCase().trim()}`;
+    const key = name.toLowerCase().trim();
     const inQty = parseInt(item.qty || item.quantity || 1) || 1;
-    const inPrice = parseFloat(item.price_val !== undefined ? item.price_val : item.price || 0) || 0;
-    const productId = item.product_id || item.productId || item.id || item.deal_id || item.dealId || '';
     if (merged[key]) {
-      merged[key].qty = parseInt(merged[key].qty || 1) + inQty;
-      if (!merged[key].price_val && inPrice) merged[key].price_val = inPrice;
-      if (!merged[key].price && inPrice) merged[key].price = inPrice;
+      merged[key].qty = (parseInt(merged[key].qty || 1) || 1) + inQty;
       if (!merged[key].image && item.image) merged[key].image = item.image;
-      if (!merged[key].store && store) merged[key].store = store;
-      if (!merged[key].product_id && productId) merged[key].product_id = productId;
+      if ((!merged[key].store_prices || !merged[key].store_prices.length) && item.store_prices) merged[key].store_prices = item.store_prices;
     } else {
-      const base = (typeof item === 'object' && item !== null) ? item : {};
-      merged[key] = { ...base, name, store, qty: inQty, id: item.id || name, product_id: productId, purchased: item.purchased || false, image: item.image || '', price_val: inPrice, price: inPrice };
+      const base = (typeof item === 'object' && item !== null) ? { ...item } : {};
+      merged[key] = { ...base, name, qty: inQty, purchased: !!(item.purchased), store_prices: item.store_prices || [] };
     }
   });
   return Object.values(merged);
 }
 
-const PLACEHOLDER_IMG = "{{ url_for('static', filename='placeholder.svg') }}";
+/* ══════════════════════════════════════════════════════════════════════════
+   ITEM INTERACTIONS
+   ══════════════════════════════════════════════════════════════════════════ */
+function toggleItemComplete(idx, checkbox) {
+  const item = currentItems[idx];
+  if (!item) return;
+  item.purchased = checkbox.checked;
+  const row = checkbox.closest('.item-row');
+  row.classList.toggle('completed', checkbox.checked);
+  computeStats();
+  saveListState();
+  applyAllFilters();
+}
+
+function changeQuantity(idx, delta) {
+  const item = currentItems[idx];
+  if (!item) return;
+  item.qty = Math.max(1, (parseInt(item.qty || 1, 10) || 1) + delta);
+  refreshRow(idx);
+  computeStats();
+  saveListState();
+}
+
+function setQuantity(idx, input) {
+  const item = currentItems[idx];
+  if (!item) return;
+  let qty = parseInt(input.value || 1, 10);
+  if (isNaN(qty) || qty < 1) qty = 1;
+  item.qty = qty;
+  refreshRow(idx);
+  computeStats();
+  saveListState();
+}
+
+function refreshRow(idx) {
+  const row = document.querySelector(`.item-row[data-idx="${idx}"]`);
+  const item = currentItems[idx];
+  if (!row || !item) return;
+  const eff = effectiveUnit(item);
+  row.querySelector('.qty-input').value = item.qty;
+  row.querySelector('.item-total').textContent = fmt(lineTotal(item));
+  row.querySelector('.item-total-unit').textContent = `${fmt(eff.price)} ea.`;
+}
 
 function openProductDetailFromList(event, productId) {
-  if (event && event.target && event.target.closest('button, input, label, a, select, textarea, .qty-container, .form-check')) {
-    return;
-  }
+  if (event && event.target && event.target.closest('button, input, label, a, select, textarea, .qty-container, .form-check, .price-popover, .item-price-cell')) return;
   if (!productId) return;
   window.location.href = '/product/' + encodeURIComponent(productId);
 }
 
-// ── DISPLAY LIST ITEMS ────────────────────────────────────────────────────────
-function displayListItems(data) {
-  if (!data) return;
-  const listName = data.list_name || data.name || 'Unnamed List';
-  let items = mergeItemsByName(data.items || []);
-  currentSharedListUsers = data.collaborators || [];
-  currentListOwnerEmail = data.is_shared ? (data.owner_email || 'Another User') : 'You';
-
-  const titleEl = document.getElementById('active-list-title');
-  if (titleEl) {
-    let html = `<i class="bi bi-basket3-fill me-2" style="color:#65388f;font-size:1.2rem;"></i>${listName}`;
-    if (data.is_shared) html += ` <span class="badge bg-info text-dark ms-2" style="border-radius:999px;cursor:pointer;" onclick="showCollaboratorsModal()"><i class="bi bi-people-fill me-1"></i>Shared</span>`;
-    else if (data.collaborators && data.collaborators.length > 0) html += ` <span class="badge bg-primary ms-2" style="border-radius:999px;cursor:pointer;" onclick="showCollaboratorsModal()"><i class="bi bi-person-lines-fill me-1"></i>${data.collaborators.length} shared</span>`;
-    titleEl.innerHTML = html;
-  }
-
-  const cardBody = document.getElementById('active-list-body');
-  if (!cardBody) return;
-
-  if (items.length === 0) {
-    cardBody.innerHTML = `
-      <div class="p-5 text-center" style="color:#9ca3af;">
-        <i class="bi bi-cart-x" style="font-size:3rem;opacity:0.25;display:block;margin-bottom:1rem;"></i>
-        <h5 class="fw-700" style="color:#4b5563;font-weight:700;">This list is empty</h5>
-        <p class="mb-4">Add items from the product browser.</p>
-        <a href="/compare-prices" class="btn-create-list" style="margin:0 auto;text-decoration:none;">
-          <i class="bi bi-search me-2"></i>Browse Products
-        </a>
-      </div>`;
-    setTimeout(computeTotals, 50);
-    return;
-  }
-
-  // Group by store
-  const groupedByStore = {}, uniqueStores = [];
-  items.forEach(it => {
-    const st = it.store || 'Other';
-    if (!groupedByStore[st]) { groupedByStore[st] = []; uniqueStores.push(st); }
-    groupedByStore[st].push(it);
-  });
-
-  let html = `
-    <div class="filter-bar" style="border-top:none;">
-      <div class="filter-tabs">
-        <button class="filter-tab ${currentFilter==='all'?'active':''}" onclick="setItemFilter('all',this)">All</button>
-        <button class="filter-tab ${currentFilter==='tobuy'?'active':''}" onclick="setItemFilter('tobuy',this)">To Buy</button>
-        <button class="filter-tab ${currentFilter==='purchased'?'active':''}" onclick="setItemFilter('purchased',this)">Purchased</button>
-      </div>
-    </div>
-    <div id="items-container">`;
-
-  uniqueStores.forEach(store => {
-    let subtotal = 0;
-    groupedByStore[store].forEach(it => {
-      const u = parseFloat(it.price_val !== undefined ? it.price_val : it.price || 0) || 0;
-      subtotal += u * (it.qty || 1);
-    });
-    const storeItemCount = groupedByStore[store].length;
-    html += `<div class="store-group-header">
-      <span><i class="bi bi-shop me-2"></i>${store}<span class="store-count-badge">${storeItemCount}</span></span>
-      <span class="store-subtotal-badge store-subtotal" data-store="${store}">€${subtotal.toFixed(2)}</span>
-    </div>`;
-
-    groupedByStore[store].forEach((it, idx) => {
-      const name = (typeof it === 'string') ? it : (it.name || 'Unknown');
-      const item_id = it.id || name;
-      const product_id = it.product_id || it.productId || it.deal_id || it.dealId || '';
-      const purchased = it.purchased || false;
-      const img = (it.image || it.images?.[0] || PLACEHOLDER_IMG);
-      const unit = parseFloat(it.price_val !== undefined ? it.price_val : it.price || 0) || 0;
-      const qty = it.qty || 1;
-      const offerObj = (it.offer && typeof it.offer === 'object') ? it.offer : null;
-      const offerX = offerObj ? (offerObj.x || '') : (it.multibuy_buy || '');
-      const offerY = offerObj ? (offerObj.y || '') : (it.multibuy_free || '');
-      const offerType = offerObj ? (offerObj.type || '') : (offerX && offerY ? 'buyXgetY' : '');
-      const offerJson = offerObj ? JSON.stringify(offerObj).replace(/"/g,'&quot;') : '';
-      const tierJson = (it.discount_tiers && Array.isArray(it.discount_tiers)) ? JSON.stringify(it.discount_tiers).replace(/"/g,'&quot;') : '';
-      const hiddenByFilter = (currentFilter === 'tobuy' && purchased) || (currentFilter === 'purchased' && !purchased);
-
-      html += `
-        <div class="item-row ${purchased ? 'completed' : ''}" draggable="true"
-             data-item-id="${item_id}" data-name="${name}" data-price="${unit}"
-             data-product-id="${product_id}"
-             data-qty="${qty}" data-store="${store}" data-image="${img}"
-             data-offer-json='${offerJson}' data-offer-type="${offerType}"
-             data-offer-x="${offerX}" data-offer-y="${offerY}"
-             data-tier-json='${tierJson}'
-             ${product_id ? 'onclick="openProductDetailFromList(event, this.dataset.productId)"' : ''}
-             style="${hiddenByFilter ? 'display:none;' : ''}">
-          <div class="form-check p-0 m-0">
-            <input class="form-check-input item-checkbox d-none" type="checkbox"
-                   id="item-dyn-${idx}_${store.replace(/\W+/g,'')}" ${purchased ? 'checked' : ''}
-                   onchange="toggleItemComplete(this)">
-            <label class="premium-checkbox" for="item-dyn-${idx}_${store.replace(/\W+/g,'')}">
-              <i class="bi bi-check-lg" style="font-size:0.8rem;"></i>
-            </label>
-          </div>
-          <div class="item-img-pill">
-            <img src="${img}" alt="${name}" onerror="this.src='${PLACEHOLDER_IMG}'">
-          </div>
-          <div class="flex-grow-1">
-            <p class="item-name mb-1">${name}</p>
-            <span class="item-status-badge ${purchased ? 'purchased' : ''}">
-              <i class="bi ${purchased ? 'bi-check-circle-fill' : 'bi-cart3'}"></i>
-              ${purchased ? 'Purchased' : 'To Buy'}
-            </span>
-          </div>
-          <div class="qty-container">
-            <button class="qty-btn" onclick="changeQuantity(this,-1)"><i class="bi bi-dash"></i></button>
-            <input type="number" class="qty-input" value="${qty}" min="1"
-                   onchange="setQuantity(this)" onkeypress="if(event.key==='Enter') setQuantity(this)">
-            <button class="qty-btn" onclick="changeQuantity(this,1)"><i class="bi bi-plus"></i></button>
-          </div>
-          <div class="text-end" style="min-width:80px;">
-            <div class="item-price fw-900">€${(unit * qty).toFixed(2)}</div>
-            <div class="item-price-unit">€${unit.toFixed(2)} ea.</div>
-          </div>
-          <button class="btn-remove-item" onclick="showRemoveItemConfirm(this,'${name}')" title="Remove">
-            <i class="bi bi-x-lg"></i>
-          </button>
-        </div>`;
-    });
-  });
-
-  html += '</div>';
-  cardBody.innerHTML = html;
-  setTimeout(() => { computeTotals(); updateListStats(); }, 50);
+/* Remove item */
+let removeItemIdx = null;
+function showRemoveItemConfirm(idx) {
+  removeItemIdx = idx;
+  const item = currentItems[idx];
+  document.getElementById('removeItemName').textContent = item ? item.name : 'this item';
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('removeItemModal')).show();
+}
+function confirmRemoveItem() {
+  if (removeItemIdx === null) return;
+  const item = currentItems[removeItemIdx];
+  bootstrap.Modal.getInstance(document.getElementById('removeItemModal'))?.hide();
+  if (!item) return;
+  fetch('/api/list/remove-item', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({item_name: item.name}) })
+    .then(r => r.json())
+    .then(d => {
+      if (d.success) {
+        currentItems.splice(removeItemIdx, 1);
+        removeItemIdx = null;
+        renderItems();
+        computeStats();
+        showNotification(`"${item.name}" removed`, 'success');
+      } else showNotification('Failed to remove item', 'danger');
+    })
+    .catch(() => showNotification('Error removing item', 'danger'));
 }
 
-// ── CREATE LIST ───────────────────────────────────────────────────────────────
+/* Save state */
+function saveListState() {
+  const items = currentItems.map(i => ({
+    name: i.name, qty: parseInt(i.qty || 1, 10) || 1,
+    purchased: !!i.purchased,
+    price: effectiveUnit(i).price,
+    store: effectiveUnit(i).store || '',
+    image: i.image || '',
+    product_id: i.product_id || i.productId || i.id || '',
+    id: i.product_id || i.productId || i.id || '',
+    offer: i.offer || null, discount_tiers: i.discount_tiers || null,
+    special_offer: i.special_offer || ''
+  }));
+  fetch('/api/list/update-items', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({items, list_id: currentListId}) });
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   CREATE / RENAME / DELETE / DUPLICATE / ICON
+   ══════════════════════════════════════════════════════════════════════════ */
+let createSelectedIcon = 'basket';
+let changeSelectedIcon = 'basket';
+
+function buildIconGrid(containerId, selectedKey, onSelect) {
+  const grid = document.getElementById(containerId);
+  if (!grid) return;
+  grid.innerHTML = Object.keys(LIST_ICONS).map(key =>
+    `<button type="button" class="icon-picker-option ${key === selectedKey ? 'selected' : ''}"
+       data-icon-key="${key}" title="${key}">${iconHtml(key)}</button>`).join('');
+  grid.querySelectorAll('.icon-picker-option').forEach(btn => {
+    btn.addEventListener('click', () => {
+      grid.querySelectorAll('.icon-picker-option').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      onSelect(btn.getAttribute('data-icon-key'));
+    });
+  });
+}
+
+function applyTemplate(name, icon) {
+  document.getElementById('new-list-name').value = name;
+  createSelectedIcon = icon;
+  buildIconGrid('create-icon-grid', icon, k => createSelectedIcon = k);
+}
+
 function createList() {
   const nameInput = document.getElementById('new-list-name');
   if (!nameInput) return;
@@ -1275,42 +1651,128 @@ function createList() {
   const btn = document.querySelector('#createListModal .btn-premium-purple');
   const orig = btn ? btn.innerHTML : 'Create List';
   if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Creating...'; }
-  fetch('/api/list/create', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({name: listName}) })
+  fetch('/api/list/create', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({name: listName, icon: createSelectedIcon}) })
     .then(async r => { const d = await r.json(); if (!r.ok) throw new Error(d.error||'Server error'); return d; })
-    .then(d => { if (d.success) safeReload(); else throw new Error(d.error||'Failed to create list'); })
+    .then(d => {
+      if (d.success) { if (d.list_id) localStorage.setItem('lastOpenedListId', d.list_id); safeReload(); }
+      else throw new Error(d.error||'Failed to create list');
+    })
     .catch(err => showNotification(err.message||'A server error occurred','danger'))
     .finally(() => { if (btn) { btn.disabled = false; btn.innerHTML = orig; } });
 }
 
-// ── COLLABORATORS ─────────────────────────────────────────────────────────────
-let currentSharedListUsers = [];
-try {
-  const el = document.getElementById('shared-list-collaborators-data');
-  if (el) currentSharedListUsers = JSON.parse(el.textContent || '[]');
-} catch(e) {}
-let currentListOwnerEmail = "{{ active_list.owner_email if active_list and active_list.is_shared else 'You' }}";
+function openIconPicker(listId) {
+  document.getElementById('icon-picker-list-id').value = listId;
+  const card = document.querySelector(`.list-card[data-list-id="${listId}"]`);
+  changeSelectedIcon = card ? (card.getAttribute('data-icon') || 'basket') : 'basket';
+  buildIconGrid('change-icon-grid', changeSelectedIcon, k => changeSelectedIcon = k);
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('iconPickerModal')).show();
+}
 
+function confirmIconChange() {
+  const listId = document.getElementById('icon-picker-list-id').value;
+  fetch('/api/list/set-icon', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({list_id: listId, icon: changeSelectedIcon}) })
+    .then(r => r.json())
+    .then(d => {
+      if (d.success) {
+        const card = document.querySelector(`.list-card[data-list-id="${listId}"]`);
+        if (card) {
+          card.setAttribute('data-icon', changeSelectedIcon);
+          setIconContent(card.querySelector('[data-role="emoji"]'), changeSelectedIcon);
+        }
+        if (listId === currentListId) {
+          currentListIcon = changeSelectedIcon;
+          setIconContent(document.getElementById('detail-emoji'), changeSelectedIcon);
+        }
+        bootstrap.Modal.getInstance(document.getElementById('iconPickerModal'))?.hide();
+        showNotification('Icon updated!', 'success');
+      } else showNotification(d.error || 'Failed to update icon', 'danger');
+    })
+    .catch(() => showNotification('Error updating icon', 'danger'));
+}
+
+function duplicateList(listId) {
+  fetch('/api/list/duplicate', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({list_id: listId}) })
+    .then(r => r.json())
+    .then(d => {
+      if (d.success) { if (d.list_id) localStorage.setItem('lastOpenedListId', d.list_id); safeReload(); }
+      else showNotification(d.error || 'Failed to duplicate', 'danger');
+    })
+    .catch(() => showNotification('Error duplicating list', 'danger'));
+}
+
+function renameList(listId, currentName) {
+  const idEl = document.getElementById('rename-list-id'), nameEl = document.getElementById('rename-list-name');
+  if (idEl) idEl.value = listId;
+  if (nameEl) { nameEl.value = currentName; nameEl.dataset.originalName = currentName; }
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('renameListModal')).show();
+}
+
+function confirmRename() {
+  const listId = document.getElementById('rename-list-id').value;
+  const nameInput = document.getElementById('rename-list-name');
+  const newName = nameInput.value.trim();
+  if (newName === nameInput.dataset.originalName) { bootstrap.Modal.getInstance(document.getElementById('renameListModal'))?.hide(); return; }
+  if (!newName) { showNotification('Please enter a name','warning'); return; }
+  const btn = document.querySelector('#renameListModal .btn-premium-purple');
+  const orig = btn ? btn.innerHTML : 'Update';
+  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Updating...'; }
+  fetch('/api/list/rename', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({list_id:listId,name:newName}) })
+    .then(r => r.json())
+    .then(d => { if (d.success) safeReload(); else throw new Error(d.error||'Failed'); })
+    .catch(err => showNotification(err.message||'Error updating list','danger'))
+    .finally(() => { if (btn) { btn.disabled = false; btn.innerHTML = orig; } });
+}
+
+let deleteListTargetId = null;
+function deleteList(listId, listName) {
+  deleteListTargetId = listId;
+  const nameEl = document.getElementById('delete-list-name'), idEl = document.getElementById('delete-list-id');
+  if (nameEl) nameEl.textContent = listName || 'this list';
+  if (idEl) idEl.value = listId;
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('deleteListModal')).show();
+}
+
+function confirmDeleteList() {
+  const listId = deleteListTargetId || document.getElementById('delete-list-id')?.value;
+  if (!listId) { showNotification('List ID missing','danger'); return; }
+  const btn = document.querySelector('#deleteListModal .btn-danger');
+  const orig = btn ? btn.innerHTML : 'Delete Forever';
+  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Deleting...'; }
+  fetch('/api/list/delete', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({list_id:listId}) })
+    .then(r => r.json())
+    .then(d => {
+      if (d.success) {
+        if (localStorage.getItem('lastOpenedListId') === listId) localStorage.removeItem('lastOpenedListId');
+        safeReload();
+      } else throw new Error(d.error||'Failed');
+    })
+    .catch(err => showNotification(err.message||'Error deleting list','danger'))
+    .finally(() => { if (btn) { btn.disabled = false; btn.innerHTML = orig; } });
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   SHARE / COLLABORATORS
+   ══════════════════════════════════════════════════════════════════════════ */
 function showCollaboratorsModal() {
   const container = document.getElementById('collaborators-list-container');
-  let html = `<div class="d-flex align-items-center p-3" style="background:#f8fafc;border:1px solid #f1f5f9;">
-    <div style="width:40px;height:40px;background:#f5f0ff;display:flex;align-items:center;justify-content:center;color:#65388f;margin-right:12px;">
-      <i class="bi bi-person-badge fs-5"></i></div>
-    <div><div class="fw-bold" style="color:#1e293b;">${currentListOwnerEmail||'Unknown'}</div><div class="small text-muted">Owner</div></div></div>`;
+  let html = `<div class="d-flex align-items-center p-3" style="background:#f8fafc;border:1px solid #f1f5f9;border-radius:12px;">
+    <span class="sl-avatar" style="width:38px;height:38px;font-size:0.8rem;margin-right:12px;background:${avatarColor(currentListOwnerEmail)};">${esc(String(currentListOwnerEmail||'?').slice(0,2).toUpperCase())}</span>
+    <div><div class="fw-bold" style="color:#1e293b;">${esc(currentListOwnerEmail||'Unknown')}</div><div class="small text-muted">Owner</div></div></div>`;
   if (currentSharedListUsers && currentSharedListUsers.length > 0) {
     currentSharedListUsers.forEach(c => {
-      html += `<div class="d-flex align-items-center p-3" style="background:#fff;border:1px solid #f1f5f9;">
-        <div style="width:40px;height:40px;background:#f5f0ff;display:flex;align-items:center;justify-content:center;color:#65388f;margin-right:12px;">
-          <i class="bi bi-person fs-5"></i></div>
-        <div><div class="fw-bold" style="color:#1e293b;">${c.email}</div><div class="small text-muted text-capitalize">${c.role||'view'}</div></div></div>`;
+      html += `<div class="d-flex align-items-center p-3" style="background:#fff;border:1px solid #f1f5f9;border-radius:12px;">
+        <span class="sl-avatar" style="width:38px;height:38px;font-size:0.8rem;margin-right:12px;background:${avatarColor(c.email)};">${esc(String(c.email||'?').slice(0,2).toUpperCase())}</span>
+        <div><div class="fw-bold" style="color:#1e293b;">${esc(c.email)}</div><div class="small text-muted text-capitalize">${esc(c.role||'view')}</div></div></div>`;
     });
   } else { html += `<div class="text-center text-muted p-3">No other collaborators.</div>`; }
   container.innerHTML = html;
   bootstrap.Modal.getOrCreateInstance(document.getElementById('collaboratorsModal')).show();
 }
 
-function showShareListModal(listId) {
+function showShareListModalActive() {
   const idEl = document.getElementById('share-list-id');
-  if (idEl) idEl.value = listId;
+  if (idEl) idEl.value = currentListId || '';
   bootstrap.Modal.getOrCreateInstance(document.getElementById('shareListModal')).show();
 }
 
@@ -1335,113 +1797,12 @@ function confirmShareList() {
     .finally(() => { if (btn) { btn.disabled = false; btn.innerHTML = orig; } });
 }
 
-// ── RENAME LIST ───────────────────────────────────────────────────────────────
-function renameList(listId, currentName) {
-  const idEl = document.getElementById('rename-list-id'), nameEl = document.getElementById('rename-list-name');
-  if (idEl) idEl.value = listId;
-  if (nameEl) { nameEl.value = currentName; nameEl.dataset.originalName = currentName; }
-  bootstrap.Modal.getOrCreateInstance(document.getElementById('renameListModal')).show();
-}
-
-function confirmRename() {
-  const listId = document.getElementById('rename-list-id').value;
-  const nameInput = document.getElementById('rename-list-name');
-  const newName = nameInput.value.trim();
-  if (newName === nameInput.dataset.originalName) { bootstrap.Modal.getInstance(document.getElementById('renameListModal'))?.hide(); return; }
-  if (!newName) { showNotification('Please enter a name','warning'); return; }
-  const btn = document.querySelector('#renameListModal .btn-premium-purple');
-  const orig = btn ? btn.innerHTML : 'Update';
-  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Updating...'; }
-  fetch('/api/list/rename', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({list_id:listId,name:newName}) })
-    .then(r => r.json())
-    .then(d => { if (d.success) safeReload(); else throw new Error(d.error||'Failed'); })
-    .catch(err => showNotification(err.message||'Error updating list','danger'))
-    .finally(() => { if (btn) { btn.disabled = false; btn.innerHTML = orig; } });
-}
-
-// ── DELETE LIST ───────────────────────────────────────────────────────────────
-let deleteListTargetId = null;
-function deleteList(listId, listName) {
-  deleteListTargetId = listId;
-  const nameEl = document.getElementById('delete-list-name'), idEl = document.getElementById('delete-list-id');
-  if (nameEl) nameEl.textContent = listName || 'this list';
-  if (idEl) idEl.value = listId;
-  bootstrap.Modal.getOrCreateInstance(document.getElementById('deleteListModal')).show();
-}
-
-function confirmDeleteList() {
-  const listId = deleteListTargetId || document.getElementById('delete-list-id')?.value;
-  if (!listId) { showNotification('List ID missing','danger'); return; }
-  const btn = document.querySelector('#deleteListModal .btn-danger');
-  const orig = btn ? btn.innerHTML : 'Delete Forever';
-  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Deleting...'; }
-  fetch('/api/list/delete', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({list_id:listId}) })
-    .then(r => r.json())
-    .then(d => { if (d.success) safeReload(); else throw new Error(d.error||'Failed'); })
-    .catch(err => showNotification(err.message||'Error deleting list','danger'))
-    .finally(() => { if (btn) { btn.disabled = false; btn.innerHTML = orig; } });
-}
-
-// ── ITEM INTERACTIONS ─────────────────────────────────────────────────────────
-function toggleItemComplete(checkbox) {
-  const row = checkbox.closest('.item-row');
-  const statusBadge = row.querySelector('.item-status-badge');
-  if (checkbox.checked) {
-    row.classList.add('completed');
-    if (statusBadge) { statusBadge.className = 'item-status-badge purchased'; statusBadge.innerHTML = '<i class="bi bi-check-circle-fill"></i> Purchased'; }
-  } else {
-    row.classList.remove('completed');
-    if (statusBadge) { statusBadge.className = 'item-status-badge'; statusBadge.innerHTML = '<i class="bi bi-cart3"></i> To Buy'; }
-  }
-  updateListStats();
-  saveListState();
-  applyAllFilters();
-}
-
-function changeQuantity(btn, delta) {
-  const row = btn.closest('.item-row');
-  const input = row.querySelector('.qty-input');
-  let qty = Math.max(1, parseInt(input.value||1) + delta);
-  input.value = qty;
-  row.setAttribute('data-qty', qty);
-  const priceEl = row.querySelector('.item-price');
-  if (priceEl) priceEl.textContent = `€${calculateItemPrice(row).toFixed(2)}`;
-  updateListStats();
-  saveListState();
-}
-
-function setQuantity(input) {
-  const row = input.closest('.item-row');
-  let qty = parseInt(input.value||1);
-  if (isNaN(qty)||qty<1) { qty=1; input.value=1; }
-  row.setAttribute('data-qty', qty);
-  const priceEl = row.querySelector('.item-price');
-  if (priceEl) priceEl.textContent = `€${calculateItemPrice(row).toFixed(2)}`;
-  updateListStats();
-  saveListState();
-}
-
-function removeItem(btn) {
-  const row = btn.closest('.item-row');
-  const name = row.getAttribute('data-name');
-  fetch('/api/list/remove-item', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({item_name:name}) })
-    .then(r => r.json())
-    .then(d => {
-      if (d.success) {
-        row.style.transition = 'all 0.3s ease';
-        row.style.opacity = '0';
-        row.style.transform = 'translateX(20px)';
-        setTimeout(() => { row.remove(); updateListStats(); showNotification(`"${name}" removed`,'success'); }, 300);
-      } else showNotification('Failed to remove item','danger');
-    })
-    .catch(() => showNotification('Error removing item','danger'));
-}
-
-// ── CLEAR ALL ─────────────────────────────────────────────────────────────────
+/* ══════════════════════════════════════════════════════════════════════════
+   CLEAR / EXPORT / PRINT
+   ══════════════════════════════════════════════════════════════════════════ */
 function showClearAllConfirm() {
-  const allItems = document.querySelectorAll('.item-row');
-  if (allItems.length === 0) { showNotification('No items to clear','info'); return; }
-  document.getElementById('clearAllCount').textContent = allItems.length;
+  if (!currentItems.length) { showNotification('No items to clear','info'); return; }
+  document.getElementById('clearAllCount').textContent = currentItems.length;
   bootstrap.Modal.getOrCreateInstance(document.getElementById('clearAllModal')).show();
 }
 
@@ -1456,44 +1817,93 @@ function confirmClearAll() {
     .finally(() => { if (btn) { btn.disabled = false; btn.innerHTML = orig; } });
 }
 
-// ── SAVE STATE ────────────────────────────────────────────────────────────────
-function saveListState() {
-  const items = Array.from(document.querySelectorAll('.item-row')).map(row => {
-    let offer = null, discountTiers = null;
-    try { const oj = row.getAttribute('data-offer-json'); if (oj) offer = JSON.parse(oj); } catch(e) {}
-    try { const tj = row.getAttribute('data-tier-json'); if (tj) discountTiers = JSON.parse(tj); } catch(e) {}
-    return {
-      name: row.getAttribute('data-name'), qty: parseInt(row.getAttribute('data-qty')||1),
-      purchased: row.classList.contains('completed'), price: parseFloat(row.getAttribute('data-price')||0),
-      store: row.getAttribute('data-store')||'', image: row.getAttribute('data-image')||'',
-      id: row.getAttribute('data-product-id') || row.getAttribute('data-item-id') || '',
-      offer, discount_tiers: discountTiers, special_offer: row.getAttribute('data-special-offer')||''
-    };
-  });
-  fetch('/api/list/update-items', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({items}) });
+function clearCompleted() {
+  fetch('/api/list/clear-completed',{method:'POST',headers:{'Content-Type':'application/json'}})
+    .then(r=>r.json())
+    .then(d=>{
+      if(d.success){
+        currentItems = currentItems.filter(i => !i.purchased);
+        renderItems(); computeStats();
+        showNotification('Purchased items removed','success');
+      } else showNotification('Failed','danger');
+    }).catch(()=>showNotification('Error','danger'));
 }
 
-// ── EXPORT / PRINT ────────────────────────────────────────────────────────────
-function printList() { window.print(); }
-
 function exportList() {
-  const items = Array.from(document.querySelectorAll('.item-row')).map(row => ({
-    name: row.getAttribute('data-name'), quantity: row.getAttribute('data-qty'),
-    price: row.getAttribute('data-price'), store: row.getAttribute('data-store'),
-    completed: row.classList.contains('completed')
-  }));
-  const csv = 'Item,Quantity,Price,Store,Completed\n' +
-    items.map(i => `"${i.name}",${i.quantity},€${i.price},"${i.store}",${i.completed}`).join('\n');
+  const rows = currentItems.map(i => {
+    const c = cheapestOf(i);
+    return `"${String(i.name).replace(/"/g,'""')}",${i.qty || 1},€${c.price.toFixed(2)},"${c.store}",€${lineTotal(i).toFixed(2)},${!!i.purchased}`;
+  });
+  const csv = 'Item,Quantity,Cheapest Price,Cheapest Store,Total,Bought\n' + rows.join('\n');
   const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(new Blob([csv],{type:'text/csv'})), download: 'shopping-list.csv' });
   a.click();
 }
 
+function printList() { window.print(); }
 function showExportListConfirm()  { bootstrap.Modal.getOrCreateInstance(document.getElementById('exportListModal')).show(); }
 function confirmExportList()      { bootstrap.Modal.getInstance(document.getElementById('exportListModal'))?.hide(); exportList(); }
 function showPrintListConfirm()   { bootstrap.Modal.getOrCreateInstance(document.getElementById('printListModal')).show(); }
 function confirmPrintList()       { bootstrap.Modal.getInstance(document.getElementById('printListModal'))?.hide(); printList(); }
 
-// ── DRAG & DROP ───────────────────────────────────────────────────────────────
+/* ══════════════════════════════════════════════════════════════════════════
+   CHECK / UNCHECK ALL
+   ══════════════════════════════════════════════════════════════════════════ */
+function checkAllItems() {
+  if (!currentItems.length) return;
+  currentItems.forEach(i => i.purchased = true);
+  renderItems();
+  computeStats();
+  saveListState();
+  showNotification('All items checked', 'success');
+}
+
+function uncheckAllItems() {
+  if (!currentItems.length) return;
+  currentItems.forEach(i => i.purchased = false);
+  renderItems();
+  computeStats();
+  saveListState();
+  showNotification('All items unchecked', 'info');
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ACTIVITY FEED
+   ══════════════════════════════════════════════════════════════════════════ */
+function timeAgo(isoStr) {
+  if (!isoStr) return '';
+  const diff = Math.floor((Date.now() - new Date(isoStr).getTime()) / 1000);
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  return `${Math.floor(diff / 86400)}d ago`;
+}
+
+function fetchAndRenderActivity(listId) {
+  fetch(`/api/list/${listId}/activity`)
+    .then(r => r.json())
+    .then(data => {
+      const section = document.getElementById('activity-feed-section');
+      const list = document.getElementById('activity-feed-list');
+      if (!data.success || !data.activity || !data.activity.length) {
+        section.classList.add('d-none'); return;
+      }
+      list.innerHTML = data.activity.map(a => `
+        <div class="activity-item">
+          <div class="activity-dot" style="background:${a.checked ? '#16a34a' : '#a58ac2'};"></div>
+          <div class="activity-text">
+            <span class="activity-item-name">${esc(a.name)}</span>
+            <span style="color:#9b8fae;font-weight:400;"> · qty ${a.qty}${a.checked ? ' · ✓' : ''}</span>
+          </div>
+          <div class="activity-time">${timeAgo(a.added_at)}</div>
+        </div>`).join('');
+      section.classList.remove('d-none');
+    })
+    .catch(() => {});
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   DRAG & DROP (reorder)
+   ══════════════════════════════════════════════════════════════════════════ */
 let draggedItem = null;
 document.addEventListener('dragstart', e => {
   const row = e.target.closest('.item-row');
@@ -1501,7 +1911,15 @@ document.addEventListener('dragstart', e => {
 });
 document.addEventListener('dragend', e => {
   const row = e.target.closest('.item-row');
-  if (row) { row.classList.remove('dragging'); document.querySelectorAll('.item-row').forEach(r => r.classList.remove('drag-over')); saveListState(); }
+  if (row) {
+    row.classList.remove('dragging');
+    document.querySelectorAll('.item-row').forEach(r => r.classList.remove('drag-over'));
+    // Rebuild currentItems in new DOM order
+    const order = [...document.querySelectorAll('.item-row')].map(r => parseInt(r.getAttribute('data-idx'), 10));
+    currentItems = order.map(i => currentItems[i]).filter(Boolean);
+    renderItems();
+    saveListState();
+  }
 });
 document.addEventListener('dragover', e => { e.preventDefault(); const row = e.target.closest('.item-row'); if (row && row !== draggedItem) row.classList.add('drag-over'); });
 document.addEventListener('dragleave', e => { const row = e.target.closest('.item-row'); if (row) row.classList.remove('drag-over'); });
@@ -1516,38 +1934,35 @@ document.addEventListener('drop', e => {
   }
 });
 
-// ── REMOVE ITEM MODAL ─────────────────────────────────────────────────────────
-function showRemoveItemConfirm(btn, itemName) {
-  const nameEl = document.getElementById('removeItemName'), btnEl = document.getElementById('removeItemBtn');
-  if (nameEl) nameEl.textContent = itemName || 'this item';
-  if (btnEl) btnEl.value = btn ? btn.closest('.item-row')?.getAttribute('data-item-id') || '' : '';
-  window.removeItemButton = btn;
-  bootstrap.Modal.getOrCreateInstance(document.getElementById('removeItemModal')).show();
-}
+/* ══════════════════════════════════════════════════════════════════════════
+   INIT
+   ══════════════════════════════════════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.modal').forEach(m => document.body.appendChild(m));
 
-function confirmRemoveItem() {
-  if (window.removeItemButton) {
-    bootstrap.Modal.getInstance(document.getElementById('removeItemModal'))?.hide();
-    removeItem(window.removeItemButton);
-    window.removeItemButton = null;
-  }
-}
+  // Render icons on server-rendered cards
+  document.querySelectorAll('.list-card [data-role="emoji"]').forEach(el => {
+    const card = el.closest('.list-card');
+    setIconContent(el, card ? card.getAttribute('data-icon') : 'basket');
+  });
 
-// ── HIDE COMPLETED (legacy toggle kept for compatibility) ─────────────────────
-let hideCompleted = false;
-function toggleCompletedItems() {
-  currentFilter = hideCompleted ? 'all' : 'tobuy';
-  hideCompleted = !hideCompleted;
-  applyAllFilters();
-}
-function clearCompleted() { fetch('/api/list/clear-completed',{method:'POST',headers:{'Content-Type':'application/json'}}).then(r=>r.json()).then(d=>{if(d.success){showNotification('Completed items removed','success');setTimeout(()=>window.location.reload(),500);}else showNotification('Failed','danger');}).catch(()=>showNotification('Error','danger')); }
-function clearAllItems() { showClearAllConfirm(); }
-function clearAll() { showClearAllConfirm(); }
-function exitListView() {
-  document.getElementById('active-list-wrapper')?.classList.add('d-none');
-  document.getElementById('list-placeholder')?.classList.remove('d-none');
-  document.querySelectorAll('.list-card').forEach(c => c.classList.remove('active'));
-  localStorage.removeItem('lastOpenedListId');
-}
+  // Build create-modal icon grid
+  buildIconGrid('create-icon-grid', createSelectedIcon, k => createSelectedIcon = k);
+
+  // Rename via pencil in detail header
+  const renameBtn = document.getElementById('detail-rename-btn');
+  if (renameBtn) renameBtn.addEventListener('click', () => {
+    if (currentListId) renameList(currentListId, document.getElementById('detail-name').textContent);
+  });
+
+  // Close price popovers when clicking elsewhere
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.item-price-cell')) {
+      document.querySelectorAll('.item-price-cell.popover-open').forEach(c => c.classList.remove('popover-open'));
+    }
+  });
+
+  restoreLastOpenedList();
+});
 </script>
 {% endblock %}

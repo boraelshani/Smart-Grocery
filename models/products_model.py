@@ -3,9 +3,25 @@ PRODUCTS MODEL — PostgreSQL / SQLAlchemy (updated for normalized schema)
 """
 from __future__ import annotations
 import math
+from datetime import date as _date, datetime as _datetime
 from typing import List, Optional, Dict, Any
 from sqlalchemy import or_, func, desc, asc
 from models.postgres_models import db, Product, ProductStore, Store, Category, PriceHistory, Promotion, PromotionTarget, Offer
+
+
+def _format_last_seen(dt) -> str:
+    if not dt:
+        return '—'
+    if isinstance(dt, str):
+        try:
+            dt = _datetime.fromisoformat(dt)
+        except ValueError:
+            return dt[:10]
+    if hasattr(dt, 'date'):
+        if dt.date() == _date.today():
+            return 'Today'
+        return dt.strftime('%-d %b')
+    return '—'
 
 
 class ProductsModel:
@@ -24,6 +40,28 @@ class ProductsModel:
             return 0
         return int(math.ceil(float(max_price)))
 
+    @staticmethod
+    def _category_ids_for_filter(value: str) -> list:
+        """Return category id + all descendant ids matching slug or name."""
+        # Strip regex anchors if passed from the route
+        clean = value.strip().lstrip('^').rstrip('$')
+        root = Category.query.filter(
+            or_(Category.slug == clean,
+                Category.name_en.ilike(clean),
+                Category.name_de.ilike(clean))
+        ).first()
+        if not root:
+            return []
+        # Collect all descendants via BFS
+        ids = [root.id]
+        queue = [root.id]
+        while queue:
+            children = Category.query.filter(Category.parent_id.in_(queue)).all()
+            child_ids = [c.id for c in children]
+            ids.extend(child_ids)
+            queue = child_ids
+        return ids
+
     def list_products(self, query=None, skip=0, limit=20, sort=None):
         q = Product.query
         if isinstance(query, dict):
@@ -41,9 +79,9 @@ class ProductsModel:
                             elif field == 'brand':
                                 sa_ors.append(Product.brand.ilike(pat))
                             elif field == 'category':
-                                cat = Category.query.filter(Category.name_en.ilike(pat)).first()
-                                if cat:
-                                    sa_ors.append(Product.category_id == cat.id)
+                                cat_ids = self._category_ids_for_filter(cond['$regex'])
+                                if cat_ids:
+                                    sa_ors.append(Product.category_id.in_(cat_ids))
                         elif field == 'category_path':
                             pass
                 if sa_ors:
@@ -76,9 +114,9 @@ class ProductsModel:
                             elif field == 'brand':
                                 sa_ors.append(Product.brand.ilike(pat))
                             elif field == 'category':
-                                cat = Category.query.filter(Category.name_en.ilike(pat)).first()
-                                if cat:
-                                    sa_ors.append(Product.category_id == cat.id)
+                                cat_ids = self._category_ids_for_filter(cond['$regex'])
+                                if cat_ids:
+                                    sa_ors.append(Product.category_id.in_(cat_ids))
                 if sa_ors:
                     q = q.filter(or_(*sa_ors))
         return q.count()
@@ -112,36 +150,51 @@ class ProductsModel:
         ).first()
         return self._hydrate_product(row) if row else None
 
-    def get_price_history(self, product_id, limit=8):
+    def get_price_history(self, product_id, limit=60):
         if not product_id:
             return []
         try:
             pid = int(product_id)
         except (ValueError, TypeError):
             return []
-        
-        # Get price history for this product across all stores
-        history = PriceHistory.query.filter(
+
+        # Get all distinct store_ids for this product
+        store_ids_q = db.session.query(PriceHistory.store_id).filter(
             PriceHistory.product_id == pid
-        ).order_by(desc(PriceHistory.changed_at)).limit(limit).all()
-        
-        # Get store names
-        store_ids = list(set(h.store_id for h in history if h.store_id))
+        ).distinct().all()
+        all_store_ids = [r[0] for r in store_ids_q if r[0]]
+
         store_names = {}
-        if store_ids:
-            stores = Store.query.filter(Store.store_id.in_(store_ids)).all()
+        if all_store_ids:
+            stores = Store.query.filter(Store.store_id.in_(all_store_ids)).all()
             store_names = {s.store_id: s.name for s in stores}
-        
+
+        # Fetch recent history per store so all stores are represented
+        per_store = max(6, limit // max(len(all_store_ids), 1))
+        all_history = []
+        for sid in all_store_ids:
+            rows = PriceHistory.query.filter(
+                PriceHistory.product_id == pid,
+                PriceHistory.store_id == sid,
+            ).order_by(desc(PriceHistory.recorded_at)).limit(per_store).all()
+            all_history.extend(rows)
+
+        from datetime import datetime as _dt
+        def _row_date(h):
+            return h.recorded_at or h.changed_at or _dt.min
+
+        all_history.sort(key=_row_date)
+
         return [
             {
                 'store': store_names.get(h.store_id, h.store_id),
                 'old_price': float(h.old_price) if h.old_price else None,
                 'new_price': float(h.new_price) if h.new_price else None,
-                'price': float(h.new_price) if h.new_price else None,
-                'timestamp': h.changed_at.isoformat() if h.changed_at else None,
-                'date': h.changed_at.strftime('%Y-%m-%d') if h.changed_at else None
+                'price': float(h.price) if h.price else (float(h.new_price) if h.new_price else None),
+                'timestamp': _row_date(h).isoformat(),
+                'date': _row_date(h).strftime('%b %-d'),
             }
-            for h in history
+            for h in all_history
         ]
 
     def _hydrate_products_bulk(self, rows: list) -> list:
@@ -220,21 +273,42 @@ class ProductsModel:
                     'store': store_name,
                     'name': store_name,
                     'price': price,
+                    'unit_price': float(ps.unit_price) if ps.unit_price else None,
+                    'unit_price_unit': ps.unit_price_unit or None,
                     'url': ps.product_url,
                     'image': row.default_image_url,
                     'storeProductId': f'{ps.product_id}_{ps.store_id}',
                     'has_deal': promo is not None,
+                    'store_product_name': ps.store_product_name or None,
+                    'store_size': f"{ps.store_size_normalized.normalize():f}".rstrip('0').rstrip('.') + (f" {ps.store_unit_normalized}" if ps.store_unit_normalized else '') if ps.store_size_normalized else None,
+                    'last_seen': ps.last_seen,
+                    'last_seen_label': _format_last_seen(ps.last_seen),
                 }
+
+                # If the scraper stored the original (pre-sale) price explicitly, use it directly
+                if ps.was_price and price:
+                    store_entry['original_price'] = float(ps.was_price)
+                    store_entry['has_deal'] = True
+                    # compute approximate discount percent from the two prices
+                    was = float(ps.was_price)
+                    if was > price:
+                        store_entry['discount_percent'] = int(round((was - price) / was * 100))
 
                 if promo and price:
                     dt = promo['discount_type']
                     dv = promo['discount_value']
                     if dt == 'percentage' and dv > 0:
-                        original = price / (1 - dv / 100) if dv < 100 else price
-                        store_entry['original_price'] = round(original, 2)
+                        if not ps.was_price:
+                            # No explicit was_price — compute from the percentage
+                            # base_price is the regular (pre-discount) price; compute actual sale price
+                            sale_price = round(price * (1 - dv / 100), 2)
+                            store_entry['original_price'] = price
+                            store_entry['price'] = sale_price
+                            price = sale_price
                         store_entry['discount_percent'] = int(dv)
                     elif dt == 'fixed' and dv > 0:
-                        store_entry['original_price'] = round(price + dv, 2)
+                        if not ps.was_price:
+                            store_entry['original_price'] = round(price + dv, 2)
                         store_entry['discount_percent'] = int(dv / (price + dv) * 100) if price + dv else 0
                     elif dt == 'bogo':
                         store_entry['discount_percent'] = int(dv)

@@ -244,3 +244,9 @@ def home():
 def barcode_scanner():
     """Barcode Scanner Tool UI."""
     return render_template('barcode_scanner.html')
+
+
+@main_bp.route('/privacy')
+def privacy_policy():
+    """Privacy policy & cookie information (GDPR / DSGVO transparency page)."""
+    return render_template('privacy.html')

@@ -1,0 +1,1 @@
+ALTER TABLE product_store ADD COLUMN IF NOT EXISTS was_price NUMERIC(10,2);
