@@ -16,7 +16,7 @@
 ## Technologies Used
 
 - **Backend:** Python (Flask)
-- **Database:** PostgreSQL (via SQLAlchemy) — MongoDB references are legacy
+- **Database:** PostgreSQL (via SQLAlchemy) 
 - **Frontend:** HTML5, CSS3, Bootstrap 5, Jinja2 Templates
 - **Scripting:** JavaScript (Vanilla JS & Async Fetch API)
 - **Security:** Bcrypt (hashing), JWT (JSON Web Tokens)
