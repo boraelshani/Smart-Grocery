@@ -20,7 +20,7 @@ def _format_last_seen(dt) -> str:
     if hasattr(dt, 'date'):
         if dt.date() == _date.today():
             return 'Today'
-        return dt.strftime('%-d %b')
+        return f"{dt.day} {dt.strftime('%b')}"
     return '—'
 
 

@@ -1693,9 +1693,52 @@
         display: none;
     }
 
+    /* Steps need to wrap for the 50%/100% flex-basis below to take effect */
+    .how-steps-row {
+        flex-wrap: wrap;
+    }
+
     .how-step {
         flex: 0 0 50%;
         margin-bottom: 2rem;
+    }
+
+    /* Hero: body padding-top already clears the fixed mobile navbar,
+       so drop the extra desktop margin that was stacking on top of it */
+    .modern-hero {
+        margin-top: 0;
+        padding-top: 24px;
+        padding-bottom: 32px;
+    }
+
+    .hero-text-col {
+        padding-right: 0;
+        text-align: center;
+    }
+
+    .modern-subline {
+        max-width: 100%;
+    }
+
+    .modern-cta-row {
+        justify-content: center;
+    }
+
+    .modern-headline {
+        font-size: 2.8rem;
+    }
+
+    .modern-img-wrapper {
+        height: 320px;
+        margin-top: 2rem;
+    }
+
+    .modern-floating-card {
+        position: relative;
+        bottom: auto;
+        right: auto;
+        width: 100%;
+        margin-top: 1rem;
     }
 
     .newsletter-inner {

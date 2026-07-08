@@ -1026,6 +1026,19 @@ body.scrolled .mega-menu-content {
     max-width: 100% !important;
     border-radius: 1rem;
     margin-top: 0.5rem;
+    display: none;
+  }
+
+  /* Hover doesn't exist on touch — mega menu opens via tap, toggled with .mega-open */
+  .mega-dropdown:hover .mega-menu-content {
+    display: none;
+  }
+
+  .mega-dropdown.mega-open .mega-menu-content {
+    display: block;
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
   }
   
   .mega-menu-wrapper {

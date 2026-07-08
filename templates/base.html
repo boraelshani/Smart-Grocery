@@ -224,7 +224,7 @@
         <span class="navbar-toggler-icon"></span>
       </button>
 
-      <div class="collapse navbar-collapse w-100 tabs-collapse w-100 order-5 order-lg-5 mt-2 mb-2 d-flex justify-content-center border-top border-md-0 border-light pt-2" id="navbarNav">
+      <div class="collapse navbar-collapse w-100 tabs-collapse order-5 order-lg-5 mt-2 mb-2 justify-content-center border-top border-md-0 border-light pt-2" id="navbarNav">
         <ul class="navbar-nav mx-auto mb-1 mb-lg-0 align-items-center gap-2">
                     <!-- MEGA MENU -->
           <li class="nav-item mega-dropdown mr-2">
@@ -555,6 +555,20 @@
   </nav>
   
   <script>
+  // Tap-to-open Browse mega menu on mobile (hover doesn't work on touch)
+  document.addEventListener('DOMContentLoaded', function() {
+    const browseToggle = document.getElementById('browseDropdown');
+    const megaDropdown = browseToggle ? browseToggle.closest('.mega-dropdown') : null;
+    if (browseToggle && megaDropdown) {
+      browseToggle.addEventListener('click', function(e) {
+        if (window.innerWidth < 992) {
+          e.preventDefault();
+          megaDropdown.classList.toggle('mega-open');
+        }
+      });
+    }
+  });
+
   // Handle tab switching for browse menu
   document.addEventListener('DOMContentLoaded', function() {
     const tabButtons = document.querySelectorAll('[data-bs-toggle="tab"]');
