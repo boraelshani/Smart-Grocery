@@ -1161,8 +1161,8 @@
     }
     
     .circular-carousel-arrow {
-        width: 40px;
-        height: 40px;
+        width: 44px;
+        height: 44px;
         font-size: 1.2rem;
     }
 }
@@ -1171,20 +1171,20 @@
     .circular-carousel-wrapper {
         padding: 0 40px;
     }
-    
+
     .circular-category-image {
         width: 150px;
         height: 150px;
     }
-    
+
     .circular-category-name {
         font-size: 1rem;
         margin-top: 1rem;
     }
-    
+
     .circular-carousel-arrow {
-        width: 35px;
-        height: 35px;
+        width: 44px;
+        height: 44px;
         font-size: 1rem;
     }
 }
@@ -1768,6 +1768,32 @@
 
     .how-step {
         flex: 0 0 100%;
+    }
+
+    /* Bump below the 44px tap-target minimum otherwise */
+    .view-all-btn {
+        padding: 14px 22px;
+    }
+
+    /* Footer links/icons and hero floating-card link were under the
+       44px tap-target minimum — widen their hit areas without changing
+       their visual density on desktop */
+    .footer-link {
+        display: inline-flex;
+        align-items: center;
+        padding: 10px 0;
+        margin-bottom: 0;
+    }
+
+    .footer-social-btn {
+        width: 44px;
+        height: 44px;
+    }
+
+    .modern-floating-card .floating-link {
+        display: inline-flex;
+        align-items: center;
+        padding: 10px 0;
     }
 }
 

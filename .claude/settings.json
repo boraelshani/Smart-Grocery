@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-Process | Where-Object { $_.ProcessName -match \"chrome|chromium\" } | Select-Object ProcessName, Id | Format-Table -AutoSize)",
+      "Bash(./venv/Scripts/python.exe \"C:\\\\Users\\\\beni\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-beni-Desktop-Smart-Grocery\\\\786abc58-aecc-40cb-9d03-f4704f790f93\\\\scratchpad\\\\shot_clean.py\" \"http://127.0.0.1:5001/?refresh=1\" \"C:\\\\Users\\\\beni\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-beni-Desktop-Smart-Grocery\\\\786abc58-aecc-40cb-9d03-f4704f790f93\\\\scratchpad\" nocookie 375)",
+      "Bash(./venv/Scripts/python.exe -c ' *)"
+    ]
+  }
+}

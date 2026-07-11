@@ -311,7 +311,9 @@ body {
   font-size: 1rem;
 }
 
-/* ═══ SCROLLED STATE - SINGLE ROW WITH TABS ═══ */
+/* ═══ SCROLLED STATE - SINGLE ROW WITH TABS (desktop only — mobile has its own
+   collapsed-menu behavior and must not be forced back open by scroll) ═══ */
+@media (min-width: 992px) {
 .navbar-premium.scrolled {
   background: #f4f0ec !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
@@ -393,6 +395,7 @@ body {
 /* Adjust body padding when scrolled */
 body.scrolled {
   padding-top: 76px !important;
+}
 }
 
 /* Mobile toggler */
