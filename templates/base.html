@@ -29,6 +29,7 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/shopping_list.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/misc.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/messages.css') }}?v=1">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile.css') }}?v=6">
 
   <!-- Custom Page Styles Inserted Here -->
   {% block styles %}{% endblock %}
@@ -597,6 +598,189 @@
     });
   });
   </script>
+
+  <!-- ========================================== -->
+  <!-- MOBILE TOP APP BAR (< 992px)               -->
+  <!-- ========================================== -->
+  <header class="m-topbar">
+    <a class="m-topbar__brand" href="{{ url_for('main.home') }}">
+      <svg viewBox="0 0 64 64" aria-hidden="true">
+        <defs>
+          <linearGradient id="m-brand-bg" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#f97316"/><stop offset="100%" stop-color="#0ea5a3"/>
+          </linearGradient>
+          <linearGradient id="m-brand-leaf" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#22c55e"/><stop offset="100%" stop-color="#16a34a"/>
+          </linearGradient>
+        </defs>
+        <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#m-brand-bg)"/>
+        <path d="M32 12c-8.3 0-15 6.7-15 15 0 10.8 13.1 22.7 14.2 23.7a1.2 1.2 0 0 0 1.6 0C33.9 49.7 47 37.8 47 27c0-8.3-6.7-15-15-15z" fill="#ffffff"/>
+        <path d="M32.2 20.5c4.6-3.6 9.1-2.1 11.4 1.2-4 3.3-8.9 4.2-12.6 2.9-1.9 1.4-3.3 3.6-4 6.2 1.2.4 2.6.6 4 .6 4 0 7.5-1.4 10.1-3.7-.3 6.6-4.3 11.4-10.3 11.4-5.9 0-10.8-4.4-10.8-10.2 0-5.6 4.7-10.2 10.7-10.2.5 0 1 0 1.5.1z" fill="url(#m-brand-leaf)"/>
+        <circle cx="46.5" cy="16.5" r="2.3" fill="#ffffff" opacity="0.95"/>
+      </svg>
+      <span>Smart Grocery</span>
+    </a>
+    <div class="m-topbar__actions">
+      <button type="button" class="m-topbar__btn" data-m-search-open aria-label="Search">
+        <i class="bi bi-search"></i>
+      </button>
+      <a href="{{ url_for('main.barcode_scanner') }}" class="m-topbar__btn" aria-label="Barcode scanner">
+        <i class="bi bi-upc-scan"></i>
+      </a>
+      {% if session.get('user') %}
+      <a href="{{ url_for('main.notifications_page') }}" class="m-topbar__btn" aria-label="Notifications">
+        <i class="bi bi-bell-fill"></i>
+        {% set unread_count = unread_count|default(0) %}
+        {% if unread_count and unread_count > 0 %}
+        <span class="m-topbar__badge">{{ unread_count }}</span>
+        {% endif %}
+      </a>
+      <a href="{{ url_for('main.profile') }}" class="m-topbar__btn" aria-label="Profile" style="width:auto;">
+        <span class="m-topbar__avatar">
+          {% if account_avatar %}<img src="{{ account_avatar }}" alt="{{ account_name }}">{% else %}{{ account_initials }}{% endif %}
+        </span>
+      </a>
+      {% else %}
+      <a href="{{ url_for('auth.login') }}" class="m-topbar__btn" aria-label="Log in">
+        <i class="bi bi-person-circle"></i>
+      </a>
+      {% endif %}
+    </div>
+  </header>
+
+  <!-- ========================================== -->
+  <!-- MOBILE BOTTOM NAVIGATION (< 992px)         -->
+  <!-- ========================================== -->
+  <nav class="m-bottomnav" id="mBottomNav" aria-label="Primary mobile navigation">
+    <a href="{{ url_for('main.home') }}" class="m-bottomnav__item {% if request.endpoint == 'main.home' %}active{% endif %}">
+      <i class="bi {% if request.endpoint == 'main.home' %}bi-house-door-fill{% else %}bi-house-door{% endif %}"></i>
+      <span>Home</span>
+    </a>
+    <button type="button" class="m-bottomnav__item" data-m-browse-open>
+      <i class="bi bi-grid-3x3-gap"></i>
+      <span>Browse</span>
+    </button>
+    <a href="{{ url_for('main.compare_prices') }}" class="m-bottomnav__item {% if request.endpoint == 'main.compare_prices' %}active{% endif %}">
+      <i class="bi {% if request.endpoint == 'main.compare_prices' %}bi-search-heart-fill{% else %}bi-search{% endif %}"></i>
+      <span>Compare</span>
+    </a>
+    <a href="{{ url_for('main.featured_deals_page') }}" class="m-bottomnav__item {% if request.endpoint == 'main.featured_deals_page' %}active{% endif %}">
+      <i class="bi {% if request.endpoint == 'main.featured_deals_page' %}bi-tags-fill{% else %}bi-tags{% endif %}"></i>
+      <span>Deals</span>
+    </a>
+    {% if session.get('user') %}
+    <a href="{{ url_for('main.shopping_list') }}" class="m-bottomnav__item {% if request.endpoint == 'main.shopping_list' %}active{% endif %}">
+      <i class="bi {% if request.endpoint == 'main.shopping_list' %}bi-card-checklist{% else %}bi-card-list{% endif %}"></i>
+      <span>My List</span>
+    </a>
+    {% else %}
+    <a href="{{ url_for('auth.login') }}" class="m-bottomnav__item {% if request.endpoint in ['auth.login', 'auth.signup'] %}active{% endif %}">
+      <i class="bi bi-person"></i>
+      <span>Log In</span>
+    </a>
+    {% endif %}
+  </nav>
+
+  <!-- ========================================== -->
+  <!-- MOBILE FULL-SCREEN SEARCH OVERLAY          -->
+  <!-- ========================================== -->
+  <div class="m-search-overlay" id="mSearchOverlay" role="dialog" aria-modal="true" aria-label="Search">
+    <div class="m-search-overlay__head">
+      <div class="m-search-overlay__input-wrap">
+        <i class="bi bi-search"></i>
+        <input type="search" id="mSearchInput" class="m-search-overlay__input" placeholder="Search products, brands, stores…" autocomplete="off" enterkeyhint="search">
+      </div>
+      <button type="button" class="m-search-overlay__cancel" id="mSearchCancel">Cancel</button>
+    </div>
+    <div class="m-search-overlay__body" id="mSearchBody"></div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MOBILE FULL-SCREEN BROWSE OVERLAY          -->
+  <!-- ========================================== -->
+  <div class="m-browse-overlay" id="mBrowseOverlay" role="dialog" aria-modal="true" aria-label="Browse categories and brands">
+    <!-- Main header (shown on category list) -->
+    <div class="m-browse-overlay__head" id="mBrowseHeadMain">
+      <h2 class="m-browse-overlay__title">Browse</h2>
+      <button type="button" class="m-browse-overlay__close" id="mBrowseClose" aria-label="Close browse">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+    <!-- Sub-panel header with breadcrumb trail -->
+    <div class="m-browse-head--sub" id="mBrowseHeadSub">
+      <button type="button" class="m-browse-back-btn" id="mBrowseBack" aria-label="Go back">
+        <i class="bi bi-arrow-left"></i>
+      </button>
+      <nav class="m-browse-breadcrumb" id="mBrowseBreadcrumb" aria-label="Category path"></nav>
+      <button type="button" class="m-browse-overlay__close" id="mBrowseCloseSub" aria-label="Close browse">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+    <div class="m-browse-tabs" id="mBrowseTabRow">
+      <button type="button" class="m-browse-tab active" data-m-pane="mBrowseCategories"><i class="bi bi-grid-fill me-1"></i> Categories</button>
+      <button type="button" class="m-browse-tab" data-m-pane="mBrowseBrands"><i class="bi bi-tags-fill me-1"></i> Brands</button>
+    </div>
+    <div class="m-browse-overlay__body" style="overflow: hidden; padding: 0;">
+      <!-- Categories pane: two-panel slide layout -->
+      <div class="m-browse-pane active" id="mBrowseCategories" style="overflow: hidden; padding: 0; height: 100%;">
+        <div class="m-browse-slide-container" id="mBrowseSlideContainer">
+          <!-- Panel 1: Category list -->
+          <div class="m-browse-slide-panel" id="mBrowseCatList">
+            {% if mega_menu and mega_menu.categories %}
+            {% for cat, info in mega_menu.categories.items() %}
+            <div class="m-catrow">
+              <a href="{{ url_for('main.compare_prices', category=cat) }}" class="m-catrow__link">
+                <span class="m-catrow__icon">
+                  <img src="{{ info.image or mega_menu.images.get(cat, mega_menu.fallback_image) }}" alt="" loading="lazy" onerror="this.src='{{ mega_menu.fallback_image }}'">
+                </span>
+                <span class="m-catrow__name">{{ cat }}</span>
+              </a>
+              <button type="button" class="m-catrow__drill"
+                data-cat-name="{{ cat }}"
+                data-cat-url="{{ url_for('main.compare_prices', category=cat) }}"
+                aria-label="Browse {{ cat }} subcategories">
+                <i class="bi bi-chevron-right"></i>
+                <template class="m-catrow-data">
+                  {% for l1, l2_list in info.subcats.items() %}
+                  <div data-l1-name="{{ l1 }}" data-l1-url="{{ url_for('main.compare_prices', category=l1) }}">
+                    {% for l2 in l2_list %}
+                    <span data-l2-name="{{ l2 }}" data-l2-url="{{ url_for('main.compare_prices', category=l2) }}"></span>
+                    {% endfor %}
+                  </div>
+                  {% endfor %}
+                </template>
+              </button>
+            </div>
+            {% endfor %}
+            {% endif %}
+          </div>
+          <!-- Panel 2: Subcategory panel (populated by JS when a category is tapped) -->
+          <div class="m-browse-slide-panel" id="mBrowseSubPanel">
+            <!-- JS populates this -->
+          </div>
+        </div>
+      </div>
+      <!-- Brands pane -->
+      <div class="m-browse-pane" id="mBrowseBrands" style="padding: 0 14px; overflow-y: auto; -webkit-overflow-scrolling: touch; height: 100%;">
+        <div class="m-brands-grid" style="padding-top: 4px;">
+          {% if mega_menu and mega_menu.brands %}
+          {% for brand in mega_menu.brands %}
+          <a href="{{ url_for('main.compare_prices', search=brand.display_name) }}" class="m-brand-card">
+            <span class="m-brand-card__visual">
+              {% if brand.image %}
+              <img src="{{ brand.image }}" alt="{{ brand.display_name }}" loading="lazy" onerror="this.parentElement.innerHTML='<span class=&quot;m-brand-card__fallback&quot;>{{ brand.initials }}</span>';">
+              {% else %}
+              <span class="m-brand-card__fallback">{{ brand.initials }}</span>
+              {% endif %}
+            </span>
+            <span class="m-brand-card__label">{{ brand.display_name }}</span>
+          </a>
+          {% endfor %}
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
   {% endblock %}
 
   <!-- ========================================== -->
@@ -683,6 +867,7 @@
   <script src="{{ url_for('static', filename='js/modules/product_modal.js') }}"></script>
   <script src="{{ url_for('static', filename='js/modules/profile.js') }}"></script>
   <script src="{{ url_for('static', filename='js/modules/main.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/modules/mobile.js') }}?v=4"></script>
 
   
       <!-- Global Price Report Modal -->

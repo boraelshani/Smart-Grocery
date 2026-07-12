@@ -43,6 +43,12 @@
         <div class="modern-img-wrapper animate-fade-up">
           <img src="{{ url_for('static', filename='img/home_hero_1.png') }}" alt="Fresh produce" loading="lazy">
         </div>
+
+        <!-- Mobile-only CTAs below image (hidden on lg+, shown via CSS on mobile) -->
+        <div class="mobile-hero-cta-row d-lg-none">
+          <a href="{{ url_for('main.compare_prices') }}" class="modern-btn-primary">Compare Prices</a>
+          <a href="/shopping-list" class="modern-btn-secondary">My Lists</a>
+        </div>
         
         <!-- Floating Accent Card -->
         <div class="modern-floating-card animate-fade-up animate-fade-up-delay-1" id="floating-promo-card">

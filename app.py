@@ -371,4 +371,4 @@ if __name__ == '__main__':
     # (debug=True exposes the Werkzeug interactive debugger: remote code execution.)
     debug_mode = os.environ.get('FLASK_DEBUG', '').lower() in ('1', 'true', 'yes')
     # use_reloader=False prevents WinError 10038 on some Windows environments
-    app.run(debug=debug_mode, use_reloader=False, port=5001)
+    app.run(debug=debug_mode, use_reloader=False, port=int(os.environ.get('PORT', 5001)))

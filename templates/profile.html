@@ -1168,6 +1168,47 @@
     {% else %}
       <div class="pa-layout">
 
+        <!-- Mobile full-screen account menu (hidden on desktop) -->
+        <div class="m-profile-menu" id="mProfileMenu">
+          <div class="m-profile-hero">
+            <div class="m-profile-hero__avatar">
+              {% if user_data.avatar %}
+                <img src="{{ user_data.avatar }}" alt="Avatar">
+              {% else %}
+                {{ (user_data.name[0] | upper) if user_data.name else 'U' }}
+              {% endif %}
+            </div>
+            <h2 class="m-profile-hero__name">{{ user_data.name if user_data and user_data.get('name') else 'Shopper' }}</h2>
+            <p class="m-profile-hero__email">{{ user_data.email }}</p>
+          </div>
+
+          <div class="m-profile-list">
+            <button class="m-profile-item" onclick="mOpenPanel('overview', 'Overview')">
+              <span class="m-profile-item__icon"><i class="bi bi-grid-fill"></i></span>
+              Overview <i class="bi bi-chevron-right"></i>
+            </button>
+            <button class="m-profile-item" onclick="mOpenPanel('favorites', 'Favorites')">
+              <span class="m-profile-item__icon"><i class="bi bi-heart-fill"></i></span>
+              Favorites <i class="bi bi-chevron-right"></i>
+            </button>
+            <button class="m-profile-item" onclick="mOpenPanel('settings', 'Settings')">
+              <span class="m-profile-item__icon"><i class="bi bi-gear-fill"></i></span>
+              Settings <i class="bi bi-chevron-right"></i>
+            </button>
+            <button class="m-profile-item" onclick="mOpenPanel('preferences', 'Preferences')">
+              <span class="m-profile-item__icon"><i class="bi bi-sliders"></i></span>
+              Preferences <i class="bi bi-chevron-right"></i>
+            </button>
+          </div>
+
+          <div class="m-profile-list">
+            <button class="m-profile-item m-profile-item--logout" data-bs-toggle="modal" data-bs-target="#logoutConfirmModal">
+              <span class="m-profile-item__icon"><i class="bi bi-box-arrow-right"></i></span>
+              Log Out <i class="bi bi-chevron-right"></i>
+            </button>
+          </div>
+        </div>
+
         <!-- Left sidebar nav -->
         <div class="pa-sidebar-nav">
           <p class="pa-sidebar-label">Account</p>
@@ -1186,7 +1227,15 @@
         </div>
 
         <!-- Right content -->
-        <div>
+        <div class="pa-content" id="paContent">
+
+          <!-- Mobile back bar -->
+          <div class="m-profile-back" id="mProfileBack">
+            <button class="m-profile-back__btn" onclick="mBackToMenu()" aria-label="Back to account menu">
+              <i class="bi bi-arrow-left"></i>
+            </button>
+            <h3 class="m-profile-back__title" id="mProfileBackTitle">Overview</h3>
+          </div>
 
           <!-- Purple gradient banner (always visible) -->
           <div class="pa-banner">
@@ -1570,10 +1619,33 @@
       if (tabInput) tabInput.value = name;
     }
 
+    // ── Mobile full-screen account menu ──
+    const M_PANEL_LABELS = { overview: 'Overview', favorites: 'Favorites', settings: 'Settings', preferences: 'Preferences' };
+    function mIsMobile() { return window.innerWidth <= 991.98; }
+
+    function mOpenPanel(name, label) {
+      showPanel(name, null);
+      document.getElementById('mProfileMenu').classList.add('is-hidden');
+      document.getElementById('paContent').classList.add('is-active');
+      document.getElementById('mProfileBack').classList.add('is-active');
+      document.getElementById('mProfileBackTitle').textContent = label || M_PANEL_LABELS[name] || 'Account';
+      window.scrollTo({ top: 0 });
+    }
+
+    function mBackToMenu() {
+      document.getElementById('mProfileMenu').classList.remove('is-hidden');
+      document.getElementById('paContent').classList.remove('is-active');
+      document.getElementById('mProfileBack').classList.remove('is-active');
+      window.scrollTo({ top: 0 });
+    }
+
     // Auto-switch panel from URL ?tab= param
     document.addEventListener('DOMContentLoaded', () => {
       const tab = new URLSearchParams(window.location.search).get('tab');
-      if (tab) showPanel(tab, null);
+      if (tab) {
+        if (mIsMobile()) mOpenPanel(tab);
+        else showPanel(tab, null);
+      }
     });
 
     // Global variable to persist selection across modal toggles
